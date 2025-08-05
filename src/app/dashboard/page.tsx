@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Rocket, Code, MessageSquare } from "lucide-react";
+import { Rocket, Code, MessageSquare, Briefcase, Percent } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -10,6 +10,39 @@ export default function DashboardPage() {
       <div className="mb-8">
         <h1 className="font-headline text-4xl font-bold">Dashboard</h1>
         <p className="text-muted-foreground">Here's your progress overview, welcome back!</p>
+      </div>
+
+      <div className="mb-6 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Interviews Completed</CardTitle>
+            <Briefcase className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">12</div>
+            <p className="text-xs text-muted-foreground">+2 since last month</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Coding Questions Solved</CardTitle>
+            <Code className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">57</div>
+            <p className="text-xs text-muted-foreground">+10 since last month</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Job Likelihood</CardTitle>
+            <Percent className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">78%</div>
+            <p className="text-xs text-muted-foreground">Based on your performance</p>
+          </CardContent>
+        </Card>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
