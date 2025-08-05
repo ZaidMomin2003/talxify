@@ -53,7 +53,7 @@ export default function DashboardLayout({
   const menuItems = [
     { href: "/dashboard", label: "Dashboard", icon: LayoutGrid },
     { href: "/dashboard/portfolio", label: "Portfolio", icon: User },
-    { href: "/performance", label: "Performance", icon: BarChart },
+    { href: "/dashboard/performance", label: "Performance", icon: BarChart },
   ];
 
   const filteredActivity = recentActivity.filter(item =>
@@ -75,7 +75,7 @@ export default function DashboardLayout({
         <SidebarContent>
           <SidebarMenu>
             {menuItems.map((item) => {
-              const isEnabled = item.href === '/dashboard' || item.href === '/dashboard/portfolio';
+              const isEnabled = item.href === '/dashboard' || item.href === '/dashboard/portfolio' || item.href === '/dashboard/performance';
               return (
                 <SidebarMenuItem key={item.label}>
                   <SidebarMenuButton
