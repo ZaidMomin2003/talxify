@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Rocket, Code, MessageSquare, Briefcase, Percent } from "lucide-react";
+import { Rocket, Code, Briefcase, Percent } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -47,7 +47,7 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-2">
         <Card className="flex flex-col shadow-lg hover:shadow-xl transition-shadow duration-300 border-primary/20">
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -95,45 +95,6 @@ export default function DashboardPage() {
             <Button asChild className="w-full" size="lg" variant="secondary" disabled>
               <Link href="#">Start Coding</Link>
             </Button>
-          </CardFooter>
-        </Card>
-        
-        <Card className="md:col-span-2 lg:col-span-1 flex flex-col shadow-lg">
-          <CardHeader>
-            <CardTitle>Recent Activity</CardTitle>
-            <CardDescription>Review your past sessions.</CardDescription>
-          </CardHeader>
-          <CardContent className="flex-grow space-y-6">
-            <div className="flex items-start gap-4">
-              <div className="bg-primary/10 text-primary rounded-full p-3">
-                <MessageSquare className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="font-semibold">Frontend Interview</p>
-                <p className="text-sm text-muted-foreground">Completed 2 days ago</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-4">
-              <div className="bg-primary/10 text-primary rounded-full p-3">
-                <Code className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="font-semibold">Algorithm Challenge</p>
-                <p className="text-sm text-muted-foreground">Completed 4 days ago</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-4">
-              <div className="bg-primary/10 text-primary rounded-full p-3">
-                <MessageSquare className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="font-semibold">System Design Mock</p>
-                <p className="text-sm text-muted-foreground">Completed 1 week ago</p>
-              </div>
-            </div>
-          </CardContent>
-          <CardFooter>
-            <Button variant="outline" className="w-full" disabled>View All Activity</Button>
           </CardFooter>
         </Card>
       </div>

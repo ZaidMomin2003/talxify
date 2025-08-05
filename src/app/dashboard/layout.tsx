@@ -6,6 +6,15 @@ import React from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import {
   Sidebar,
   SidebarContent,
   SidebarHeader,
@@ -17,7 +26,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { Bot, Code, LayoutGrid, MessageSquare, BarChart, Settings } from "lucide-react";
+import { Bot, Code, LayoutGrid, MessageSquare, BarChart, Settings, History, Search } from "lucide-react";
 
 export default function DashboardLayout({
   children,
@@ -86,7 +95,58 @@ export default function DashboardLayout({
               <SidebarTrigger />
             </div>
             <div className="flex-1" />
-            {/* Future elements like search or notifications can go here */}
+            
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <History className="h-5 w-5" />
+                  <span className="sr-only">View recent activity</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-80">
+                <DropdownMenuLabel>Recent Activity</DropdownMenuLabel>
+                <div className="p-2">
+                  <div className="relative">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input placeholder="Search activity..." className="pl-8" />
+                  </div>
+                </div>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem>
+                  <div className="flex items-start gap-3">
+                    <div className="bg-primary/10 text-primary rounded-full p-2">
+                      <MessageSquare className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-sm">Frontend Interview</p>
+                      <p className="text-xs text-muted-foreground">2 days ago</p>
+                    </div>
+                  </div>
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                    <div className="flex items-start gap-3">
+                        <div className="bg-primary/10 text-primary rounded-full p-2">
+                            <Code className="h-4 w-4" />
+                        </div>
+                        <div>
+                            <p className="font-semibold text-sm">Algorithm Challenge</p>
+                            <p className="text-xs text-muted-foreground">4 days ago</p>
+                        </div>
+                    </div>
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                    <div className="flex items-start gap-3">
+                        <div className="bg-primary/10 text-primary rounded-full p-2">
+                            <MessageSquare className="h-4 w-4" />
+                        </div>
+                        <div>
+                            <p className="font-semibold text-sm">System Design Mock</p>
+                            <p className="text-xs text-muted-foreground">1 week ago</p>
+                        </div>
+                    </div>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
         </header>
         {children}
       </SidebarInset>
