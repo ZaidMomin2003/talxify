@@ -90,23 +90,23 @@ export default function DashboardPage() {
             </div>
             <CardDescription>Simulate a real-time interview with an AI.</CardDescription>
           </CardHeader>
-          <CardContent className="flex-grow">
+          <CardContent className="flex-grow flex flex-col justify-between">
             <form className="space-y-4">
-              <div>
-                <Label htmlFor="role">Role</Label>
-                <Input id="role" placeholder="e.g., Software Engineer" />
-              </div>
-              <div>
+               <div>
                 <Label htmlFor="topic">Topic</Label>
                 <Input id="topic" placeholder="e.g., React, System Design" />
               </div>
+              <div className="flex items-end gap-4">
+                <div className="flex-grow">
+                  <Label htmlFor="role">Role</Label>
+                  <Input id="role" placeholder="e.g., Software Engineer" />
+                </div>
+                 <Button asChild size="lg" disabled>
+                    <Link href="#">Start Interview</Link>
+                </Button>
+              </div>
             </form>
           </CardContent>
-          <CardFooter>
-            <Button asChild className="w-full" size="lg" disabled>
-              <Link href="#">Start Interview</Link>
-            </Button>
-          </CardFooter>
         </Card>
 
         <Card className="flex flex-col shadow-lg hover:shadow-xl transition-shadow duration-300 border-accent/20">
