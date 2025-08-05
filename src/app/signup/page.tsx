@@ -15,7 +15,10 @@ export default function SignupPage() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { signUp } = useAuth();
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [githubLoading, setGithubLoading] = useState(false);
+
+  const { signUp, signInWithGoogle, signInWithGitHub } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
 
@@ -37,6 +40,40 @@ export default function SignupPage() {
     }
   };
 
+  const handleGoogleSignIn = async () => {
+    setGoogleLoading(true);
+    try {
+      await signInWithGoogle();
+      router.push('/dashboard');
+    } catch (error: any) {
+      console.error(error);
+      toast({
+        title: "Google sign-up failed",
+        description: error.message || "Could not sign up with Google.",
+        variant: "destructive",
+      });
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
+  const handleGitHubSignIn = async () => {
+    setGithubLoading(true);
+    try {
+      await signInWithGitHub();
+      router.push('/dashboard');
+    } catch (error: any) {
+      console.error(error);
+      toast({
+        title: "GitHub sign-up failed",
+        description: error.message || "Could not sign up with GitHub.",
+        variant: "destructive",
+      });
+    } finally {
+      setGithubLoading(false);
+    }
+  };
+
   return (
     <div className="relative flex min-h-screen w-full items-center justify-center overflow-hidden p-4 bg-background">
       <div className="z-10 w-full max-w-6xl">
@@ -51,7 +88,7 @@ export default function SignupPage() {
                         <h1 className="text-3xl font-headline font-bold">Talxify</h1>
                     </div>
                     <h2 className="mb-4 text-5xl font-bold font-headline leading-tight">
-                    Ace Your Next Tech Interview.
+                    Win your interviews with AI Assistance.
                     </h2>
                     <p className="mb-12 text-lg opacity-80">
                     AI-powered mock interviews and coding assistance to land your dream job.
@@ -145,7 +182,7 @@ export default function SignupPage() {
                   </div>
                 </div>
 
-                <Button type="submit" className="w-full" size="lg" disabled={loading}>
+                <Button type="submit" className="w-full" size="lg" disabled={loading || googleLoading || githubLoading}>
                   {loading ? <Loader2 className="animate-spin" /> : 'Create Account'}
                 </Button>
 
@@ -155,12 +192,12 @@ export default function SignupPage() {
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
-                    <Button variant="outline" type="button">
-                        <img src="https://www.svgrepo.com/show/475656/google-color.svg" className="h-5 w-5" alt="Google" />
+                    <Button variant="outline" type="button" onClick={handleGoogleSignIn} disabled={loading || googleLoading || githubLoading}>
+                        {googleLoading ? <Loader2 className="animate-spin" /> : <img src="https://www.svgrepo.com/show/475656/google-color.svg" className="h-5 w-5" alt="Google" />}
                         <span className="ml-2">Google</span>
                     </Button>
-                    <Button variant="outline" type="button">
-                        <Github className="h-5 w-5" />
+                    <Button variant="outline" type="button" onClick={handleGitHubSignIn} disabled={loading || googleLoading || githubLoading}>
+                        {githubLoading ? <Loader2 className="animate-spin" /> : <Github className="h-5 w-5" />}
                         <span className="ml-2">GitHub</span>
                     </Button>
                 </div>

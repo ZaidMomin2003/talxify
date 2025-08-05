@@ -2,8 +2,8 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { User, onAuthStateChanged, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { User, onAuthStateChanged, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
+import { auth, googleProvider, githubProvider } from '@/lib/firebase';
 import type { SignUpForm, SignInForm } from '@/lib/types';
 import { useRouter } from 'next/navigation';
 
@@ -12,6 +12,8 @@ interface AuthContextType {
   loading: boolean;
   signUp: (data: SignUpForm) => Promise<any>;
   signIn: (data: SignInForm) => Promise<any>;
+  signInWithGoogle: () => Promise<any>;
+  signInWithGitHub: () => Promise<any>;
   logout: () => Promise<void>;
 }
 
@@ -39,13 +41,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
      return signInWithEmailAndPassword(auth, data.email, data.password);
   };
 
+  const signInWithGoogle = async () => {
+    return signInWithPopup(auth, googleProvider);
+  };
+
+  const signInWithGitHub = async () => {
+    return signInWithPopup(auth, githubProvider);
+  };
+
   const logout = async () => {
     await signOut(auth);
     router.push('/login');
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, signUp, signIn, logout }}>
+    <AuthContext.Provider value={{ user, loading, signUp, signIn, signInWithGoogle, signInWithGitHub, logout }}>
       {children}
     </AuthContext.Provider>
   );
