@@ -5,13 +5,12 @@ import { easeInOut, motion, spring } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import {
   ArrowRight,
-  Database,
   Sparkles,
-  Zap,
+  BarChart,
+  BrainCircuit,
+  Code
 } from 'lucide-react';
 import Link from 'next/link';
-import { Bot, BrainCircuit, Code, BarChart } from 'lucide-react';
-
 
 export default function LandingHero() {
   const [stats, setStats] = useState({
