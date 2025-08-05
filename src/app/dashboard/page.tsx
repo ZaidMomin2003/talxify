@@ -24,13 +24,27 @@ const codingAssistantSchema = z.object({
   difficulty: z.enum(["easy", "moderate", "difficult"]),
 });
 
+const mockInterviewSchema = z.object({
+  topic: z.string().min(1, "Topic is required."),
+  role: z.string().min(1, "Role is required."),
+});
+
 export default function DashboardPage() {
   const router = useRouter();
-  const form = useForm<z.infer<typeof codingAssistantSchema>>({
+
+  const codingAssistantForm = useForm<z.infer<typeof codingAssistantSchema>>({
     resolver: zodResolver(codingAssistantSchema),
     defaultValues: {
       topics: "",
       difficulty: "easy",
+    },
+  });
+
+  const mockInterviewForm = useForm<z.infer<typeof mockInterviewSchema>>({
+    resolver: zodResolver(mockInterviewSchema),
+    defaultValues: {
+      topic: "",
+      role: "",
     },
   });
 
@@ -47,13 +61,21 @@ export default function DashboardPage() {
     }
   }, []);
 
-  function onSubmit(values: z.infer<typeof codingAssistantSchema>) {
+  function onCodingAssistantSubmit(values: z.infer<typeof codingAssistantSchema>) {
     const params = new URLSearchParams({
         topics: values.topics,
         difficulty: values.difficulty,
         numQuestions: "3",
     });
     router.push(`/dashboard/coding-quiz/instructions?${params.toString()}`);
+  }
+
+  function onMockInterviewSubmit(values: z.infer<typeof mockInterviewSchema>) {
+    const params = new URLSearchParams({
+        topic: values.topic,
+        role: values.role,
+    });
+    router.push(`/dashboard/mock-interview/instructions?${params.toString()}`);
   }
 
   const filteredQuizzes = useMemo(() => {
@@ -134,35 +156,55 @@ export default function DashboardPage() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card className="flex flex-col shadow-lg hover:shadow-xl transition-shadow duration-300">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>Mock Interview</CardTitle>
-              <Rocket className="h-6 w-6 text-primary" />
-            </div>
-            <CardDescription>Simulate a real-time interview with an AI.</CardDescription>
-          </CardHeader>
-          <CardContent className="flex-grow">
-             <form className="space-y-4">
-               <div>
-                <Label htmlFor="topic">Topic</Label>
-                <Input id="topic" placeholder="e.g., React, System Design" />
-              </div>
-              <div className="flex items-end gap-4">
-                <div className="flex-grow">
-                  <Label htmlFor="role">Role</Label>
-                  <Input id="role" placeholder="e.g., Software Engineer" />
+          <Form {...mockInterviewForm}>
+            <form onSubmit={mockInterviewForm.handleSubmit(onMockInterviewSubmit)} className="flex flex-col h-full">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Mock Interview</CardTitle>
+                  <Rocket className="h-6 w-6 text-primary" />
                 </div>
-                 <Button asChild size="lg" disabled>
-                    <Link href="#">Start Interview</Link>
-                </Button>
-              </div>
+                <CardDescription>Simulate a real-time interview with an AI.</CardDescription>
+              </CardHeader>
+              <CardContent className="flex-grow space-y-4">
+                  <FormField
+                    control={mockInterviewForm.control}
+                    name="topic"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Topic</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g., React, System Design" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <div className="flex items-end gap-4">
+                    <FormField
+                      control={mockInterviewForm.control}
+                      name="role"
+                      render={({ field }) => (
+                        <FormItem className="flex-grow">
+                          <FormLabel>Role</FormLabel>
+                           <FormControl>
+                              <Input placeholder="e.g., Software Engineer" {...field} />
+                           </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <Button type="submit" size="lg">
+                        Start Interview
+                    </Button>
+                  </div>
+              </CardContent>
             </form>
-          </CardContent>
+          </Form>
         </Card>
 
         <Card className="flex flex-col shadow-lg hover:shadow-xl transition-shadow duration-300 border-accent/20">
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col h-full">
+          <Form {...codingAssistantForm}>
+            <form onSubmit={codingAssistantForm.handleSubmit(onCodingAssistantSubmit)} className="flex flex-col h-full">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle>Coding Assistant</CardTitle>
@@ -172,7 +214,7 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent className="flex-grow space-y-4">
                   <FormField
-                    control={form.control}
+                    control={codingAssistantForm.control}
                     name="topics"
                     render={({ field }) => (
                       <FormItem>
@@ -186,7 +228,7 @@ export default function DashboardPage() {
                   />
                   <div className="flex items-end gap-4">
                     <FormField
-                      control={form.control}
+                      control={codingAssistantForm.control}
                       name="difficulty"
                       render={({ field }) => (
                         <FormItem className="flex-grow">
