@@ -82,11 +82,11 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Card className="flex flex-col shadow-lg hover:shadow-xl transition-shadow duration-300 bg-yellow-400/20 border-yellow-500/30">
+        <Card className="flex flex-col shadow-lg hover:shadow-xl transition-shadow duration-300">
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle>Mock Interview</CardTitle>
-              <Rocket className="h-6 w-6 text-yellow-400" />
+              <Rocket className="h-6 w-6 text-primary" />
             </div>
             <CardDescription>Simulate a real-time interview with an AI.</CardDescription>
           </CardHeader>
