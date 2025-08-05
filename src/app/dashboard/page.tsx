@@ -1,3 +1,6 @@
+
+"use client";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -5,8 +8,39 @@ import { Label } from "@/components/ui/label";
 import { Rocket, Code, Briefcase, Percent } from "lucide-react";
 import Link from "next/link";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { useRouter } from "next/navigation";
+
+const codingAssistantSchema = z.object({
+  topics: z.string().min(1, "Topics are required."),
+  difficulty: z.enum(["easy", "moderate", "difficult"]),
+  numQuestions: z.coerce.number().min(1, "Please enter a number of questions.").max(10, "You can request a maximum of 10 questions."),
+});
 
 export default function DashboardPage() {
+  const router = useRouter();
+  const form = useForm<z.infer<typeof codingAssistantSchema>>({
+    resolver: zodResolver(codingAssistantSchema),
+    defaultValues: {
+      topics: "",
+      difficulty: "easy",
+      numQuestions: 3,
+    },
+  });
+
+  function onSubmit(values: z.infer<typeof codingAssistantSchema>) {
+    const params = new URLSearchParams({
+        topics: values.topics,
+        difficulty: values.difficulty,
+        numQuestions: String(values.numQuestions),
+    });
+    router.push(`/dashboard/coding-quiz/instructions?${params.toString()}`);
+  }
+
+
   return (
     <main className="flex-1 overflow-auto p-4 sm:p-6">
       <div className="mb-8">
@@ -76,43 +110,72 @@ export default function DashboardPage() {
         </Card>
 
         <Card className="flex flex-col shadow-lg hover:shadow-xl transition-shadow duration-300 border-accent/20">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>Coding Assistant</CardTitle>
-              <Code className="h-6 w-6 text-accent" />
-            </div>
-            <CardDescription>Get AI-powered help with your coding problems.</CardDescription>
-          </CardHeader>
-          <CardContent className="flex-grow">
-            <form className="space-y-4">
-              <div>
-                <Label htmlFor="coding-topics">Topics</Label>
-                <Input id="coding-topics" placeholder="e.g., JavaScript, Algorithms" />
-              </div>
-              <div>
-                <Label htmlFor="difficulty">Difficulty</Label>
-                <Select>
-                  <SelectTrigger id="difficulty">
-                    <SelectValue placeholder="Select a difficulty" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="easy">Easy</SelectItem>
-                    <SelectItem value="moderate">Moderate</SelectItem>
-                    <SelectItem value="difficult">Difficult</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="num-questions">Number of Questions</Label>
-                <Input id="num-questions" type="number" placeholder="Number of questions to practice" />
-              </div>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col h-full">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Coding Assistant</CardTitle>
+                  <Code className="h-6 w-6 text-accent" />
+                </div>
+                <CardDescription>Get AI-powered help with your coding problems.</CardDescription>
+              </CardHeader>
+              <CardContent className="flex-grow space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="topics"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Topics</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g., JavaScript, Algorithms" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                   <FormField
+                    control={form.control}
+                    name="difficulty"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Difficulty</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a difficulty" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="easy">Easy</SelectItem>
+                            <SelectItem value="moderate">Moderate</SelectItem>
+                            <SelectItem value="difficult">Difficult</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="numQuestions"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Number of Questions</FormLabel>
+                        <FormControl>
+                          <Input type="number" placeholder="Number of questions to practice" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+              </CardContent>
+              <CardFooter>
+                <Button type="submit" className="w-full" size="lg" variant="secondary">
+                  Start Coding
+                </Button>
+              </CardFooter>
             </form>
-          </CardContent>
-          <CardFooter>
-            <Button asChild className="w-full" size="lg" variant="secondary" disabled>
-              <Link href="#">Start Coding</Link>
-            </Button>
-          </CardFooter>
+          </Form>
         </Card>
       </div>
     </main>
