@@ -9,6 +9,8 @@ import Image from "next/image";
 import { Marquee } from "@/components/ui/marquee";
 import { TestimonialCard } from "@/app/landing-testimonials";
 import { Button } from "@/components/ui/button";
+import LandingHeader from "../landing-header";
+import LandingFooter from "../landing-footer";
 
 const testimonials = [
   {
@@ -65,10 +67,11 @@ const secondRow = testimonials.slice(Math.ceil(testimonials.length / 2));
 export default function AboutUsPage() {
     return (
         <div className="bg-background min-h-screen text-foreground">
+            <LandingHeader />
             {/* Hero Section */}
-            <section className="relative bg-primary/5 py-20 sm:py-28 text-center">
+            <section className="relative bg-primary/5 pt-20 sm:pt-28 text-center">
                  <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-primary/20 via-background/80 to-background blur-sm"></div>
-                <div className="container mx-auto max-w-4xl px-4 md:px-6 relative">
+                <div className="container mx-auto max-w-4xl px-4 md:px-6 relative py-12">
                     <h1 className="text-4xl sm:text-5xl md:text-6xl font-headline font-bold mb-4">About Talxify</h1>
                     <p className="max-w-2xl mx-auto text-lg text-muted-foreground">
                         We are on a mission to bridge the gap between talent and opportunity, empowering the next generation of software engineers to achieve their career goals.
@@ -179,9 +182,7 @@ export default function AboutUsPage() {
 
             </main>
 
-             <footer className="text-center p-6 border-t mt-16">
-                <p className="text-muted-foreground">© {new Date().getFullYear()} Talxify. All rights reserved.</p>
-            </footer>
+            <LandingFooter />
         </div>
     );
 }
