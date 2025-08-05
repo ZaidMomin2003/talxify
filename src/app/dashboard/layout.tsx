@@ -30,6 +30,8 @@ import {
 import { Bot, Code, LayoutGrid, MessageSquare, BarChart, Settings, History, Search, User } from "lucide-react";
 import type { QuizResult } from "./coding-quiz/analysis/page";
 import { formatDistanceToNow } from 'date-fns';
+import { useAuth } from "@/context/auth-context";
+import { useRouter } from "next/navigation";
 
 export default function DashboardLayout({
   children,
@@ -37,8 +39,17 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, loading } = useAuth();
   const [recentActivity, setRecentActivity] = useState<QuizResult[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/login');
+    }
+  }, [user, loading, router]);
+
 
   useEffect(() => {
     // This effect runs on the client-side, where localStorage is available.
@@ -60,6 +71,14 @@ export default function DashboardLayout({
     item.topics.toLowerCase().includes(searchQuery.toLowerCase()) ||
     item.difficulty.toLowerCase().includes(searchQuery.toLowerCase())
   );
+  
+  if (loading || !user) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center">
+        <p>Loading...</p>
+      </div>
+    );
+  }
 
   return (
     <SidebarProvider>
