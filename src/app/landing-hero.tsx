@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -248,7 +249,7 @@ export default function LandingHero() {
               variants={itemVariants}
               className="mb-6 bg-gradient-to-r from-white/70 via-white to-slate-500/80 bg-clip-text text-3xl leading-tight text-transparent sm:text-4xl md:text-5xl lg:text-6xl"
             >
-              Ace Your Next Tech Interview <br className="hidden sm:inline" />
+              Win your interviews <br className="hidden sm:inline" />
               <span className="bg-gradient-to-r from-purple-400 via-blue-400 to-purple-400 bg-clip-text text-transparent">
                 with AI Assistance
               </span>
