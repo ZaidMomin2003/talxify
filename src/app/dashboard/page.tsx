@@ -90,34 +90,34 @@ export default function DashboardPage() {
       </div>
 
       <div className="mb-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        <Card>
+        <Card className="bg-[#D4FF00] text-black border-none">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Interviews Completed</CardTitle>
-            <Briefcase className="h-4 w-4 text-muted-foreground" />
+            <Briefcase className="h-4 w-4" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">12</div>
-            <p className="text-xs text-muted-foreground">+2 since last month</p>
+            <p className="text-xs text-black/60">+2 since last month</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="bg-white text-black border-none">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Coding Questions Solved</CardTitle>
-            <Code className="h-4 w-4 text-muted-foreground" />
+            <Code className="h-4 w-4" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">57</div>
-            <p className="text-xs text-muted-foreground">+10 since last month</p>
+            <p className="text-xs text-black/60">+10 since last month</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="bg-[#F96A5D] text-white border-none">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Job Likelihood</CardTitle>
-            <Percent className="h-4 w-4 text-muted-foreground" />
+            <Percent className="h-4 w-4 text-white/80" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">78%</div>
-            <p className="text-xs text-muted-foreground">Based on your performance</p>
+            <p className="text-xs text-white/80">Based on your performance</p>
           </CardContent>
         </Card>
       </div>
