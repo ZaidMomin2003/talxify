@@ -31,12 +31,12 @@ const AnswerAnalysisSchema = z.object({
 export type AnswerAnalysis = z.infer<typeof AnswerAnalysisSchema>;
 
 
-export const AnalyzeCodingAnswersInputSchema = z.object({
+const AnalyzeCodingAnswersInputSchema = z.object({
   submissions: z.array(SubmissionSchema),
 });
 export type AnalyzeCodingAnswersInput = z.infer<typeof AnalyzeCodingAnswersInputSchema>;
 
-export const AnalyzeCodingAnswersOutputSchema = z.object({
+const AnalyzeCodingAnswersOutputSchema = z.object({
   analysis: z.array(AnswerAnalysisSchema),
 });
 export type AnalyzeCodingAnswersOutput = z.infer<typeof AnalyzeCodingAnswersOutputSchema>;
