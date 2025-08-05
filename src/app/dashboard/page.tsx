@@ -1,5 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Rocket, Code, MessageSquare, Briefcase, Percent } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -55,14 +57,16 @@ export default function DashboardPage() {
             <CardDescription>Simulate a real-time interview with an AI.</CardDescription>
           </CardHeader>
           <CardContent className="flex-grow">
-            <Image
-              src="https://placehold.co/600x400.png"
-              alt="Mock Interview"
-              width={600}
-              height={400}
-              className="rounded-lg object-cover aspect-video"
-              data-ai-hint="person video call"
-            />
+            <form className="space-y-4">
+              <div>
+                <Label htmlFor="role">Role</Label>
+                <Input id="role" placeholder="e.g., Software Engineer" />
+              </div>
+              <div>
+                <Label htmlFor="topic">Topic</Label>
+                <Input id="topic" placeholder="e.g., React, System Design" />
+              </div>
+            </form>
           </CardContent>
           <CardFooter>
             <Button asChild className="w-full" size="lg" disabled>
@@ -80,14 +84,12 @@ export default function DashboardPage() {
             <CardDescription>Get AI-powered help with your coding problems.</CardDescription>
           </CardHeader>
           <CardContent className="flex-grow">
-            <Image
-              src="https://placehold.co/600x400.png"
-              alt="Coding Assistant"
-              width={600}
-              height={400}
-              className="rounded-lg object-cover aspect-video"
-              data-ai-hint="code editor"
-            />
+            <form className="space-y-4">
+              <div>
+                <Label htmlFor="coding-topics">Topics</Label>
+                <Input id="coding-topics" placeholder="e.g., JavaScript, Algorithms" />
+              </div>
+            </form>
           </CardContent>
           <CardFooter>
             <Button asChild className="w-full" size="lg" variant="secondary" disabled>
