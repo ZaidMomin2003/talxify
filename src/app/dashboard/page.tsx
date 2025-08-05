@@ -102,6 +102,10 @@ export default function DashboardPage() {
                   </SelectContent>
                 </Select>
               </div>
+              <div>
+                <Label htmlFor="num-questions">Number of Questions</Label>
+                <Input id="num-questions" type="number" placeholder="Number of questions to practice" />
+              </div>
             </form>
           </CardContent>
           <CardFooter>
