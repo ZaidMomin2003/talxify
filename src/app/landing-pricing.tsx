@@ -14,6 +14,7 @@ const monthlyPlan = {
   features: [
     '20 AI Mock Interviews',
     'Unlimited Coding Questions',
+    'Weekly feedback',
     '24/7 Customer Support',
   ],
   isPopular: false,
@@ -24,14 +25,17 @@ const yearlyPlan = {
   price: '₹10999',
   period: '/year',
   features: [
-    '20 AI Mock Interviews',
+    '300 AI Mock Interviews',
     'Unlimited Coding Questions',
+    'Weekly feedback',
+    'Portfolio Builder',
+    'Detailed Analytics',
     '24/7 Customer Support',
   ],
   isPopular: true,
 };
 
-const PricingCard = ({ plan }: { plan: typeof monthlyPlan }) => (
+const PricingCard = ({ plan }: { plan: typeof monthlyPlan | typeof yearlyPlan }) => (
   <Card className={cn(
     "flex flex-col shadow-lg transition-transform duration-300",
     plan.isPopular ? "border-primary border-2 shadow-primary/20 -translate-y-4" : "border-border"
