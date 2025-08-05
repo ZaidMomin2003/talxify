@@ -11,12 +11,14 @@ import LandingContact from "./landing-contact";
 import LandingFooter from "./landing-footer";
 import React from 'react';
 import LandingHeader from "./landing-header";
+import EntryPopup from "@/components/entry-popup";
 
 
 export default function LandingPage() {
   return (
     <div className="flex flex-col min-h-screen bg-background overflow-x-hidden">
        <LandingHeader />
+       <EntryPopup />
       <main className="flex-1">
         <LandingHero />
         <LandingFeatures />
