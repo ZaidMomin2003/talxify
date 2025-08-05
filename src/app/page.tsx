@@ -5,23 +5,23 @@ import LandingHero from "./landing-hero";
 export default function LandingPage() {
   return (
     <div className="flex flex-col min-h-screen bg-background">
-      <header className="px-4 lg:px-6 h-14 flex items-center fixed top-0 w-full z-50 bg-background/80 backdrop-blur-sm">
+      <header className="px-4 lg:px-6 h-14 flex items-center fixed top-0 w-full z-50 bg-transparent text-white">
         <Link href="#" className="flex items-center justify-center font-headline font-bold text-xl">
           Talxify
         </Link>
         <nav className="ml-auto flex gap-4 sm:gap-6 items-center">
-          <Button asChild variant="ghost">
+          <Button asChild variant="ghost" className="hover:bg-white/10 hover:text-white">
             <Link href="/login">
               Login
             </Link>
           </Button>
-          <Button asChild>
+          <Button asChild className="bg-white text-black hover:bg-white/90">
             <Link href="/signup">Sign Up</Link>
           </Button>
         </nav>
       </header>
       <main className="flex-1">
-        
+        <LandingHero />
       </main>
     </div>
   );
