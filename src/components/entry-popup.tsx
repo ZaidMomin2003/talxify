@@ -61,12 +61,6 @@ export default function EntryPopup() {
                 Maybe later
             </Button>
         </div>
-        <button
-            onClick={() => setIsOpen(false)}
-            className="absolute top-4 right-4 text-primary-foreground/70 hover:text-primary-foreground z-20"
-        >
-            <X className="w-5 h-5" />
-        </button>
       </DialogContent>
     </Dialog>
   );
