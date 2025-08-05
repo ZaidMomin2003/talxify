@@ -4,6 +4,7 @@ import LandingHero from "./landing-hero";
 import LandingFeatures from "./landing-features";
 import LandingTestimonials from "./landing-testimonials";
 import LandingPricing from "./landing-pricing";
+import LandingFaq from "./landing-faq";
 
 export default function LandingPage() {
   return (
@@ -28,6 +29,7 @@ export default function LandingPage() {
         <LandingFeatures />
         <LandingTestimonials />
         <LandingPricing />
+        <LandingFaq />
       </main>
     </div>
   );
