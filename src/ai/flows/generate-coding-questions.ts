@@ -13,7 +13,7 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-export const CodingQuestionSchema = z.object({
+const CodingQuestionSchema = z.object({
   questionText: z.string().describe('The text of the coding question.'),
 });
 export type CodingQuestion = z.infer<typeof CodingQuestionSchema>;

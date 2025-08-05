@@ -12,7 +12,10 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import { CodingQuestionSchema } from './generate-coding-questions';
+
+export const CodingQuestionSchema = z.object({
+  questionText: z.string().describe('The text of the coding question.'),
+});
 
 const SubmissionSchema = z.object({
     question: CodingQuestionSchema,
