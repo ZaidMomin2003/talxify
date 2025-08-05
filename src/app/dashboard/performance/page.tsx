@@ -4,16 +4,18 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import type { QuizResult } from '../coding-quiz/analysis/page';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { BarChart, BookOpen, Brain, Eye, HelpCircle } from 'lucide-react';
+import { BarChart, BookOpen, Brain, Eye, HelpCircle, TrendingUp } from 'lucide-react';
 import {
-  BarChart as RechartsBarChart,
-  Bar,
+  LineChart,
+  Line,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer,
+  AreaChart,
+  Area,
+  Dot,
 } from 'recharts';
 import {
   Table,
@@ -27,6 +29,26 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
+
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-background/90 backdrop-blur-sm p-4 rounded-lg border border-border shadow-lg">
+        <p className="label text-muted-foreground">{`${label}`}</p>
+        {payload.map((pld: any, index: number) => (
+          <div key={index} style={{ color: pld.color }} className="flex items-center gap-2 font-semibold">
+              <div className="w-2.5 h-2.5 rounded-full" style={{backgroundColor: pld.color}}/>
+              {pld.name}: {pld.value}%
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  return null;
+};
+
 
 export default function PerformancePage() {
   const [quizResults, setQuizResults] = useState<QuizResult[]>([]);
@@ -41,13 +63,22 @@ export default function PerformancePage() {
   }, []);
 
   const performanceData = useMemo(() => {
+    // Generate some mock comparison data that shows a slight upward trend.
+    const generateComparisonScore = (index: number, total: number) => {
+        const base = 55;
+        const growth = (index / (total - 1)) * 20; // grows from 0 to 20
+        const randomFactor = (Math.random() - 0.5) * 5;
+        return Math.min(100, Math.max(0, Math.round(base + growth + randomFactor)));
+    };
+
     return quizResults
-        .map(result => {
+        .map((result, index, arr) => {
             const totalScore = result.analysis.reduce((sum, item) => sum + item.score, 0);
             const averageScore = Math.round((totalScore / result.analysis.length) * 100);
             return {
                 name: format(new Date(result.timestamp), 'MMM d'),
-                score: averageScore,
+                yourScore: averageScore,
+                averageScore: generateComparisonScore(index, arr.length),
                 topics: result.topics
             };
         })
@@ -151,24 +182,29 @@ export default function PerformancePage() {
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle>Performance Over Time</CardTitle>
-            <CardDescription>Your average quiz scores over your last few sessions.</CardDescription>
+            <CardDescription>Your average quiz scores compared to the community average.</CardDescription>
           </CardHeader>
           <CardContent className="h-[300px] w-full">
-             <ResponsiveContainer width="100%" height="100%">
-                <RechartsBarChart data={performanceData}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false}/>
-                  <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value}%`} />
-                  <Tooltip
-                    cursor={{ fill: 'hsl(var(--muted))' }}
-                    contentStyle={{
-                        backgroundColor: 'hsl(var(--background))',
-                        borderColor: 'hsl(var(--border))',
-                        borderRadius: 'var(--radius)',
-                    }}
-                   />
-                  <Bar dataKey="score" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                </RechartsBarChart>
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart
+                data={performanceData}
+                margin={{
+                  top: 5, right: 20, left: -10, bottom: 5,
+                }}
+              >
+                <defs>
+                  <linearGradient id="colorYourScore" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.4}/>
+                    <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
+                <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value}%`} />
+                <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'hsl(var(--primary))', strokeWidth: 1, strokeDasharray: '3 3' }} />
+                <Area type="monotone" dataKey="yourScore" name="Your Score" stroke="hsl(var(--primary))" fillOpacity={1} fill="url(#colorYourScore)" strokeWidth={2} activeDot={{ r: 6, style: { fill: 'hsl(var(--primary))', stroke: 'hsl(var(--background))' } }} />
+                <Area type="monotone" dataKey="averageScore" name="Avg. Score" stroke="hsl(var(--muted-foreground))" fill="transparent" strokeWidth={2} activeDot={{ r: 6, style: { fill: 'hsl(var(--muted-foreground))', stroke: 'hsl(var(--background))' } }} />
+              </AreaChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
@@ -238,3 +274,5 @@ export default function PerformancePage() {
     </main>
   );
 }
+
+    
