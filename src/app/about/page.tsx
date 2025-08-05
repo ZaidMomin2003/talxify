@@ -3,7 +3,7 @@
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Github, Linkedin, Instagram, Mail, Phone, Code, Briefcase, Percent, Twitter, Globe, Target, Eye } from "lucide-react";
+import { Github, Linkedin, Instagram, Mail, Phone, Code, Briefcase, Percent, Twitter, Globe, Target, Eye, Users } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { Marquee } from "@/components/ui/marquee";
@@ -106,8 +106,8 @@ export default function AboutUsPage() {
                             <Briefcase className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">12</div>
-                            <p className="text-xs text-muted-foreground">+2 since last month</p>
+                            <div className="text-2xl font-bold">870+</div>
+                            <p className="text-xs text-muted-foreground">Across our platform</p>
                         </CardContent>
                     </Card>
                     <Card>
@@ -116,18 +116,18 @@ export default function AboutUsPage() {
                             <Code className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">57</div>
-                            <p className="text-xs text-muted-foreground">+10 since last month</p>
+                            <div className="text-2xl font-bold">4,000+</div>
+                            <p className="text-xs text-muted-foreground">Solutions submitted</p>
                         </CardContent>
                     </Card>
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between pb-2">
-                            <CardTitle className="text-sm font-medium">Job Likelihood</CardTitle>
-                            <Percent className="h-4 w-4 text-muted-foreground" />
+                            <CardTitle className="text-sm font-medium">Happy Users</CardTitle>
+                            <Users className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">78%</div>
-                            <p className="text-xs text-muted-foreground">Based on your performance</p>
+                            <div className="text-2xl font-bold">5,000+</div>
+                            <p className="text-xs text-muted-foreground">And growing every day</p>
                         </CardContent>
                     </Card>
                 </section>
