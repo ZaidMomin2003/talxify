@@ -39,7 +39,7 @@ const demoQuizResults: QuizResult[] = [
         ],
         analysis: [
             { isCorrect: true, feedback: 'Good start.', score: 0.8, correctSolution: 'A closure is a function that remembers the environment in which it was created.' },
-            { isCorrect: true, feedback: 'Correct, but could be more detailed.', score: 0.7, correctSolution: 'Prototypal inheritance is a feature in JavaScript where objects can have a "prototype" object, which acts as a template object that it inherits methods and properties from.' }
+            { isCorrect: false, feedback: 'This is a weak answer.', score: 0.5, correctSolution: 'Prototypal inheritance is a feature in JavaScript where objects can have a "prototype" object, which acts as a template object that it inherits methods and properties from.' }
         ]
     },
     {
