@@ -4,18 +4,15 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import type { QuizResult } from '../coding-quiz/analysis/page';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { BarChart, BookOpen, Brain, Eye, HelpCircle, TrendingUp } from 'lucide-react';
+import { BarChart, BookOpen, Brain, Eye, HelpCircle, TrendingUp, Bookmark } from 'lucide-react';
 import {
-  LineChart,
-  Line,
+  AreaChart,
+  Area,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  AreaChart,
-  Area,
-  Dot,
 } from 'recharts';
 import {
   Table,
@@ -29,7 +26,50 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
-import { cn } from '@/lib/utils';
+
+const demoQuizResults: QuizResult[] = [
+    {
+        id: 'demo_quiz_1',
+        timestamp: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString(),
+        topics: 'JavaScript',
+        difficulty: 'easy',
+        quizState: [
+            { question: { questionText: 'What is a closure?' }, userAnswer: 'A function with access to its outer scope.' },
+            { question: { questionText: 'Explain prototypal inheritance.' }, userAnswer: 'Objects can inherit from other objects.' }
+        ],
+        analysis: [
+            { isCorrect: true, feedback: 'Good start.', score: 0.8, correctSolution: 'A closure is a function that remembers the environment in which it was created.' },
+            { isCorrect: true, feedback: 'Correct, but could be more detailed.', score: 0.7, correctSolution: 'Prototypal inheritance is a feature in JavaScript where objects can have a "prototype" object, which acts as a template object that it inherits methods and properties from.' }
+        ]
+    },
+    {
+        id: 'demo_quiz_2',
+        timestamp: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
+        topics: 'React',
+        difficulty: 'moderate',
+        quizState: [
+            { question: { questionText: 'What is the virtual DOM?' }, userAnswer: 'A copy of the DOM in memory.' },
+            { question: { questionText: 'What are React Hooks?' }, userAnswer: 'Functions that let you use state and other React features in functional components.' }
+        ],
+        analysis: [
+            { isCorrect: true, feedback: 'A good, concise answer.', score: 0.9, correctSolution: 'The virtual DOM (VDOM) is a programming concept where a virtual representation of a UI is kept in memory and synced with the "real" DOM by a library such as React DOM.' },
+            { isCorrect: true, feedback: 'Excellent explanation.', score: 1.0, correctSolution: 'Hooks are functions that let you "hook into" React state and lifecycle features from function components.' }
+        ]
+    },
+    {
+        id: 'demo_quiz_3',
+        timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+        topics: 'Algorithms',
+        difficulty: 'moderate',
+        quizState: [
+            { question: { questionText: 'What is Big O notation?' }, userAnswer: 'It describes algorithm complexity.' }
+        ],
+        analysis: [
+            { isCorrect: false, feedback: 'This is too vague. Be more specific.', score: 0.4, correctSolution: 'Big O notation is a mathematical notation that describes the limiting behavior of a function when the argument tends towards a particular value or infinity.' }
+        ]
+    }
+];
+
 
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
@@ -52,21 +92,24 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 
 export default function PerformancePage() {
   const [quizResults, setQuizResults] = useState<QuizResult[]>([]);
+  const [hasLoaded, setHasLoaded] = useState(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const storedResults = localStorage.getItem('allQuizResults');
-      if (storedResults) {
+      if (storedResults && JSON.parse(storedResults).length > 0) {
         setQuizResults(JSON.parse(storedResults));
+      } else {
+        setQuizResults(demoQuizResults);
       }
+      setHasLoaded(true);
     }
   }, []);
 
   const performanceData = useMemo(() => {
-    // Generate some mock comparison data that shows a slight upward trend.
     const generateComparisonScore = (index: number, total: number) => {
         const base = 55;
-        const growth = (index / (total - 1)) * 20; // grows from 0 to 20
+        const growth = (index / Math.max(total - 1, 1)) * 20; // grows from 0 to 20
         const randomFactor = (Math.random() - 0.5) * 5;
         return Math.min(100, Math.max(0, Math.round(base + growth + randomFactor)));
     };
@@ -74,7 +117,7 @@ export default function PerformancePage() {
     return quizResults
         .map((result, index, arr) => {
             const totalScore = result.analysis.reduce((sum, item) => sum + item.score, 0);
-            const averageScore = Math.round((totalScore / result.analysis.length) * 100);
+            const averageScore = Math.round((totalScore / Math.max(result.analysis.length, 1)) * 100);
             return {
                 name: format(new Date(result.timestamp), 'MMM d'),
                 yourScore: averageScore,
@@ -109,7 +152,7 @@ export default function PerformancePage() {
         questionsCount += result.analysis.length;
     });
 
-    const avgScore = Math.round((totalScore / questionsCount) * 100);
+    const avgScore = questionsCount > 0 ? Math.round((totalScore / questionsCount) * 100) : 0;
     
     const weak: {topic: string, score: number}[] = Object.entries(conceptScores)
         .map(([topic, data]) => ({
@@ -127,6 +170,20 @@ export default function PerformancePage() {
       weakConcepts: weak,
     };
   }, [quizResults]);
+  
+  const bookmarkedConcepts = [
+    { title: 'JavaScript Closures', link: '#' },
+    { title: 'React State Management', link: '#' },
+    { title: 'CSS Flexbox vs. Grid', link: '#' },
+  ];
+
+  if (!hasLoaded) {
+    return (
+        <div className="flex h-full w-full flex-col items-center justify-center">
+            <p className="text-muted-foreground">Loading performance data...</p>
+        </div>
+    )
+  }
 
   return (
     <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
@@ -234,45 +291,75 @@ export default function PerformancePage() {
         </Card>
       </div>
 
-      <Card className="mt-8">
-        <CardHeader>
-            <CardTitle>Recent Activity</CardTitle>
-            <CardDescription>A log of your most recently completed quizzes.</CardDescription>
-        </CardHeader>
-        <CardContent>
-            <Table>
-                <TableHeader>
-                    <TableRow>
-                        <TableHead>Quiz</TableHead>
-                        <TableHead>Difficulty</TableHead>
-                        <TableHead className="text-right">Date</TableHead>
-                        <TableHead className="text-right">Action</TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {quizResults.slice(0, 5).map(result => (
-                        <TableRow key={result.id}>
-                            <TableCell className="font-medium capitalize">{result.topics} Quiz</TableCell>
-                            <TableCell className="capitalize">{result.difficulty}</TableCell>
-                            <TableCell className="text-right">{format(new Date(result.timestamp), 'MMM d, yyyy')}</TableCell>
-                            <TableCell className="text-right">
-                                <Button asChild variant="outline" size="sm">
-                                    <Link href={`/dashboard/coding-quiz/analysis?id=${result.id}`}>View Analysis</Link>
-                                </Button>
-                            </TableCell>
-                        </TableRow>
+      <div className="mt-8 grid gap-8 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+              <CardTitle>Recent Activity</CardTitle>
+              <CardDescription>A log of your most recently completed quizzes.</CardDescription>
+          </CardHeader>
+          <CardContent>
+              <Table>
+                  <TableHeader>
+                      <TableRow>
+                          <TableHead>Quiz</TableHead>
+                          <TableHead>Difficulty</TableHead>
+                          <TableHead className="text-right">Date</TableHead>
+                          <TableHead className="text-right">Action</TableHead>
+                      </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                      {quizResults.slice(0, 5).map(result => (
+                          <TableRow key={result.id}>
+                              <TableCell className="font-medium capitalize">{result.topics} Quiz</TableCell>
+                              <TableCell className="capitalize">{result.difficulty}</TableCell>
+                              <TableCell className="text-right">{format(new Date(result.timestamp), 'MMM d, yyyy')}</TableCell>
+                              <TableCell className="text-right">
+                                  <Button asChild variant="outline" size="sm">
+                                      <Link href={`/dashboard/coding-quiz/analysis?id=${result.id}`}>View Analysis</Link>
+                                  </Button>
+                              </TableCell>
+                          </TableRow>
+                      ))}
+                  </TableBody>
+              </Table>
+              {quizResults.length === 0 && (
+                   <div className="text-center p-8 text-muted-foreground">
+                      You haven't completed any quizzes yet.
+                   </div>
+              )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Bookmarked Concepts</CardTitle>
+            <CardDescription>Concepts you've saved for future study.</CardDescription>
+          </CardHeader>
+          <CardContent>
+             {bookmarkedConcepts.length > 0 ? (
+                <ul className="space-y-3">
+                    {bookmarkedConcepts.map(concept => (
+                        <li key={concept.title} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                           <div className='flex items-center gap-3'>
+                             <Bookmark className="w-4 h-4 text-primary" />
+                             <span className="capitalize font-medium">{concept.title}</span>
+                           </div>
+                           <Button asChild variant="secondary" size="sm">
+                             <Link href={concept.link}>Review</Link>
+                           </Button>
+                        </li>
                     ))}
-                </TableBody>
-            </Table>
-            {quizResults.length === 0 && (
-                 <div className="text-center p-8 text-muted-foreground">
-                    You haven't completed any quizzes yet.
-                 </div>
+                </ul>
+            ) : (
+                <div className="flex flex-col items-center justify-center text-center text-muted-foreground p-4">
+                    <Bookmark className="w-8 h-8 mb-2"/>
+                    <p>You haven't bookmarked any concepts yet.</p>
+                </div>
             )}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
+
     </main>
   );
 }
-
-    
