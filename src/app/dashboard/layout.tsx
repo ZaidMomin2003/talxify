@@ -26,7 +26,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { Bot, Code, LayoutGrid, MessageSquare, BarChart, Settings, History, Search } from "lucide-react";
+import { Bot, Code, LayoutGrid, MessageSquare, BarChart, Settings, History, Search, User } from "lucide-react";
 
 export default function DashboardLayout({
   children,
@@ -37,6 +37,7 @@ export default function DashboardLayout({
 
   const menuItems = [
     { href: "/dashboard", label: "Dashboard", icon: LayoutGrid },
+    { href: "/dashboard/portfolio", label: "Portfolio", icon: User },
     { href: "/performance", label: "Performance", icon: BarChart },
   ];
 
@@ -54,7 +55,7 @@ export default function DashboardLayout({
         <SidebarContent>
           <SidebarMenu>
             {menuItems.map((item) => {
-              const isEnabled = item.href === '/dashboard';
+              const isEnabled = item.href === '/dashboard' || item.href === '/dashboard/portfolio';
               return (
                 <SidebarMenuItem key={item.label}>
                   <SidebarMenuButton
