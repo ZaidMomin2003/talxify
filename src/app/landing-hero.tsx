@@ -124,6 +124,19 @@ export default function LandingHero() {
     },
   };
 
+  const [particles, setParticles] = useState<any[]>([]);
+  useEffect(() => {
+    setParticles(
+      Array.from({ length: 20 }).map(() => ({
+        top: `${Math.random() * 100}%`,
+        left: `${Math.random() * 100}%`,
+        duration: 3 + Math.random() * 2,
+        delay: Math.random() * 2,
+      }))
+    );
+  }, []);
+
+
   return (
     <section className="relative flex min-h-screen w-full flex-col items-center overflow-hidden bg-black py-16 text-white sm:px-6 lg:px-8 lg:py-2">
       <div className="absolute inset-0 z-0 h-full w-full rotate-180 items-center px-5 py-24 opacity-80 [background:radial-gradient(125%_125%_at_50%_10%,#000_40%,#63e_100%)]"></div>
@@ -177,23 +190,23 @@ export default function LandingHero() {
 
         {/* Particle effects - subtle dots */}
         <div className="absolute inset-0 opacity-20">
-          {Array.from({ length: 20 }).map((_, i) => (
+          {particles.map((particle, i) => (
             <motion.div
               key={i}
               className="absolute h-1 w-1 rounded-full bg-white"
               style={{
-                top: `${Math.random() * 100}%`,
-                left: `${Math.random() * 100}%`,
+                top: particle.top,
+                left: particle.left,
               }}
               animate={{
                 opacity: [0.2, 0.8, 0.2],
                 scale: [1, 1.5, 1],
               }}
               transition={{
-                duration: 3 + Math.random() * 2,
+                duration: particle.duration,
                 repeat: Infinity,
                 ease: 'easeInOut',
-                delay: Math.random() * 2,
+                delay: particle.delay,
               }}
             />
           ))}
