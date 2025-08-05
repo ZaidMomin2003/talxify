@@ -39,7 +39,7 @@ export default function LandingFooter() {
               <ul className="space-y-3">
                 <li><Link href="#features" className="text-muted-foreground hover:text-primary">Features</Link></li>
                 <li><Link href="#pricing" className="text-muted-foreground hover:text-primary">Pricing</Link></li>
-                <li><Link href="#" className="text-muted-foreground hover:text-primary">Testimonials</Link></li>
+                <li><Link href="#testimonials" className="text-muted-foreground hover:text-primary">Testimonials</Link></li>
                 <li><Link href="/dashboard" className="text-muted-foreground hover:text-primary">Dashboard</Link></li>
               </ul>
             </div>
@@ -51,7 +51,7 @@ export default function LandingFooter() {
                 <li><Link href="#" className="text-muted-foreground hover:text-primary">About Us</Link></li>
                 <li><Link href="#" className="text-muted-foreground hover:text-primary">Careers</Link></li>
                 <li><Link href="#" className="text-muted-foreground hover:text-primary">Blog</Link></li>
-                <li><Link href="#" className="text-muted-foreground hover:text-primary">Contact</Link></li>
+                <li><Link href="#contact" className="text-muted-foreground hover:text-primary">Contact</Link></li>
               </ul>
             </div>
              <div>
@@ -59,9 +59,9 @@ export default function LandingFooter() {
                 Legal
               </h3>
               <ul className="space-y-3">
-                <li><Link href="#" className="text-muted-foreground hover:text-primary">Privacy Policy</Link></li>
-                <li><Link href="#" className="text-muted-foreground hover:text-primary">Terms of Service</Link></li>
-                <li><Link href="#" className="text-muted-foreground hover:text-primary">Cookie Policy</Link></li>
+                <li><Link href="/privacy-policy" className="text-muted-foreground hover:text-primary">Privacy Policy</Link></li>
+                <li><Link href="/terms-of-service" className="text-muted-foreground hover:text-primary">Terms of Service</Link></li>
+                <li><Link href="/refund-policy" className="text-muted-foreground hover:text-primary">Refund Policy</Link></li>
               </ul>
             </div>
             <div>
