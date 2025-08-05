@@ -57,6 +57,18 @@ const demoQuizResults: QuizResult[] = [
         ]
     },
     {
+        id: 'demo_quiz_4',
+        timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+        topics: 'CSS',
+        difficulty: 'easy',
+        quizState: [
+            { question: { questionText: 'What is the box model?' }, userAnswer: 'It\'s about content, padding, border, and margin.' }
+        ],
+        analysis: [
+            { isCorrect: true, feedback: 'Correct and to the point.', score: 0.9, correctSolution: 'The CSS box model is a box that wraps around every HTML element. It consists of: margins, borders, padding, and the actual content.' }
+        ]
+    },
+    {
         id: 'demo_quiz_3',
         timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
         topics: 'Algorithms',
