@@ -127,6 +127,7 @@ export default function LandingPage() {
                   <span className="text-lg font-bold">
                     Talxify
                   </span>
+                  <span className={`text-xs -mt-1 ${isScrolled ? 'text-muted-foreground' : 'text-slate-400'}`}>AI Job Assistant</span>
                 </div>
               </Link>
             </motion.div>
