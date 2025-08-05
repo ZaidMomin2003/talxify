@@ -3,6 +3,7 @@ import Link from "next/link";
 import LandingHero from "./landing-hero";
 import LandingFeatures from "./landing-features";
 import LandingTestimonials from "./landing-testimonials";
+import LandingPricing from "./landing-pricing";
 
 export default function LandingPage() {
   return (
@@ -26,6 +27,7 @@ export default function LandingPage() {
         <LandingHero />
         <LandingFeatures />
         <LandingTestimonials />
+        <LandingPricing />
       </main>
     </div>
   );
