@@ -15,6 +15,9 @@ const initialCertificates = [{ name: 'Google Cloud Certified - Professional Clou
 const initialAchievements = [{ description: "Speaker at React Conf 2023 on 'The Future of Web Development'." }];
 const initialTestimonials = [{ testimonial: 'John is a brilliant engineer who brings not only technical expertise but also a creative and collaborative spirit to every project. He was instrumental in our latest launch.', author: 'Jane Smith, CEO of Tech Innovations' }];
 const initialFaqs = [{ question: 'What are you most passionate about in software development?', answer: 'I am most passionate about creating elegant solutions to complex problems and building products that have a meaningful impact on people\'s lives. I love the blend of creativity and logic that software engineering requires.' }];
+const initialSkills = [{ skill: 'React' }, { skill: 'Next.js' }, { skill: 'TypeScript' }, { skill: 'Node.js' }, { skill: 'GraphQL' }];
+const initialExperience = [{ role: 'Senior Software Engineer', company: 'Tech Innovations Inc.', duration: '2021 - Present', description: 'Led the development of a new microservices-based architecture, improving system scalability by 50%.' }];
+const initialEducation = [{ degree: 'B.Sc. in Computer Science', institution: 'State University', year: '2018' }];
 
 export default function PortfolioPage() {
   const [projects, setProjects] = useState(initialProjects);
@@ -22,6 +25,9 @@ export default function PortfolioPage() {
   const [achievements, setAchievements] = useState(initialAchievements);
   const [testimonials, setTestimonials] = useState(initialTestimonials);
   const [faqs, setFaqs] = useState(initialFaqs);
+  const [skills, setSkills] = useState(initialSkills);
+  const [experience, setExperience] = useState(initialExperience);
+  const [education, setEducation] = useState(initialEducation);
 
   const addProject = () => setProjects([...projects, { title: '', description: '', link: '', tags: '' }]);
   const removeProject = (index: number) => setProjects(projects.filter((_, i) => i !== index));
@@ -63,6 +69,30 @@ export default function PortfolioPage() {
     setFaqs(newFaqs);
   };
 
+  const addSkill = () => setSkills([...skills, { skill: '' }]);
+  const removeSkill = (index: number) => setSkills(skills.filter((_, i) => i !== index));
+  const handleSkillChange = (index: number, value: string) => {
+    const newSkills = [...skills];
+    newSkills[index] = { skill: value };
+    setSkills(newSkills);
+  };
+
+  const addExperience = () => setExperience([...experience, { role: '', company: '', duration: '', description: '' }]);
+  const removeExperience = (index: number) => setExperience(experience.filter((_, i) => i !== index));
+  const handleExperienceChange = (index: number, field: string, value: string) => {
+    const newExperience = [...experience];
+    newExperience[index] = { ...newExperience[index], [field]: value };
+    setExperience(newExperience);
+  };
+
+  const addEducation = () => setEducation([...education, { degree: '', institution: '', year: '' }]);
+  const removeEducation = (index: number) => setEducation(education.filter((_, i) => i !== index));
+  const handleEducationChange = (index: number, field: string, value: string) => {
+    const newEducation = [...education];
+    newEducation[index] = { ...newEducation[index], [field]: value };
+    setEducation(newEducation);
+  };
+
   return (
     <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
       <div className="mb-8 max-w-4xl mx-auto">
@@ -91,6 +121,10 @@ export default function PortfolioPage() {
             <div>
               <Label htmlFor="bio">Bio</Label>
               <Textarea id="bio" placeholder="Tell a little bit about yourself..." defaultValue="A passionate software engineer with a love for building scalable and user-friendly web applications." />
+            </div>
+             <div>
+              <Label htmlFor="bannerUrl">Portfolio Banner URL</Label>
+              <Input id="bannerUrl" placeholder="https://placehold.co/1200x300.png" defaultValue="https://placehold.co/1200x300.png" />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -122,6 +156,14 @@ export default function PortfolioPage() {
                     <Input id="linkedin" placeholder="https://linkedin.com/in/your-profile" defaultValue="https://linkedin.com/in/johndoe" />
                 </div>
                 <div>
+                    <Label htmlFor="twitter">Twitter / X</Label>
+                    <Input id="twitter" placeholder="https://twitter.com/your-handle" defaultValue="https://twitter.com/johndoe" />
+                </div>
+                 <div>
+                    <Label htmlFor="website">Personal Website (Optional)</Label>
+                    <Input id="website" placeholder="https://your-site.com" defaultValue="https://johndoe.com" />
+                </div>
+                <div>
                     <Label htmlFor="instagram">Instagram (Optional)</Label>
                     <Input id="instagram" placeholder="https://instagram.com/your-handle" defaultValue="https://instagram.com/johndoe" />
                 </div>
@@ -129,6 +171,95 @@ export default function PortfolioPage() {
           </CardContent>
         </Card>
         
+        {/* Skills */}
+        <Card className="shadow-lg border-primary/10">
+            <CardHeader>
+                <CardTitle>Skills</CardTitle>
+                <CardDescription>List your technical skills.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {skills.map((skill, index) => (
+                        <div key={index} className="flex items-center gap-2 relative">
+                            <Input id={`skill-${index}`} placeholder="e.g., React" value={skill.skill} onChange={(e) => handleSkillChange(index, e.target.value)} />
+                            <Button variant="ghost" size="icon" className="shrink-0 text-muted-foreground hover:text-destructive" onClick={() => removeSkill(index)}><Trash2 className="w-4 h-4" /></Button>
+                        </div>
+                    ))}
+                </div>
+                <Button variant="outline" className="w-full" onClick={addSkill}>
+                    <PlusCircle className="mr-2 h-4 w-4" /> Add Another Skill
+                </Button>
+            </CardContent>
+        </Card>
+
+        {/* Work Experience */}
+        <Card className="shadow-lg border-primary/10">
+            <CardHeader>
+                <CardTitle>Work Experience</CardTitle>
+                <CardDescription>Detail your professional history.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+                {experience.map((exp, index) => (
+                    <div key={index} className="space-y-4 p-4 border rounded-lg relative">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <Label htmlFor={`exp-role-${index}`}>Role</Label>
+                                <Input id={`exp-role-${index}`} placeholder="e.g., Software Engineer" value={exp.role} onChange={(e) => handleExperienceChange(index, 'role', e.target.value)} />
+                            </div>
+                            <div>
+                                <Label htmlFor={`exp-company-${index}`}>Company</Label>
+                                <Input id={`exp-company-${index}`} placeholder="e.g., Tech Corp" value={exp.company} onChange={(e) => handleExperienceChange(index, 'company', e.target.value)} />
+                            </div>
+                        </div>
+                        <div>
+                            <Label htmlFor={`exp-duration-${index}`}>Duration</Label>
+                            <Input id={`exp-duration-${index}`} placeholder="e.g., 2020 - 2022" value={exp.duration} onChange={(e) => handleExperienceChange(index, 'duration', e.target.value)} />
+                        </div>
+                        <div>
+                            <Label htmlFor={`exp-description-${index}`}>Description</Label>
+                            <Textarea id={`exp-description-${index}`} placeholder="Describe your responsibilities and achievements..." value={exp.description} onChange={(e) => handleExperienceChange(index, 'description', e.target.value)} />
+                        </div>
+                        <Button variant="ghost" size="icon" className="absolute top-2 right-2 text-muted-foreground hover:text-destructive" onClick={() => removeExperience(index)}><Trash2 className="w-4 h-4" /></Button>
+                    </div>
+                ))}
+                <Button variant="outline" className="w-full" onClick={addExperience}>
+                    <PlusCircle className="mr-2 h-4 w-4" /> Add Experience
+                </Button>
+            </CardContent>
+        </Card>
+
+        {/* Education */}
+        <Card className="shadow-lg border-primary/10">
+            <CardHeader>
+                <CardTitle>Education</CardTitle>
+                <CardDescription>Your academic background.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+                {education.map((edu, index) => (
+                    <div key={index} className="space-y-4 p-4 border rounded-lg relative">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <Label htmlFor={`edu-degree-${index}`}>Degree/Certificate</Label>
+                                <Input id={`edu-degree-${index}`} placeholder="e.g., Bachelor of Science" value={edu.degree} onChange={(e) => handleEducationChange(index, 'degree', e.target.value)} />
+                            </div>
+                            <div>
+                                <Label htmlFor={`edu-institution-${index}`}>Institution</Label>
+                                <Input id={`edu-institution-${index}`} placeholder="e.g., University of Technology" value={edu.institution} onChange={(e) => handleEducationChange(index, 'institution', e.target.value)} />
+                            </div>
+                        </div>
+                        <div>
+                            <Label htmlFor={`edu-year-${index}`}>Year of Completion</Label>
+                            <Input id={`edu-year-${index}`} placeholder="e.g., 2020" value={edu.year} onChange={(e) => handleEducationChange(index, 'year', e.target.value)} />
+                        </div>
+                        <Button variant="ghost" size="icon" className="absolute top-2 right-2 text-muted-foreground hover:text-destructive" onClick={() => removeEducation(index)}><Trash2 className="w-4 h-4" /></Button>
+                    </div>
+                ))}
+                <Button variant="outline" className="w-full" onClick={addEducation}>
+                    <PlusCircle className="mr-2 h-4 w-4" /> Add Education
+                </Button>
+            </CardContent>
+        </Card>
+
         {/* Projects */}
         <Card className="shadow-lg border-primary/10">
           <CardHeader>
