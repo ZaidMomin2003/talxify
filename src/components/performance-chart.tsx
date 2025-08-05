@@ -67,8 +67,8 @@ const CustomXAxisTick = (props: any) => {
     const { x, y, payload } = props;
     return (
       <g transform={`translate(${x},${y})`}>
-        <foreignObject x={-25} y={10} width={50} height={30}>
-            <div className="flex items-center justify-center bg-muted/50 rounded-full text-muted-foreground text-xs px-3 py-1">
+        <foreignObject x={-15} y={10} width={30} height={30}>
+            <div className="flex items-center justify-center bg-muted/50 rounded-full text-muted-foreground text-xs px-2 py-1">
                 {payload.value}
             </div>
         </foreignObject>
@@ -81,8 +81,8 @@ const CustomYAxisTick = (props: any) => {
     
     return (
         <g transform={`translate(${x},${y})`}>
-            <foreignObject x={-40} y={-15} width={40} height={30}>
-                <div className="flex items-center justify-center bg-muted/50 rounded-full text-muted-foreground text-xs px-3 py-1 w-fit ml-auto">
+            <foreignObject x={-30} y={-15} width={30} height={30}>
+                <div className="flex items-center justify-center bg-muted/50 rounded-full text-muted-foreground text-xs px-2 py-1 w-fit ml-auto">
                     {payload.value}
                 </div>
             </foreignObject>
@@ -116,9 +116,9 @@ export function PerformanceChart() {
                 data={chartData}
                 margin={{
                     top: 20,
-                    right: 20,
-                    left: 20,
-                    bottom: 40,
+                    right: 10,
+                    left: 0,
+                    bottom: 20,
                 }}
             >
             <defs>
