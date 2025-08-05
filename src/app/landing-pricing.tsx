@@ -39,13 +39,18 @@ const yearlyPlan = {
 
 const PricingCard = ({ plan }: { plan: typeof monthlyPlan | typeof yearlyPlan }) => (
   <Card className={cn(
-    "flex flex-col shadow-lg transition-transform duration-300",
-    plan.isPopular ? "border-primary border-2 shadow-primary/20 -translate-y-4" : "border-border"
+    "flex flex-col shadow-lg transition-transform duration-300 w-full",
+    plan.isPopular ? "border-primary border-2 shadow-primary/20 md:-translate-y-4" : "border-border"
   )}>
     {plan.isPopular && (
-      <div className="bg-primary text-primary-foreground text-xs font-semibold py-1 px-4 rounded-t-lg flex items-center justify-center gap-2">
-        <Star className="w-4 h-4" />
-        <span>Most Popular</span>
+      <div className="relative">
+        <div className="bg-primary text-primary-foreground text-xs font-semibold py-1 px-4 rounded-t-lg flex items-center justify-center gap-2">
+          <Star className="w-4 h-4" />
+          <span>Most Popular</span>
+        </div>
+         <div className="absolute top-0 right-0 -mt-3 mr-3 bg-destructive text-destructive-foreground text-xs font-bold px-2 py-1 rounded-full rotate-12">
+            Save 25%
+        </div>
       </div>
     )}
     <CardHeader className="text-center">
@@ -79,8 +84,10 @@ const PricingCard = ({ plan }: { plan: typeof monthlyPlan | typeof yearlyPlan })
 export default function LandingPricing() {
   return (
     <section className="bg-background text-foreground py-20 pb-8" id="pricing">
-      <div className="container mx-auto max-w-5xl px-6">
-        <div className="text-center mb-12">
+      <div className="container mx-auto max-w-5xl px-6 relative">
+         <div className="absolute top-0 left-0 z-0 h-64 w-64 rounded-full bg-primary/5 blur-3xl" />
+        <div className="absolute bottom-0 right-0 z-0 h-64 w-64 rounded-full bg-accent/5 blur-3xl" />
+        <div className="text-center mb-16 relative z-10">
           <h2 className="text-4xl font-bold font-headline tracking-tighter sm:text-5xl">
             Choose Your Plan
           </h2>
@@ -89,7 +96,7 @@ export default function LandingPricing() {
           </p>
         </div>
 
-        <div className="grid gap-8 md:grid-cols-2 max-w-3xl mx-auto">
+        <div className="grid gap-y-10 md:gap-x-8 md:grid-cols-2 max-w-3xl mx-auto relative z-10">
           <PricingCard plan={monthlyPlan} />
           <PricingCard plan={yearlyPlan} />
         </div>
