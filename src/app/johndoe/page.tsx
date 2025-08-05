@@ -4,10 +4,22 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Github, Linkedin, Instagram, Mail, Phone, Link as LinkIcon, Award, Briefcase, MessageSquare, GraduationCap, Sparkles, Building, Calendar, Star, Code, Twitter, Globe, School } from "lucide-react";
+import { Github, Linkedin, Instagram, Mail, Phone, Link as LinkIcon, Award, Briefcase, MessageSquare, GraduationCap, Sparkles, Building, Calendar, Star, Code, Twitter, Globe, School, Percent } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
+
+const Section = ({ icon, title, children, className }: { icon: React.ReactNode, title: string, children: React.ReactNode, className?: string }) => (
+    <section className={cn("space-y-6", className)}>
+        <div className="flex items-center gap-3">
+            <div className="bg-primary/10 text-primary rounded-full p-2">
+                {icon}
+            </div>
+            <h2 className="text-3xl font-bold">{title}</h2>
+        </div>
+        {children}
+    </section>
+);
 
 export default function PortfolioPreviewPage() {
     const portfolio = {
@@ -55,18 +67,6 @@ export default function PortfolioPreviewPage() {
         ],
     };
 
-    const Section = ({ icon, title, children, className }: { icon: React.ReactNode, title: string, children: React.ReactNode, className?: string }) => (
-        <section className={cn("space-y-6", className)}>
-            <div className="flex items-center gap-3">
-                <div className="bg-primary/10 text-primary rounded-full p-2">
-                    {icon}
-                </div>
-                <h2 className="text-3xl font-bold">{title}</h2>
-            </div>
-            {children}
-        </section>
-    );
-
     return (
         <div className="bg-background min-h-screen">
             <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur-sm">
@@ -109,6 +109,40 @@ export default function PortfolioPreviewPage() {
                             {portfolio.phone && <div className="inline-flex items-center gap-2 text-sm text-muted-foreground"><Phone className="w-4 h-4" />{portfolio.phone}</div>}
                         </div>
                     </div>
+                </section>
+
+                {/* Stats Section */}
+                <section className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between pb-2">
+                            <CardTitle className="text-sm font-medium">Interviews Completed</CardTitle>
+                            <Briefcase className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">12</div>
+                            <p className="text-xs text-muted-foreground">+2 since last month</p>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between pb-2">
+                            <CardTitle className="text-sm font-medium">Coding Questions Solved</CardTitle>
+                            <Code className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">57</div>
+                            <p className="text-xs text-muted-foreground">+10 since last month</p>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between pb-2">
+                            <CardTitle className="text-sm font-medium">Job Likelihood</CardTitle>
+                            <Percent className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">78%</div>
+                            <p className="text-xs text-muted-foreground">Based on your performance</p>
+                        </CardContent>
+                    </Card>
                 </section>
                 
                  {/* Skills Section */}
