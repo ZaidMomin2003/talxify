@@ -5,6 +5,7 @@ import LandingFeatures from "./landing-features";
 import LandingTestimonials from "./landing-testimonials";
 import LandingPricing from "./landing-pricing";
 import LandingFaq from "./landing-faq";
+import LandingCta from "./landing-cta";
 
 export default function LandingPage() {
   return (
@@ -30,6 +31,9 @@ export default function LandingPage() {
         <LandingTestimonials />
         <LandingPricing />
         <LandingFaq />
+        <section className="py-16 flex justify-center">
+          <LandingCta />
+        </section>
       </main>
     </div>
   );
