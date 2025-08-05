@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Rocket, Code, Briefcase, Percent } from "lucide-react";
 import Link from "next/link";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function DashboardPage() {
   return (
@@ -87,6 +88,19 @@ export default function DashboardPage() {
               <div>
                 <Label htmlFor="coding-topics">Topics</Label>
                 <Input id="coding-topics" placeholder="e.g., JavaScript, Algorithms" />
+              </div>
+              <div>
+                <Label htmlFor="difficulty">Difficulty</Label>
+                <Select>
+                  <SelectTrigger id="difficulty">
+                    <SelectValue placeholder="Select a difficulty" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="easy">Easy</SelectItem>
+                    <SelectItem value="moderate">Moderate</SelectItem>
+                    <SelectItem value="difficult">Difficult</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </form>
           </CardContent>
