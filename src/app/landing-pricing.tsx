@@ -3,6 +3,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Check, Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
@@ -72,6 +73,52 @@ const PricingCard = ({ plan }: { plan: typeof monthlyPlan | typeof yearlyPlan })
           </li>
         ))}
       </ul>
+       {!plan.isPopular && (
+        <Dialog>
+          <DialogTrigger asChild>
+            <div className="text-center mt-4">
+              <Button variant="link" size="sm">Learn more about features</Button>
+            </div>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Monthly Plan Features</DialogTitle>
+              <DialogDescription>
+                Here's a detailed look at what's included in the Monthly Plan to help you succeed.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              {plan.features.map((feature, index) => (
+                <div key={index} className="flex items-start gap-3">
+                  <div className="bg-primary/10 text-primary rounded-full p-1 mt-1">
+                    <Check className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold">{feature}</h4>
+                    <p className="text-sm text-muted-foreground">
+                      {
+                        [
+                          "Practice with our advanced AI that simulates real-world technical and behavioral interviews.",
+                          "Access an infinite library of questions on any topic, at any difficulty level, to sharpen your skills.",
+                          "Receive personalized reports from our AI on your progress, highlighting strengths and areas for improvement.",
+                          "Automatically create a professional portfolio page to showcase your skills and quiz results to employers.",
+                          "Dive deep into your performance with comprehensive charts and statistics on your dashboard.",
+                          "Get help whenever you need it with our dedicated customer support team, available around the clock."
+                        ][index]
+                      }
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <DialogFooter>
+              <Button asChild className="w-full" size="lg">
+                <Link href="/signup">Get Started with Monthly Plan</Link>
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </CardContent>
     <CardFooter>
       <Button asChild className="w-full" size="lg" variant={plan.isPopular ? 'default' : 'secondary'}>
