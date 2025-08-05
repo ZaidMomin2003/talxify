@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import { Button } from "@/components/ui/button";
@@ -12,7 +13,7 @@ import React from "react";
 import Link from "next/link";
 
 // TODO: Replace with dynamic fields state management
-const initialProjects = [{ title: 'Talxify - AI Interview Coach', description: 'An AI-powered platform to help users practice for technical interviews with real-time feedback and coding assistance.', link: 'https://talxify.ai' }];
+const initialProjects = [{ title: 'Talxify - AI Interview Coach', description: 'An AI-powered platform to help users practice for technical interviews with real-time feedback and coding assistance.', link: 'https://talxify.ai', tags: 'Next.js, AI, Tailwind' }];
 const initialCertificates = [{ name: 'Google Cloud Certified - Professional Cloud Architect', body: 'Google Cloud', date: '2023-05' }];
 const initialAchievements = [{ description: "Speaker at React Conf 2023 on 'The Future of Web Development'." }];
 const initialTestimonials = [{ testimonial: 'John is a brilliant engineer who brings not only technical expertise but also a creative and collaborative spirit to every project. He was instrumental in our latest launch.', author: 'Jane Smith, CEO of Tech Innovations' }];
@@ -94,10 +95,14 @@ export default function PortfolioPage() {
           <CardContent className="space-y-6">
             {initialProjects.map((project, index) => (
                 <div key={index} className="space-y-4 p-4 border rounded-lg relative">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 gap-4">
                         <div>
                             <Label htmlFor={`project-title-${index}`}>Project Title</Label>
                             <Input id={`project-title-${index}`} placeholder="e.g., Awesome App" defaultValue={project.title} />
+                        </div>
+                         <div>
+                            <Label htmlFor={`project-tags-${index}`}>Tags (comma separated)</Label>
+                            <Input id={`project-tags-${index}`} placeholder="e.g., React, Next.js, AI" defaultValue={project.tags} />
                         </div>
                         <div>
                             <Label htmlFor={`project-link-${index}`}>Project Link</Label>
@@ -126,7 +131,7 @@ export default function PortfolioPage() {
           <CardContent className="space-y-6">
             {initialCertificates.map((cert, index) => (
                 <div key={index} className="space-y-4 p-4 border rounded-lg relative">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 gap-4">
                         <div>
                             <Label htmlFor={`cert-name-${index}`}>Certificate Name</Label>
                             <Input id={`cert-name-${index}`} placeholder="e.g., Certified Kubernetes Administrator" defaultValue={cert.name} />
@@ -230,3 +235,5 @@ export default function PortfolioPage() {
     </main>
   );
 }
+
+    

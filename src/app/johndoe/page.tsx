@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Github, Linkedin, Instagram, Mail, Phone, Link as LinkIcon } from "lucide-react";
+import { Github, Linkedin, Instagram, Mail, Phone, Link as LinkIcon, Award, Briefcase, MessageSquare, GraduationCap, Sparkles } from "lucide-react";
 import Link from "next/link";
 
 export default function PortfolioPreviewPage() {
@@ -20,8 +20,8 @@ export default function PortfolioPreviewPage() {
             instagram: 'https://instagram.com/johndoe',
         },
         projects: [
-            { title: 'Talxify - AI Interview Coach', description: 'An AI-powered platform to help users practice for technical interviews with real-time feedback and coding assistance.', link: 'https://talxify.ai' },
-            { title: 'E-commerce Platform', description: 'Built a full-featured e-commerce site with Next.js, Stripe, and Sanity.io, focusing on performance and user experience.', link: '#' },
+            { title: 'Talxify - AI Interview Coach', description: 'An AI-powered platform to help users practice for technical interviews with real-time feedback and coding assistance.', link: 'https://talxify.ai', tags: ['Next.js', 'AI', 'Tailwind'] },
+            { title: 'E-commerce Platform', description: 'Built a full-featured e-commerce site with Next.js, Stripe, and Sanity.io, focusing on performance and user experience.', link: '#', tags: ['React', 'Stripe', 'E-commerce'] },
         ],
         certificates: [
             { name: 'Google Cloud Certified - Professional Cloud Architect', body: 'Google Cloud', date: '2023-05' },
@@ -42,10 +42,22 @@ export default function PortfolioPreviewPage() {
         ],
     };
 
+    const Section = ({ icon, title, children }: { icon: React.ReactNode, title: string, children: React.ReactNode }) => (
+        <section className="space-y-6">
+            <div className="flex items-center gap-3">
+                <div className="bg-primary/10 text-primary rounded-full p-2">
+                    {icon}
+                </div>
+                <h2 className="text-3xl font-bold">{title}</h2>
+            </div>
+            {children}
+        </section>
+    );
+
     return (
         <div className="bg-background min-h-screen">
             <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur-sm">
-                <div className="container mx-auto flex h-16 items-center justify-between px-4 md:px-6">
+                <div className="container mx-auto flex h-16 items-center justify-between px-4 md:px-6 max-w-4xl">
                     <Link href="#" className="flex items-center gap-2">
                         <Avatar>
                             <AvatarImage src="https://placehold.co/40x40.png" alt={portfolio.name} data-ai-hint="person avatar" />
@@ -59,9 +71,9 @@ export default function PortfolioPreviewPage() {
                 </div>
             </header>
 
-            <main className="container mx-auto p-4 md:p-6 lg:p-8 space-y-12">
+            <main className="container mx-auto p-4 md:p-6 lg:p-8 space-y-16 max-w-4xl">
                 {/* Hero Section */}
-                <section className="text-center py-16">
+                <section className="text-center py-12">
                     <Avatar className="w-32 h-32 mx-auto mb-4 border-4 border-primary shadow-lg">
                         <AvatarImage src="https://placehold.co/128x128.png" alt={portfolio.name} data-ai-hint="person avatar" />
                         <AvatarFallback>{portfolio.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
@@ -69,7 +81,7 @@ export default function PortfolioPreviewPage() {
                     <h1 className="text-5xl font-headline font-bold mb-2">{portfolio.name}</h1>
                     <p className="text-2xl text-primary font-semibold mb-4">{portfolio.profession}</p>
                     <p className="max-w-3xl mx-auto text-lg text-muted-foreground mb-6">{portfolio.bio}</p>
-                    <div className="flex justify-center gap-4">
+                    <div className="flex justify-center gap-4 mb-8">
                         <Button variant="ghost" size="icon" asChild>
                             <a href={portfolio.socials.github} target="_blank" rel="noopener noreferrer"><Github /></a>
                         </Button>
@@ -80,105 +92,105 @@ export default function PortfolioPreviewPage() {
                             <a href={portfolio.socials.instagram} target="_blank" rel="noopener noreferrer"><Instagram /></a>
                         </Button>
                     </div>
-                </section>
-                
-                {/* Contact Section */}
-                <section id="contact" className="grid md:grid-cols-2 gap-8 items-center bg-muted/50 p-8 rounded-lg">
-                    <div>
-                        <h2 className="text-3xl font-bold mb-4">Get in Touch</h2>
-                        <p className="text-muted-foreground mb-6">I'm currently open to new opportunities. Feel free to reach out!</p>
-                    </div>
-                    <div className="space-y-4">
-                        <a href={`mailto:${portfolio.email}`} className="flex items-center gap-4 p-4 rounded-lg hover:bg-background transition-colors">
-                            <Mail className="w-6 h-6 text-primary" />
-                            <span>{portfolio.email}</span>
+                     <div className="flex justify-center gap-4">
+                        <a href={`mailto:${portfolio.email}`} className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary">
+                            <Mail className="w-4 h-4" />
+                            {portfolio.email}
                         </a>
-                        <div className="flex items-center gap-4 p-4 rounded-lg">
-                            <Phone className="w-6 h-6 text-primary" />
-                            <span>{portfolio.phone}</span>
+                        <div className="inline-flex items-center gap-2 text-sm text-muted-foreground">
+                            <Phone className="w-4 h-4" />
+                            {portfolio.phone}
                         </div>
                     </div>
                 </section>
-
+                
                 {/* Projects Section */}
-                <section id="projects">
-                    <h2 className="text-3xl font-bold mb-6 text-center">My Projects</h2>
-                    <div className="grid md:grid-cols-2 gap-6">
+                <Section icon={<Briefcase />} title="Projects">
+                    <div className="space-y-8">
                         {portfolio.projects.map((project, index) => (
                             <Card key={index} className="shadow-lg hover:shadow-xl transition-shadow duration-300">
                                 <CardHeader>
                                     <CardTitle className="flex items-center justify-between">
                                         {project.title}
-                                        <a href={project.link} target="_blank" rel="noopener noreferrer">
-                                            <LinkIcon className="w-5 h-5 text-muted-foreground hover:text-primary" />
+                                        <a href={project.link} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary">
+                                            <LinkIcon className="w-5 h-5" />
                                         </a>
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent>
-                                    <p className="text-muted-foreground">{project.description}</p>
+                                    <p className="text-muted-foreground mb-4">{project.description}</p>
+                                    <div className="flex flex-wrap gap-2">
+                                        {project.tags.map(tag => <Badge key={tag} variant="secondary">{tag}</Badge>)}
+                                    </div>
                                 </CardContent>
                             </Card>
                         ))}
                     </div>
-                </section>
+                </Section>
 
-                <div className="grid md:grid-cols-2 gap-8">
-                    {/* Certificates Section */}
-                    <section id="certificates">
-                        <h2 className="text-3xl font-bold mb-6">Certificates</h2>
-                        <div className="space-y-4">
-                            {portfolio.certificates.map((cert, index) => (
-                                <Card key={index} className="p-4">
+                {/* Certificates Section */}
+                <Section icon={<GraduationCap />} title="Certificates">
+                    <div className="space-y-4">
+                        {portfolio.certificates.map((cert, index) => (
+                            <Card key={index} className="p-4 flex items-center gap-4">
+                                <div className="bg-muted text-muted-foreground rounded-full p-2">
+                                    <GraduationCap className="w-5 h-5" />
+                                </div>
+                                <div>
                                     <p className="font-semibold">{cert.name}</p>
                                     <p className="text-sm text-muted-foreground">{cert.body} - {cert.date}</p>
-                                </Card>
-                            ))}
-                        </div>
-                    </section>
-                    {/* Achievements Section */}
-                    <section id="achievements">
-                        <h2 className="text-3xl font-bold mb-6">Achievements</h2>
-                        <ul className="space-y-2 list-disc list-inside">
+                                </div>
+                            </Card>
+                        ))}
+                    </div>
+                </Section>
+                
+                {/* Achievements Section */}
+                <Section icon={<Award />} title="Achievements">
+                    <Card className="p-6">
+                        <ul className="space-y-3 list-inside">
                             {portfolio.achievements.map((ach, index) => (
-                                <li key={index} className="text-muted-foreground">{ach}</li>
+                                <li key={index} className="flex items-start gap-3">
+                                    <Sparkles className="w-4 h-4 text-primary mt-1 shrink-0" />
+                                    <span className="text-muted-foreground">{ach}</span>
+                                </li>
                             ))}
                         </ul>
-                    </section>
-                </div>
-
+                    </Card>
+                </Section>
 
                 {/* Testimonials Section */}
-                <section id="testimonials" className="bg-muted/50 p-8 rounded-lg">
-                    <h2 className="text-3xl font-bold mb-6 text-center">Testimonials</h2>
-                    <div className="grid md:grid-cols-2 gap-6">
+                <Section icon={<MessageSquare />} title="Testimonials">
+                    <div className="space-y-6">
                         {portfolio.testimonials.map((test, index) => (
-                             <blockquote key={index} className="p-6 bg-background rounded-lg shadow">
-                                <p className="italic">"{test.testimonial}"</p>
+                             <blockquote key={index} className="p-6 bg-muted/50 rounded-lg border border-primary/10">
+                                <p className="italic text-lg">"{test.testimonial}"</p>
                                 <footer className="mt-4 text-right font-semibold"> - {test.author}</footer>
                             </blockquote>
                         ))}
                     </div>
-                </section>
+                </Section>
 
                 {/* FAQs Section */}
-                <section id="faqs">
-                    <h2 className="text-3xl font-bold mb-6 text-center">FAQs</h2>
-                    <Accordion type="single" collapsible className="w-full max-w-3xl mx-auto">
+                <Section icon={<Sparkles />} title="FAQs">
+                    <Accordion type="single" collapsible className="w-full">
                         {portfolio.faqs.map((faq, index) => (
                             <AccordionItem value={`item-${index}`} key={index}>
-                                <AccordionTrigger>{faq.question}</AccordionTrigger>
-                                <AccordionContent>
+                                <AccordionTrigger className="text-lg">{faq.question}</AccordionTrigger>
+                                <AccordionContent className="text-base text-muted-foreground">
                                     {faq.answer}
                                 </AccordionContent>
                             </AccordionItem>
                         ))}
                     </Accordion>
-                </section>
-
+                </Section>
             </main>
-            <footer className="text-center p-6 border-t mt-12">
+
+            <footer className="text-center p-6 border-t mt-16">
                 <p className="text-muted-foreground">© {new Date().getFullYear()} {portfolio.name}. All rights reserved.</p>
             </footer>
         </div>
     );
 }
+
+    
