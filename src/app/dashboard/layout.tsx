@@ -27,7 +27,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { Bot, Code, LayoutGrid, MessageSquare, BarChart, Settings, History, Search, User, LogOut } from "lucide-react";
+import { Bot, Code, LayoutGrid, MessageSquare, BarChart, Settings, History, Search, User, LogOut, Gem } from "lucide-react";
 import type { QuizResult } from "./coding-quiz/analysis/page";
 import { formatDistanceToNow } from 'date-fns';
 import { useAuth } from "@/context/auth-context";
@@ -110,6 +110,14 @@ export default function DashboardLayout({
               )
             })}
           </SidebarMenu>
+           <div className="p-2 mt-auto">
+             <Button asChild className="w-full bg-gradient-to-r from-purple-500 to-blue-500 text-white hover:from-purple-600 hover:to-blue-600 shadow-lg">
+                <Link href="/dashboard/pricing">
+                    <Gem className="mr-2 h-4 w-4" />
+                    Upgrade to Pro
+                </Link>
+             </Button>
+           </div>
         </SidebarContent>
         <SidebarFooter>
           <DropdownMenu>
