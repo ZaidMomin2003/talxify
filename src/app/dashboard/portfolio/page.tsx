@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 import { PlusCircle, Trash2 } from "lucide-react";
 import React, { useState } from "react";
 import Link from "next/link";
@@ -19,6 +20,14 @@ const initialSkills = [{ skill: 'React' }, { skill: 'Next.js' }, { skill: 'TypeS
 const initialExperience = [{ role: 'Senior Software Engineer', company: 'Tech Innovations Inc.', duration: '2021 - Present', description: 'Led the development of a new microservices-based architecture, improving system scalability by 50%.' }];
 const initialEducation = [{ degree: 'B.Sc. in Computer Science', institution: 'State University', year: '2018' }];
 
+const colorOptions = [
+    { name: 'Default', hsl: '210 90% 60%' },
+    { name: 'Green', hsl: '150 80% 50%' },
+    { name: 'Orange', hsl: '30 90% 55%' },
+    { name: 'Purple', hsl: '260 85% 65%' },
+    { name: 'Red', hsl: '0 85% 60%' },
+];
+
 export default function PortfolioPage() {
   const [projects, setProjects] = useState(initialProjects);
   const [certificates, setCertificates] = useState(initialCertificates);
@@ -28,6 +37,7 @@ export default function PortfolioPage() {
   const [skills, setSkills] = useState(initialSkills);
   const [experience, setExperience] = useState(initialExperience);
   const [education, setEducation] = useState(initialEducation);
+  const [themeColor, setThemeColor] = useState(colorOptions[0].hsl);
 
   const addProject = () => setProjects([...projects, { title: '', description: '', link: '', tags: '' }]);
   const removeProject = (index: number) => setProjects(projects.filter((_, i) => i !== index));
@@ -135,6 +145,31 @@ export default function PortfolioPage() {
                     <Label htmlFor="phone">Phone (Optional)</Label>
                     <Input id="phone" type="tel" placeholder="e.g., +1 234 567 890" defaultValue="+1 234 567 890" />
                 </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Theme Customization */}
+        <Card className="shadow-lg border-primary/10">
+          <CardHeader>
+            <CardTitle>Theme Customization</CardTitle>
+            <CardDescription>Choose a primary color for your portfolio.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-4">
+              {colorOptions.map((color) => (
+                <div key={color.name} className="flex items-center gap-2">
+                  <button
+                    onClick={() => setThemeColor(color.hsl)}
+                    className={cn(
+                      "w-8 h-8 rounded-full border-2 transition-transform transform",
+                      themeColor === color.hsl ? "border-ring scale-110" : "border-transparent"
+                    )}
+                    style={{ backgroundColor: `hsl(${color.hsl})` }}
+                  />
+                  <Label htmlFor={`color-${color.name}`}>{color.name}</Label>
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>
@@ -401,7 +436,7 @@ export default function PortfolioPage() {
 
         <div className="flex justify-end gap-2 pt-4">
             <Button asChild variant="outline" size="lg">
-              <Link href="/johndoe">Preview</Link>
+              <Link href={{ pathname: "/johndoe", query: { color: themeColor } }}>Preview</Link>
             </Button>
             <Button size="lg" disabled>Save & Generate Portfolio</Button>
         </div>

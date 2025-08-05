@@ -1,4 +1,6 @@
 
+'use client'
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -8,6 +10,8 @@ import { Github, Linkedin, Instagram, Mail, Phone, Link as LinkIcon, Award, Brie
 import Link from "next/link";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
+import React from "react";
+import { useSearchParams } from "next/navigation";
 
 const Section = ({ icon, title, children, className }: { icon: React.ReactNode, title: string, children: React.ReactNode, className?: string }) => (
     <section className={cn("space-y-6", className)}>
@@ -22,6 +26,9 @@ const Section = ({ icon, title, children, className }: { icon: React.ReactNode, 
 );
 
 export default function PortfolioPreviewPage() {
+    const searchParams = useSearchParams()
+    const themeColor = searchParams.get('color') || '210 90% 60%';
+
     const portfolio = {
         name: 'John Doe',
         profession: 'Senior Software Engineer',
@@ -68,7 +75,10 @@ export default function PortfolioPreviewPage() {
     };
 
     return (
-        <div className="bg-background min-h-screen">
+        <div 
+            className="bg-background min-h-screen"
+            style={{ '--primary': themeColor } as React.CSSProperties}
+        >
             <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur-sm">
                 <div className="container mx-auto flex h-16 items-center justify-between px-4 md:px-6 max-w-4xl">
                     <Link href="#" className="flex items-center gap-2">
@@ -278,3 +288,4 @@ export default function PortfolioPreviewPage() {
         </div>
     );
 }
+
