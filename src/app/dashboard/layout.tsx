@@ -45,6 +45,13 @@ export default function DashboardLayout({
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
+    if (!loading && !user) {
+      router.push('/login');
+    }
+  }, [user, loading, router]);
+
+
+  useEffect(() => {
     // This effect runs on the client-side, where localStorage is available.
     if (typeof window !== 'undefined') {
       const storedResults = localStorage.getItem('allQuizResults');
@@ -65,6 +72,14 @@ export default function DashboardLayout({
     item.difficulty.toLowerCase().includes(searchQuery.toLowerCase())
   );
   
+  if (loading || !user) {
+    return (
+        <div className="flex h-screen items-center justify-center">
+            {/* You can add a loading spinner here */}
+        </div>
+    );
+  }
+
   return (
     <SidebarProvider>
       <Sidebar>

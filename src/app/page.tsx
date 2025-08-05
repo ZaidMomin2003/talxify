@@ -16,9 +16,6 @@ export default function LandingPage() {
           <Button asChild variant="outline">
             <Link href="/signup">Sign Up</Link>
           </Button>
-          <Button asChild>
-            <Link href="/dashboard">Get Started</Link>
-          </Button>
         </nav>
       </header>
       <main className="flex-1 flex items-center justify-center">
