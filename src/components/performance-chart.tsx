@@ -136,7 +136,6 @@ export function PerformanceChart() {
                 tickLine={false}
                 axisLine={false}
                 tick={<CustomXAxisTick />}
-                padding={{ left: 20, right: 20 }}
             />
             <YAxis
                 tickLine={false}
