@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Rocket, Code, Briefcase, Percent, Search, RefreshCw, BarChart, Info } from "lucide-react";
+import { Rocket, Code, Briefcase, Percent, Search, RefreshCw, BarChart, Info, CalendarDays } from "lucide-react";
 import Link from "next/link";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useForm } from "react-hook-form";
@@ -89,7 +89,7 @@ export default function DashboardPage() {
         <p className="text-muted-foreground">Here's your progress overview, welcome back!</p>
       </div>
 
-      <div className="mb-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mb-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
         <Card className="bg-[#D4FF00] text-black border-none">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Interviews Completed</CardTitle>
@@ -118,6 +118,16 @@ export default function DashboardPage() {
           <CardContent>
             <div className="text-2xl font-bold">78%</div>
             <p className="text-xs text-white/80">Based on your performance</p>
+          </CardContent>
+        </Card>
+        <Card className="bg-[#4DD0E1] text-black border-none">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Plan Expires</CardTitle>
+            <CalendarDays className="h-4 w-4" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">21 Days</div>
+            <p className="text-xs text-black/60">on your current plan</p>
           </CardContent>
         </Card>
       </div>
