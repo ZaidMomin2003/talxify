@@ -71,11 +71,6 @@ export default function LandingFooter() {
           <p className="text-sm text-muted-foreground">
             © {new Date().getFullYear()} Talxify, Inc. All rights reserved.
           </p>
-          <div className="flex items-center space-x-4">
-            <Link href="#" className="text-muted-foreground hover:text-primary"><Github className="h-5 w-5" /></Link>
-            <Link href="#" className="text-muted-foreground hover:text-primary"><Twitter className="h-5 w-5" /></Link>
-            <Link href="#" className="text-muted-foreground hover:text-primary"><Linkedin className="h-5 w-5" /></Link>
-          </div>
         </div>
       </div>
     </footer>
