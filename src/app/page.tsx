@@ -22,8 +22,10 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { name: 'Features', href: '#features' },
+  { name: 'Testimonials', href: '#testimonials' },
   { name: 'Pricing', href: '#pricing' },
-  { name: 'Contact', href: '/#contact' },
+  { name: 'FAQ', href: '#faq' },
+  { name: 'Contact', href: '#contact' },
 ];
 
 export default function LandingPage() {

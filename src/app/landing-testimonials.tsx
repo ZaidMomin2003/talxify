@@ -90,9 +90,7 @@ const testimonials = [
     description: (
       <p>
         Talxify was a game-changer for my prep.
-        <Highlight>
-          The AI mock interviews felt incredibly realistic and helped me pinpoint my weaknesses.
-        </Highlight>{' '}
+        The AI mock interviews felt incredibly realistic.
       </p>
     ),
   },
@@ -103,9 +101,7 @@ const testimonials = [
     description: (
       <p>
         The AI coding assistant is brilliant.
-        <Highlight>
-          It doesn't just give you answers; it helps you understand the logic behind them.
-        </Highlight>{' '}
+        It helps you understand the logic.
       </p>
     ),
   },
@@ -115,8 +111,8 @@ const testimonials = [
     img: 'https://randomuser.me/api/portraits/women/44.jpg',
     description: (
       <p>
-        As a student, getting relevant interview practice is tough.
-        <Highlight>Talxify's targeted quizzes were perfect for my coursework.</Highlight>
+        Getting relevant interview practice is tough.
+        Talxify's targeted quizzes were perfect.
       </p>
     ),
   },
@@ -127,9 +123,7 @@ const testimonials = [
     description: (
       <p>
         I used Talxify to prepare for a senior role.
-        <Highlight>
-          The system design questions were spot-on and the feedback was insightful.
-        </Highlight>{' '}
+        The system design questions were spot-on.
       </p>
     ),
   },
@@ -140,9 +134,7 @@ const testimonials = [
     description: (
       <p>
         The portfolio builder is a fantastic bonus.
-        <Highlight>
-          It automatically showcased my solved problems and quiz results.
-        </Highlight>{' '}
+        It automatically showcased my solved problems.
       </p>
     ),
   },
@@ -153,9 +145,7 @@ const testimonials = [
     description: (
       <p>
         The variety of questions on Talxify is impressive.
-        <Highlight>
-          It kept me challenged and well-prepared for anything.
-        </Highlight>{' '}
+        It kept me challenged and well-prepared.
       </p>
     ),
   },
@@ -167,7 +157,7 @@ const secondRow = testimonials.slice(Math.ceil(testimonials.length / 2));
 
 export default function LandingTestimonials() {
   return (
-    <section className="relative container py-10 bg-background">
+    <section className="relative container py-10 bg-background" id="testimonials">
       {/* Decorative elements */}
       <div className="absolute top-20 -left-20 z-10 h-64 w-64 rounded-full bg-primary/5 blur-3xl" />
       <div className="absolute -right-20 bottom-20 z-10 h-64 w-64 rounded-full bg-primary/5 blur-3xl" />

@@ -94,7 +94,7 @@ export default function LandingFaq() {
   };
 
   return (
-    <section className="bg-background py-16">
+    <section className="bg-background py-16" id="faq">
       <div className="container mx-auto max-w-6xl px-4 md:px-6">
         <div className="mb-12 flex flex-col items-center">
           <Badge
