@@ -84,11 +84,14 @@ export default function DashboardLayout({
     <SidebarProvider>
       <Sidebar>
         <SidebarHeader>
-          <div className="flex items-center gap-3">
+           <div className="flex items-center gap-3">
             <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-primary-foreground">
               <Bot size={28} />
             </div>
-            <h1 className="text-2xl font-headline font-bold">Talxify</h1>
+            <div className="flex flex-col">
+              <h1 className="text-2xl font-headline font-bold">Talxify</h1>
+              <span className="text-xs -mt-1 text-muted-foreground">AI Job Assistant</span>
+            </div>
           </div>
         </SidebarHeader>
         <SidebarContent>
