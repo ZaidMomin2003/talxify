@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { PlusCircle, Trash2 } from "lucide-react";
 import React from "react";
+import Link from "next/link";
 
 // TODO: Replace with dynamic fields state management
 const initialProjects = [{ title: 'Talxify - AI Interview Coach', description: 'An AI-powered platform to help users practice for technical interviews with real-time feedback and coding assistance.', link: 'https://talxify.ai' }];
@@ -220,7 +221,9 @@ export default function PortfolioPage() {
         </Card>
 
         <div className="flex justify-end gap-2 pt-4">
-            <Button variant="outline" size="lg">Preview</Button>
+            <Button asChild variant="outline" size="lg">
+              <Link href="/johndoe">Preview</Link>
+            </Button>
             <Button size="lg" disabled>Save & Generate Portfolio</Button>
         </div>
       </div>
