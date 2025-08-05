@@ -116,7 +116,7 @@ export function PerformanceChart() {
                 data={chartData}
                 margin={{
                     top: 20,
-                    right: 40,
+                    right: 20,
                     left: 20,
                     bottom: 40,
                 }}
