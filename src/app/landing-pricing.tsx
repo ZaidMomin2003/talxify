@@ -16,6 +16,7 @@ const monthlyPlan = {
     'Unlimited Coding Questions',
     'Weekly feedback',
     'Portfolio Builder',
+    'Detailed Analytics',
     '24/7 Customer Support',
   ],
   isPopular: false,
