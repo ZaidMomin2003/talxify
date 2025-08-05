@@ -37,8 +37,6 @@ export default function DashboardLayout({
 
   const menuItems = [
     { href: "/dashboard", label: "Dashboard", icon: LayoutGrid },
-    { href: "/interview", label: "Mock Interview", icon: MessageSquare },
-    { href: "/coding", label: "Coding Practice", icon: Code },
     { href: "/performance", label: "Performance", icon: BarChart },
   ];
 
