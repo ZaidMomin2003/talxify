@@ -6,11 +6,13 @@ import LandingTestimonials from "./landing-testimonials";
 import LandingPricing from "./landing-pricing";
 import LandingFaq from "./landing-faq";
 import LandingCta from "./landing-cta";
+import LandingContact from "./landing-contact";
+import LandingFooter from "./landing-footer";
 
 export default function LandingPage() {
   return (
     <div className="flex flex-col min-h-screen bg-background">
-      <header className="px-4 lg:px-6 h-14 flex items-center fixed top-0 w-full z-50 bg-transparent text-white">
+      <header className="px-4 lg:px-6 h-14 flex items-center fixed top-0 w-full z-50 bg-black/50 backdrop-blur-sm text-white">
         <Link href="#" className="flex items-center justify-center font-headline font-bold text-xl">
           Talxify
         </Link>
@@ -31,10 +33,12 @@ export default function LandingPage() {
         <LandingTestimonials />
         <LandingPricing />
         <LandingFaq />
-        <section className="py-16 flex justify-center">
+        <section className="py-16 flex justify-center px-4">
           <LandingCta />
         </section>
+        <LandingContact />
       </main>
+      <LandingFooter />
     </div>
   );
 }
