@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Rocket, Code, Briefcase, Percent } from "lucide-react";
 import Link from "next/link";
-import Image from "next/image";
+import { PerformanceChart } from "@/components/performance-chart";
 
 export default function DashboardPage() {
   return (
@@ -106,14 +106,7 @@ export default function DashboardPage() {
               <CardDescription>Track your improvement over time.</CardDescription>
           </CardHeader>
           <CardContent>
-              <Image 
-                  src="https://placehold.co/1200x400.png" 
-                  alt="Performance chart placeholder"
-                  width={1200}
-                  height={400}
-                  className="w-full h-auto rounded-lg"
-                  data-ai-hint="data visualization chart"
-              />
+              <PerformanceChart />
           </CardContent>
         </Card>
       </div>
