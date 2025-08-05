@@ -45,7 +45,7 @@ export function TestimonialCard({
   return (
     <div
       className={cn(
-        'mb-4 flex w-full cursor-pointer break-inside-avoid flex-col items-center justify-between gap-6 rounded-xl p-4',
+        'mb-4 flex w-[350px] cursor-pointer break-inside-avoid flex-col items-center justify-between gap-6 rounded-xl p-4',
         // theme styles
         'border-border bg-card/50 border shadow-sm',
         // hover effect
@@ -89,11 +89,10 @@ const testimonials = [
     img: 'https://randomuser.me/api/portraits/women/33.jpg',
     description: (
       <p>
-        Talxify was a game-changer for my interview prep.
+        Talxify was a game-changer for my prep.
         <Highlight>
           The AI mock interviews felt incredibly realistic and helped me pinpoint my weaknesses.
         </Highlight>{' '}
-        I walked into my real interviews with so much more confidence.
       </p>
     ),
   },
@@ -105,9 +104,8 @@ const testimonials = [
       <p>
         The AI coding assistant is brilliant.
         <Highlight>
-          It doesn't just give you answers; it helps you understand the logic.
+          It doesn't just give you answers; it helps you understand the logic behind them.
         </Highlight>{' '}
-        I was able to get unstuck on complex algorithm problems much faster.
       </p>
     ),
   },
@@ -118,7 +116,7 @@ const testimonials = [
     description: (
       <p>
         As a student, getting relevant interview practice is tough.
-        <Highlight>Talxify's targeted quizzes were perfect for my coursework.</Highlight> The performance analytics showed me exactly where I needed to focus my studies.
+        <Highlight>Talxify's targeted quizzes were perfect for my coursework.</Highlight>
       </p>
     ),
   },
@@ -132,7 +130,6 @@ const testimonials = [
         <Highlight>
           The system design questions were spot-on and the feedback was insightful.
         </Highlight>{' '}
-        It's the best prep tool I've come across.
       </p>
     ),
   },
@@ -146,7 +143,6 @@ const testimonials = [
         <Highlight>
           It automatically showcased my solved problems and quiz results.
         </Highlight>{' '}
-        I included the link in my resume and got great feedback from recruiters.
       </p>
     ),
   },
@@ -158,9 +154,8 @@ const testimonials = [
       <p>
         The variety of questions on Talxify is impressive.
         <Highlight>
-          From basic data structures to advanced machine learning concepts.
+          It kept me challenged and well-prepared for anything.
         </Highlight>{' '}
-        It kept me challenged and well-prepared for anything.
       </p>
     ),
   },
