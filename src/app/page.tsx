@@ -11,7 +11,7 @@ import LandingFooter from "./landing-footer";
 
 export default function LandingPage() {
   return (
-    <div className="flex flex-col min-h-screen bg-background">
+    <div className="flex flex-col min-h-screen bg-background overflow-x-hidden">
       <header className="px-4 lg:px-6 h-14 flex items-center fixed top-0 w-full z-50 bg-black/50 backdrop-blur-sm text-white">
         <Link href="#" className="flex items-center justify-center font-headline font-bold text-xl">
           Talxify
