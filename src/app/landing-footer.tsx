@@ -43,17 +43,6 @@ export default function LandingFooter() {
                 <li><Link href="/dashboard" className="text-muted-foreground hover:text-primary">Dashboard</Link></li>
               </ul>
             </div>
-            <div>
-              <h3 className="mb-4 font-semibold tracking-wider uppercase text-foreground">
-                Company
-              </h3>
-              <ul className="space-y-3">
-                <li><Link href="#" className="text-muted-foreground hover:text-primary">About Us</Link></li>
-                <li><Link href="#" className="text-muted-foreground hover:text-primary">Careers</Link></li>
-                <li><Link href="#" className="text-muted-foreground hover:text-primary">Blog</Link></li>
-                <li><Link href="#contact" className="text-muted-foreground hover:text-primary">Contact</Link></li>
-              </ul>
-            </div>
              <div>
               <h3 className="mb-4 font-semibold tracking-wider uppercase text-foreground">
                 Legal
