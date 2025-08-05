@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Rocket, Code, Briefcase, Percent } from "lucide-react";
+import { Rocket, Code, Briefcase, Percent, Search, RefreshCw, BarChart } from "lucide-react";
 import Link from "next/link";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useForm } from "react-hook-form";
@@ -13,6 +13,10 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useRouter } from "next/navigation";
+import React, { useState, useEffect, useMemo } from "react";
+import type { QuizResult } from "./coding-quiz/analysis/page";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 
 const codingAssistantSchema = z.object({
   topics: z.string().min(1, "Topics are required."),
@@ -29,6 +33,18 @@ export default function DashboardPage() {
     },
   });
 
+  const [recentQuizzes, setRecentQuizzes] = useState<QuizResult[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const storedResults = localStorage.getItem('allQuizResults');
+      if (storedResults) {
+        setRecentQuizzes(JSON.parse(storedResults));
+      }
+    }
+  }, []);
+
   function onSubmit(values: z.infer<typeof codingAssistantSchema>) {
     const params = new URLSearchParams({
         topics: values.topics,
@@ -38,6 +54,27 @@ export default function DashboardPage() {
     router.push(`/dashboard/coding-quiz/instructions?${params.toString()}`);
   }
 
+  const filteredQuizzes = useMemo(() => {
+    return recentQuizzes.filter(quiz => 
+        quiz.topics.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        quiz.difficulty.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [recentQuizzes, searchQuery]);
+
+  const getOverallScore = (analysis: QuizResult['analysis']) => {
+    if (!analysis || analysis.length === 0) return 0;
+    const totalScore = analysis.reduce((sum, item) => sum + item.score, 0);
+    return Math.round((totalScore / analysis.length) * 100);
+  };
+
+  const handleRetakeQuiz = (quiz: QuizResult) => {
+     const params = new URLSearchParams({
+        topics: quiz.topics,
+        difficulty: quiz.difficulty,
+        numQuestions: String(quiz.quizState.length),
+    });
+    router.push(`/dashboard/coding-quiz/instructions?${params.toString()}`);
+  }
 
   return (
     <main className="flex-1 overflow-auto p-4 sm:p-6">
@@ -163,6 +200,70 @@ export default function DashboardPage() {
           </Form>
         </Card>
       </div>
+      
+      <div className="mt-8">
+        <Card className="shadow-lg">
+          <CardHeader>
+            <CardTitle>Activity</CardTitle>
+            <CardDescription>Review your past coding quizzes and retake them to improve.</CardDescription>
+            <div className="relative pt-2">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Input 
+                    placeholder="Search by topic or difficulty..." 
+                    className="pl-10"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <Table>
+                <TableHeader>
+                    <TableRow>
+                        <TableHead>Topic</TableHead>
+                        <TableHead>Difficulty</TableHead>
+                        <TableHead className="text-center">Score</TableHead>
+                        <TableHead className="text-center">Result</TableHead>
+                        <TableHead className="text-right">Retake</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {filteredQuizzes.length > 0 ? filteredQuizzes.map((quiz) => (
+                        <TableRow key={quiz.id}>
+                            <TableCell className="font-medium capitalize">{quiz.topics}</TableCell>
+                            <TableCell>
+                                <Badge variant={
+                                    quiz.difficulty === 'easy' ? 'default' :
+                                    quiz.difficulty === 'moderate' ? 'secondary' : 'destructive'
+                                } className="capitalize">{quiz.difficulty}</Badge>
+                            </TableCell>
+                            <TableCell className="text-center font-semibold">
+                                {getOverallScore(quiz.analysis)}%
+                            </TableCell>
+                            <TableCell className="text-center">
+                                <Button asChild variant="outline" size="sm">
+                                    <Link href={`/dashboard/coding-quiz/analysis?id=${quiz.id}`}>View</Link>
+                                </Button>
+                            </TableCell>
+                            <TableCell className="text-right">
+                                <Button variant="ghost" size="icon" onClick={() => handleRetakeQuiz(quiz)}>
+                                    <RefreshCw className="h-4 w-4" />
+                                </Button>
+                            </TableCell>
+                        </TableRow>
+                    )) : (
+                        <TableRow>
+                            <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                                You haven't taken any quizzes yet.
+                            </TableCell>
+                        </TableRow>
+                    )}
+                </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      </div>
+
     </main>
   );
 }
