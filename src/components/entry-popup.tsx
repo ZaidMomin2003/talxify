@@ -64,7 +64,7 @@ export default function EntryPopup() {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogContent className="max-w-lg p-0 overflow-hidden border-primary/20 shadow-2xl">
-        <div className="relative p-8 text-center bg-[url('/popup.png')]" data-ai-hint="abstract technology">
+        <div className="relative p-8 text-center bg-[url('/popup.png')] bg-cover bg-center bg-no-repeat" data-ai-hint="abstract technology">
             <div className="absolute inset-0 bg-primary/80"></div>
             <motion.div 
               className="relative z-10"
