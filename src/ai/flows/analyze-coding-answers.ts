@@ -13,7 +13,7 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-export const CodingQuestionSchema = z.object({
+const CodingQuestionSchema = z.object({
   questionText: z.string().describe('The text of the coding question.'),
 });
 
@@ -22,7 +22,7 @@ const SubmissionSchema = z.object({
     userAnswer: z.string().describe("The user's submitted code answer."),
 });
 
-export const AnswerAnalysisSchema = z.object({
+const AnswerAnalysisSchema = z.object({
   isCorrect: z.boolean().describe('Whether the user\'s answer is functionally correct.'),
   feedback: z.string().describe('Detailed feedback on the user\'s answer, explaining what is right or wrong.'),
   score: z.number().min(0).max(1).describe('A score from 0.0 to 1.0 indicating the correctness of the answer.'),
