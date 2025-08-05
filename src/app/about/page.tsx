@@ -137,7 +137,7 @@ export default function AboutUsPage() {
                     <Card className="overflow-hidden shadow-lg border-primary/10">
                         <div className="grid md:grid-cols-3 items-center">
                             <div className="md:col-span-1">
-                                <Image src="https://placehold.co/400x400.png" alt="Zaid (Arshad)" width={400} height={400} className="w-full h-full object-cover" data-ai-hint="person portrait" />
+                                <Image src="/about.jpg" alt="Zaid (Arshad)" width={400} height={400} className="w-full h-full object-cover" data-ai-hint="person portrait" />
                             </div>
                             <div className="md:col-span-2 p-8 space-y-4">
                                 <h2 className="text-3xl font-bold font-headline">Meet the Founder</h2>
