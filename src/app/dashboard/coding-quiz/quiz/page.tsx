@@ -33,6 +33,16 @@ export default function CodingQuizPage() {
   useEffect(() => {
     async function fetchQuestions() {
       setIsLoading(true);
+      if (!topics) {
+        toast({
+          title: 'Error',
+          description: 'No topics specified for the quiz.',
+          variant: 'destructive',
+        });
+        router.back();
+        return;
+      }
+
       try {
         const input: GenerateCodingQuestionsInput = {
           taskDescription: `Generate ${numQuestions} coding questions about ${topics}`,
@@ -41,8 +51,17 @@ export default function CodingQuizPage() {
           count: numQuestions
         };
         const result = await generateCodingQuestions(input);
-        setQuestions(result.questions);
-        setUserAnswers(new Array(result.questions.length).fill(''));
+        if (result.questions && result.questions.length > 0) {
+            setQuestions(result.questions);
+            setUserAnswers(new Array(result.questions.length).fill(''));
+        } else {
+             toast({
+                title: 'No Questions',
+                description: 'The AI could not generate questions for the selected topic. Please try another one.',
+                variant: 'destructive',
+            });
+            router.back();
+        }
       } catch (error) {
         console.error('Failed to generate coding questions:', error);
         toast({
@@ -85,7 +104,6 @@ export default function CodingQuizPage() {
       userAnswer: userAnswers[i],
     }));
     
-    // Store results in session storage to pass to the analysis page
     sessionStorage.setItem('quizResults', JSON.stringify(quizState));
     sessionStorage.setItem('quizTopics', topics);
     sessionStorage.setItem('quizDifficulty', difficulty);
@@ -104,7 +122,7 @@ export default function CodingQuizPage() {
   if (questions.length === 0) {
     return (
       <div className="flex h-full w-full flex-col items-center justify-center">
-        <p className="text-muted-foreground">No questions were generated. Please go back and try again.</p>
+        <p className="text-muted-foreground">Could not load questions. Please go back and try again.</p>
          <Button onClick={() => router.back()} className="mt-4">Go Back</Button>
       </div>
     )

@@ -17,7 +17,6 @@ import { useRouter } from "next/navigation";
 const codingAssistantSchema = z.object({
   topics: z.string().min(1, "Topics are required."),
   difficulty: z.enum(["easy", "moderate", "difficult"]),
-  numQuestions: z.coerce.number().min(1, "Please enter a number of questions.").max(10, "You can request a maximum of 10 questions."),
 });
 
 export default function DashboardPage() {
@@ -27,7 +26,6 @@ export default function DashboardPage() {
     defaultValues: {
       topics: "",
       difficulty: "easy",
-      numQuestions: 3,
     },
   });
 
@@ -35,7 +33,7 @@ export default function DashboardPage() {
     const params = new URLSearchParams({
         topics: values.topics,
         difficulty: values.difficulty,
-        numQuestions: String(values.numQuestions),
+        numQuestions: "3",
     });
     router.push(`/dashboard/coding-quiz/instructions?${params.toString()}`);
   }
@@ -133,47 +131,34 @@ export default function DashboardPage() {
                       </FormItem>
                     )}
                   />
-                   <FormField
-                    control={form.control}
-                    name="difficulty"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Difficulty</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select a difficulty" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="easy">Easy</SelectItem>
-                            <SelectItem value="moderate">Moderate</SelectItem>
-                            <SelectItem value="difficult">Difficult</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="numQuestions"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Number of Questions</FormLabel>
-                        <FormControl>
-                          <Input type="number" placeholder="Number of questions to practice" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  <div className="flex items-end gap-4">
+                    <FormField
+                      control={form.control}
+                      name="difficulty"
+                      render={({ field }) => (
+                        <FormItem className="flex-grow">
+                          <FormLabel>Difficulty</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select a difficulty" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="easy">Easy</SelectItem>
+                              <SelectItem value="moderate">Moderate</SelectItem>
+                              <SelectItem value="difficult">Difficult</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                     <Button type="submit" size="lg" variant="secondary">
+                      Start Coding
+                    </Button>
+                  </div>
               </CardContent>
-              <CardFooter>
-                <Button type="submit" className="w-full" size="lg" variant="secondary">
-                  Start Coding
-                </Button>
-              </CardFooter>
             </form>
           </Form>
         </Card>

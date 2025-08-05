@@ -12,12 +12,12 @@ export default function CodingQuizInstructionsPage() {
   const searchParams = useSearchParams();
   const topics = searchParams.get('topics');
   const difficulty = searchParams.get('difficulty');
-  const numQuestions = searchParams.get('numQuestions');
+  const numQuestions = searchParams.get('numQuestions') || '3';
 
   const quizParams = new URLSearchParams({
     topics: topics || '',
     difficulty: difficulty || '',
-    numQuestions: numQuestions || '',
+    numQuestions: numQuestions,
   });
 
   return (
