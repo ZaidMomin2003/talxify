@@ -1,3 +1,4 @@
+
 "use client"
 
 import {
@@ -19,24 +20,24 @@ import {
 } from "@/components/ui/chart"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
-import { BarChart } from "lucide-react";
+import { BarChart, Briefcase, Code } from "lucide-react";
 
 const chartData = [
-    { month: "Jun", yourGrowth: 25000, comparison: 45000 },
-    { month: "Jul", yourGrowth: 40000, comparison: 55000 },
-    { month: "Aug", yourGrowth: 50000, comparison: 60000 },
-    { month: "Sep", yourGrowth: 75000, comparison: 50000 },
-    { month: "Oct", yourGrowth: 120000, comparison: 40000 },
-    { month: "Nov", yourGrowth: 154002, comparison: 65698 },
+    { month: "Jun", interviews: 5, coding: 8 },
+    { month: "Jul", interviews: 7, coding: 10 },
+    { month: "Aug", interviews: 10, coding: 12 },
+    { month: "Sep", interviews: 9, coding: 15 },
+    { month: "Oct", interviews: 12, coding: 18 },
+    { month: "Nov", interviews: 14, coding: 22 },
 ];
 
 const chartConfig = {
-  yourGrowth: {
-    label: "Your Growth",
-    color: "url(#colorYourGrowth)",
+  interviews: {
+    label: "Interviews",
+    color: "url(#colorInterviews)",
   },
-  comparison: {
-    label: "Comparison",
+  coding: {
+    label: "Coding",
     color: "hsl(var(--muted-foreground))",
   },
 }
@@ -48,10 +49,10 @@ const CustomTooltip = ({ active, payload, label }: any) => {
         {payload.map((pld: any, index: number) => (
             <div key={index} className="flex flex-col items-start gap-1.5 rounded-lg border border-border/50 bg-background/90 px-3 py-2 text-xs shadow-xl mb-2">
                 <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 shrink-0 rounded-[2px] bg-[--color-bg]" style={{ '--color-bg': index === 0 ? 'hsl(var(--accent))' : 'hsl(var(--muted-foreground))' } as React.CSSProperties} />
-                    <p className="font-medium text-foreground">{pld.dataKey === 'yourGrowth' ? 'Annual Growth' : 'Comparison Data'}</p>
+                    <span className="w-2.5 h-2.5 shrink-0 rounded-[2px] bg-[--color-bg]" style={{ '--color-bg': index === 0 ? 'hsl(var(--muted-foreground))' : 'hsl(var(--accent))' } as React.CSSProperties} />
+                    <p className="font-medium text-foreground">{pld.dataKey === 'interviews' ? 'Interviews' : 'Coding Questions'}</p>
                 </div>
-                <p className="font-bold text-lg text-foreground/90">${pld.value.toLocaleString()}</p>
+                <p className="font-bold text-lg text-foreground/90">{pld.value}</p>
           </div>
         ))}
       </div>
@@ -80,9 +81,9 @@ const CustomYAxisTick = (props: any) => {
     
     return (
         <g transform={`translate(${x},${y})`}>
-            <foreignObject x={-60} y={-15} width={60} height={30}>
+            <foreignObject x={-40} y={-15} width={40} height={30}>
                 <div className="flex items-center justify-center bg-muted/50 rounded-full text-muted-foreground text-xs px-3 py-1 w-fit ml-auto">
-                    ${payload.value / 1000}K
+                    {payload.value}
                 </div>
             </foreignObject>
         </g>
@@ -96,7 +97,7 @@ export function PerformanceChart() {
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <div className="flex items-center gap-2">
             <BarChart className="w-4 h-4 text-muted-foreground"/>
-            <CardTitle className="text-sm font-medium">Annual Growth</CardTitle>
+            <CardTitle className="text-sm font-medium">Performance</CardTitle>
         </div>
         <Select>
             <SelectTrigger className="w-[120px] h-8 text-xs">
@@ -121,7 +122,7 @@ export function PerformanceChart() {
                 }}
             >
             <defs>
-                <linearGradient id="colorYourGrowth" x1="0" y1="0" x2="1" y2="0">
+                <linearGradient id="colorInterviews" x1="0" y1="0" x2="1" y2="0">
                     <stop offset="5%" stopColor="hsl(var(--accent))" stopOpacity={0.8}/>
                     <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0.8}/>
                 </linearGradient>
@@ -141,8 +142,8 @@ export function PerformanceChart() {
                 tickLine={false}
                 axisLine={false}
                 tick={<CustomYAxisTick />}
-                domain={[0, 200000]}
-                ticks={[25000, 50000, 100000, 200000]}
+                domain={[0, 30]}
+                ticks={[5, 10, 20, 30]}
             />
             <Tooltip
                 cursor={{ stroke: 'hsl(var(--border))', strokeWidth: 1, strokeDasharray: '5 5' }}
@@ -150,7 +151,7 @@ export function PerformanceChart() {
                 wrapperStyle={{ outline: 'none' }}
             />
             <Area
-                dataKey="comparison"
+                dataKey="coding"
                 type="natural"
                 fill="url(#diagonalStripes)"
                 stroke="hsl(var(--muted-foreground))"
@@ -159,9 +160,9 @@ export function PerformanceChart() {
                 dot={false}
             />
             <Line
-                dataKey="yourGrowth"
+                dataKey="interviews"
                 type="natural"
-                stroke="url(#colorYourGrowth)"
+                stroke="url(#colorInterviews)"
                 strokeWidth={3}
                 dot={false}
                 activeDot={(props) => {
