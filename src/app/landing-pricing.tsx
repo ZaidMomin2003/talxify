@@ -15,6 +15,7 @@ const monthlyPlan = {
     '20 AI Mock Interviews',
     'Unlimited Coding Questions',
     'Weekly feedback',
+    'Portfolio Builder',
     '24/7 Customer Support',
   ],
   isPopular: false,
