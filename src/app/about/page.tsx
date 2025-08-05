@@ -8,6 +8,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Marquee } from "@/components/ui/marquee";
 import { TestimonialCard } from "@/app/landing-testimonials";
+import { Button } from "@/components/ui/button";
 
 const testimonials = [
   {
@@ -184,5 +185,3 @@ export default function AboutUsPage() {
         </div>
     );
 }
-
-    
