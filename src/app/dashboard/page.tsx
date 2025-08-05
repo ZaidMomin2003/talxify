@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Rocket, Code, Briefcase, Percent, Search, RefreshCw, BarChart } from "lucide-react";
+import { Rocket, Code, Briefcase, Percent, Search, RefreshCw, BarChart, Info } from "lucide-react";
 import Link from "next/link";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useForm } from "react-hook-form";
@@ -17,6 +17,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import type { QuizResult } from "./coding-quiz/analysis/page";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 
 const codingAssistantSchema = z.object({
   topics: z.string().min(1, "Topics are required."),
@@ -35,6 +36,7 @@ export default function DashboardPage() {
 
   const [recentQuizzes, setRecentQuizzes] = useState<QuizResult[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedQuiz, setSelectedQuiz] = useState<QuizResult | null>(null);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -74,6 +76,10 @@ export default function DashboardPage() {
         numQuestions: String(quiz.quizState.length),
     });
     router.push(`/dashboard/coding-quiz/instructions?${params.toString()}`);
+  }
+
+  const handleInfoClick = (quiz: QuizResult) => {
+    setSelectedQuiz(quiz);
   }
 
   return (
@@ -126,7 +132,7 @@ export default function DashboardPage() {
             <CardDescription>Simulate a real-time interview with an AI.</CardDescription>
           </CardHeader>
           <CardContent className="flex-grow">
-            <form className="space-y-4">
+             <form className="space-y-4">
                <div>
                 <Label htmlFor="topic">Topic</Label>
                 <Input id="topic" placeholder="e.g., React, System Design" />
@@ -221,34 +227,41 @@ export default function DashboardPage() {
                 <TableHeader>
                     <TableRow>
                         <TableHead>Topic</TableHead>
-                        <TableHead>Difficulty</TableHead>
-                        <TableHead className="text-center">Score</TableHead>
-                        <TableHead className="text-center">Result</TableHead>
-                        <TableHead className="text-right">Retake</TableHead>
+                        <TableHead className="hidden md:table-cell">Difficulty</TableHead>
+                        <TableHead className="hidden md:table-cell text-center">Score</TableHead>
+                        <TableHead className="hidden md:table-cell text-center">Result</TableHead>
+                        <TableHead className="text-right">Action</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
                     {filteredQuizzes.length > 0 ? filteredQuizzes.map((quiz) => (
                         <TableRow key={quiz.id}>
                             <TableCell className="font-medium capitalize">{quiz.topics}</TableCell>
-                            <TableCell>
+                            <TableCell className="hidden md:table-cell">
                                 <Badge variant={
                                     quiz.difficulty === 'easy' ? 'default' :
                                     quiz.difficulty === 'moderate' ? 'secondary' : 'destructive'
                                 } className="capitalize">{quiz.difficulty}</Badge>
                             </TableCell>
-                            <TableCell className="text-center font-semibold">
+                            <TableCell className="hidden md:table-cell text-center font-semibold">
                                 {getOverallScore(quiz.analysis)}%
                             </TableCell>
-                            <TableCell className="text-center">
+                            <TableCell className="hidden md:table-cell text-center">
                                 <Button asChild variant="outline" size="sm">
                                     <Link href={`/dashboard/coding-quiz/analysis?id=${quiz.id}`}>View</Link>
                                 </Button>
                             </TableCell>
                             <TableCell className="text-right">
-                                <Button variant="ghost" size="icon" onClick={() => handleRetakeQuiz(quiz)}>
+                                <Button variant="ghost" size="icon" className="hidden md:inline-flex" onClick={() => handleRetakeQuiz(quiz)}>
                                     <RefreshCw className="h-4 w-4" />
                                 </Button>
+                                <Dialog onOpenChange={(open) => !open && setSelectedQuiz(null)}>
+                                  <DialogTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="md:hidden" onClick={() => handleInfoClick(quiz)}>
+                                      <Info className="h-4 w-4" />
+                                    </Button>
+                                  </DialogTrigger>
+                                </Dialog>
                             </TableCell>
                         </TableRow>
                     )) : (
@@ -260,6 +273,40 @@ export default function DashboardPage() {
                     )}
                 </TableBody>
             </Table>
+            {selectedQuiz && (
+              <Dialog open={!!selectedQuiz} onOpenChange={(open) => !open && setSelectedQuiz(null)}>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle className="capitalize">{selectedQuiz.topics} Quiz Details</DialogTitle>
+                    <DialogDescription>
+                      Review the details of your past quiz attempt.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground">Difficulty</span>
+                      <Badge variant={
+                          selectedQuiz.difficulty === 'easy' ? 'default' :
+                          selectedQuiz.difficulty === 'moderate' ? 'secondary' : 'destructive'
+                      } className="capitalize">{selectedQuiz.difficulty}</Badge>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground">Score</span>
+                      <span className="font-semibold">{getOverallScore(selectedQuiz.analysis)}%</span>
+                    </div>
+                  </div>
+                  <DialogFooter className="sm:justify-start gap-2">
+                     <Button asChild variant="outline">
+                        <Link href={`/dashboard/coding-quiz/analysis?id=${selectedQuiz.id}`} onClick={() => setSelectedQuiz(null)}>View Full Analysis</Link>
+                    </Button>
+                    <Button onClick={() => { handleRetakeQuiz(selectedQuiz); setSelectedQuiz(null); }}>
+                      <RefreshCw className="mr-2 h-4 w-4" />
+                      Retake Quiz
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            )}
           </CardContent>
         </Card>
       </div>
