@@ -166,57 +166,62 @@ export default function DashboardLayout({
       </Sidebar>
       <SidebarInset>
         <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-background/80 px-4 backdrop-blur-sm sm:px-6 lg:px-8">
-            <div className="md:hidden">
-              <SidebarTrigger />
+            <div className="flex items-center gap-2 md:hidden">
+              <Bot className="h-6 w-6 text-primary" />
+              <span className="font-bold">Talxify</span>
             </div>
-            <div className="flex-1" />
             
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <History className="h-5 w-5" />
-                  <span className="sr-only">View recent activity</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-80">
-                <DropdownMenuLabel>Recent Activity</DropdownMenuLabel>
-                <div className="p-2">
-                  <div className="relative">
-                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input 
-                      placeholder="Search activity..." 
-                      className="pl-8" 
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                    />
-                  </div>
+            <div className="flex flex-1 items-center justify-end gap-2">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon">
+                      <History className="h-5 w-5" />
+                      <span className="sr-only">View recent activity</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-80">
+                    <DropdownMenuLabel>Recent Activity</DropdownMenuLabel>
+                    <div className="p-2">
+                      <div className="relative">
+                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <Input 
+                          placeholder="Search activity..." 
+                          className="pl-8" 
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    <DropdownMenuSeparator />
+                    {filteredActivity.length > 0 ? (
+                      filteredActivity.map((item) => (
+                        <DropdownMenuItem key={item.id} asChild>
+                          <Link href={`/dashboard/coding-quiz/analysis?id=${item.id}`} className="cursor-pointer">
+                            <div className="flex items-start gap-3">
+                                <div className="bg-primary/10 text-primary rounded-full p-2">
+                                    <Code className="h-4 w-4" />
+                                </div>
+                                <div>
+                                    <p className="font-semibold text-sm capitalize">{item.topics} Quiz</p>
+                                    <p className="text-xs text-muted-foreground">
+                                      {formatDistanceToNow(new Date(item.timestamp), { addSuffix: true })}
+                                    </p>
+                                </div>
+                            </div>
+                          </Link>
+                        </DropdownMenuItem>
+                      ))
+                    ) : (
+                      <div className="p-4 text-center text-sm text-muted-foreground">
+                        No recent activity found.
+                      </div>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                <div className="md:hidden">
+                  <SidebarTrigger />
                 </div>
-                <DropdownMenuSeparator />
-                {filteredActivity.length > 0 ? (
-                  filteredActivity.map((item) => (
-                    <DropdownMenuItem key={item.id} asChild>
-                      <Link href={`/dashboard/coding-quiz/analysis?id=${item.id}`} className="cursor-pointer">
-                        <div className="flex items-start gap-3">
-                            <div className="bg-primary/10 text-primary rounded-full p-2">
-                                <Code className="h-4 w-4" />
-                            </div>
-                            <div>
-                                <p className="font-semibold text-sm capitalize">{item.topics} Quiz</p>
-                                <p className="text-xs text-muted-foreground">
-                                  {formatDistanceToNow(new Date(item.timestamp), { addSuffix: true })}
-                                </p>
-                            </div>
-                        </div>
-                      </Link>
-                    </DropdownMenuItem>
-                  ))
-                ) : (
-                  <div className="p-4 text-center text-sm text-muted-foreground">
-                    No recent activity found.
-                  </div>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
+            </div>
         </header>
         {children}
       </SidebarInset>
