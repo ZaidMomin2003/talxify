@@ -7,6 +7,7 @@ import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
 
 export default function SignupPage() {
   const [name, setName] = useState('');
@@ -14,18 +15,26 @@ export default function SignupPage() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const { signUp } = useAuth();
   const router = useRouter();
+  const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    // This is a dummy signup.
-    setTimeout(() => {
-      login({ email });
+    try {
+      await signUp({ name, email, password });
       router.push('/dashboard');
+    } catch (error: any) {
+      console.error(error);
+      toast({
+        title: "Sign-up failed",
+        description: error.message || "An unexpected error occurred.",
+        variant: "destructive",
+      });
+    } finally {
       setLoading(false);
-    }, 1500);
+    }
   };
 
   return (

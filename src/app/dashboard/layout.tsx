@@ -27,7 +27,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { Bot, Code, LayoutGrid, MessageSquare, BarChart, Settings, History, Search, User } from "lucide-react";
+import { Bot, Code, LayoutGrid, MessageSquare, BarChart, Settings, History, Search, User, LogOut } from "lucide-react";
 import type { QuizResult } from "./coding-quiz/analysis/page";
 import { formatDistanceToNow } from 'date-fns';
 import { useAuth } from "@/context/auth-context";
@@ -40,7 +40,7 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, loading } = useAuth();
+  const { user, loading, logout } = useAuth();
   const [recentActivity, setRecentActivity] = useState<QuizResult[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -75,7 +75,7 @@ export default function DashboardLayout({
   if (loading || !user) {
     return (
         <div className="flex h-screen items-center justify-center">
-            {/* You can add a loading spinner here */}
+            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
         </div>
     );
   }
@@ -112,19 +112,43 @@ export default function DashboardLayout({
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter>
-          <div className="flex items-center gap-3 rounded-lg bg-muted p-2.5">
-             <Avatar className="h-10 w-10 border-2 border-primary">
-              <AvatarImage src="https://placehold.co/40x40.png" alt="User avatar" data-ai-hint="person avatar" />
-              <AvatarFallback>JD</AvatarFallback>
-            </Avatar>
-            <div className="flex-1">
-              <p className="text-sm font-semibold">John Doe</p>
-              <p className="text-xs text-muted-foreground">Pro Member</p>
-            </div>
-            <Button variant="ghost" size="icon" className="h-8 w-8">
-                <Settings className="h-4 w-4"/>
-            </Button>
-          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <div className="flex items-center gap-3 rounded-lg bg-muted p-2.5 cursor-pointer hover:bg-accent transition-colors">
+                  <Avatar className="h-10 w-10 border-2 border-primary">
+                    <AvatarImage src={user.photoURL || "https://placehold.co/40x40.png"} alt="User avatar" data-ai-hint="person avatar" />
+                    <AvatarFallback>{user.email?.[0].toUpperCase()}</AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 overflow-hidden">
+                    <p className="text-sm font-semibold truncate">{user.displayName || user.email}</p>
+                    <p className="text-xs text-muted-foreground">Pro Member</p>
+                  </div>
+                   <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
+                      <Settings className="h-4 w-4"/>
+                  </Button>
+                </div>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-56 mb-2" align="end" forceMount>
+                <DropdownMenuLabel className="font-normal">
+                    <div className="flex flex-col space-y-1">
+                        <p className="text-sm font-medium leading-none">{user.displayName || 'User'}</p>
+                        <p className="text-xs leading-none text-muted-foreground">
+                        {user.email}
+                        </p>
+                    </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem>
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>Settings</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={logout}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Sign out</span>
+                </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
