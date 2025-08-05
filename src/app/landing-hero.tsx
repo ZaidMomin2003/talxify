@@ -6,13 +6,13 @@ import { easeInOut, motion, spring } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import {
   ArrowRight,
-  BrainCircuit,
-  Code,
+  Database,
   Sparkles,
-  BarChart,
-  Bot
+  Zap,
 } from 'lucide-react';
 import Link from 'next/link';
+import { Bot, BrainCircuit, Code, BarChart } from 'lucide-react';
+
 
 export default function LandingHero() {
   const [stats, setStats] = useState({
@@ -113,7 +113,11 @@ export default function LandingHero() {
 
        <div className="fadein-blur relative z-20 mx-auto mb-10 h-[250px] w-[250px] lg:absolute lg:top-1/2 lg:right-1/4 lg:mx-0 lg:mb-0 lg:h-[400px] lg:w-[400px] lg:translate-x-1/2 lg:-translate-y-1/2">
         <div className="absolute inset-0 flex items-center justify-center">
-            <Bot className="h-full w-full object-contain text-primary/10 drop-shadow-[0_0_35px_hsl(var(--primary)/0.5)] transition-all duration-1000 hover:scale-110" />
+             <img
+              src="https://blocks.mvp-subha.me/Adobe%20Express%20-%20file(1).png"
+              alt="Talxify 3D Visualization"
+              className="h-full w-full object-contain drop-shadow-[0_0_35px_hsl(var(--primary)/0.5)] transition-all duration-1000 hover:scale-110"
+            />
         </div>
         <motion.div
           variants={tooltipVariants}
