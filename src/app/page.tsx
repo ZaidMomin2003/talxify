@@ -21,7 +21,7 @@ export default function LandingPage() {
         </nav>
       </header>
       <main className="flex-1">
-        <LandingHero />
+        
       </main>
     </div>
   );
