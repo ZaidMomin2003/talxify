@@ -4,7 +4,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Rocket, Code, Briefcase, Percent } from "lucide-react";
 import Link from "next/link";
-import { PerformanceChart } from "@/components/performance-chart";
 
 export default function DashboardPage() {
   return (
@@ -96,12 +95,6 @@ export default function DashboardPage() {
               <Link href="#">Start Coding</Link>
             </Button>
           </CardFooter>
-        </Card>
-      </div>
-
-      <div className="mt-8">
-        <Card className="overflow-hidden shadow-lg relative bg-card/50 backdrop-blur-sm border-border/10">
-            <PerformanceChart />
         </Card>
       </div>
     </main>
