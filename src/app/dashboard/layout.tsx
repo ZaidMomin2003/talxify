@@ -1,8 +1,9 @@
+
 "use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -27,6 +28,8 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { Bot, Code, LayoutGrid, MessageSquare, BarChart, Settings, History, Search, User } from "lucide-react";
+import type { QuizResult } from "./coding-quiz/analysis/page";
+import { formatDistanceToNow } from 'date-fns';
 
 export default function DashboardLayout({
   children,
@@ -34,12 +37,29 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const [recentActivity, setRecentActivity] = useState<QuizResult[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  useEffect(() => {
+    // This effect runs on the client-side, where localStorage is available.
+    if (typeof window !== 'undefined') {
+      const storedResults = localStorage.getItem('allQuizResults');
+      if (storedResults) {
+        setRecentActivity(JSON.parse(storedResults));
+      }
+    }
+  }, [pathname]); // Rerun when path changes to maybe update activity
 
   const menuItems = [
     { href: "/dashboard", label: "Dashboard", icon: LayoutGrid },
     { href: "/dashboard/portfolio", label: "Portfolio", icon: User },
     { href: "/performance", label: "Performance", icon: BarChart },
   ];
+
+  const filteredActivity = recentActivity.filter(item =>
+    item.topics.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    item.difficulty.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <SidebarProvider>
@@ -107,43 +127,38 @@ export default function DashboardLayout({
                 <div className="p-2">
                   <div className="relative">
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input placeholder="Search activity..." className="pl-8" />
+                    <Input 
+                      placeholder="Search activity..." 
+                      className="pl-8" 
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
                   </div>
                 </div>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                  <div className="flex items-start gap-3">
-                    <div className="bg-primary/10 text-primary rounded-full p-2">
-                      <MessageSquare className="h-4 w-4" />
-                    </div>
-                    <div>
-                      <p className="font-semibold text-sm">Frontend Interview</p>
-                      <p className="text-xs text-muted-foreground">2 days ago</p>
-                    </div>
+                {filteredActivity.length > 0 ? (
+                  filteredActivity.map((item) => (
+                    <DropdownMenuItem key={item.id} asChild>
+                      <Link href={`/dashboard/coding-quiz/analysis?id=${item.id}`} className="cursor-pointer">
+                        <div className="flex items-start gap-3">
+                            <div className="bg-primary/10 text-primary rounded-full p-2">
+                                <Code className="h-4 w-4" />
+                            </div>
+                            <div>
+                                <p className="font-semibold text-sm capitalize">{item.topics} Quiz</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {formatDistanceToNow(new Date(item.timestamp), { addSuffix: true })}
+                                </p>
+                            </div>
+                        </div>
+                      </Link>
+                    </DropdownMenuItem>
+                  ))
+                ) : (
+                  <div className="p-4 text-center text-sm text-muted-foreground">
+                    No recent activity found.
                   </div>
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                    <div className="flex items-start gap-3">
-                        <div className="bg-primary/10 text-primary rounded-full p-2">
-                            <Code className="h-4 w-4" />
-                        </div>
-                        <div>
-                            <p className="font-semibold text-sm">Algorithm Challenge</p>
-                            <p className="text-xs text-muted-foreground">4 days ago</p>
-                        </div>
-                    </div>
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                    <div className="flex items-start gap-3">
-                        <div className="bg-primary/10 text-primary rounded-full p-2">
-                            <MessageSquare className="h-4 w-4" />
-                        </div>
-                        <div>
-                            <p className="font-semibold text-sm">System Design Mock</p>
-                            <p className="text-xs text-muted-foreground">1 week ago</p>
-                        </div>
-                    </div>
-                </DropdownMenuItem>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
         </header>

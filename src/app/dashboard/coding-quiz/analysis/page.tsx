@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useEffect, useState, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -10,29 +10,85 @@ import { Loader2, CheckCircle, XCircle, Sparkles } from 'lucide-react';
 import type { QuizState } from '../quiz/page';
 import { analyzeCodingAnswers, AnalyzeCodingAnswersInput, AnswerAnalysis } from '@/ai/flows/analyze-coding-answers';
 
+export type QuizResult = {
+  id: string;
+  timestamp: string;
+  quizState: QuizState;
+  analysis: AnswerAnalysis[];
+  topics: string;
+  difficulty: string;
+}
+
 export default function CodingQuizAnalysisPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [analysis, setAnalysis] = useState<AnswerAnalysis[] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [quizState, setQuizState] = useState<QuizState | null>(null);
+  const [quizResult, setQuizResult] = useState<QuizResult | null>(null);
 
   useEffect(() => {
-    const results = sessionStorage.getItem('quizResults');
-    if (!results) {
-      // If no results, redirect back to the dashboard
-      router.replace('/dashboard');
-      return;
-    }
-
-    const parsedState: QuizState = JSON.parse(results);
-    setQuizState(parsedState);
+    const quizId = searchParams.get('id');
 
     async function getAnalysis() {
       setIsLoading(true);
+      if (quizId) {
+        // Load from localStorage if an ID is provided
+        const allResults: QuizResult[] = JSON.parse(localStorage.getItem('allQuizResults') || '[]');
+        const existingResult = allResults.find(r => r.id === quizId);
+        if (existingResult) {
+          setQuizResult(existingResult);
+          setQuizState(existingResult.quizState);
+          setAnalysis(existingResult.analysis);
+          setIsLoading(false);
+          return;
+        } else {
+          // If no result found with that ID, redirect
+          router.replace('/dashboard');
+          return;
+        }
+      }
+
+      const results = sessionStorage.getItem('quizResults');
+      if (!results) {
+        // If no results, redirect back to the dashboard
+        router.replace('/dashboard');
+        return;
+      }
+      
+      const parsedState: QuizState = JSON.parse(results);
+      setQuizState(parsedState);
+      
+      const topics = sessionStorage.getItem('quizTopics') || 'N/A';
+      const difficulty = sessionStorage.getItem('quizDifficulty') || 'N/A';
+
       try {
         const input: AnalyzeCodingAnswersInput = { submissions: parsedState };
-        const result = await analyzeCodingAnswers(input);
-        setAnalysis(result.analysis);
+        const analysisResult = await analyzeCodingAnswers(input);
+        setAnalysis(analysisResult.analysis);
+
+        // Save the complete result to localStorage
+        const newResult: QuizResult = {
+          id: `quiz_${Date.now()}`,
+          timestamp: new Date().toISOString(),
+          quizState: parsedState,
+          analysis: analysisResult.analysis,
+          topics,
+          difficulty,
+        };
+
+        const allResults: QuizResult[] = JSON.parse(localStorage.getItem('allQuizResults') || '[]');
+        allResults.unshift(newResult); // Add to the beginning
+        localStorage.setItem('allQuizResults', JSON.stringify(allResults.slice(0, 10))); // Keep last 10
+
+        // Clean up sessionStorage
+        sessionStorage.removeItem('quizResults');
+        sessionStorage.removeItem('quizTopics');
+        sessionStorage.removeItem('quizDifficulty');
+
+        // Update URL to reflect the new ID without reloading the page
+        router.replace(`/dashboard/coding-quiz/analysis?id=${newResult.id}`, undefined);
+
       } catch (error) {
         console.error('Failed to analyze answers:', error);
         // Handle error state
@@ -42,7 +98,7 @@ export default function CodingQuizAnalysisPage() {
     }
 
     getAnalysis();
-  }, [router]);
+  }, [router, searchParams]);
 
   const overallScore = useMemo(() => {
     if (!analysis) return 0;

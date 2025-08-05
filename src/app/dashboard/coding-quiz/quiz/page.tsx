@@ -87,6 +87,8 @@ export default function CodingQuizPage() {
     
     // Store results in session storage to pass to the analysis page
     sessionStorage.setItem('quizResults', JSON.stringify(quizState));
+    sessionStorage.setItem('quizTopics', topics);
+    sessionStorage.setItem('quizDifficulty', difficulty);
     router.push('/dashboard/coding-quiz/analysis');
   };
 
