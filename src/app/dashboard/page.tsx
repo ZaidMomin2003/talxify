@@ -100,14 +100,8 @@ export default function DashboardPage() {
       </div>
 
       <div className="mt-8">
-        <Card className="shadow-lg">
-          <CardHeader>
-              <CardTitle>Performance Analytics</CardTitle>
-              <CardDescription>Track your improvement over time.</CardDescription>
-          </CardHeader>
-          <CardContent>
-              <PerformanceChart />
-          </CardContent>
+        <Card className="overflow-hidden shadow-lg relative bg-card/50 backdrop-blur-sm border-border/10">
+            <PerformanceChart />
         </Card>
       </div>
     </main>
