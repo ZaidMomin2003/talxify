@@ -10,15 +10,20 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
-export default function LoginPage() {
+export default function SignupPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const { login } = useAuth();
   const router = useRouter();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleSignup = (e: React.FormEvent) => {
     e.preventDefault();
-    // This is a dummy login. In a real app, you'd validate credentials.
+    if (password !== confirmPassword) {
+      alert("Passwords don't match");
+      return;
+    }
+    // This is a dummy signup. In a real app, you'd create a new user.
     login({ email });
     router.push('/dashboard');
   };
@@ -27,10 +32,10 @@ export default function LoginPage() {
     <div className="flex h-screen items-center justify-center bg-background p-4">
       <Card className="w-full max-w-sm">
         <CardHeader>
-          <CardTitle className="text-2xl">Login</CardTitle>
-          <CardDescription>Enter your credentials to access your dashboard.</CardDescription>
+          <CardTitle className="text-2xl">Sign Up</CardTitle>
+          <CardDescription>Create an account to get started.</CardDescription>
         </CardHeader>
-        <form onSubmit={handleLogin}>
+        <form onSubmit={handleSignup}>
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
@@ -53,15 +58,25 @@ export default function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
               />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirm-password">Confirm Password</Label>
+              <Input
+                id="confirm-password"
+                type="password"
+                required
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+              />
+            </div>
           </CardContent>
           <CardFooter className="flex-col items-stretch gap-4">
             <Button type="submit" className="w-full">
-              Login
+              Sign Up
             </Button>
-            <div className="text-center text-sm text-muted-foreground">
-              Don't have an account?{' '}
-              <Link href="/signup" className="underline hover:text-primary">
-                Sign up
+             <div className="text-center text-sm text-muted-foreground">
+              Already have an account?{' '}
+              <Link href="/login" className="underline hover:text-primary">
+                Login
               </Link>
             </div>
           </CardFooter>

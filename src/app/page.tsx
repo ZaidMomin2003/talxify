@@ -9,10 +9,13 @@ export default function LandingPage() {
         <Link href="#" className="flex items-center justify-center">
           <span className="sr-only">Talxify</span>
         </Link>
-        <nav className="ml-auto flex gap-4 sm:gap-6">
+        <nav className="ml-auto flex gap-4 sm:gap-6 items-center">
           <Link href="/login" className="text-sm font-medium hover:underline underline-offset-4">
             Login
           </Link>
+          <Button asChild variant="outline">
+            <Link href="/signup">Sign Up</Link>
+          </Button>
           <Button asChild>
             <Link href="/dashboard">Get Started</Link>
           </Button>
