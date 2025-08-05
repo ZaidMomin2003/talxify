@@ -14,6 +14,7 @@ import LandingFooter from "./landing-footer";
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence, easeInOut } from 'framer-motion';
 import { Menu, X, ArrowRight, Bot } from 'lucide-react';
+import { useAuth } from "@/context/auth-context";
 
 interface NavItem {
   name: string;
@@ -32,6 +33,7 @@ export default function LandingPage() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
+  const { user, loading } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -167,26 +169,41 @@ export default function LandingPage() {
               className="hidden items-center space-x-3 lg:flex"
               variants={itemVariants}
             >
-              <Link
-                href="/login"
-                className="px-4 py-2 text-sm font-medium transition-colors duration-200"
-              >
-                Sign In
-              </Link>
-
-              <motion.div
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                <Button asChild>
-                  <Link
-                    href="/signup"
+              {loading ? (
+                <div className="h-9 w-24 animate-pulse rounded-md bg-muted"></div>
+              ) : user ? (
+                 <motion.div
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
                   >
-                    <span>Get Started</span>
-                    <ArrowRight className="h-4 w-4" />
+                    <Button asChild>
+                      <Link href="/dashboard">
+                        <span>Dashboard</span>
+                        <ArrowRight className="h-4 w-4" />
+                      </Link>
+                    </Button>
+                  </motion.div>
+              ) : (
+                <>
+                  <Link
+                    href="/login"
+                    className="px-4 py-2 text-sm font-medium transition-colors duration-200"
+                  >
+                    Sign In
                   </Link>
-                </Button>
-              </motion.div>
+                  <motion.div
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <Button asChild>
+                      <Link href="/signup">
+                        <span>Get Started</span>
+                        <ArrowRight className="h-4 w-4" />
+                      </Link>
+                    </Button>
+                  </motion.div>
+                </>
+              )}
             </motion.div>
 
             <motion.button
@@ -241,20 +258,32 @@ export default function LandingPage() {
                   className="border-border space-y-3 border-t pt-6"
                   variants={mobileItemVariants}
                 >
-                  <Link
-                    href="/login"
-                    className="block w-full rounded-lg py-3 text-center font-medium transition-colors duration-200"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    Sign In
-                  </Link>
-                  <Link
-                    href="/signup"
-                    className="bg-foreground text-background block w-full rounded-lg py-3 text-center font-medium transition-all duration-200"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    Get Started
-                  </Link>
+                  {user ? (
+                      <Link
+                        href="/dashboard"
+                        className="bg-foreground text-background block w-full rounded-lg py-3 text-center font-medium transition-all duration-200"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        Go to Dashboard
+                      </Link>
+                  ) : (
+                    <>
+                      <Link
+                        href="/login"
+                        className="block w-full rounded-lg py-3 text-center font-medium transition-colors duration-200"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        Sign In
+                      </Link>
+                      <Link
+                        href="/signup"
+                        className="bg-foreground text-background block w-full rounded-lg py-3 text-center font-medium transition-all duration-200"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        Get Started
+                      </Link>
+                    </>
+                  )}
                 </motion.div>
               </div>
             </motion.div>
