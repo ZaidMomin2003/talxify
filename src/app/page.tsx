@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import LandingHero from "./landing-hero";
 import LandingFeatures from "./landing-features";
+import LandingTestimonials from "./landing-testimonials";
 
 export default function LandingPage() {
   return (
@@ -24,6 +25,7 @@ export default function LandingPage() {
       <main className="flex-1">
         <LandingHero />
         <LandingFeatures />
+        <LandingTestimonials />
       </main>
     </div>
   );
