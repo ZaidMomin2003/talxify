@@ -32,7 +32,7 @@ export default function LoginPage() {
       <div className="z-10 w-full max-w-6xl">
         <div className="bg-card/50 backdrop-blur-sm overflow-hidden rounded-2xl shadow-lg border border-border/20 md:rounded-3xl lg:grid lg:grid-cols-2">
           {/* Left Side */}
-          <div className="brand-side relative hidden lg:block m-4 rounded-xl bg-[url('https://placehold.co/800x1200.png')] bg-cover p-12 text-white" data-ai-hint="abstract technology">
+          <div className="brand-side relative hidden lg:block m-4 rounded-xl bg-[url('/popup.png')] bg-cover p-12 text-white" data-ai-hint="abstract technology">
             <div className='absolute inset-0 bg-primary/80 rounded-xl'></div>
             <div className="relative z-10 flex flex-col justify-between h-full">
                 <div>
@@ -71,6 +71,11 @@ export default function LoginPage() {
           <div className="flex flex-col justify-center p-8 sm:p-12">
             <div className="mx-auto w-full max-w-md">
               <div className="mb-8 text-center">
+                <div className="flex justify-center mb-4">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                    <Bot size={32} />
+                  </div>
+                </div>
                 <h2 className="text-3xl font-bold font-headline text-foreground">
                   Welcome Back
                 </h2>
