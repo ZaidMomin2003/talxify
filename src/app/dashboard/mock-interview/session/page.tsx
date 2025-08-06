@@ -91,17 +91,6 @@ export default function MockInterviewSessionPage() {
         }
     }, [toast]);
 
-    const startInterview = useCallback(async () => {
-        if (hasCameraPermission === false) {
-             toast({ title: 'Cannot Start Interview', description: 'Permissions for camera and microphone are required.', variant: 'destructive' });
-             return;
-        }
-        setInterviewState('generating_response');
-        const initialMessage = `Hello! Thank you for joining me. I'll be interviewing you for a ${role} position focused on ${topic}. Are you ready to begin?`;
-        setMessages([{ role: 'model', content: initialMessage }]);
-        speakResponse(initialMessage);
-    }, [role, topic, toast, hasCameraPermission, speakResponse]);
-
     const handleUserResponse = useCallback(async (transcript: string) => {
         if (!transcript.trim()) {
             setInterviewState('listening'); // If empty transcript, just go back to listening
@@ -128,63 +117,73 @@ export default function MockInterviewSessionPage() {
         }
 
     }, [messages, interviewContext, speakResponse, toast]);
-
-     const setupDeepgram = useCallback(() => {
-        if (!process.env.NEXT_PUBLIC_DEEPGRAM_API_KEY) {
-            throw new Error("Deepgram API Key not found in environment variables.");
+    
+    const startInterview = useCallback(async () => {
+        if (hasCameraPermission === false) {
+             toast({ title: 'Cannot Start Interview', description: 'Permissions for camera and microphone are required.', variant: 'destructive' });
+             return;
         }
+        setInterviewState('generating_response');
+        const initialMessage = `Hello! Thank you for joining me. I'll be interviewing you for a ${role} position focused on ${topic}. Are you ready to begin?`;
+        setMessages([{ role: 'model', content: initialMessage }]);
+        speakResponse(initialMessage);
+    }, [role, topic, toast, hasCameraPermission, speakResponse]);
+
+    const startListening = useCallback(async () => {
+        if (isRecording || interviewState !== 'listening') return;
+    
+        if (!process.env.NEXT_PUBLIC_DEEPGRAM_API_KEY) {
+            toast({ title: 'Configuration Error', description: 'Deepgram API Key not found.', variant: 'destructive' });
+            return;
+        }
+    
         const deepgram = createClient(process.env.NEXT_PUBLIC_DEEPGRAM_API_KEY);
         const connection = deepgram.listen.live({
             model: 'nova-2',
             smart_format: true,
             interim_results: true,
         });
-
+    
+        connection.on(LiveTranscriptionEvents.Open, async () => {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                const recorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+    
+                recorder.ondataavailable = (event) => {
+                    if (event.data.size > 0 && connection.getReadyState() === 1) {
+                        connection.send(event.data);
+                    }
+                };
+    
+                mediaRecorderRef.current = recorder;
+                setIsRecording(true);
+                recorder.start(250);
+    
+            } catch (error) {
+                console.error('Error getting user media:', error);
+                toast({ title: 'Microphone Error', description: 'Could not access your microphone.', variant: 'destructive' });
+                if (connection.getReadyState() === 1) connection.close();
+            }
+        });
+    
         connection.on(LiveTranscriptionEvents.Transcript, (data) => {
             const transcript = data.channel.alternatives[0].transcript;
             if (transcript) {
                setCurrentTranscript(transcript);
             }
         });
-        
-         connection.on(LiveTranscriptionEvents.Close, () => {
+    
+        connection.on(LiveTranscriptionEvents.Close, () => {
             console.log('Deepgram connection closed.');
         });
-
-         connection.on(LiveTranscriptionEvents.Error, (e) => {
+    
+        connection.on(LiveTranscriptionEvents.Error, (e) => {
             console.error("Deepgram Error: ", e);
-         });
-
+            toast({ title: 'Real-time Error', description: 'A transcription error occurred.', variant: 'destructive' });
+        });
+    
         deepgramConnectionRef.current = connection;
-    }, []);
-
-    const startListening = useCallback(async () => {
-        if (isRecording || interviewState !== 'listening') return;
-        
-        setupDeepgram();
-
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            if (deepgramConnectionRef.current?.getReadyState() === 1) {
-                setIsRecording(true);
-                mediaRecorderRef.current = new MediaRecorder(stream, { mimeType: 'audio/webm' });
-                
-                mediaRecorderRef.current.ondataavailable = (event) => {
-                    if (event.data.size > 0 && deepgramConnectionRef.current?.getReadyState() === 1) {
-                         deepgramConnectionRef.current.send(event.data);
-                    }
-                };
-                mediaRecorderRef.current.start(250);
-            } else {
-                 console.error("Deepgram connection not ready.");
-                 toast({ title: 'Real-time Error', description: 'Could not connect to transcription service.', variant: 'destructive' });
-            }
-        } catch (error) {
-            console.error('Error setting up media recorder:', error);
-            toast({ title: 'Microphone Error', description: 'Could not start recording.', variant: 'destructive' });
-            setInterviewState('error');
-        }
-    }, [isRecording, interviewState, toast, setupDeepgram]);
+    }, [isRecording, interviewState, toast]);
 
     const stopListening = useCallback(() => {
         if (mediaRecorderRef.current) {
@@ -324,5 +323,3 @@ export default function MockInterviewSessionPage() {
         </main>
     );
 }
-
-    
