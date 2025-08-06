@@ -73,17 +73,6 @@ export default function MockInterviewSessionPage() {
         };
     }, [toast]);
     
-    const startInterview = useCallback(async () => {
-        if (hasCameraPermission === false) {
-             toast({ title: 'Cannot Start Interview', description: 'Permissions for camera and microphone are required.', variant: 'destructive' });
-             return;
-        }
-        setInterviewState('generating_response');
-        const initialMessage = `Hello! Thank you for joining me. I'll be interviewing you for a ${role} position focused on ${topic}. Are you ready to begin?`;
-        setMessages([{ role: 'model', content: initialMessage }]);
-        speakResponse(initialMessage);
-    }, [role, topic, toast, hasCameraPermission, speakResponse]);
-
     const speakResponse = useCallback(async (text: string) => {
         setInterviewState('speaking_response');
         try {
@@ -101,6 +90,17 @@ export default function MockInterviewSessionPage() {
             setInterviewState('listening'); // Even if TTS fails, allow user to respond
         }
     }, [toast]);
+
+    const startInterview = useCallback(async () => {
+        if (hasCameraPermission === false) {
+             toast({ title: 'Cannot Start Interview', description: 'Permissions for camera and microphone are required.', variant: 'destructive' });
+             return;
+        }
+        setInterviewState('generating_response');
+        const initialMessage = `Hello! Thank you for joining me. I'll be interviewing you for a ${role} position focused on ${topic}. Are you ready to begin?`;
+        setMessages([{ role: 'model', content: initialMessage }]);
+        speakResponse(initialMessage);
+    }, [role, topic, toast, hasCameraPermission, speakResponse]);
 
     const handleUserResponse = useCallback(async (transcript: string) => {
         if (!transcript.trim()) {
