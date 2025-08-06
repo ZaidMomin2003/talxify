@@ -8,17 +8,17 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Loader2, Mic, AlertTriangle, Video, Bot, User, Keyboard } from 'lucide-react';
 import { textToSpeech } from '@/ai/flows/text-to-speech';
 import { speechToText } from '@/ai/flows/speech-to-text';
-import { generateInterviewQuestions } from '@/ai/flows/generate-interview-questions';
+import { conductInterviewTurn } from '@/ai/flows/analyze-interview-response';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import Image from 'next/image';
 
 type Message = {
-  sender: 'user' | 'ai';
-  text: string;
+  role: 'user' | 'model';
+  content: string;
 };
 
-type InterviewState = 'idle' | 'generating_question' | 'speaking_question' | 'listening' | 'processing_response' | 'finished' | 'error';
+type InterviewState = 'idle' | 'generating_response' | 'speaking_response' | 'listening' | 'processing_response' | 'finished' | 'error';
 
 export default function MockInterviewSessionPage() {
     const router = useRouter();
@@ -27,9 +27,6 @@ export default function MockInterviewSessionPage() {
 
     const [interviewState, setInterviewState] = useState<InterviewState>('idle');
     const [messages, setMessages] = useState<Message[]>([]);
-    const [questions, setQuestions] = useState<string[]>([]);
-    const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-    const [userTranscript, setUserTranscript] = useState('');
     const [isRecording, setIsRecording] = useState(false);
     const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
     
@@ -40,6 +37,7 @@ export default function MockInterviewSessionPage() {
 
     const topic = searchParams.get('topic') || 'general';
     const role = searchParams.get('role') || 'Software Engineer';
+    const interviewContext = `This is a mock interview for a ${role} role, focusing on ${topic}.`;
 
     // Request camera and microphone permissions
     useEffect(() => {
@@ -78,27 +76,17 @@ export default function MockInterviewSessionPage() {
              toast({ title: 'Cannot Start Interview', description: 'Permissions for camera and microphone are required.', variant: 'destructive' });
              return;
         }
-        setInterviewState('generating_question');
-        try {
-            const result = await generateInterviewQuestions({ role, level: 'mid-level', technologies: topic });
-            if (result.questions && result.questions.length > 0) {
-                setQuestions(result.questions);
-                askQuestion(result.questions[0]);
-            } else {
-                throw new Error('No questions were generated.');
-            }
-        } catch (error) {
-            console.error('Failed to generate interview questions:', error);
-            toast({ title: 'Error', description: 'Could not start the interview. Please try again.', variant: 'destructive' });
-            setInterviewState('error');
-        }
+        // Start with a greeting
+        const initialMessage = `Hello! Thank you for joining me. I'll be interviewing you for a ${role} position focused on ${topic}. Are you ready to begin?`;
+        setMessages([{ role: 'model', content: initialMessage }]);
+        speakResponse(initialMessage);
+
     }, [role, topic, toast, hasCameraPermission]);
 
-    const askQuestion = useCallback(async (questionText: string) => {
-        setInterviewState('speaking_question');
-        setMessages(prev => [...prev, { sender: 'ai', text: questionText }]);
+    const speakResponse = useCallback(async (text: string) => {
+        setInterviewState('speaking_response');
         try {
-            const { audioDataUri } = await textToSpeech({ text: questionText });
+            const { audioDataUri } = await textToSpeech({ text });
             if (audioRef.current) {
                 audioRef.current.src = audioDataUri;
                 audioRef.current.play();
@@ -108,15 +96,35 @@ export default function MockInterviewSessionPage() {
             }
         } catch (error) {
             console.error('Text-to-speech failed:', error);
-            toast({ title: 'Audio Error', description: 'Could not play the question.', variant: 'destructive' });
+            toast({ title: 'Audio Error', description: 'Could not play the AI response.', variant: 'destructive' });
             setInterviewState('listening'); // Fallback to listening
         }
     }, [toast]);
 
+    const handleUserResponse = useCallback(async (transcript: string) => {
+        setInterviewState('generating_response');
+        const newHistory: Message[] = [...messages, { role: 'user', content: transcript }];
+        setMessages(newHistory);
+
+        try {
+            const result = await conductInterviewTurn({
+                history: newHistory,
+                questionContext: interviewContext,
+            });
+            const aiResponse = result.response;
+            setMessages(prev => [...prev, { role: 'model', content: aiResponse }]);
+            speakResponse(aiResponse);
+        } catch(error) {
+            console.error('Error conducting interview turn:', error);
+            toast({ title: 'AI Error', description: 'The AI failed to respond. Please try again.', variant: 'destructive' });
+            setInterviewState('listening');
+        }
+
+    }, [messages, interviewContext, speakResponse, toast]);
+
     const startListening = useCallback(async () => {
         if (isRecording || interviewState !== 'listening') return;
 
-        setUserTranscript('');
         setIsRecording(true);
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -140,16 +148,13 @@ export default function MockInterviewSessionPage() {
                     if (base64Audio) {
                         try {
                             const { transcript } = await speechToText({ audioDataUri: base64Audio });
-                            setUserTranscript(transcript);
-                            setMessages(prev => [...prev, { sender: 'user', text: transcript }]);
-                            
-                            if (currentQuestionIndex < questions.length - 1) {
-                                const nextIndex = currentQuestionIndex + 1;
-                                setCurrentQuestionIndex(nextIndex);
-                                askQuestion(questions[nextIndex]);
+                            if (transcript) {
+                                handleUserResponse(transcript);
                             } else {
-                                setInterviewState('finished');
+                                toast({ title: 'No Speech Detected', description: 'I didn\'t catch that. Could you please try again?', variant: 'destructive' });
+                                setInterviewState('listening');
                             }
+                            
                         } catch (error) {
                              console.error('Speech-to-text failed:', error);
                              toast({ title: 'Transcription Error', description: 'Could not understand your response. Please try again.', variant: 'destructive' });
@@ -163,8 +168,9 @@ export default function MockInterviewSessionPage() {
             console.error('Microphone access denied:', error);
             toast({ title: 'Microphone Required', description: 'Please allow microphone access.', variant: 'destructive' });
             setIsRecording(false);
+            setInterviewState('error');
         }
-    }, [isRecording, interviewState, askQuestion, currentQuestionIndex, questions, toast]);
+    }, [isRecording, interviewState, handleUserResponse, toast]);
 
     const stopListening = useCallback(() => {
         if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
@@ -176,14 +182,14 @@ export default function MockInterviewSessionPage() {
     // Handle Spacebar press for push-to-talk
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.code === 'Space' && !e.repeat && interviewState === 'listening') {
+            if (e.code === 'Space' && !e.repeat && interviewState === 'listening' && !isRecording) {
                 e.preventDefault();
                 startListening();
             }
         };
 
         const handleKeyUp = (e: KeyboardEvent) => {
-            if (e.code === 'Space' && interviewState === 'listening') {
+            if (e.code === 'Space' && isRecording) {
                 e.preventDefault();
                 stopListening();
             }
@@ -196,15 +202,15 @@ export default function MockInterviewSessionPage() {
             window.removeEventListener('keydown', handleKeyDown);
             window.removeEventListener('keyup', handleKeyUp);
         };
-    }, [interviewState, startListening, stopListening]);
+    }, [interviewState, isRecording, startListening, stopListening]);
 
     const renderInterviewStatus = () => {
         switch (interviewState) {
             case 'idle':
                 return <Button size="lg" onClick={startInterview} disabled={hasCameraPermission === false}>Start Interview</Button>;
-            case 'generating_question':
-                return <div className="flex items-center space-x-2"><Loader2 className="animate-spin" /> <p>Preparing question...</p></div>;
-            case 'speaking_question':
+            case 'generating_response':
+                return <div className="flex items-center space-x-2"><Loader2 className="animate-spin" /> <p>AI is thinking...</p></div>;
+            case 'speaking_response':
                 return <div className="flex items-center space-x-2 text-primary"><Bot className="animate-pulse" /> <p>AI is speaking...</p></div>;
             case 'listening':
                  return (
@@ -274,8 +280,8 @@ export default function MockInterviewSessionPage() {
                        <div className="min-h-[6rem] text-center flex flex-col justify-center">
                            {lastMessage ? (
                                 <div>
-                                    <p className="text-sm font-semibold text-primary mb-1">{lastMessage.sender === 'ai' ? 'AI Interviewer:' : 'You said:'}</p>
-                                    <p className="text-xl text-foreground">{lastMessage.text}</p>
+                                    <p className="text-sm font-semibold text-primary mb-1">{lastMessage.role === 'model' ? 'AI Interviewer:' : 'You said:'}</p>
+                                    <p className="text-xl text-foreground">{lastMessage.content}</p>
                                 </div>
                             ) : (
                                 <p className="text-lg text-muted-foreground">The interview will begin shortly...</p>
@@ -290,4 +296,3 @@ export default function MockInterviewSessionPage() {
         </main>
     );
 }
-

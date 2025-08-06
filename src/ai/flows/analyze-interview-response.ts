@@ -1,84 +1,71 @@
 'use server';
 
 /**
- * @fileOverview A flow to analyze interview responses and provide feedback.
+ * @fileOverview A flow to power a conversational interview agent.
  *
- * - analyzeInterviewResponse - A function that analyzes interview responses and provides feedback.
- * - AnalyzeInterviewResponseInput - The input type for the analyzeInterviewResponse function.
- * - AnalyzeInterviewResponseOutput - The return type for the analyzeInterviewResponse function.
+ * - conductInterviewTurn - A function that takes the conversation history and determines the AI's next response.
+ * - ConductInterviewTurnInput - The input type for the conductInterviewTurn function.
+ * - ConductInterviewTurnOutput - The return type for the conductInterviewTurn function.
  */
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-const AnalyzeInterviewResponseInputSchema = z.object({
-  question: z.string().describe('The interview question that was asked.'),
-  response: z.string().describe('The response given by the interviewee.'),
-  context: z
-    .string()
-    .optional()
-    .describe('Additional context about the interview or role.'),
+const MessageSchema = z.object({
+  role: z.enum(['user', 'model']),
+  content: z.string(),
 });
-export type AnalyzeInterviewResponseInput = z.infer<
-  typeof AnalyzeInterviewResponseInputSchema
->;
 
-const AnalyzeInterviewResponseOutputSchema = z.object({
-  clarity: z
-    .string()
-    .describe('Feedback on the clarity of the response.'),
-  completeness: z
-    .string()
-    .describe('Feedback on the completeness of the response.'),
-  technicalAccuracy: z
-    .string()
-    .describe('Feedback on the technical accuracy of the response.'),
-  overallFeedback: z
-    .string()
-    .describe('Overall feedback on the interview response.'),
+const ConductInterviewTurnInputSchema = z.object({
+  history: z.array(MessageSchema).describe('The history of the conversation so far.'),
+  questionContext: z.string().describe('The overall topic or role for the interview, e.g., "React Developer".'),
 });
-export type AnalyzeInterviewResponseOutput = z.infer<
-  typeof AnalyzeInterviewResponseOutputSchema
->;
+export type ConductInterviewTurnInput = z.infer<typeof ConductInterviewTurnInputSchema>;
 
-export async function analyzeInterviewResponse(
-  input: AnalyzeInterviewResponseInput
-): Promise<AnalyzeInterviewResponseOutput> {
-  return analyzeInterviewResponseFlow(input);
+const ConductInterviewTurnOutputSchema = z.object({
+  response: z.string().describe("The AI interviewer's next response in the conversation."),
+});
+export type ConductInterviewTurnOutput = z.infer<typeof ConductInterviewTurnOutputSchema>;
+
+export async function conductInterviewTurn(
+  input: ConductInterviewTurnInput
+): Promise<ConductInterviewTurnOutput> {
+  return conductInterviewTurnFlow(input);
 }
 
-const analyzeInterviewResponsePrompt = ai.definePrompt({
-  name: 'analyzeInterviewResponsePrompt',
-  input: {schema: AnalyzeInterviewResponseInputSchema},
-  output: {schema: AnalyzeInterviewResponseOutputSchema},
-  prompt: `You are an AI interview coach providing feedback on interview responses.
+const prompt = ai.definePrompt({
+  name: 'conductInterviewTurnPrompt',
+  input: {schema: ConductInterviewTurnInputSchema},
+  output: {schema: ConductInterviewTurnOutputSchema},
+  prompt: `You are an expert, friendly, and engaging AI interviewer. Your goal is to conduct a natural, human-like technical interview based on the provided topic.
 
-  Analyze the following interview response for clarity, completeness, and technical accuracy.
-  Provide specific feedback in each of these areas, as well as overall feedback.
+  Current Conversation:
+  {{#each history}}
+  - {{this.role}}: {{{this.content}}}
+  {{/each}}
 
-  Interview Question: {{{question}}}
-  Interview Response: {{{response}}}
+  Interview Topic: {{{questionContext}}}
 
-  {{#if context}}
-  Additional Context: {{{context}}}
-  {{/if}}
-
-  Format your response as a JSON object with the following keys:
-  - clarity: Feedback on the clarity of the response.
-  - completeness: Feedback on the completeness of the response.
-  - technicalAccuracy: Feedback on the technical accuracy of the response.
-  - overallFeedback: Overall feedback on the interview response.
+  Your task is to respond as the interviewer. Here's how you should behave:
+  1.  If the user's last response was an answer to a question, acknowledge it briefly and naturally. Use phrases like "I see," "Okay, thank you," or "That makes sense."
+  2.  If the user's response is unclear or too short, ask for clarification or elaboration.
+  3.  When you are ready to move on, ask the next relevant interview question. The questions should be appropriate for the specified interview topic.
+  4.  Maintain a conversational flow. Don't just fire off questions. Use conversational fillers to make the interaction feel human.
+  5.  Keep your responses concise and to the point.
+  
+  Generate only the interviewer's next response.
   `,
 });
 
-const analyzeInterviewResponseFlow = ai.defineFlow(
+
+const conductInterviewTurnFlow = ai.defineFlow(
   {
-    name: 'analyzeInterviewResponseFlow',
-    inputSchema: AnalyzeInterviewResponseInputSchema,
-    outputSchema: AnalyzeInterviewResponseOutputSchema,
+    name: 'conductInterviewTurnFlow',
+    inputSchema: ConductInterviewTurnInputSchema,
+    outputSchema: ConductInterviewTurnOutputSchema,
   },
   async input => {
-    const {output} = await analyzeInterviewResponsePrompt(input);
+    const {output} = await prompt(input);
     return output!;
   }
 );
