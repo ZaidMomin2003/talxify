@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -14,7 +15,7 @@ import { createClient } from '@deepgram/sdk';
 
 const TextToSpeechInputSchema = z.object({
   text: z.string().describe('The text to be converted to speech.'),
-  voice: z.string().optional().default('aura-asteria-en').describe('The voice model to use for the speech synthesis.'),
+  voice: z.string().optional().describe('The voice model to use for the speech synthesis.'),
 });
 export type TextToSpeechInput = z.infer<typeof TextToSpeechInputSchema>;
 
@@ -39,11 +40,12 @@ const textToSpeechFlow = ai.defineFlow(
     }
 
     const deepgram = createClient(process.env.DEEPGRAM_API_KEY);
+    const voiceModel = input.voice || 'aura-asteria-en';
 
     const response = await deepgram.speak.request(
       { text: input.text },
       {
-        model: input.voice,
+        model: voiceModel,
         encoding: 'mp3',
       }
     );
