@@ -315,10 +315,10 @@ export default function MockInterviewSessionPage() {
                        </div>
                        <div className="h-16 flex items-center justify-center border-t border-border/30 mt-4 pt-4">
                             <div className="flex items-center gap-4">
-                                {interviewState !== 'idle' && interviewState !== 'finished' && (
+                                {interviewState !== 'finished' && (
                                      <Button variant="destructive" onClick={() => router.push('/dashboard')}>
                                         <StopCircle className="mr-2 h-4 w-4" />
-                                        Stop Meeting
+                                        Quit
                                     </Button>
                                 )}
                                 {renderInterviewStatus()}
