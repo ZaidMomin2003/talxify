@@ -12,6 +12,8 @@ import {
   ArrowUpRight,
 } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
+
 
 export default function LandingHero() {
   const [stats, setStats] = useState({
@@ -102,7 +104,7 @@ export default function LandingHero() {
   };
 
   return (
-    <section className="relative flex min-h-screen w-full flex-col items-center overflow-hidden bg-black py-16 text-white sm:px-6 lg:px-8 lg:py-2">
+    <section className="relative w-full flex flex-col items-center overflow-hidden bg-black py-16 text-white sm:px-6 lg:px-8 lg:py-20">
       <div className="absolute inset-0 z-0 h-full w-full rotate-180 items-center px-5 py-24 opacity-80 [background:radial-gradient(125%_125%_at_50%_10%,#000_40%,#63e_100%)]"></div>
       <svg
         id="noice"
@@ -132,9 +134,6 @@ export default function LandingHero() {
       </svg>
       {/* Background effects */}
       <div className="absolute inset-0 z-0">
-        {/* Radial gradient */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-indigo-900/30 via-black/70 to-gray-950 blur-3xl"></div>
-
         {/* Grid pattern */}
         <div className="absolute inset-0 opacity-10">
           <div className="h-full w-full bg-[linear-gradient(to_right,rgba(255,255,255,0.22)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.2)_1px,transparent_1px)] bg-[size:4rem_4rem]"></div>
@@ -177,195 +176,87 @@ export default function LandingHero() {
         </div>
       </div>
 
-      <div className="fadein-blur relative z-0 mx-auto mb-10 h-[300px] w-[300px] lg:absolute lg:top-1/2 lg:right-1/2 lg:mx-0 lg:mb-0 lg:h-[500px] lg:w-[500px] lg:translate-x-1/2 lg:-translate-y-2/3">
-        <img
-          src="https://blocks.mvp-subha.me/Adobe Express - file(1).png"
-          alt="Talxify Platform 3D Visualization"
-          className="h-full w-full object-contain drop-shadow-[0_0_35px_#3358ea85] transition-all duration-1000 hover:scale-110"
-        />
-        <motion.div
-          variants={tooltipVariants}
-          initial="hidden"
-          animate="visible"
-          className="absolute top-4 -left-4 rounded-lg border border-purple-500/30 bg-black/80 p-2 backdrop-blur-md lg:top-1/4 lg:-left-20"
-        >
-          <div className="flex items-center gap-2">
-            <BrainCircuit className="h-4 w-4 text-purple-400" />
-            <span className="text-xs font-medium text-purple-200">
-              AI Mock Interviews
-            </span>
-          </div>
-        </motion.div>
-
-        <motion.div
-          variants={tooltipVariants}
-          initial="hidden"
-          animate="visible"
-          className="absolute top-1/2 -right-4 rounded-lg border border-blue-500/30 bg-black/80 p-2 backdrop-blur-md lg:-right-24"
-        >
-          <div className="flex items-center gap-2">
-            <Code className="h-4 w-4 text-blue-400" />
-            <span className="text-xs font-medium text-blue-200">
-              Coding Assistant
-            </span>
-          </div>
-        </motion.div>
-
-        <motion.div
-          variants={tooltipVariants}
-          initial="hidden"
-          animate="visible"
-          className="absolute bottom-4 left-4 rounded-lg border border-indigo-500/30 bg-black/80 p-2 backdrop-blur-md lg:bottom-1/4 lg:left-8"
-        >
-          <div className="flex items-center gap-2">
-            <BarChart className="h-4 w-4 text-indigo-400" />
-            <span className="text-xs font-medium text-indigo-200">
-              Performance Analytics
-            </span>
-          </div>
-        </motion.div>
-      </div>
-
       {/* Main Content Area */}
       <motion.main
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="relative z-10 mb-10 flex w-full max-w-[1450px] flex-grow flex-col items-center justify-center px-4 text-center sm:px-8 lg:mb-0 lg:items-start lg:justify-end lg:text-left"
+        className="relative z-10 flex w-full max-w-7xl flex-grow flex-col items-center justify-center px-4 text-center"
       >
-        <motion.div className="flex w-full flex-col items-center justify-between lg:flex-row lg:items-start">
-          <div className="w-full lg:w-auto">
-            <motion.div
-              variants={itemVariants}
-              className="mb-4 inline-flex items-center rounded-full border border-purple-500/30 bg-purple-500/10 px-3 py-1 text-sm text-purple-300"
-            >
-              <span className="mr-2 rounded-full bg-purple-500 px-2 py-0.5 text-xs font-semibold text-white">
-                New
-              </span>
-              Introducing Talxify Platform
-            </motion.div>
+        <motion.div variants={itemVariants} className="mb-4 inline-flex items-center rounded-full border border-purple-500/30 bg-purple-500/10 px-3 py-1 text-sm text-purple-300">
+            <span className="mr-2 rounded-full bg-purple-500 px-2 py-0.5 text-xs font-semibold text-white">
+            New
+            </span>
+            Introducing Talxify Platform
+        </motion.div>
+        
+        <motion.h1
+            variants={itemVariants}
+            className="mb-6 max-w-4xl bg-gradient-to-r from-white/70 via-white to-slate-500/80 bg-clip-text text-5xl font-bold leading-tight text-transparent md:text-6xl lg:text-7xl"
+        >
+            Win your interviews <br className="hidden sm:inline" />
+            <span className="bg-gradient-to-r from-purple-400 via-blue-400 to-purple-400 bg-clip-text text-transparent">
+            with AI Assistance
+            </span>
+        </motion.h1>
 
-            <motion.h1
-              variants={itemVariants}
-              className="mb-6 bg-gradient-to-r from-white/70 via-white to-slate-500/80 bg-clip-text text-3xl leading-tight text-transparent sm:text-4xl md:text-5xl lg:text-6xl"
+        <motion.p
+            variants={itemVariants}
+            className="mb-8 max-w-2xl text-lg leading-relaxed text-slate-300/90"
+        >
+            Talxify connects you with AI-powered tools to practice mock interviews, sharpen your coding skills, and analyze your performance. Land your dream job, faster.
+        </motion.p>
+        
+        <motion.div
+            variants={itemVariants}
+            className="mb-8 flex flex-col flex-wrap gap-4 sm:flex-row"
+        >
+            <Button asChild
+            className="group rounded-full border-t border-purple-400 bg-gradient-to-b from-purple-700 to-slate-950/80 px-6 py-6 text-white shadow-lg shadow-purple-600/20 transition-all hover:shadow-purple-600/40"
+            size="lg"
             >
-              Win your interviews <br className="hidden sm:inline" />
-              <span className="bg-gradient-to-r from-purple-400 via-blue-400 to-purple-400 bg-clip-text text-transparent">
-                with AI Assistance
-              </span>
-            </motion.h1>
+            <Link href="/signup">
+                Get Started
+                <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+            </Link>
+            </Button>
 
-            {/* Animated Stats Row */}
-            <motion.div
-              variants={itemVariants}
-              className="mb-6 flex flex-wrap justify-center gap-4 md:gap-6 lg:justify-start"
+            <Button asChild
+            variant="outline"
+            className="rounded-full border-purple-500/30 bg-black/30 text-white hover:bg-purple-500/10 hover:text-white backdrop-blur-sm"
+            size="lg"
             >
-              <div className="rounded-lg border border-purple-500/20 bg-black/40 px-4 py-2 backdrop-blur-sm">
-                <p className="text-2xl font-bold text-white">
-                  {stats.users.toLocaleString()}+
-                </p>
-                <p className="text-xs text-gray-400">Happy Users</p>
-              </div>
-              <div className="rounded-lg border border-blue-500/20 bg-black/40 px-4 py-2 backdrop-blur-sm">
-                <p className="text-2xl font-bold text-white">
-                  {stats.interviews.toLocaleString()}+
-                </p>
-                <p className="text-xs text-gray-400">Interviews Taken</p>
-              </div>
-              <div className="rounded-lg border border-indigo-500/20 bg-black/40 px-4 py-2 backdrop-blur-sm">
-                <p className="text-2xl font-bold text-white">
-                  {stats.questions.toLocaleString()}+
-                </p>
-                <p className="text-xs text-gray-400">Problems Solved</p>
-              </div>
-            </motion.div>
+            <Link href="/login">
+                Sign In
+            </Link>
+            </Button>
+        </motion.div>
 
-            {/* Integration badges */}
-            <motion.div
-              variants={itemVariants}
-              className="mb-8 flex flex-wrap items-center justify-center gap-2 lg:justify-start"
-            >
-              <span className="text-xs font-medium text-gray-400">
-                Powered by:
-              </span>
-              <div className="flex cursor-pointer items-center gap-2 rounded-full border border-slate-800 bg-slate-900/60 px-2 py-1 text-xs font-medium text-slate-300 backdrop-blur-sm transition-all hover:bg-purple-950">
-                <div className="h-2 w-2 rounded-full bg-blue-400"></div>
-                Gemini
-              </div>
-              <div className="flex cursor-pointer items-center gap-2 rounded-full border border-slate-800 bg-slate-900/60 px-2 py-1 text-xs font-medium text-slate-300 backdrop-blur-sm transition-all hover:bg-purple-950">
-                <div className="h-2 w-2 rounded-full bg-purple-400"></div>
-                React
-              </div>
-              <div className="flex cursor-pointer items-center gap-2 rounded-full border border-slate-800 bg-slate-900/60 px-2 py-1 text-xs font-medium text-slate-300 backdrop-blur-sm transition-all hover:bg-purple-950">
-                <div className="h-2 w-2 rounded-full bg-green-400"></div>
-                Next.js
-              </div>
-              <div className="flex cursor-pointer items-center gap-2 rounded-full border border-slate-800 bg-slate-900/60 px-2 py-1 text-xs font-medium text-slate-300 backdrop-blur-sm transition-all hover:bg-purple-950">
-                <div className="h-2 w-2 rounded-full bg-yellow-400"></div>
-                Genkit
-              </div>
-            </motion.div>
-          </div>
-
-          <div className="mt-6 flex flex-col items-center lg:mt-0 lg:items-end">
-            <motion.p
-              variants={itemVariants}
-              className="mb-8 max-w-md px-6 text-center text-lg leading-relaxed text-slate-300/90 lg:text-end"
-            >
-              Talxify connects you with AI-powered tools to practice mock interviews, sharpen your coding skills, and analyze your performance. Land your dream job, faster.
-            </motion.p>
-            <motion.div
-              variants={itemVariants}
-              className="mb-8 flex flex-col flex-wrap gap-4 sm:flex-row lg:justify-end"
-            >
-              <Button asChild
-                className="group rounded-full border-t border-purple-400 bg-gradient-to-b from-purple-700 to-slate-950/80 px-6 py-6 text-white shadow-lg shadow-purple-600/20 transition-all hover:shadow-purple-600/40"
-                size="lg"
-              >
-                <Link href="/signup">
-                  Get Started
-                  <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
-                </Link>
-              </Button>
-
-              <Button asChild
-                variant="outline"
-                className="rounded-full border-purple-500/30 bg-transparent text-white hover:bg-purple-500/10 hover:text-white"
-                size="lg"
-              >
-                <Link href="/login">
-                  Sign In
-                </Link>
-              </Button>
-            </motion.div>
-
-            {/* Social proof */}
-            <motion.div
-              variants={itemVariants}
-              className="mx-auto flex items-center gap-3 rounded-full border border-slate-800 bg-slate-900/50 px-3 py-1 backdrop-blur-sm lg:mx-0 lg:ml-auto"
-            >
-              <div className="flex -space-x-2">
-                {[1, 2, 3, 4].map((i) => (
-                  <div
-                    key={i}
-                    className="h-6 w-6 overflow-hidden rounded-full border-2 border-slate-900 bg-slate-800"
-                  >
-                    <div className="h-full w-full bg-gradient-to-br from-purple-500 to-blue-600 opacity-80"></div>
-                  </div>
-                ))}
-              </div>
-              <span className="text-xs text-slate-300">
-                <span className="font-semibold text-white">5,000+</span>{' '}
-                developers already preparing
-              </span>
-              <ArrowUpRight className="h-3 w-3 text-purple-400" />
-            </motion.div>
+        <motion.div
+          variants={itemVariants}
+          className="mt-12 w-full max-w-4xl"
+        >
+          <div className="relative rounded-xl border border-white/10 bg-gray-900/50 p-2 shadow-2xl shadow-purple-500/10 backdrop-blur-sm">
+            <div className="flex items-center gap-1.5 p-1.5">
+              <div className="h-2.5 w-2.5 rounded-full bg-red-500"></div>
+              <div className="h-2.5 w-2.5 rounded-full bg-yellow-500"></div>
+              <div className="h-2.5 w-2.5 rounded-full bg-green-500"></div>
+            </div>
+            <div className="relative rounded-md bg-black">
+                <Image 
+                    src="/dashboard.jpg"
+                    alt="Talxify Dashboard Preview"
+                    width={1024}
+                    height={640}
+                    className="rounded-md"
+                    data-ai-hint="dashboard analytics"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/20 pointer-events-none"></div>
+            </div>
           </div>
         </motion.div>
+
       </motion.main>
-      <div className="absolute right-auto -bottom-40 left-1/2 h-96 w-20 -translate-x-1/2 -rotate-45 rounded-full bg-gray-200/30 blur-[80px] lg:right-96 lg:left-auto lg:translate-x-0"></div>
-      <div className="absolute right-auto -bottom-52 left-1/2 h-96 w-20 -translate-x-1/2 -rotate-45 rounded-full bg-gray-300/20 blur-[80px] lg:right-auto lg:left-auto lg:translate-x-0"></div>
-      <div className="absolute right-auto -bottom-60 left-1/2 h-96 w-10 -translate-x-20 -rotate-45 rounded-full bg-gray-300/20 blur-[80px] lg:right-96 lg:left-auto lg:-translate-x-40"></div>
     </section>
   );
 }
