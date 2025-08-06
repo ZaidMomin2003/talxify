@@ -10,7 +10,7 @@ import { Github, Linkedin, Instagram, Mail, Phone, Link as LinkIcon, Award, Brie
 import Link from "next/link";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
-import React from "react";
+import React, { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 
 const Section = ({ icon, title, children, className }: { icon: React.ReactNode, title: string, children: React.ReactNode, className?: string }) => (
@@ -25,7 +25,7 @@ const Section = ({ icon, title, children, className }: { icon: React.ReactNode, 
     </section>
 );
 
-export default function PortfolioPreviewPage() {
+function PortfolioComponent() {
     const searchParams = useSearchParams()
     const themeColor = searchParams.get('color') || '210 90% 60%';
 
@@ -289,3 +289,10 @@ export default function PortfolioPreviewPage() {
     );
 }
 
+export default function PortfolioPreviewPage() {
+    return (
+        <Suspense fallback={<div>Loading...</div>}>
+            <PortfolioComponent />
+        </Suspense>
+    )
+}
