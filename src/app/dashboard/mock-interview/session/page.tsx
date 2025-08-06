@@ -5,7 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Loader2, Mic, AlertTriangle, Video, Bot, User, Keyboard, LogOut } from 'lucide-react';
+import { Loader2, Mic, AlertTriangle, Video, Bot, User, Keyboard, StopCircle } from 'lucide-react';
 import { textToSpeech } from '@/ai/flows/text-to-speech';
 import { conductInterviewTurn } from '@/ai/flows/analyze-interview-response';
 import { useToast } from '@/hooks/use-toast';
@@ -40,6 +40,62 @@ export default function MockInterviewSessionPage() {
     const role = searchParams.get('role') || 'Software Engineer';
     const interviewContext = `This is a mock interview for a ${role} role, focusing on ${topic}.`;
 
+    const speakResponse = useCallback(async (text: string) => {
+        setInterviewState('speaking_response');
+        try {
+            const { audioDataUri } = await textToSpeech({ text });
+            if (audioRef.current) {
+                audioRef.current.src = audioDataUri;
+                audioRef.current.play();
+                audioRef.current.onended = () => {
+                    setInterviewState('listening');
+                };
+            }
+        } catch (error) {
+            console.error('Text-to-speech failed:', error);
+            toast({ title: 'Audio Error', description: 'Could not play the AI response.', variant: 'destructive' });
+            setInterviewState('listening'); // Even if TTS fails, allow user to respond
+        }
+    }, [toast]);
+    
+    const handleUserResponse = useCallback(async (transcript: string) => {
+        if (!transcript.trim()) {
+            setInterviewState('listening'); // If empty transcript, just go back to listening
+            return;
+        }
+        
+        setInterviewState('generating_response');
+        const newHistory: Message[] = [...messages, { role: 'user', content: transcript }];
+        setMessages(newHistory);
+        setCurrentTranscript('');
+
+        try {
+            const result = await conductInterviewTurn({
+                history: newHistory,
+                questionContext: interviewContext,
+            });
+            const aiResponse = result.response;
+            setMessages(prev => [...prev, { role: 'model', content: aiResponse }]);
+            speakResponse(aiResponse);
+        } catch(error) {
+            console.error('Error conducting interview turn:', error);
+            toast({ title: 'AI Error', description: 'The AI failed to respond. Please try again.', variant: 'destructive' });
+            setInterviewState('listening');
+        }
+
+    }, [messages, interviewContext, speakResponse, toast]);
+
+    const startInterview = useCallback(async () => {
+        if (hasCameraPermission === false) {
+             toast({ title: 'Cannot Start Interview', description: 'Permissions for camera and microphone are required.', variant: 'destructive' });
+             return;
+        }
+        setInterviewState('generating_response');
+        const initialMessage = `Hello! Thank you for joining me. I'll be interviewing you for a ${role} position focused on ${topic}. Are you ready to begin?`;
+        setMessages([{ role: 'model', content: initialMessage }]);
+        speakResponse(initialMessage);
+    }, [role, topic, toast, hasCameraPermission, speakResponse]);
+
     useEffect(() => {
         async function getPermissions() {
             try {
@@ -73,62 +129,6 @@ export default function MockInterviewSessionPage() {
         };
     }, [toast]);
     
-    const speakResponse = useCallback(async (text: string) => {
-        setInterviewState('speaking_response');
-        try {
-            const { audioDataUri } = await textToSpeech({ text });
-            if (audioRef.current) {
-                audioRef.current.src = audioDataUri;
-                audioRef.current.play();
-                audioRef.current.onended = () => {
-                    setInterviewState('listening');
-                };
-            }
-        } catch (error) {
-            console.error('Text-to-speech failed:', error);
-            toast({ title: 'Audio Error', description: 'Could not play the AI response.', variant: 'destructive' });
-            setInterviewState('listening'); // Even if TTS fails, allow user to respond
-        }
-    }, [toast]);
-
-    const handleUserResponse = useCallback(async (transcript: string) => {
-        if (!transcript.trim()) {
-            setInterviewState('listening'); // If empty transcript, just go back to listening
-            return;
-        }
-        
-        setInterviewState('generating_response');
-        const newHistory: Message[] = [...messages, { role: 'user', content: transcript }];
-        setMessages(newHistory);
-        setCurrentTranscript('');
-
-        try {
-            const result = await conductInterviewTurn({
-                history: newHistory,
-                questionContext: interviewContext,
-            });
-            const aiResponse = result.response;
-            setMessages(prev => [...prev, { role: 'model', content: aiResponse }]);
-            speakResponse(aiResponse);
-        } catch(error) {
-            console.error('Error conducting interview turn:', error);
-            toast({ title: 'AI Error', description: 'The AI failed to respond. Please try again.', variant: 'destructive' });
-            setInterviewState('listening');
-        }
-
-    }, [messages, interviewContext, speakResponse, toast]);
-    
-    const startInterview = useCallback(async () => {
-        if (hasCameraPermission === false) {
-             toast({ title: 'Cannot Start Interview', description: 'Permissions for camera and microphone are required.', variant: 'destructive' });
-             return;
-        }
-        setInterviewState('generating_response');
-        const initialMessage = `Hello! Thank you for joining me. I'll be interviewing you for a ${role} position focused on ${topic}. Are you ready to begin?`;
-        setMessages([{ role: 'model', content: initialMessage }]);
-        speakResponse(initialMessage);
-    }, [role, topic, toast, hasCameraPermission, speakResponse]);
-
     const startListening = useCallback(async () => {
         if (isRecording || interviewState !== 'listening') return;
     
@@ -188,8 +188,6 @@ export default function MockInterviewSessionPage() {
     const stopListening = useCallback(() => {
         if (mediaRecorderRef.current) {
             mediaRecorderRef.current.stop();
-            // Do not stop tracks here, as it kills the camera stream
-            // mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
             mediaRecorderRef.current = null;
         }
         if (deepgramConnectionRef.current) {
@@ -319,8 +317,8 @@ export default function MockInterviewSessionPage() {
                             <div className="flex items-center gap-4">
                                 {interviewState !== 'idle' && interviewState !== 'finished' && (
                                      <Button variant="destructive" onClick={() => router.push('/dashboard')}>
-                                        <LogOut className="mr-2 h-4 w-4" />
-                                        Quit
+                                        <StopCircle className="mr-2 h-4 w-4" />
+                                        Stop Meeting
                                     </Button>
                                 )}
                                 {renderInterviewStatus()}
