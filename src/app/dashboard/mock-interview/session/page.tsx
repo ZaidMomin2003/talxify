@@ -7,11 +7,11 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Loader2, Mic, AlertTriangle, Video, Bot, User, Keyboard } from 'lucide-react';
 import { textToSpeech } from '@/ai/flows/text-to-speech';
-import { speechToText } from '@/ai/flows/speech-to-text';
 import { conductInterviewTurn } from '@/ai/flows/analyze-interview-response';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import Image from 'next/image';
+import { createClient, LiveClient, LiveTranscriptionEvents } from '@deepgram/sdk';
 
 type Message = {
   role: 'user' | 'model';
@@ -29,9 +29,10 @@ export default function MockInterviewSessionPage() {
     const [messages, setMessages] = useState<Message[]>([]);
     const [isRecording, setIsRecording] = useState(false);
     const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
+    const [currentTranscript, setCurrentTranscript] = useState('');
     
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-    const audioChunksRef = useRef<Blob[]>([]);
+    const deepgramClientRef = useRef<LiveClient | null>(null);
     const audioRef = useRef<HTMLAudioElement>(null);
     const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -39,7 +40,6 @@ export default function MockInterviewSessionPage() {
     const role = searchParams.get('role') || 'Software Engineer';
     const interviewContext = `This is a mock interview for a ${role} role, focusing on ${topic}.`;
 
-    // Request camera and microphone permissions
     useEffect(() => {
         async function getPermissions() {
             try {
@@ -61,14 +61,16 @@ export default function MockInterviewSessionPage() {
         }
         getPermissions();
 
-        // Cleanup function to stop media tracks when the component unmounts
         return () => {
              if (videoRef.current && videoRef.current.srcObject) {
                 const stream = videoRef.current.srcObject as MediaStream;
                 stream.getTracks().forEach(track => track.stop());
             }
+             if (deepgramClientRef.current) {
+                deepgramClientRef.current.close();
+                deepgramClientRef.current = null;
+            }
         };
-
     }, [toast]);
     
     const startInterview = useCallback(async () => {
@@ -76,11 +78,9 @@ export default function MockInterviewSessionPage() {
              toast({ title: 'Cannot Start Interview', description: 'Permissions for camera and microphone are required.', variant: 'destructive' });
              return;
         }
-        // Start with a greeting
         const initialMessage = `Hello! Thank you for joining me. I'll be interviewing you for a ${role} position focused on ${topic}. Are you ready to begin?`;
         setMessages([{ role: 'model', content: initialMessage }]);
         speakResponse(initialMessage);
-
     }, [role, topic, toast, hasCameraPermission]);
 
     const speakResponse = useCallback(async (text: string) => {
@@ -91,20 +91,26 @@ export default function MockInterviewSessionPage() {
                 audioRef.current.src = audioDataUri;
                 audioRef.current.play();
                 audioRef.current.onended = () => {
-                    setInterviewState('listening'); // Ready to listen after speaking
+                    setInterviewState('listening');
                 };
             }
         } catch (error) {
             console.error('Text-to-speech failed:', error);
             toast({ title: 'Audio Error', description: 'Could not play the AI response.', variant: 'destructive' });
-            setInterviewState('listening'); // Fallback to listening
+            setInterviewState('listening');
         }
     }, [toast]);
 
     const handleUserResponse = useCallback(async (transcript: string) => {
+        if (!transcript.trim()) {
+            setInterviewState('listening');
+            return;
+        }
+        
         setInterviewState('generating_response');
         const newHistory: Message[] = [...messages, { role: 'user', content: transcript }];
         setMessages(newHistory);
+        setCurrentTranscript('');
 
         try {
             const result = await conductInterviewTurn({
@@ -127,57 +133,68 @@ export default function MockInterviewSessionPage() {
 
         setIsRecording(true);
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            mediaRecorderRef.current = new MediaRecorder(stream);
-            audioChunksRef.current = [];
-
-            mediaRecorderRef.current.ondataavailable = (event) => {
-                audioChunksRef.current.push(event.data);
-            };
-
-            mediaRecorderRef.current.onstop = async () => {
-                setInterviewState('processing_response');
-                const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-                // Stop the microphone track after recording
-                stream.getTracks().forEach(track => track.stop());
-                
-                const reader = new FileReader();
-                reader.readAsDataURL(audioBlob);
-                reader.onloadend = async () => {
-                    const base64Audio = reader.result as string;
-                    if (base64Audio) {
-                        try {
-                            const { transcript } = await speechToText({ audioDataUri: base64Audio });
-                            if (transcript) {
-                                handleUserResponse(transcript);
-                            } else {
-                                toast({ title: 'No Speech Detected', description: 'I didn\'t catch that. Could you please try again?', variant: 'destructive' });
-                                setInterviewState('listening');
-                            }
-                            
-                        } catch (error) {
-                             console.error('Speech-to-text failed:', error);
-                             toast({ title: 'Transcription Error', description: 'Could not understand your response. Please try again.', variant: 'destructive' });
-                             setInterviewState('listening');
-                        }
+            if (!process.env.NEXT_PUBLIC_DEEPGRAM_API_KEY) {
+                throw new Error("Deepgram API Key not found in environment variables.");
+            }
+            const deepgram = createClient(process.env.NEXT_PUBLIC_DEEPGRAM_API_KEY);
+            const connection = deepgram.listen.live({
+                model: 'nova-2',
+                smart_format: true,
+                interim_results: true,
+            });
+            deepgramClientRef.current = connection;
+            
+            connection.on(LiveTranscriptionEvents.Open, async () => {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorderRef.current = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+                mediaRecorderRef.current.ondataavailable = (event) => {
+                    if (event.data.size > 0 && connection.getReadyState() === 1) {
+                         connection.send(event.data);
                     }
                 };
-            };
-            mediaRecorderRef.current.start();
+                mediaRecorderRef.current.start(250); // Start sending data every 250ms
+            });
+
+            connection.on(LiveTranscriptionEvents.Transcript, (data) => {
+                const transcript = data.channel.alternatives[0].transcript;
+                if (transcript) {
+                   setCurrentTranscript(transcript);
+                }
+            });
+            
+             connection.on(LiveTranscriptionEvents.Close, () => {
+                console.log('Deepgram connection closed.');
+            });
+
+             connection.on(LiveTranscriptionEvents.Error, (e) => {
+                console.error("Deepgram Error: ", e);
+             })
+
         } catch (error) {
-            console.error('Microphone access denied:', error);
-            toast({ title: 'Microphone Required', description: 'Please allow microphone access.', variant: 'destructive' });
+            console.error('Error setting up Deepgram:', error);
+            toast({ title: 'Real-time Error', description: 'Could not connect to transcription service.', variant: 'destructive' });
             setIsRecording(false);
             setInterviewState('error');
         }
-    }, [isRecording, interviewState, handleUserResponse, toast]);
+    }, [isRecording, interviewState, toast]);
 
     const stopListening = useCallback(() => {
         if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
             mediaRecorderRef.current.stop();
-            setIsRecording(false);
+            mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+            mediaRecorderRef.current = null;
         }
-    }, []);
+        if (deepgramClientRef.current) {
+            deepgramClientRef.current.finish();
+            deepgramClientRef.current = null;
+        }
+        setIsRecording(false);
+        if(currentTranscript){
+            handleUserResponse(currentTranscript);
+        } else {
+            setInterviewState('listening');
+        }
+    }, [currentTranscript, handleUserResponse]);
 
     // Handle Spacebar press for push-to-talk
     useEffect(() => {
@@ -244,7 +261,6 @@ export default function MockInterviewSessionPage() {
         <main className="flex flex-col h-screen bg-black text-white p-4">
             <audio ref={audioRef} style={{ display: 'none' }} />
 
-            {/* Video Panels */}
             <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Card className="relative bg-muted/20 border-primary/20 overflow-hidden">
                     <video ref={videoRef} className="w-full h-full object-cover" autoPlay muted />
@@ -273,12 +289,16 @@ export default function MockInterviewSessionPage() {
                 </div>
             )}
 
-            {/* Subtitles and Controls */}
             <div className="w-full mt-4">
                 <Card className="bg-background/80 backdrop-blur-sm border-border/30">
                     <CardContent className="p-4">
                        <div className="min-h-[6rem] text-center flex flex-col justify-center">
-                           {lastMessage ? (
+                           {isRecording ? (
+                                <div>
+                                    <p className="text-sm font-semibold text-primary mb-1">You said:</p>
+                                    <p className="text-xl text-foreground">{currentTranscript}</p>
+                                </div>
+                           ) : lastMessage ? (
                                 <div>
                                     <p className="text-sm font-semibold text-primary mb-1">{lastMessage.role === 'model' ? 'AI Interviewer:' : 'You said:'}</p>
                                     <p className="text-xl text-foreground">{lastMessage.content}</p>
@@ -296,3 +316,5 @@ export default function MockInterviewSessionPage() {
         </main>
     );
 }
+
+    
