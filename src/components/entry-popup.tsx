@@ -41,15 +41,15 @@ export default function EntryPopup() {
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="max-w-4xl w-[95%] p-0 overflow-hidden border-border/20 shadow-2xl rounded-2xl bg-background grid grid-cols-1 md:grid-cols-2 gap-0">
+      <DialogContent className="max-w-md md:max-w-4xl w-[95%] p-0 overflow-hidden border-border/20 shadow-2xl rounded-2xl bg-background grid grid-cols-1 md:grid-cols-2 gap-0">
         {/* Left Side - Image */}
-        <div className="relative h-64 md:h-full w-full">
+        <div className="relative h-64 md:h-full w-full hidden md:block">
             <Image 
                 src="/popup.png" 
                 alt="Talxify AI Assistant" 
                 layout="fill"
                 objectFit="cover"
-                className="rounded-t-2xl md:rounded-l-2xl md:rounded-r-none"
+                className="rounded-l-2xl"
                 data-ai-hint="abstract technology"
             />
              <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
