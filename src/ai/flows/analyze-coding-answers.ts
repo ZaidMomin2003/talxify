@@ -24,7 +24,7 @@ const SubmissionSchema = z.object({
 
 const AnswerAnalysisSchema = z.object({
   isCorrect: z.boolean().describe('Whether the user\'s answer is functionally correct.'),
-  feedback: z.string().describe('Detailed feedback on the user\'s answer, explaining what is right or wrong.'),
+  feedback: z.string().describe('Detailed feedback on the user\'s answer, explaining what is right or wrong, and how to improve. Comment on logic, style, and efficiency.'),
   score: z.number().min(0).max(1).describe('A score from 0.0 to 1.0 indicating the correctness of the answer.'),
   correctSolution: z.string().describe('An example of a correct solution for the problem.'),
 });
@@ -57,7 +57,7 @@ const prompt = ai.definePrompt({
 
   For each submission, provide the following:
   1.  isCorrect: A boolean indicating if the solution is functionally correct and solves the problem.
-  2.  feedback: Constructive feedback on the code. Explain why it's correct or incorrect. Comment on code style, efficiency, and logic.
+  2.  feedback: Constructive feedback on the code. Explain why it's correct or incorrect. Comment on code style, efficiency, and logic. Be specific about what could be improved.
   3.  score: A float between 0.0 (completely wrong) and 1.0 (perfectly correct).
   4.  correctSolution: Provide one ideal, correct code solution for the problem.
 

@@ -155,22 +155,23 @@ export default function CodingQuizAnalysisPage() {
                     }
                 </div>
               </AccordionTrigger>
-              <AccordionContent className="text-base text-muted-foreground space-y-4">
+              <AccordionContent className="text-base text-muted-foreground space-y-4 p-4 bg-muted/50 rounded-b-lg">
                 <div>
-                    <h3 className="font-semibold text-foreground mb-2">Your Answer:</h3>
-                    <pre className="p-4 bg-muted rounded-md overflow-x-auto text-sm"><code>{state.userAnswer || "// No answer provided"}</code></pre>
-                </div>
-                 <div>
-                    <h3 className="font-semibold text-foreground mb-2">Correctness Score: {Math.round(analysis[index].score * 100)}%</h3>
+                    <h3 className="font-semibold text-foreground mb-2">Your Answer (Score: {Math.round(analysis[index].score * 100)}%)</h3>
+                    <pre className="p-4 bg-background rounded-md overflow-x-auto text-sm"><code>{state.userAnswer || "// No answer provided"}</code></pre>
                 </div>
                 <div>
-                    <h3 className="font-semibold text-foreground mb-2">Feedback:</h3>
-                    <p>{analysis[index].feedback}</p>
+                    <h3 className="font-semibold text-foreground mb-2">AI Feedback:</h3>
+                    <div className="p-4 bg-background rounded-md">
+                        <p>{analysis[index].feedback}</p>
+                    </div>
                 </div>
-                <div>
-                    <h3 className="font-semibold text-foreground mb-2">Correct Solution:</h3>
-                     <pre className="p-4 bg-muted rounded-md overflow-x-auto text-sm"><code>{analysis[index].correctSolution}</code></pre>
-                </div>
+                {!analysis[index].isCorrect && (
+                    <div>
+                        <h3 className="font-semibold text-foreground mb-2">Correct Solution:</h3>
+                        <pre className="p-4 bg-background rounded-md overflow-x-auto text-sm"><code>{analysis[index].correctSolution}</code></pre>
+                    </div>
+                )}
               </AccordionContent>
             </AccordionItem>
           ))}
