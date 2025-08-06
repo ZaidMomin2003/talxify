@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -65,7 +66,14 @@ const conductInterviewTurnFlow = ai.defineFlow(
     outputSchema: ConductInterviewTurnOutputSchema,
   },
   async input => {
-    const {output} = await prompt(input);
-    return output!;
+    try {
+      const {output} = await prompt(input);
+      return output!;
+    } catch (error) {
+       console.error("AI model error:", error);
+       // A more specific, user-friendly error could be returned
+       // For now, we'll return a generic error response
+       return { response: "I'm sorry, I'm having trouble connecting to my brain right now. Please try again in a moment." };
+    }
   }
 );
