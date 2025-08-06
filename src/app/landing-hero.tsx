@@ -6,49 +6,32 @@ import { easeInOut, motion, spring } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import {
   ArrowRight,
-  Database,
-  Sparkles,
-  Zap,
+  BarChart,
+  BrainCircuit,
+  Code,
   ArrowUpRight,
 } from 'lucide-react';
 import Link from 'next/link';
-import Image from 'next/image';
-
 
 export default function LandingHero() {
   // State for animated counters
   const [stats, setStats] = useState({
     users: 0,
-    transactions: 0,
-    networks: 0,
+    interviews: 0,
+    problems: 0,
   });
 
   // Animation to count up numbers
   useEffect(() => {
-    const interval = setInterval(() => {
-      setStats((prev) => {
-        const newUsers = prev.users >= 20000 ? 20000 : prev.users + 500;
-        const newTransactions =
-          prev.transactions >= 1500000 ? 1500000 : prev.transactions + 37500;
-        const newNetworks = prev.networks >= 40 ? 40 : prev.networks + 1;
+    const intervals = [
+      setInterval(() => setStats(prev => ({ ...prev, users: Math.min(5000, prev.users + 125) })), 50),
+      setInterval(() => setStats(prev => ({ ...prev, interviews: Math.min(10000, prev.interviews + 250) })), 50),
+      setInterval(() => setStats(prev => ({ ...prev, problems: Math.min(25000, prev.problems + 625) })), 50),
+    ];
+    
+    setTimeout(() => intervals.forEach(clearInterval), 2000); // Stop after 2 seconds
 
-        if (
-          newUsers === 20000 &&
-          newTransactions === 1500000 &&
-          newNetworks === 40
-        ) {
-          clearInterval(interval);
-        }
-
-        return {
-          users: newUsers,
-          transactions: newTransactions,
-          networks: newNetworks,
-        };
-      });
-    }, 50);
-
-    return () => clearInterval(interval);
+    return () => intervals.forEach(clearInterval);
   }, []);
 
   // Animation variants
@@ -176,7 +159,7 @@ export default function LandingHero() {
       <div className="fadein-blur relative z-0 mx-auto mb-10 h-[300px] w-[300px] lg:absolute lg:top-1/2 lg:right-1/2 lg:mx-0 lg:mb-0 lg:h-[500px] lg:w-[500px] lg:translate-x-1/2 lg:-translate-y-2/3">
         <img
           src="https://blocks.mvp-subha.me/Adobe%20Express%20-%20file(1).png"
-          alt="Nexus Platform 3D Visualization"
+          alt="Talxify Platform 3D Visualization"
           className="h-full w-full object-contain drop-shadow-[0_0_35px_#3358ea85] transition-all duration-1000 hover:scale-110"
         />
         <motion.div
@@ -186,9 +169,9 @@ export default function LandingHero() {
           className="absolute top-4 -left-4 rounded-lg border border-purple-500/30 bg-black/80 p-2 backdrop-blur-md lg:top-1/4 lg:-left-20"
         >
           <div className="flex items-center gap-2">
-            <Zap className="h-4 w-4 text-purple-400" />
+            <BrainCircuit className="h-4 w-4 text-purple-400" />
             <span className="text-xs font-medium text-purple-200">
-              High Performance
+              AI Mock Interviews
             </span>
           </div>
         </motion.div>
@@ -200,9 +183,9 @@ export default function LandingHero() {
           className="absolute top-1/2 -right-4 rounded-lg border border-blue-500/30 bg-black/80 p-2 backdrop-blur-md lg:-right-24"
         >
           <div className="flex items-center gap-2">
-            <Database className="h-4 w-4 text-blue-400" />
+            <Code className="h-4 w-4 text-blue-400" />
             <span className="text-xs font-medium text-blue-200">
-              Decentralized Storage
+              Coding Assistant
             </span>
           </div>
         </motion.div>
@@ -214,9 +197,9 @@ export default function LandingHero() {
           className="absolute bottom-4 left-4 rounded-lg border border-indigo-500/30 bg-black/80 p-2 backdrop-blur-md lg:bottom-1/4 lg:left-8"
         >
           <div className="flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-indigo-400" />
+            <BarChart className="h-4 w-4 text-indigo-400" />
             <span className="text-xs font-medium text-indigo-200">
-              AI-Powered
+              Performance Analytics
             </span>
           </div>
         </motion.div>
@@ -238,16 +221,16 @@ export default function LandingHero() {
               <span className="mr-2 rounded-full bg-purple-500 px-2 py-0.5 text-xs font-semibold text-white">
                 New
               </span>
-              Introducing Nexus Platform
+              Introducing Talxify Platform
             </motion.div>
 
             <motion.h1
               variants={itemVariants}
               className="mb-6 bg-gradient-to-r from-white/70 via-white to-slate-500/80 bg-clip-text text-3xl leading-tight text-transparent sm:text-4xl md:text-5xl lg:text-6xl"
             >
-              The Bridge Between <br className="hidden sm:inline" />
+              Win your interviews <br className="hidden sm:inline" />
               <span className="bg-gradient-to-r from-purple-400 via-blue-400 to-purple-400 bg-clip-text text-transparent">
-                AI and Web3
+                with AI Assistance
               </span>
             </motion.h1>
 
@@ -260,19 +243,19 @@ export default function LandingHero() {
                 <p className="text-2xl font-bold text-white">
                   {stats.users.toLocaleString()}+
                 </p>
-                <p className="text-xs text-gray-400">Active Users</p>
+                <p className="text-xs text-gray-400">Happy Users</p>
               </div>
               <div className="rounded-lg border border-blue-500/20 bg-black/40 px-4 py-2 backdrop-blur-sm">
                 <p className="text-2xl font-bold text-white">
-                  {stats.transactions.toLocaleString()}+
+                  {stats.interviews.toLocaleString()}+
                 </p>
-                <p className="text-xs text-gray-400">Transactions</p>
+                <p className="text-xs text-gray-400">Interviews Taken</p>
               </div>
               <div className="rounded-lg border border-indigo-500/20 bg-black/40 px-4 py-2 backdrop-blur-sm">
                 <p className="text-2xl font-bold text-white">
-                  {stats.networks}+
+                  {stats.problems.toLocaleString()}+
                 </p>
-                <p className="text-xs text-gray-400">Networks</p>
+                <p className="text-xs text-gray-400">Problems Solved</p>
               </div>
             </motion.div>
 
@@ -282,23 +265,23 @@ export default function LandingHero() {
               className="mb-8 flex flex-wrap items-center justify-center gap-2 lg:justify-start"
             >
               <span className="text-xs font-medium text-gray-400">
-                Integrates with:
+                Powered by:
               </span>
               <div className="flex cursor-pointer items-center gap-2 rounded-full border border-slate-800 bg-slate-900/60 px-2 py-1 text-xs font-medium text-slate-300 backdrop-blur-sm transition-all hover:bg-purple-950">
                 <div className="h-2 w-2 rounded-full bg-blue-400"></div>
-                Ethereum
+                Gemini
               </div>
               <div className="flex cursor-pointer items-center gap-2 rounded-full border border-slate-800 bg-slate-900/60 px-2 py-1 text-xs font-medium text-slate-300 backdrop-blur-sm transition-all hover:bg-purple-950">
                 <div className="h-2 w-2 rounded-full bg-purple-400"></div>
-                Solana
+                React
               </div>
               <div className="flex cursor-pointer items-center gap-2 rounded-full border border-slate-800 bg-slate-900/60 px-2 py-1 text-xs font-medium text-slate-300 backdrop-blur-sm transition-all hover:bg-purple-950">
                 <div className="h-2 w-2 rounded-full bg-green-400"></div>
-                OpenAI
+                Next.js
               </div>
               <div className="flex cursor-pointer items-center gap-2 rounded-full border border-slate-800 bg-slate-900/60 px-2 py-1 text-xs font-medium text-slate-300 backdrop-blur-sm transition-all hover:bg-purple-950">
                 <div className="h-2 w-2 rounded-full bg-yellow-400"></div>
-                +5 more
+                Genkit
               </div>
             </motion.div>
           </div>
@@ -308,28 +291,28 @@ export default function LandingHero() {
               variants={itemVariants}
               className="mb-8 max-w-md px-6 text-center text-lg leading-relaxed text-slate-300/90 lg:text-end"
             >
-              Nexus connects AI tools with Web3 infrastructure, giving
-              developers the power to build beyond limits. One platform. Endless
-              potential.
+              Talxify connects you with AI-powered tools to practice mock interviews, sharpen your coding skills, and analyze your performance. Land your dream job, faster.
             </motion.p>
             <motion.div
               variants={itemVariants}
               className="mb-8 flex flex-col flex-wrap gap-4 sm:flex-row lg:justify-end"
             >
-              <Button
+              <Button asChild
                 className="group rounded-full border-t border-purple-400 bg-gradient-to-b from-purple-700 to-slate-950/80 px-6 py-6 text-white shadow-lg shadow-purple-600/20 transition-all hover:shadow-purple-600/40"
                 size="lg"
               >
-                Start Building
-                <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+                <Link href="/signup">
+                  Get Started
+                  <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+                </Link>
               </Button>
 
-              <Button
+              <Button asChild
                 variant="outline"
                 className="rounded-full border-purple-500/30 bg-transparent text-white hover:bg-purple-500/10 hover:text-white"
                 size="lg"
               >
-                View Demo
+                <Link href="/login">Sign In</Link>
               </Button>
             </motion.div>
 
@@ -339,7 +322,7 @@ export default function LandingHero() {
               className="mx-auto flex items-center gap-3 rounded-full border border-slate-800 bg-slate-900/50 px-3 py-1 backdrop-blur-sm lg:mx-0 lg:ml-auto"
             >
               <div className="flex -space-x-2">
-                {[1, 2, 3, 4].map((i) => (
+                {[1, 2, 3, 4, 5].map((i) => (
                   <div
                     key={i}
                     className="h-6 w-6 overflow-hidden rounded-full border-2 border-slate-900 bg-slate-800"
@@ -349,8 +332,8 @@ export default function LandingHero() {
                 ))}
               </div>
               <span className="text-xs text-slate-300">
-                <span className="font-semibold text-white">500+</span>{' '}
-                developers already building
+                <span className="font-semibold text-white">5,000+</span>{' '}
+                developers already preparing
               </span>
               <ArrowUpRight className="h-3 w-3 text-purple-400" />
             </motion.div>
@@ -363,3 +346,5 @@ export default function LandingHero() {
     </section>
   );
 }
+
+    
