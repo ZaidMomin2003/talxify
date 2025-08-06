@@ -53,7 +53,7 @@ const demoQuizResults: QuizResult[] = [
         ],
         analysis: [
             { isCorrect: true, feedback: 'A good, concise answer.', score: 0.9, correctSolution: 'The virtual DOM (VDOM) is a programming concept where a virtual representation of a UI is kept in memory and synced with the "real" DOM by a library such as React DOM.' },
-            { isCorrect: false, feedback: 'Excellent explanation.', score: 0.5, correctSolution: 'Hooks are functions that let you "hook into" React state and lifecycle features from function components.' }
+            { isCorrect: true, feedback: 'Excellent explanation.', score: 1.0, correctSolution: 'Hooks are functions that let you "hook into" React state and lifecycle features from function components.' }
         ]
     },
     {
