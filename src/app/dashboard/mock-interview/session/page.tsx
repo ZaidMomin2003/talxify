@@ -5,7 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Loader2, Mic, AlertTriangle, Video, Bot, User, Keyboard } from 'lucide-react';
+import { Loader2, Mic, AlertTriangle, Video, Bot, User, Keyboard, LogOut } from 'lucide-react';
 import { textToSpeech } from '@/ai/flows/text-to-speech';
 import { conductInterviewTurn } from '@/ai/flows/analyze-interview-response';
 import { useToast } from '@/hooks/use-toast';
@@ -188,7 +188,8 @@ export default function MockInterviewSessionPage() {
     const stopListening = useCallback(() => {
         if (mediaRecorderRef.current) {
             mediaRecorderRef.current.stop();
-            mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+            // Do not stop tracks here, as it kills the camera stream
+            // mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
             mediaRecorderRef.current = null;
         }
         if (deepgramConnectionRef.current) {
@@ -315,7 +316,15 @@ export default function MockInterviewSessionPage() {
                             )}
                        </div>
                        <div className="h-16 flex items-center justify-center border-t border-border/30 mt-4 pt-4">
-                            {renderInterviewStatus()}
+                            <div className="flex items-center gap-4">
+                                {interviewState !== 'idle' && interviewState !== 'finished' && (
+                                     <Button variant="destructive" onClick={() => router.push('/dashboard')}>
+                                        <LogOut className="mr-2 h-4 w-4" />
+                                        Quit
+                                    </Button>
+                                )}
+                                {renderInterviewStatus()}
+                            </div>
                         </div>
                     </CardContent>
                 </Card>
