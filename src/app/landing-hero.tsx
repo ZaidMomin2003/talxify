@@ -231,31 +231,6 @@ export default function LandingHero() {
             </Link>
             </Button>
         </motion.div>
-
-        <motion.div
-          variants={itemVariants}
-          className="mt-12 w-full max-w-4xl"
-        >
-          <div className="relative rounded-xl border border-white/10 bg-gray-900/50 p-2 shadow-2xl shadow-purple-500/10 backdrop-blur-sm">
-            <div className="flex items-center gap-1.5 p-1.5">
-              <div className="h-2.5 w-2.5 rounded-full bg-red-500"></div>
-              <div className="h-2.5 w-2.5 rounded-full bg-yellow-500"></div>
-              <div className="h-2.5 w-2.5 rounded-full bg-green-500"></div>
-            </div>
-            <div className="relative rounded-md bg-black">
-                <Image 
-                    src="/dashboard.jpg"
-                    alt="Talxify Dashboard Preview"
-                    width={1024}
-                    height={640}
-                    className="rounded-md"
-                    data-ai-hint="dashboard analytics"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/20 pointer-events-none"></div>
-            </div>
-          </div>
-        </motion.div>
-
       </motion.main>
     </section>
   );
