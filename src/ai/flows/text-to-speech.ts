@@ -28,6 +28,17 @@ export async function textToSpeech(input: TextToSpeechInput): Promise<TextToSpee
   return textToSpeechFlow(input);
 }
 
+// Helper function to convert a stream to a buffer
+const streamToBuffer = (stream: NodeJS.ReadableStream): Promise<Buffer> => {
+  return new Promise((resolve, reject) => {
+    const chunks: Buffer[] = [];
+    stream.on('data', (chunk) => chunks.push(chunk));
+    stream.on('error', reject);
+    stream.on('end', () => resolve(Buffer.concat(chunks)));
+  });
+};
+
+
 const textToSpeechFlow = ai.defineFlow(
   {
     name: 'textToSpeechFlow',
@@ -54,8 +65,8 @@ const textToSpeechFlow = ai.defineFlow(
     if (!stream) {
       throw new Error('Failed to get audio stream from Deepgram.');
     }
-    const buffer = await stream.arrayBuffer();
-    const base64Audio = Buffer.from(buffer).toString('base64');
+    const buffer = await streamToBuffer(stream);
+    const base64Audio = buffer.toString('base64');
     
     return {
       audioDataUri: `data:audio/mp3;base64,${base64Audio}`,
