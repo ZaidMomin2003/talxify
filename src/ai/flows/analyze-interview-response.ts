@@ -44,7 +44,7 @@ const prompt = ai.definePrompt({
   
   Your task is to respond based on the conversation history.
   
-  {{#if (eq history.length 1)}}
+  {{#if (lt history.length 2)}}
   // The history only contains the initial greeting from the model.
   // Your task is to ask one single, relevant technical question based on the Interview Topic.
   Ask one question now.
