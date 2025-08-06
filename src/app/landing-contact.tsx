@@ -47,10 +47,10 @@ export default function LandingContact() {
                   For general inquiries and support.
                 </p>
                 <a
-                  href="mailto:contact@talxify.com"
+                  href="mailto:hii@talxify.space"
                   className="text-primary font-medium hover:underline"
                 >
-                  contact@talxify.com
+                  hii@talxify.space
                 </a>
               </div>
             </div>
@@ -64,24 +64,11 @@ export default function LandingContact() {
                   Our support team is available Mon-Fri, 9am-5pm.
                 </p>
                 <a
-                  href="tel:+1234567890"
+                  href="tel:+918431326909"
                   className="text-primary font-medium hover:underline"
                 >
-                  +1 (234) 567-890
+                  +91 8431326909
                 </a>
-              </div>
-            </div>
-            <div className="flex items-start gap-4">
-              <div className="bg-primary/10 text-primary mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-full">
-                <MapPin className="h-5 w-5" />
-              </div>
-              <div>
-                <h3 className="text-xl font-semibold">Office</h3>
-                <p className="text-muted-foreground">
-                  123 Tech Avenue, Suite 404
-                  <br />
-                  Innovation City, 54321
-                </p>
               </div>
             </div>
           </motion.div>
