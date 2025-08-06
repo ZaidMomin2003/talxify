@@ -32,7 +32,7 @@ export default function MockInterviewSessionPage() {
     const [currentTranscript, setCurrentTranscript] = useState('');
     
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-    const deepgramClientRef = useRef<LiveClient | null>(null);
+    const deepgramConnectionRef = useRef<LiveClient | null>(null);
     const audioRef = useRef<HTMLAudioElement>(null);
     const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -66,9 +66,9 @@ export default function MockInterviewSessionPage() {
                 const stream = videoRef.current.srcObject as MediaStream;
                 stream.getTracks().forEach(track => track.stop());
             }
-             if (deepgramClientRef.current) {
-                deepgramClientRef.current.close();
-                deepgramClientRef.current = null;
+             if (deepgramConnectionRef.current) {
+                deepgramConnectionRef.current.close();
+                deepgramConnectionRef.current = null;
             }
         };
     }, [toast]);
@@ -78,10 +78,11 @@ export default function MockInterviewSessionPage() {
              toast({ title: 'Cannot Start Interview', description: 'Permissions for camera and microphone are required.', variant: 'destructive' });
              return;
         }
+        setInterviewState('generating_response');
         const initialMessage = `Hello! Thank you for joining me. I'll be interviewing you for a ${role} position focused on ${topic}. Are you ready to begin?`;
         setMessages([{ role: 'model', content: initialMessage }]);
         speakResponse(initialMessage);
-    }, [role, topic, toast, hasCameraPermission]);
+    }, [role, topic, toast, hasCameraPermission, speakResponse]);
 
     const speakResponse = useCallback(async (text: string) => {
         setInterviewState('speaking_response');
@@ -97,13 +98,13 @@ export default function MockInterviewSessionPage() {
         } catch (error) {
             console.error('Text-to-speech failed:', error);
             toast({ title: 'Audio Error', description: 'Could not play the AI response.', variant: 'destructive' });
-            setInterviewState('listening');
+            setInterviewState('listening'); // Even if TTS fails, allow user to respond
         }
     }, [toast]);
 
     const handleUserResponse = useCallback(async (transcript: string) => {
         if (!transcript.trim()) {
-            setInterviewState('listening');
+            setInterviewState('listening'); // If empty transcript, just go back to listening
             return;
         }
         
@@ -128,65 +129,72 @@ export default function MockInterviewSessionPage() {
 
     }, [messages, interviewContext, speakResponse, toast]);
 
+     const setupDeepgram = useCallback(() => {
+        if (!process.env.NEXT_PUBLIC_DEEPGRAM_API_KEY) {
+            throw new Error("Deepgram API Key not found in environment variables.");
+        }
+        const deepgram = createClient(process.env.NEXT_PUBLIC_DEEPGRAM_API_KEY);
+        const connection = deepgram.listen.live({
+            model: 'nova-2',
+            smart_format: true,
+            interim_results: true,
+        });
+
+        connection.on(LiveTranscriptionEvents.Transcript, (data) => {
+            const transcript = data.channel.alternatives[0].transcript;
+            if (transcript) {
+               setCurrentTranscript(transcript);
+            }
+        });
+        
+         connection.on(LiveTranscriptionEvents.Close, () => {
+            console.log('Deepgram connection closed.');
+        });
+
+         connection.on(LiveTranscriptionEvents.Error, (e) => {
+            console.error("Deepgram Error: ", e);
+         });
+
+        deepgramConnectionRef.current = connection;
+    }, []);
+
     const startListening = useCallback(async () => {
         if (isRecording || interviewState !== 'listening') return;
+        
+        setupDeepgram();
 
-        setIsRecording(true);
         try {
-            if (!process.env.NEXT_PUBLIC_DEEPGRAM_API_KEY) {
-                throw new Error("Deepgram API Key not found in environment variables.");
-            }
-            const deepgram = createClient(process.env.NEXT_PUBLIC_DEEPGRAM_API_KEY);
-            const connection = deepgram.listen.live({
-                model: 'nova-2',
-                smart_format: true,
-                interim_results: true,
-            });
-            deepgramClientRef.current = connection;
-            
-            connection.on(LiveTranscriptionEvents.Open, async () => {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            if (deepgramConnectionRef.current?.getReadyState() === 1) {
+                setIsRecording(true);
                 mediaRecorderRef.current = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+                
                 mediaRecorderRef.current.ondataavailable = (event) => {
-                    if (event.data.size > 0 && connection.getReadyState() === 1) {
-                         connection.send(event.data);
+                    if (event.data.size > 0 && deepgramConnectionRef.current?.getReadyState() === 1) {
+                         deepgramConnectionRef.current.send(event.data);
                     }
                 };
-                mediaRecorderRef.current.start(250); // Start sending data every 250ms
-            });
-
-            connection.on(LiveTranscriptionEvents.Transcript, (data) => {
-                const transcript = data.channel.alternatives[0].transcript;
-                if (transcript) {
-                   setCurrentTranscript(transcript);
-                }
-            });
-            
-             connection.on(LiveTranscriptionEvents.Close, () => {
-                console.log('Deepgram connection closed.');
-            });
-
-             connection.on(LiveTranscriptionEvents.Error, (e) => {
-                console.error("Deepgram Error: ", e);
-             })
-
+                mediaRecorderRef.current.start(250);
+            } else {
+                 console.error("Deepgram connection not ready.");
+                 toast({ title: 'Real-time Error', description: 'Could not connect to transcription service.', variant: 'destructive' });
+            }
         } catch (error) {
-            console.error('Error setting up Deepgram:', error);
-            toast({ title: 'Real-time Error', description: 'Could not connect to transcription service.', variant: 'destructive' });
-            setIsRecording(false);
+            console.error('Error setting up media recorder:', error);
+            toast({ title: 'Microphone Error', description: 'Could not start recording.', variant: 'destructive' });
             setInterviewState('error');
         }
-    }, [isRecording, interviewState, toast]);
+    }, [isRecording, interviewState, toast, setupDeepgram]);
 
     const stopListening = useCallback(() => {
-        if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+        if (mediaRecorderRef.current) {
             mediaRecorderRef.current.stop();
             mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
             mediaRecorderRef.current = null;
         }
-        if (deepgramClientRef.current) {
-            deepgramClientRef.current.finish();
-            deepgramClientRef.current = null;
+        if (deepgramConnectionRef.current) {
+            deepgramConnectionRef.current.finish();
+            deepgramConnectionRef.current = null;
         }
         setIsRecording(false);
         if(currentTranscript){
@@ -293,9 +301,9 @@ export default function MockInterviewSessionPage() {
                 <Card className="bg-background/80 backdrop-blur-sm border-border/30">
                     <CardContent className="p-4">
                        <div className="min-h-[6rem] text-center flex flex-col justify-center">
-                           {isRecording ? (
+                           {isRecording && currentTranscript ? (
                                 <div>
-                                    <p className="text-sm font-semibold text-primary mb-1">You said:</p>
+                                    <p className="text-sm font-semibold text-primary mb-1">Listening...</p>
                                     <p className="text-xl text-foreground">{currentTranscript}</p>
                                 </div>
                            ) : lastMessage ? (
