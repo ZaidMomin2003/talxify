@@ -13,6 +13,47 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 
+const ParticleEffects = () => {
+  const [particles, setParticles] = useState<any[]>([]);
+
+  useEffect(() => {
+    const newParticles = Array.from({ length: 20 }).map((_, i) => ({
+      id: i,
+      top: `${Math.random() * 100}%`,
+      left: `${Math.random() * 100}%`,
+      duration: 3 + Math.random() * 2,
+      delay: Math.random() * 2,
+    }));
+    setParticles(newParticles);
+  }, []);
+
+  return (
+    <div className="absolute inset-0 opacity-20">
+      {particles.map((particle) => (
+        <motion.div
+          key={particle.id}
+          className="absolute h-1 w-1 rounded-full bg-white"
+          style={{
+            top: particle.top,
+            left: particle.left,
+          }}
+          animate={{
+            opacity: [0.2, 0.8, 0.2],
+            scale: [1, 1.5, 1],
+          }}
+          transition={{
+            duration: particle.duration,
+            repeat: Infinity,
+            ease: 'easeInOut',
+            delay: particle.delay,
+          }}
+        />
+      ))}
+    </div>
+  );
+};
+
+
 export default function LandingHero() {
   // State for animated counters
   const [stats, setStats] = useState({
@@ -132,28 +173,7 @@ export default function LandingHero() {
         ></motion.div>
 
         {/* Particle effects - subtle dots */}
-        <div className="absolute inset-0 opacity-20">
-          {Array.from({ length: 20 }).map((_, i) => (
-            <motion.div
-              key={i}
-              className="absolute h-1 w-1 rounded-full bg-white"
-              style={{
-                top: `${Math.random() * 100}%`,
-                left: `${Math.random() * 100}%`,
-              }}
-              animate={{
-                opacity: [0.2, 0.8, 0.2],
-                scale: [1, 1.5, 1],
-              }}
-              transition={{
-                duration: 3 + Math.random() * 2,
-                repeat: Infinity,
-                ease: 'easeInOut',
-                delay: Math.random() * 2,
-              }}
-            />
-          ))}
-        </div>
+        <ParticleEffects />
       </div>
 
       <div className="fadein-blur relative z-0 mx-auto mb-10 h-[300px] w-[300px] lg:absolute lg:top-1/2 lg:right-1/2 lg:mx-0 lg:mb-0 lg:h-[500px] lg:w-[500px] lg:translate-x-1/2 lg:-translate-y-2/3">
@@ -346,5 +366,3 @@ export default function LandingHero() {
     </section>
   );
 }
-
-    
