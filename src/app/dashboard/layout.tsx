@@ -13,6 +13,9 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import {
@@ -27,11 +30,13 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { Bot, Code, LayoutGrid, MessageSquare, BarChart, Settings, History, Search, User, LogOut, Gem, LifeBuoy } from "lucide-react";
+import { Bot, Code, LayoutGrid, MessageSquare, BarChart, Settings, History, Search, User, LogOut, Gem, LifeBuoy, Sun, Moon } from "lucide-react";
 import type { QuizResult } from "./coding-quiz/analysis/page";
 import { formatDistanceToNow } from 'date-fns';
 import { useAuth } from "@/context/auth-context";
 import { useRouter } from "next/navigation";
+import { useTheme } from "next-themes";
+import { Switch } from "@/components/ui/switch";
 
 export default function DashboardLayout({
   children,
@@ -41,6 +46,7 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const router = useRouter();
   const { user, loading, logout } = useAuth();
+  const { theme, setTheme } = useTheme();
   const [recentActivity, setRecentActivity] = useState<QuizResult[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -139,7 +145,7 @@ export default function DashboardLayout({
                   </Button>
                 </div>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56 mb-2" align="end" forceMount>
+            <DropdownMenuContent className="w-64 mb-2" align="end" forceMount>
                 <DropdownMenuLabel className="font-normal">
                     <div className="flex flex-col space-y-1">
                         <p className="text-sm font-medium leading-none">{user.displayName || 'User'}</p>
@@ -154,6 +160,18 @@ export default function DashboardLayout({
                     <LifeBuoy className="mr-2 h-4 w-4" />
                     <span>Support</span>
                   </Link>
+                </DropdownMenuItem>
+                 <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                  <div className="flex justify-between items-center w-full">
+                    <div className="flex items-center">
+                      {theme === 'light' ? <Sun className="mr-2 h-4 w-4" /> : <Moon className="mr-2 h-4 w-4" />}
+                      <span>Theme</span>
+                    </div>
+                    <Switch
+                      checked={theme === 'dark'}
+                      onCheckedChange={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+                    />
+                  </div>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={logout} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
