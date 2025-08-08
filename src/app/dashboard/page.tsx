@@ -78,6 +78,13 @@ export default function DashboardPage() {
     router.push(`/dashboard/mock-interview/instructions?${params.toString()}`);
   }
 
+  const { questionsSolved, interviewsCompleted } = useMemo(() => {
+    const solved = recentQuizzes.reduce((acc, quiz) => acc + quiz.quizState.length, 0);
+    // Interview tracking can be implemented later
+    const interviews = 0; 
+    return { questionsSolved: solved, interviewsCompleted: interviews };
+  }, [recentQuizzes]);
+
   const filteredQuizzes = useMemo(() => {
     return recentQuizzes.filter(quiz => 
         quiz.topics.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -118,8 +125,8 @@ export default function DashboardPage() {
             <Briefcase className="h-4 w-4" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">12</div>
-            <p className="text-xs text-black/60">+2 since last month</p>
+            <div className="text-2xl font-bold">{interviewsCompleted}</div>
+            <p className="text-xs text-black/60">Practice mock interviews to increase this.</p>
           </CardContent>
         </Card>
         <Card className="bg-white text-black border-none">
@@ -128,8 +135,8 @@ export default function DashboardPage() {
             <Code className="h-4 w-4" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">57</div>
-            <p className="text-xs text-black/60">+10 since last month</p>
+            <div className="text-2xl font-bold">{questionsSolved}</div>
+            <p className="text-xs text-black/60">Across all completed quizzes.</p>
           </CardContent>
         </Card>
         <Card className="bg-[#F96A5D] text-white border-none">
@@ -139,7 +146,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">78%</div>
-            <p className="text-xs text-white/80">Based on your performance</p>
+            <p className="text-xs text-white/80">Based on your performance (Dummy)</p>
           </CardContent>
         </Card>
         <Card className="bg-[#4DD0E1] text-black border-none">
@@ -149,7 +156,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">21 Days</div>
-            <p className="text-xs text-black/60">on your current plan</p>
+            <p className="text-xs text-black/60">on your current plan (Dummy)</p>
           </CardContent>
         </Card>
       </div>
@@ -366,3 +373,5 @@ export default function DashboardPage() {
     </main>
   );
 }
+
+    
