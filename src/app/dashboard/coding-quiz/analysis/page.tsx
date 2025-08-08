@@ -9,15 +9,8 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Loader2, CheckCircle, XCircle, Sparkles } from 'lucide-react';
 import type { QuizState } from '../quiz/page';
 import { analyzeCodingAnswers, AnalyzeCodingAnswersInput, AnswerAnalysis } from '@/ai/flows/analyze-coding-answers';
+import type { QuizResult, StoredActivity } from '@/lib/types';
 
-export type QuizResult = {
-  id: string;
-  timestamp: string;
-  quizState: QuizState;
-  analysis: AnswerAnalysis[];
-  topics: string;
-  difficulty: string;
-}
 
 export default function CodingQuizAnalysisPage() {
   const router = useRouter();
@@ -29,29 +22,30 @@ export default function CodingQuizAnalysisPage() {
 
   useEffect(() => {
     const quizId = searchParams.get('id');
+    const attemptId = sessionStorage.getItem('currentQuizAttemptId');
 
     async function getAnalysis() {
       setIsLoading(true);
-      if (quizId) {
-        // Load from localStorage if an ID is provided
-        const allResults: QuizResult[] = JSON.parse(localStorage.getItem('allQuizResults') || '[]');
-        const existingResult = allResults.find(r => r.id === quizId);
-        if (existingResult) {
+
+      // This logic handles viewing a past, completed result
+      if (quizId && !attemptId) {
+        const allResults: StoredActivity[] = JSON.parse(localStorage.getItem('allUserActivity') || '[]');
+        const existingResult = allResults.find(r => r.id === quizId && r.type === 'quiz') as QuizResult | undefined;
+        if (existingResult && existingResult.analysis.length > 0) {
           setQuizResult(existingResult);
           setQuizState(existingResult.quizState);
           setAnalysis(existingResult.analysis);
           setIsLoading(false);
           return;
         } else {
-          // If no result found with that ID, redirect
           router.replace('/dashboard');
           return;
         }
       }
 
+      // This logic handles a new quiz submission that needs analysis
       const results = sessionStorage.getItem('quizResults');
       if (!results) {
-        // If no results, redirect back to the dashboard
         router.replace('/dashboard');
         return;
       }
@@ -67,31 +61,54 @@ export default function CodingQuizAnalysisPage() {
         const analysisResult = await analyzeCodingAnswers(input);
         setAnalysis(analysisResult.analysis);
 
-        // Save the complete result to localStorage
-        const newResult: QuizResult = {
-          id: `quiz_${Date.now()}`,
-          timestamp: new Date().toISOString(),
-          quizState: parsedState,
-          analysis: analysisResult.analysis,
-          topics,
-          difficulty,
-        };
+        const allActivity: StoredActivity[] = JSON.parse(localStorage.getItem('allUserActivity') || '[]');
+        
+        let finalId = attemptId;
 
-        const allResults: QuizResult[] = JSON.parse(localStorage.getItem('allQuizResults') || '[]');
-        allResults.unshift(newResult); // Add to the beginning
-        localStorage.setItem('allQuizResults', JSON.stringify(allResults.slice(0, 10))); // Keep last 10
+        // Find the placeholder attempt and update it, or create a new entry
+        const attemptIndex = allActivity.findIndex(a => a.id === attemptId);
 
-        // Clean up sessionStorage
+        if (attemptIndex !== -1) {
+            const updatedResult: QuizResult = {
+                ...(allActivity[attemptIndex] as QuizResult),
+                quizState: parsedState,
+                analysis: analysisResult.analysis,
+                details: {
+                    ...allActivity[attemptIndex].details,
+                    score: `${Math.round(analysisResult.analysis.reduce((sum, item) => sum + item.score, 0) / analysisResult.analysis.length * 100)}%`
+                }
+            };
+            allActivity[attemptIndex] = updatedResult;
+        } else {
+            const newResult: QuizResult = {
+                id: `quiz_${Date.now()}`,
+                type: 'quiz',
+                timestamp: new Date().toISOString(),
+                quizState: parsedState,
+                analysis: analysisResult.analysis,
+                topics: topics,
+                difficulty: difficulty,
+                details: {
+                    topic: topics,
+                    difficulty: difficulty,
+                    score: `${Math.round(analysisResult.analysis.reduce((sum, item) => sum + item.score, 0) / analysisResult.analysis.length * 100)}%`
+                }
+            };
+            allActivity.unshift(newResult);
+            finalId = newResult.id;
+        }
+        
+        localStorage.setItem('allUserActivity', JSON.stringify(allActivity.slice(0, 20)));
+
         sessionStorage.removeItem('quizResults');
         sessionStorage.removeItem('quizTopics');
         sessionStorage.removeItem('quizDifficulty');
+        sessionStorage.removeItem('currentQuizAttemptId');
 
-        // Update URL to reflect the new ID without reloading the page
-        router.replace(`/dashboard/coding-quiz/analysis?id=${newResult.id}`, undefined);
+        router.replace(`/dashboard/coding-quiz/analysis?id=${finalId}`, undefined);
 
       } catch (error) {
         console.error('Failed to analyze answers:', error);
-        // Handle error state
       } finally {
         setIsLoading(false);
       }

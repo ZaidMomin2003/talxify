@@ -15,6 +15,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useRouter } from "next/navigation";
 import React, { useState, useEffect, useMemo } from "react";
 import type { QuizResult } from "./coding-quiz/analysis/page";
+import type { StoredActivity } from "@/lib/types";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
@@ -51,12 +52,16 @@ export default function DashboardPage() {
   const [recentQuizzes, setRecentQuizzes] = useState<QuizResult[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedQuiz, setSelectedQuiz] = useState<QuizResult | null>(null);
+  const [allActivity, setAllActivity] = useState<StoredActivity[]>([]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const storedResults = localStorage.getItem('allQuizResults');
-      if (storedResults) {
-        setRecentQuizzes(JSON.parse(storedResults));
+      const storedActivity = localStorage.getItem('allUserActivity');
+      if (storedActivity) {
+          const parsedActivity = JSON.parse(storedActivity);
+          setAllActivity(parsedActivity);
+          const quizzes = parsedActivity.filter((item: StoredActivity) => item.type === 'quiz') as QuizResult[];
+          setRecentQuizzes(quizzes);
       }
     }
   }, []);
@@ -67,6 +72,26 @@ export default function DashboardPage() {
         difficulty: values.difficulty,
         numQuestions: "3",
     });
+     if (typeof window !== 'undefined') {
+        const newQuizAttempt: QuizResult = {
+            id: `quiz_attempt_${Date.now()}`,
+            type: 'quiz',
+            timestamp: new Date().toISOString(),
+            quizState: [], // Empty for now, completed on analysis
+            analysis: [], // Empty for now, completed on analysis
+            topics: values.topics,
+            difficulty: values.difficulty,
+            details: {
+                topic: values.topics,
+                difficulty: values.difficulty,
+                score: 'Pending',
+            }
+        };
+
+        const currentActivity: StoredActivity[] = JSON.parse(localStorage.getItem('allUserActivity') || '[]');
+        currentActivity.unshift(newQuizAttempt);
+        localStorage.setItem('allUserActivity', JSON.stringify(currentActivity.slice(0, 20)));
+    }
     router.push(`/dashboard/coding-quiz/instructions?${params.toString()}`);
   }
 
@@ -79,11 +104,14 @@ export default function DashboardPage() {
   }
 
   const { questionsSolved, interviewsCompleted } = useMemo(() => {
-    const solved = recentQuizzes.reduce((acc, quiz) => acc + quiz.quizState.length, 0);
-    // Interview tracking can be implemented later
-    const interviews = 0; 
+    if (typeof window === 'undefined') return { questionsSolved: 0, interviewsCompleted: 0 };
+    const activity: StoredActivity[] = JSON.parse(localStorage.getItem('allUserActivity') || '[]');
+    const solved = activity
+      .filter(item => item.type === 'quiz' && (item as QuizResult).analysis.length > 0)
+      .reduce((acc, quiz) => acc + (quiz as QuizResult).quizState.length, 0);
+    const interviews = activity.filter(item => item.type === 'interview').length;
     return { questionsSolved: solved, interviewsCompleted: interviews };
-  }, [recentQuizzes]);
+  }, [allActivity]);
 
   const filteredQuizzes = useMemo(() => {
     return recentQuizzes.filter(quiz => 
@@ -119,44 +147,44 @@ export default function DashboardPage() {
       </div>
 
       <div className="mb-6 grid grid-cols-2 gap-6 lg:grid-cols-4">
-        <Card className="bg-[#D4FF00] text-black border-none">
+        <Card className="bg-primary/90 text-primary-foreground border-none">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Interviews Completed</CardTitle>
             <Briefcase className="h-4 w-4" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{interviewsCompleted}</div>
-            <p className="text-xs text-black/60">Practice mock interviews to increase this.</p>
+            <p className="text-xs text-primary-foreground/80">Practice mock interviews to increase this.</p>
           </CardContent>
         </Card>
-        <Card className="bg-white text-black border-none">
+        <Card className="bg-background text-foreground border">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Coding Questions Solved</CardTitle>
-            <Code className="h-4 w-4" />
+            <Code className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{questionsSolved}</div>
-            <p className="text-xs text-black/60">Across all completed quizzes.</p>
+            <p className="text-xs text-muted-foreground">Across all completed quizzes.</p>
           </CardContent>
         </Card>
-        <Card className="bg-[#F96A5D] text-white border-none">
+        <Card className="bg-background text-foreground border">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Job Likelihood</CardTitle>
-            <Percent className="h-4 w-4 text-white/80" />
+            <Percent className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">78%</div>
-            <p className="text-xs text-white/80">Based on your performance (Dummy)</p>
+            <p className="text-xs text-muted-foreground">Based on your performance (Dummy)</p>
           </CardContent>
         </Card>
-        <Card className="bg-[#4DD0E1] text-black border-none">
+        <Card className="bg-background text-foreground border">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Plan Expires</CardTitle>
-            <CalendarDays className="h-4 w-4" />
+            <CalendarDays className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">21 Days</div>
-            <p className="text-xs text-black/60">on your current plan (Dummy)</p>
+            <p className="text-xs text-muted-foreground">on your current plan (Dummy)</p>
           </CardContent>
         </Card>
       </div>
@@ -306,7 +334,7 @@ export default function DashboardPage() {
                                 {getOverallScore(quiz.analysis)}%
                             </TableCell>
                             <TableCell className="hidden md:table-cell text-center">
-                                <Button asChild variant="outline" size="sm">
+                                <Button asChild variant="outline" size="sm" disabled={!quiz.analysis || quiz.analysis.length === 0}>
                                     <Link href={`/dashboard/coding-quiz/analysis?id=${quiz.id}`}>View</Link>
                                 </Button>
                             </TableCell>
@@ -355,7 +383,7 @@ export default function DashboardPage() {
                     </div>
                   </div>
                   <DialogFooter className="sm:justify-start gap-2">
-                     <Button asChild variant="outline">
+                     <Button asChild variant="outline" disabled={!selectedQuiz.analysis || selectedQuiz.analysis.length === 0}>
                         <Link href={`/dashboard/coding-quiz/analysis?id=${selectedQuiz.id}`} onClick={() => setSelectedQuiz(null)}>View Full Analysis</Link>
                     </Button>
                     <Button onClick={() => { handleRetakeQuiz(selectedQuiz); setSelectedQuiz(null); }}>
@@ -373,5 +401,3 @@ export default function DashboardPage() {
     </main>
   );
 }
-
-    

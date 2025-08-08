@@ -54,6 +54,10 @@ export default function CodingQuizPage() {
         if (result.questions && result.questions.length > 0) {
             setQuestions(result.questions);
             setUserAnswers(new Array(result.questions.length).fill(''));
+
+            // Create placeholder in localStorage
+            const attemptId = `quiz_attempt_${Date.now()}`;
+            sessionStorage.setItem('currentQuizAttemptId', attemptId);
         } else {
              toast({
                 title: 'No Questions',

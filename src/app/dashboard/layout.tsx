@@ -30,8 +30,8 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { Bot, Code, LayoutGrid, MessageSquare, BarChart, Settings, History, Search, User, LogOut, Gem, LifeBuoy, Sun, Moon } from "lucide-react";
-import type { QuizResult } from "./coding-quiz/analysis/page";
+import { Bot, Code, LayoutGrid, MessageSquare, BarChart, Settings, History, Search, User, LogOut, Gem, LifeBuoy, Sun, Moon, Briefcase } from "lucide-react";
+import type { StoredActivity, QuizResult } from "@/lib/types";
 import { formatDistanceToNow } from 'date-fns';
 import { useAuth } from "@/context/auth-context";
 import { useRouter } from "next/navigation";
@@ -47,7 +47,7 @@ export default function DashboardLayout({
   const router = useRouter();
   const { user, loading, logout } = useAuth();
   const { theme, setTheme } = useTheme();
-  const [recentActivity, setRecentActivity] = useState<QuizResult[]>([]);
+  const [recentActivity, setRecentActivity] = useState<StoredActivity[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
@@ -60,9 +60,9 @@ export default function DashboardLayout({
   useEffect(() => {
     // This effect runs on the client-side, where localStorage is available.
     if (typeof window !== 'undefined') {
-      const storedResults = localStorage.getItem('allQuizResults');
-      if (storedResults) {
-        setRecentActivity(JSON.parse(storedResults));
+      const storedActivity = localStorage.getItem('allUserActivity');
+      if (storedActivity) {
+        setRecentActivity(JSON.parse(storedActivity));
       }
     }
   }, [pathname]); // Rerun when path changes to maybe update activity
@@ -74,8 +74,11 @@ export default function DashboardLayout({
   ];
 
   const filteredActivity = recentActivity.filter(item =>
-    item.topics.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    item.difficulty.toLowerCase().includes(searchQuery.toLowerCase())
+    item.type === 'quiz' ?
+    (item.details.topic.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    item.details.difficulty.toLowerCase().includes(searchQuery.toLowerCase())) :
+    (item.details.topic.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    item.details.role.toLowerCase().includes(searchQuery.toLowerCase()))
   );
   
   if (loading || !user) {
@@ -214,13 +217,13 @@ export default function DashboardLayout({
                     {filteredActivity.length > 0 ? (
                       filteredActivity.map((item) => (
                         <DropdownMenuItem key={item.id} asChild>
-                          <Link href={`/dashboard/coding-quiz/analysis?id=${item.id}`} className="cursor-pointer">
+                          <Link href={item.type === 'quiz' ? `/dashboard/coding-quiz/analysis?id=${item.id}` : '#'} className="cursor-pointer">
                             <div className="flex items-start gap-3">
                                 <div className="bg-primary/10 text-primary rounded-full p-2">
-                                    <Code className="h-4 w-4" />
+                                    {item.type === 'quiz' ? <Code className="h-4 w-4" /> : <Briefcase className="h-4 w-4" />}
                                 </div>
                                 <div>
-                                    <p className="font-semibold text-sm capitalize">{item.topics} Quiz</p>
+                                    <p className="font-semibold text-sm capitalize">{item.details.topic} {item.type === 'quiz' ? 'Quiz' : 'Interview'}</p>
                                     <p className="text-xs text-muted-foreground">
                                       {formatDistanceToNow(new Date(item.timestamp), { addSuffix: true })}
                                     </p>
