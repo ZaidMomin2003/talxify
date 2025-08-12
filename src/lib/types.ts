@@ -14,7 +14,9 @@ export interface SignInForm {
 }
 
 // A generic type for any activity stored in localStorage
-export type StoredActivity = {
+export type StoredActivity = QuizResult | InterviewActivity;
+
+export interface BaseActivity {
     id: string;
     type: 'quiz' | 'interview';
     timestamp: string;
@@ -22,10 +24,11 @@ export type StoredActivity = {
         topic: string;
         [key: string]: any;
     };
-};
+}
+
 
 // A more specific type for completed quiz results
-export interface QuizResult extends StoredActivity {
+export interface QuizResult extends BaseActivity {
   type: 'quiz';
   quizState: QuizState;
   analysis: AnswerAnalysis[];
@@ -36,4 +39,13 @@ export interface QuizResult extends StoredActivity {
     difficulty: string;
     score: string | 'Pending';
   }
+}
+
+// A specific type for initiated interviews
+export interface InterviewActivity extends BaseActivity {
+    type: 'interview';
+    details: {
+        topic: string;
+        role: string;
+    }
 }

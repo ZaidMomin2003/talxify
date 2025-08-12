@@ -2,9 +2,9 @@
 'use client';
 
 import React, { useEffect, useState, useMemo } from 'react';
-import type { QuizResult } from '../coding-quiz/analysis/page';
+import type { QuizResult, StoredActivity } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { BarChart, BookOpen, Brain, Eye, HelpCircle, TrendingUp, Bookmark, Trophy } from 'lucide-react';
+import { BarChart, BookOpen, Brain, HelpCircle, TrendingUp, Trophy } from 'lucide-react';
 import {
   AreaChart,
   Area,
@@ -52,9 +52,13 @@ export default function PerformancePage() {
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const storedResults = localStorage.getItem('allQuizResults');
-      if (storedResults) {
-        setQuizResults(JSON.parse(storedResults));
+      const storedActivity = localStorage.getItem('allUserActivity');
+      if (storedActivity) {
+        const allActivity: StoredActivity[] = JSON.parse(storedActivity);
+        const completedQuizzes = allActivity.filter(
+            (item): item is QuizResult => item.type === 'quiz' && item.analysis && item.analysis.length > 0
+        );
+        setQuizResults(completedQuizzes);
       }
       setHasLoaded(true);
     }
@@ -70,8 +74,9 @@ export default function PerformancePage() {
         const randomFactor = (Math.random() - 0.5) * 5;
         return Math.min(100, Math.max(0, Math.round(base + growth + randomFactor)));
     };
-
-    return [...quizResults] // Create a shallow copy before reversing
+    
+    return [...quizResults]
+        .filter(r => r.analysis && r.analysis.length > 0)
         .reverse()
         .map((result, index, arr) => {
             const totalScore = result.analysis.reduce((sum, item) => sum + item.score, 0);
@@ -128,11 +133,6 @@ export default function PerformancePage() {
     };
   }, [quizResults]);
   
-  const bookmarkedConcepts = [
-    { title: 'JavaScript Closures', link: '#' },
-    { title: 'React State Management', link: '#' },
-    { title: 'CSS Flexbox vs. Grid', link: '#' },
-  ];
 
   if (!hasLoaded) {
     return (
@@ -162,7 +162,7 @@ export default function PerformancePage() {
         </Card>
     ) : (
       <>
-        <div className="grid gap-6 mb-8 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-6 mb-8 md:grid-cols-2 lg:grid-cols-3">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">Total Quizzes</CardTitle>
@@ -191,16 +191,6 @@ export default function PerformancePage() {
             <CardContent>
               <div className="text-2xl font-bold">{questionsAnswered}</div>
               <p className="text-xs text-muted-foreground">Total number of coding problems solved.</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Portfolio Views</CardTitle>
-              <Eye className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">142</div>
-              <p className="text-xs text-muted-foreground">Number of times your portfolio was viewed. (Dummy data)</p>
             </CardContent>
           </Card>
         </div>
@@ -261,7 +251,7 @@ export default function PerformancePage() {
           </Card>
         </div>
 
-        <div className="mt-8 grid gap-8 lg:grid-cols-2">
+        <div className="mt-8">
           <Card>
             <CardHeader>
                 <CardTitle>Recent Activity</CardTitle>
@@ -299,40 +289,9 @@ export default function PerformancePage() {
                 )}
             </CardContent>
           </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Bookmarked Concepts</CardTitle>
-              <CardDescription>Concepts you've saved for future study. (Dummy Data)</CardDescription>
-            </CardHeader>
-            <CardContent>
-               {bookmarkedConcepts.length > 0 ? (
-                  <ul className="space-y-3">
-                      {bookmarkedConcepts.map(concept => (
-                          <li key={concept.title} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                             <div className='flex items-center gap-3'>
-                               <Bookmark className="w-4 h-4 text-primary" />
-                               <span className="capitalize font-medium">{concept.title}</span>
-                             </div>
-                             <Button asChild variant="secondary" size="sm">
-                               <Link href={concept.link}>Review</Link>
-                             </Button>
-                          </li>
-                      ))}
-                  </ul>
-              ) : (
-                  <div className="flex flex-col items-center justify-center text-center text-muted-foreground p-4">
-                      <Bookmark className="w-8 h-8 mb-2"/>
-                      <p>You haven't bookmarked any concepts yet.</p>
-                  </div>
-              )}
-            </CardContent>
-          </Card>
         </div>
       </>
     )}
     </main>
   );
 }
-
-    
