@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,112 +10,78 @@ import { Loader2, CheckCircle, XCircle, Sparkles } from 'lucide-react';
 import type { QuizState } from '../quiz/page';
 import { analyzeCodingAnswers, AnalyzeCodingAnswersInput, AnswerAnalysis } from '@/ai/flows/analyze-coding-answers';
 import type { QuizResult, StoredActivity } from '@/lib/types';
+import { useAuth } from '@/context/auth-context';
+import { getActivity, updateActivity } from '@/lib/firebase-service';
 
 
 export default function CodingQuizAnalysisPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { user } = useAuth();
+
   const [analysis, setAnalysis] = useState<AnswerAnalysis[] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [quizState, setQuizState] = useState<QuizState | null>(null);
-  const [quizResult, setQuizResult] = useState<QuizResult | null>(null);
 
-  useEffect(() => {
+  const getAnalysis = useCallback(async () => {
     const quizId = searchParams.get('id');
-    const attemptId = sessionStorage.getItem('currentQuizAttemptId');
+    if (!user || !quizId) {
+        setIsLoading(false);
+        return;
+    };
 
-    async function getAnalysis() {
-      setIsLoading(true);
+    setIsLoading(true);
 
-      // This logic handles viewing a past, completed result
-      if (quizId && !attemptId) {
-        const allResults: StoredActivity[] = JSON.parse(localStorage.getItem('allUserActivity') || '[]');
-        const existingResult = allResults.find(r => r.id === quizId && r.type === 'quiz') as QuizResult | undefined;
-        if (existingResult && existingResult.analysis.length > 0) {
-          setQuizResult(existingResult);
-          setQuizState(existingResult.quizState);
-          setAnalysis(existingResult.analysis);
-          setIsLoading(false);
-          return;
-        } else {
-          router.replace('/dashboard');
-          return;
-        }
-      }
+    const allResults = await getActivity(user.uid);
+    const currentQuizResult = allResults.find(r => r.id === quizId && r.type === 'quiz') as QuizResult | undefined;
 
-      // This logic handles a new quiz submission that needs analysis
-      const results = sessionStorage.getItem('quizResults');
-      if (!results) {
+    if (!currentQuizResult) {
         router.replace('/dashboard');
         return;
-      }
-      
-      const parsedState: QuizState = JSON.parse(results);
-      setQuizState(parsedState);
-      
-      const topics = sessionStorage.getItem('quizTopics') || 'N/A';
-      const difficulty = sessionStorage.getItem('quizDifficulty') || 'N/A';
+    }
 
-      try {
+    // If analysis is already present, just display it
+    if (currentQuizResult.analysis.length > 0) {
+        setQuizState(currentQuizResult.quizState);
+        setAnalysis(currentQuizResult.analysis);
+        setIsLoading(false);
+        return;
+    }
+
+    // Otherwise, run the analysis
+    const parsedState: QuizState = currentQuizResult.quizState;
+    setQuizState(parsedState);
+
+    try {
         const input: AnalyzeCodingAnswersInput = { submissions: parsedState };
         const analysisResult = await analyzeCodingAnswers(input);
         setAnalysis(analysisResult.analysis);
 
-        const allActivity: StoredActivity[] = JSON.parse(localStorage.getItem('allUserActivity') || '[]');
-        
-        let finalId = attemptId;
+        const score = Math.round(analysisResult.analysis.reduce((sum, item) => sum + item.score, 0) / analysisResult.analysis.length * 100);
 
-        // Find the placeholder attempt and update it, or create a new entry
-        const attemptIndex = allActivity.findIndex(a => a.id === attemptId);
+        const updatedResult: QuizResult = {
+            ...currentQuizResult,
+            analysis: analysisResult.analysis,
+            details: {
+                ...currentQuizResult.details,
+                score: `${score}%`
+            }
+        };
 
-        if (attemptIndex !== -1) {
-            const updatedResult: QuizResult = {
-                ...(allActivity[attemptIndex] as QuizResult),
-                quizState: parsedState,
-                analysis: analysisResult.analysis,
-                details: {
-                    ...allActivity[attemptIndex].details,
-                    score: `${Math.round(analysisResult.analysis.reduce((sum, item) => sum + item.score, 0) / analysisResult.analysis.length * 100)}%`
-                }
-            };
-            allActivity[attemptIndex] = updatedResult;
-        } else {
-            const newResult: QuizResult = {
-                id: `quiz_${Date.now()}`,
-                type: 'quiz',
-                timestamp: new Date().toISOString(),
-                quizState: parsedState,
-                analysis: analysisResult.analysis,
-                topics: topics,
-                difficulty: difficulty,
-                details: {
-                    topic: topics,
-                    difficulty: difficulty,
-                    score: `${Math.round(analysisResult.analysis.reduce((sum, item) => sum + item.score, 0) / analysisResult.analysis.length * 100)}%`
-                }
-            };
-            allActivity.unshift(newResult);
-            finalId = newResult.id;
-        }
-        
-        localStorage.setItem('allUserActivity', JSON.stringify(allActivity.slice(0, 20)));
+        await updateActivity(user.uid, updatedResult);
 
-        sessionStorage.removeItem('quizResults');
-        sessionStorage.removeItem('quizTopics');
-        sessionStorage.removeItem('quizDifficulty');
         sessionStorage.removeItem('currentQuizAttemptId');
 
-        router.replace(`/dashboard/coding-quiz/analysis?id=${finalId}`, undefined);
-
-      } catch (error) {
+    } catch (error) {
         console.error('Failed to analyze answers:', error);
-      } finally {
+    } finally {
         setIsLoading(false);
-      }
     }
+  }, [user, searchParams, router]);
 
+  useEffect(() => {
     getAnalysis();
-  }, [router, searchParams]);
+  }, [getAnalysis]);
 
   const overallScore = useMemo(() => {
     if (!analysis) return 0;

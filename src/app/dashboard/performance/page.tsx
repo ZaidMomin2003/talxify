@@ -1,10 +1,10 @@
 
 'use client';
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import type { QuizResult, StoredActivity } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { BarChart, BookOpen, Brain, HelpCircle, TrendingUp, Trophy } from 'lucide-react';
+import { BarChart, BookOpen, Brain, HelpCircle, Trophy } from 'lucide-react';
 import {
   AreaChart,
   Area,
@@ -26,6 +26,8 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
+import { useAuth } from '@/context/auth-context';
+import { getActivity } from '@/lib/firebase-service';
 
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
@@ -49,25 +51,25 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 export default function PerformancePage() {
   const [quizResults, setQuizResults] = useState<QuizResult[]>([]);
   const [hasLoaded, setHasLoaded] = useState(false);
+  const { user } = useAuth();
 
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const storedActivity = localStorage.getItem('allUserActivity');
-      if (storedActivity) {
-        const allActivity: StoredActivity[] = JSON.parse(storedActivity);
+  const fetchActivity = useCallback(async () => {
+    if (user) {
+        const allActivity = await getActivity(user.uid);
         const completedQuizzes = allActivity.filter(
             (item): item is QuizResult => item.type === 'quiz' && item.analysis && item.analysis.length > 0
         );
         setQuizResults(completedQuizzes);
-      }
-      setHasLoaded(true);
     }
-  }, []);
+  }, [user]);
+
+  useEffect(() => {
+    fetchActivity().finally(() => setHasLoaded(true));
+  }, [fetchActivity]);
 
   const performanceData = useMemo(() => {
     if (quizResults.length === 0) return [];
     
-    // Generates a mock "average" score for comparison purposes
     const generateComparisonScore = (index: number, total: number) => {
         const base = 55;
         const growth = (index / Math.max(total - 1, 1)) * 20; 
@@ -76,8 +78,7 @@ export default function PerformancePage() {
     };
     
     return [...quizResults]
-        .filter(r => r.analysis && r.analysis.length > 0)
-        .reverse()
+        .sort((a,b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
         .map((result, index, arr) => {
             const totalScore = result.analysis.reduce((sum, item) => sum + item.score, 0);
             const averageScore = Math.round((totalScore / Math.max(result.analysis.length, 1)) * 100);

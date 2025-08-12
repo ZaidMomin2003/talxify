@@ -1,7 +1,7 @@
-
 // src/lib/firebase.ts
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, GithubAuthProvider } from 'firebase/auth';
+import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
   apiKey: "AIzaSyD655B1QEZiJGUGTAOblJrLF1vS1BO62Gw",
@@ -15,8 +15,9 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const auth = getAuth(app);
+const db = getFirestore(app);
 const googleProvider = new GoogleAuthProvider();
 const githubProvider = new GithubAuthProvider();
 githubProvider.setCustomParameters({ prompt: 'select_account' });
 
-export { app, auth, googleProvider, githubProvider };
+export { app, auth, db, googleProvider, githubProvider };

@@ -10,6 +10,10 @@ import { generateCodingQuestions, GenerateCodingQuestionsInput, CodingQuestion }
 import { Progress } from '@/components/ui/progress';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/context/auth-context';
+import { updateActivity } from '@/lib/firebase-service';
+import type { QuizResult } from '@/lib/types';
+
 
 export type QuizState = {
     question: CodingQuestion;
@@ -20,6 +24,7 @@ export default function CodingQuizPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const [questions, setQuestions] = useState<CodingQuestion[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -54,10 +59,6 @@ export default function CodingQuizPage() {
         if (result.questions && result.questions.length > 0) {
             setQuestions(result.questions);
             setUserAnswers(new Array(result.questions.length).fill(''));
-
-            // Create placeholder in localStorage
-            const attemptId = `quiz_attempt_${Date.now()}`;
-            sessionStorage.setItem('currentQuizAttemptId', attemptId);
         } else {
              toast({
                 title: 'No Questions',
@@ -79,9 +80,7 @@ export default function CodingQuizPage() {
       }
     }
 
-    if (topics && difficulty && numQuestions > 0) {
-      fetchQuestions();
-    }
+    fetchQuestions();
   }, [topics, difficulty, numQuestions, router, toast]);
 
   const handleAnswerChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -102,16 +101,39 @@ export default function CodingQuizPage() {
     }
   };
 
-  const finishQuiz = () => {
+  const finishQuiz = async () => {
+    if(!user) return;
+
     const quizState: QuizState = questions.map((q, i) => ({
       question: q,
       userAnswer: userAnswers[i],
     }));
     
-    sessionStorage.setItem('quizResults', JSON.stringify(quizState));
-    sessionStorage.setItem('quizTopics', topics);
-    sessionStorage.setItem('quizDifficulty', difficulty);
-    router.push('/dashboard/coding-quiz/analysis');
+    const attemptId = sessionStorage.getItem('currentQuizAttemptId');
+    if (!attemptId) {
+        console.error("No attempt ID found");
+        router.push('/dashboard');
+        return;
+    }
+
+    const quizResult: QuizResult = {
+        id: attemptId,
+        type: 'quiz',
+        timestamp: new Date().toISOString(),
+        quizState: quizState,
+        analysis: [],
+        topics: topics,
+        difficulty: difficulty,
+        details: {
+            topic: topics,
+            difficulty: difficulty,
+            score: 'Pending'
+        }
+    };
+    
+    await updateActivity(user.uid, quizResult);
+
+    router.push(`/dashboard/coding-quiz/analysis?id=${attemptId}`);
   };
 
   if (isLoading) {

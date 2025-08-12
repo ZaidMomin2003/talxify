@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,7 +12,6 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuTrigger,
   DropdownMenuSub,
   DropdownMenuSubTrigger,
   DropdownMenuSubContent
@@ -37,6 +36,7 @@ import { useAuth } from "@/context/auth-context";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import { Switch } from "@/components/ui/switch";
+import { getActivity } from "@/lib/firebase-service";
 
 export default function DashboardLayout({
   children,
@@ -50,6 +50,13 @@ export default function DashboardLayout({
   const [recentActivity, setRecentActivity] = useState<StoredActivity[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
 
+  const fetchActivity = useCallback(async () => {
+    if (user) {
+      const activities = await getActivity(user.uid);
+      setRecentActivity(activities.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()));
+    }
+  }, [user]);
+  
   useEffect(() => {
     if (!loading && !user) {
       router.push('/login');
@@ -58,14 +65,8 @@ export default function DashboardLayout({
 
 
   useEffect(() => {
-    // This effect runs on the client-side, where localStorage is available.
-    if (typeof window !== 'undefined') {
-      const storedActivity = localStorage.getItem('allUserActivity');
-      if (storedActivity) {
-        setRecentActivity(JSON.parse(storedActivity));
-      }
-    }
-  }, [pathname]); // Rerun when path changes to maybe update activity
+    fetchActivity();
+  }, [pathname, fetchActivity]);
 
   const menuItems = [
     { href: "/dashboard", label: "Dashboard", icon: LayoutGrid },
@@ -215,7 +216,7 @@ export default function DashboardLayout({
                     </div>
                     <DropdownMenuSeparator />
                     {filteredActivity.length > 0 ? (
-                      filteredActivity.map((item) => (
+                      filteredActivity.slice(0, 5).map((item) => (
                         <DropdownMenuItem key={item.id} asChild>
                           <Link href={item.type === 'quiz' ? `/dashboard/coding-quiz/analysis?id=${item.id}` : '#'} className="cursor-pointer">
                             <div className="flex items-start gap-3">

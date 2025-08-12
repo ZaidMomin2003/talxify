@@ -13,12 +13,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useRouter } from "next/navigation";
-import React, { useState, useEffect, useMemo } from "react";
-import type { QuizResult } from "./coding-quiz/analysis/page";
-import type { StoredActivity } from "@/lib/types";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
+import type { StoredActivity, QuizResult, InterviewActivity } from "@/lib/types";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { useAuth } from "@/context/auth-context";
+import { getActivity, addActivity } from "@/lib/firebase-service";
 
 const codingAssistantSchema = z.object({
   topics: z.string().min(1, "Topics are required."),
@@ -32,7 +33,8 @@ const mockInterviewSchema = z.object({
 
 export default function DashboardPage() {
   const router = useRouter();
-
+  const { user } = useAuth();
+  
   const codingAssistantForm = useForm<z.infer<typeof codingAssistantSchema>>({
     resolver: zodResolver(codingAssistantSchema),
     defaultValues: {
@@ -49,68 +51,79 @@ export default function DashboardPage() {
     },
   });
 
-  const [recentQuizzes, setRecentQuizzes] = useState<QuizResult[]>([]);
+  const [allActivity, setAllActivity] = useState<StoredActivity[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedQuiz, setSelectedQuiz] = useState<QuizResult | null>(null);
-  const [allActivity, setAllActivity] = useState<StoredActivity[]>([]);
+
+  const fetchActivity = useCallback(async () => {
+    if (user) {
+        const activities = await getActivity(user.uid);
+        setAllActivity(activities);
+    }
+  }, [user]);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const storedActivity = localStorage.getItem('allUserActivity');
-      if (storedActivity) {
-          const parsedActivity = JSON.parse(storedActivity);
-          setAllActivity(parsedActivity);
-          const quizzes = parsedActivity.filter((item: StoredActivity) => item.type === 'quiz') as QuizResult[];
-          setRecentQuizzes(quizzes);
-      }
-    }
-  }, []);
+    fetchActivity();
+  }, [fetchActivity]);
 
-  function onCodingAssistantSubmit(values: z.infer<typeof codingAssistantSchema>) {
+  async function onCodingAssistantSubmit(values: z.infer<typeof codingAssistantSchema>) {
+    if (!user) return;
     const params = new URLSearchParams({
         topics: values.topics,
         difficulty: values.difficulty,
         numQuestions: "3",
     });
-     if (typeof window !== 'undefined') {
-        const newQuizAttempt: QuizResult = {
-            id: `quiz_attempt_${Date.now()}`,
-            type: 'quiz',
-            timestamp: new Date().toISOString(),
-            quizState: [], // Empty for now, completed on analysis
-            analysis: [], // Empty for now, completed on analysis
-            topics: values.topics,
+    
+    const newQuizAttempt: QuizResult = {
+        id: `quiz_attempt_${Date.now()}`,
+        type: 'quiz',
+        timestamp: new Date().toISOString(),
+        quizState: [], 
+        analysis: [], 
+        topics: values.topics,
+        difficulty: values.difficulty,
+        details: {
+            topic: values.topics,
             difficulty: values.difficulty,
-            details: {
-                topic: values.topics,
-                difficulty: values.difficulty,
-                score: 'Pending',
-            }
-        };
-
-        const currentActivity: StoredActivity[] = JSON.parse(localStorage.getItem('allUserActivity') || '[]');
-        currentActivity.unshift(newQuizAttempt);
-        localStorage.setItem('allUserActivity', JSON.stringify(currentActivity.slice(0, 20)));
-    }
+            score: 'Pending',
+        }
+    };
+    await addActivity(user.uid, newQuizAttempt);
+    sessionStorage.setItem('currentQuizAttemptId', newQuizAttempt.id);
     router.push(`/dashboard/coding-quiz/instructions?${params.toString()}`);
   }
 
-  function onMockInterviewSubmit(values: z.infer<typeof mockInterviewSchema>) {
+  async function onMockInterviewSubmit(values: z.infer<typeof mockInterviewSchema>) {
+    if(!user) return;
     const params = new URLSearchParams({
         topic: values.topic,
         role: values.role,
     });
+     const newInterview: InterviewActivity = {
+        id: `interview_${Date.now()}`,
+        type: 'interview',
+        timestamp: new Date().toISOString(),
+        details: {
+            topic: values.topic,
+            role: values.role,
+        }
+    };
+    await addActivity(user.uid, newInterview);
     router.push(`/dashboard/mock-interview/instructions?${params.toString()}`);
   }
 
-  const { questionsSolved, interviewsCompleted } = useMemo(() => {
-    if (typeof window === 'undefined') return { questionsSolved: 0, interviewsCompleted: 0 };
-    const activity: StoredActivity[] = JSON.parse(localStorage.getItem('allUserActivity') || '[]');
-    const solved = activity
-      .filter(item => item.type === 'quiz' && (item as QuizResult).analysis.length > 0)
-      .reduce((acc, quiz) => acc + (quiz as QuizResult).quizState.length, 0);
-    const interviews = activity.filter(item => item.type === 'interview').length;
-    return { questionsSolved: solved, interviewsCompleted: interviews };
+  const { questionsSolved, interviewsCompleted, recentQuizzes } = useMemo(() => {
+    const quizzes = allActivity.filter(item => item.type === 'quiz') as QuizResult[];
+    const interviews = allActivity.filter(item => item.type === 'interview');
+    const solved = quizzes
+      .filter(item => item.analysis.length > 0)
+      .reduce((acc, quiz) => acc + quiz.quizState.length, 0);
+
+    return {
+        questionsSolved: solved,
+        interviewsCompleted: interviews.length,
+        recentQuizzes: quizzes.sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+    };
   }, [allActivity]);
 
   const filteredQuizzes = useMemo(() => {
