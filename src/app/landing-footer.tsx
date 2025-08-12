@@ -51,6 +51,7 @@ export default function LandingFooter() {
                 <li><Link href="/privacy-policy" className="text-muted-foreground hover:text-primary">Privacy Policy</Link></li>
                 <li><Link href="/terms-of-service" className="text-muted-foreground hover:text-primary">Terms of Service</Link></li>
                 <li><Link href="/refund-policy" className="text-muted-foreground hover:text-primary">Refund Policy</Link></li>
+                <li><Link href="/shipping-policy" className="text-muted-foreground hover:text-primary">Service Delivery</Link></li>
               </ul>
             </div>
             <div>
@@ -77,5 +78,3 @@ export default function LandingFooter() {
     </footer>
   );
 }
-
-    
