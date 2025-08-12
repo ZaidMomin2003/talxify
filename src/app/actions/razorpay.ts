@@ -3,8 +3,7 @@
 
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
-import {-sel-
--self-
+
 export async function createOrder(amount: number) {
   if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
     throw new Error('Razorpay keys are not configured in environment variables.');
