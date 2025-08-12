@@ -3,6 +3,7 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from '@/context/auth-context';
 import { ThemeProvider } from '@/components/theme-provider';
+import DisclaimerDialog from '@/components/disclaimer-dialog';
 
 export const metadata: Metadata = {
   title: 'Talxify',
@@ -30,6 +31,7 @@ export default function RootLayout({
         >
           <AuthProvider>
             {children}
+            <DisclaimerDialog />
           </AuthProvider>
           <Toaster />
         </ThemeProvider>
