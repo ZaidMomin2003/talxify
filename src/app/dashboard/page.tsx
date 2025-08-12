@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Rocket, Code, Briefcase, Percent, Search, RefreshCw, BarChart, Info, CalendarDays } from "lucide-react";
+import { Rocket, Code, Briefcase, Percent, Search, RefreshCw, BarChart, Info, CalendarDays, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useForm } from "react-hook-form";
@@ -35,6 +35,23 @@ export default function DashboardPage() {
   const router = useRouter();
   const { user } = useAuth();
   
+  const [isCodingLoading, setIsCodingLoading] = useState(false);
+  const [isInterviewLoading, setIsInterviewLoading] = useState(false);
+  const [allActivity, setAllActivity] = useState<StoredActivity[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedQuiz, setSelectedQuiz] = useState<QuizResult | null>(null);
+
+  const fetchActivity = useCallback(async () => {
+    if (user) {
+        const activities = await getActivity(user.uid);
+        setAllActivity(activities);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    fetchActivity();
+  }, [fetchActivity]);
+
   const codingAssistantForm = useForm<z.infer<typeof codingAssistantSchema>>({
     resolver: zodResolver(codingAssistantSchema),
     defaultValues: {
@@ -51,23 +68,10 @@ export default function DashboardPage() {
     },
   });
 
-  const [allActivity, setAllActivity] = useState<StoredActivity[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedQuiz, setSelectedQuiz] = useState<QuizResult | null>(null);
-
-  const fetchActivity = useCallback(async () => {
-    if (user) {
-        const activities = await getActivity(user.uid);
-        setAllActivity(activities);
-    }
-  }, [user]);
-
-  useEffect(() => {
-    fetchActivity();
-  }, [fetchActivity]);
-
   async function onCodingAssistantSubmit(values: z.infer<typeof codingAssistantSchema>) {
     if (!user) return;
+    setIsCodingLoading(true);
+
     const params = new URLSearchParams({
         topics: values.topics,
         difficulty: values.difficulty,
@@ -88,13 +92,21 @@ export default function DashboardPage() {
             score: 'Pending',
         }
     };
-    await addActivity(user.uid, newQuizAttempt);
-    sessionStorage.setItem('currentQuizAttemptId', newQuizAttempt.id);
-    router.push(`/dashboard/coding-quiz/instructions?${params.toString()}`);
+
+    try {
+        await addActivity(user.uid, newQuizAttempt);
+        sessionStorage.setItem('currentQuizAttemptId', newQuizAttempt.id);
+        router.push(`/dashboard/coding-quiz/instructions?${params.toString()}`);
+    } catch(error) {
+        console.error("Failed to start quiz:", error);
+        setIsCodingLoading(false);
+    }
   }
 
   async function onMockInterviewSubmit(values: z.infer<typeof mockInterviewSchema>) {
     if(!user) return;
+    setIsInterviewLoading(true);
+
     const params = new URLSearchParams({
         topic: values.topic,
         role: values.role,
@@ -108,8 +120,14 @@ export default function DashboardPage() {
             role: values.role,
         }
     };
-    await addActivity(user.uid, newInterview);
-    router.push(`/dashboard/mock-interview/instructions?${params.toString()}`);
+
+    try {
+        await addActivity(user.uid, newInterview);
+        router.push(`/dashboard/mock-interview/instructions?${params.toString()}`);
+    } catch(error) {
+        console.error("Failed to start interview:", error);
+        setIsInterviewLoading(false);
+    }
   }
 
   const { questionsSolved, interviewsCompleted, recentQuizzes } = useMemo(() => {
@@ -241,7 +259,8 @@ export default function DashboardPage() {
                         </FormItem>
                       )}
                     />
-                    <Button type="submit" size="lg">
+                    <Button type="submit" size="lg" disabled={isInterviewLoading}>
+                        {isInterviewLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Start Interview
                     </Button>
                   </div>
@@ -297,8 +316,9 @@ export default function DashboardPage() {
                         </FormItem>
                       )}
                     />
-                     <Button type="submit" size="lg" variant="secondary">
-                      Start Coding
+                     <Button type="submit" size="lg" variant="secondary" disabled={isCodingLoading}>
+                        {isCodingLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Start Coding
                     </Button>
                   </div>
               </CardContent>
