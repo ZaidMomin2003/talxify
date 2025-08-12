@@ -311,7 +311,7 @@ export default function PortfolioPage() {
 
         <div className="flex justify-end gap-2 pt-4">
             <Button asChild variant="outline" size="lg">
-              <Link href={{ pathname: "/johndoe", query: { color: portfolio.themeColor } }}>Preview</Link>
+              <Link href={{ pathname: "/johndoe" }}>Preview</Link>
             </Button>
             <Button size="lg" onClick={handleSave} disabled={isSaving}>
                 {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

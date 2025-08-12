@@ -6,12 +6,16 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Github, Linkedin, Instagram, Mail, Phone, Link as LinkIcon, Award, Briefcase, MessageSquare, GraduationCap, Sparkles, Building, Calendar, Star, Code, Twitter, Globe, School, Percent } from "lucide-react";
+import { Github, Linkedin, Instagram, Mail, Phone, Link as LinkIcon, Award, Briefcase, MessageSquare, GraduationCap, Sparkles, Building, Calendar, Star, Code, Twitter, Globe, School, Percent, Loader2 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
-import React, { Suspense } from "react";
+import React, { Suspense, useEffect, useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
+import { useAuth } from "@/context/auth-context";
+import { getPortfolio } from "@/lib/firebase-service";
+import type { Portfolio } from "@/lib/types";
+import { initialPortfolioData } from "@/lib/initial-data";
 
 const Section = ({ icon, title, children, className }: { icon: React.ReactNode, title: string, children: React.ReactNode, className?: string }) => (
     <section className={cn("space-y-6", className)}>
@@ -26,70 +30,53 @@ const Section = ({ icon, title, children, className }: { icon: React.ReactNode, 
 );
 
 function PortfolioComponent() {
-    const searchParams = useSearchParams()
-    const themeColor = searchParams.get('color') || '210 90% 60%';
+    const { user } = useAuth();
+    const [portfolio, setPortfolio] = useState<Portfolio | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const searchParams = useSearchParams();
+    const themeColor = searchParams.get('color') || '221.2 83.2% 53.3%';
 
-    const portfolio = {
-        name: 'John Doe',
-        profession: 'Senior Software Engineer',
-        bio: 'A passionate software engineer with a love for building scalable and user-friendly web applications. I thrive in collaborative environments and am always eager to learn new technologies.',
-        email: 'john.doe@example.com',
-        phone: '+1 234 567 890',
-        bannerUrl: 'https://placehold.co/1200x300.png',
-        socials: {
-            github: 'https://github.com/johndoe',
-            linkedin: 'https://linkedin.com/in/johndoe',
-            instagram: 'https://instagram.com/johndoe',
-            twitter: 'https://twitter.com/johndoe',
-            website: 'https://johndoe.com',
-        },
-        skills: ['React', 'Next.js', 'TypeScript', 'Node.js', 'GraphQL', 'PostgreSQL', 'Docker', 'Kubernetes'],
-        experience: [
-            { role: 'Senior Software Engineer', company: 'Tech Innovations Inc.', duration: '2021 - Present', description: 'Led the development of a new microservices-based architecture, improving system scalability by 50%.' },
-            { role: 'Software Engineer', company: 'Solutions Co.', duration: '2019 - 2021', description: 'Developed and maintained client-side features for a large-scale e-commerce platform using React and Redux.' },
-        ],
-        education: [
-            { degree: 'B.Sc. in Computer Science', institution: 'State University', year: '2018' }
-        ],
-        projects: [
-            { title: 'Talxify - AI Interview Coach', description: 'An AI-powered platform to help users practice for technical interviews with real-time feedback and coding assistance.', link: 'https://talxify.ai', tags: ['Next.js', 'AI', 'Tailwind'] },
-            { title: 'E-commerce Platform', description: 'Built a full-featured e-commerce site with Next.js, Stripe, and Sanity.io, focusing on performance and user experience.', link: '#', tags: ['React', 'Stripe', 'E-commerce'] },
-        ],
-        certificates: [
-            { name: 'Google Cloud Certified - Professional Cloud Architect', body: 'Google Cloud', date: '2023-05' },
-            { name: 'Certified Kubernetes Administrator (CKA)', body: 'The Linux Foundation', date: '2022-11' },
-        ],
-        achievements: [
-            "Speaker at React Conf 2023 on 'The Future of Web Development'.",
-            "Won 1st place in the 2022 TechCrunch Disrupt Hackathon.",
-            "Contributed to several open-source projects, including Next.js and Tailwind CSS."
-        ],
-        testimonials: [
-            { testimonial: 'John is a brilliant engineer who brings not only technical expertise but also a creative and collaborative spirit to every project. He was instrumental in our latest launch.', author: 'Jane Smith, CEO of Tech Innovations' },
-            { testimonial: 'I had the pleasure of mentoring John early in his career. His growth has been phenomenal, and he has a rare talent for simplifying complex problems.', author: 'Sam Wilson, Principal Engineer at Innovate LLC' },
-        ],
-        faqs: [
-            { question: 'What are you most passionate about in software development?', answer: 'I am most passionate about creating elegant solutions to complex problems and building products that have a meaningful impact on people\'s lives. I love the blend of creativity and logic that software engineering requires.' },
-            { question: 'What is your preferred tech stack?', answer: 'I am most experienced with the React/Next.js ecosystem, TypeScript, Node.js, and PostgreSQL. However, I am a firm believer in using the right tool for the job and am always open to learning new technologies.' },
-        ],
-    };
+    const fetchPortfolio = useCallback(async () => {
+        if (!user) {
+            // Use initial data for non-logged in view or preview
+            setPortfolio(initialPortfolioData.portfolio);
+            setIsLoading(false);
+            return;
+        }
+        setIsLoading(true);
+        const data = await getPortfolio(user.uid);
+        setPortfolio(data ?? initialPortfolioData.portfolio);
+        setIsLoading(false);
+    }, [user]);
 
+    useEffect(() => {
+        fetchPortfolio();
+    }, [fetchPortfolio]);
+
+    if (isLoading || !portfolio) {
+        return (
+            <div className="flex h-screen items-center justify-center">
+                <Loader2 className="h-16 w-16 animate-spin text-primary" />
+            </div>
+        );
+    }
+    
     return (
         <div 
             className="bg-background min-h-screen"
-            style={{ '--primary': themeColor } as React.CSSProperties}
+            style={{ '--primary': portfolio.themeColor } as React.CSSProperties}
         >
             <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur-sm">
                 <div className="container mx-auto flex h-16 items-center justify-between px-4 md:px-6 max-w-4xl">
                     <Link href="#" className="flex items-center gap-2">
                         <Avatar>
-                            <AvatarImage src="https://placehold.co/40x40.png" alt={portfolio.name} data-ai-hint="person avatar" />
-                            <AvatarFallback>{portfolio.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                            <AvatarImage src="https://placehold.co/40x40.png" alt={portfolio.personalInfo.name} data-ai-hint="person avatar" />
+                            <AvatarFallback>{portfolio.personalInfo.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
                         </Avatar>
-                        <span className="text-xl font-bold">{portfolio.name}</span>
+                        <span className="text-xl font-bold">{portfolio.personalInfo.name}</span>
                     </Link>
                     <Button asChild>
-                        <a href={`mailto:${portfolio.email}`}>Contact Me</a>
+                        <a href={`mailto:${portfolio.personalInfo.email}`}>Contact Me</a>
                     </Button>
                 </div>
             </header>
@@ -97,16 +84,16 @@ function PortfolioComponent() {
             <main className="container mx-auto p-4 md:p-6 lg:p-8 space-y-16 max-w-4xl">
                 {/* Hero Section */}
                 <section className="relative -mt-16 -mx-8">
-                     <Image src={portfolio.bannerUrl} alt="Portfolio Banner" width={1200} height={300} className="w-full h-48 md:h-64 object-cover" data-ai-hint="abstract banner" />
+                     <Image src={portfolio.personalInfo.bannerUrl || 'https://placehold.co/1200x300.png'} alt="Portfolio Banner" width={1200} height={300} className="w-full h-48 md:h-64 object-cover" data-ai-hint="abstract banner" />
                     <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent" />
                     <div className="relative container max-w-4xl mx-auto p-4 md:p-6 lg:p-8 text-center -mt-24">
                         <Avatar className="w-32 h-32 mx-auto mb-4 border-4 border-primary shadow-lg">
-                            <AvatarImage src="https://placehold.co/128x128.png" alt={portfolio.name} data-ai-hint="person avatar" />
-                            <AvatarFallback>{portfolio.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                            <AvatarImage src="https://placehold.co/128x128.png" alt={portfolio.personalInfo.name} data-ai-hint="person avatar" />
+                            <AvatarFallback>{portfolio.personalInfo.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
                         </Avatar>
-                        <h1 className="text-5xl font-headline font-bold mb-2">{portfolio.name}</h1>
-                        <p className="text-2xl text-primary font-semibold mb-4">{portfolio.profession}</p>
-                        <p className="max-w-3xl mx-auto text-lg text-muted-foreground mb-6">{portfolio.bio}</p>
+                        <h1 className="text-5xl font-headline font-bold mb-2">{portfolio.personalInfo.name}</h1>
+                        <p className="text-2xl text-primary font-semibold mb-4">{portfolio.personalInfo.profession}</p>
+                        <p className="max-w-3xl mx-auto text-lg text-muted-foreground mb-6">{portfolio.personalInfo.bio}</p>
                         <div className="flex justify-center flex-wrap gap-4 mb-8">
                             <Button variant="ghost" size="icon" asChild><a href={portfolio.socials.github} target="_blank" rel="noopener noreferrer"><Github /></a></Button>
                             <Button variant="ghost" size="icon" asChild><a href={portfolio.socials.linkedin} target="_blank" rel="noopener noreferrer"><Linkedin /></a></Button>
@@ -115,8 +102,8 @@ function PortfolioComponent() {
                             <Button variant="ghost" size="icon" asChild><a href={portfolio.socials.website} target="_blank" rel="noopener noreferrer"><Globe /></a></Button>
                         </div>
                         <div className="flex justify-center flex-wrap gap-x-6 gap-y-2">
-                            <a href={`mailto:${portfolio.email}`} className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary"><Mail className="w-4 h-4" />{portfolio.email}</a>
-                            {portfolio.phone && <div className="inline-flex items-center gap-2 text-sm text-muted-foreground"><Phone className="w-4 h-4" />{portfolio.phone}</div>}
+                            <a href={`mailto:${portfolio.personalInfo.email}`} className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary"><Mail className="w-4 h-4" />{portfolio.personalInfo.email}</a>
+                            {portfolio.personalInfo.phone && <div className="inline-flex items-center gap-2 text-sm text-muted-foreground"><Phone className="w-4 h-4" />{portfolio.personalInfo.phone}</div>}
                         </div>
                     </div>
                 </section>
@@ -160,7 +147,7 @@ function PortfolioComponent() {
                     <Card className="p-6">
                         <div className="flex flex-wrap gap-3">
                             {portfolio.skills.map((skill) => (
-                                <Badge key={skill} variant="secondary" className="text-base px-4 py-2">{skill}</Badge>
+                                <Badge key={skill.skill} variant="secondary" className="text-base px-4 py-2">{skill.skill}</Badge>
                             ))}
                         </div>
                     </Card>
@@ -216,7 +203,7 @@ function PortfolioComponent() {
                                 <CardContent>
                                     <p className="text-muted-foreground mb-4">{project.description}</p>
                                     <div className="flex flex-wrap gap-2">
-                                        {project.tags.map(tag => <Badge key={tag} variant="secondary">{tag}</Badge>)}
+                                        {project.tags.split(',').map(tag => tag.trim() && <Badge key={tag} variant="secondary">{tag}</Badge>)}
                                     </div>
                                 </CardContent>
                             </Card>
@@ -248,7 +235,7 @@ function PortfolioComponent() {
                             {portfolio.achievements.map((ach, index) => (
                                 <li key={index} className="flex items-start gap-3">
                                     <Star className="w-4 h-4 text-primary mt-1 shrink-0" />
-                                    <span className="text-muted-foreground">{ach}</span>
+                                    <span className="text-muted-foreground">{ach.description}</span>
                                 </li>
                             ))}
                         </ul>
@@ -283,7 +270,7 @@ function PortfolioComponent() {
             </main>
 
             <footer className="text-center p-6 border-t mt-16">
-                <p className="text-muted-foreground">© {new Date().getFullYear()} {portfolio.name}. All rights reserved.</p>
+                <p className="text-muted-foreground">© {new Date().getFullYear()} {portfolio.personalInfo.name}. All rights reserved.</p>
             </footer>
         </div>
     );
@@ -291,7 +278,11 @@ function PortfolioComponent() {
 
 export default function PortfolioPreviewPage() {
     return (
-        <Suspense fallback={<div>Loading...</div>}>
+        <Suspense fallback={
+            <div className="flex h-screen items-center justify-center">
+                <Loader2 className="h-16 w-16 animate-spin text-primary" />
+            </div>
+        }>
             <PortfolioComponent />
         </Suspense>
     )
