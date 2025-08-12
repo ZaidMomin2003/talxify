@@ -53,7 +53,8 @@ export default function CodingQuizPage() {
           topics: topics,
           language: 'JavaScript',
           difficulty: difficulty as any,
-          count: numQuestions
+          count: numQuestions,
+          example: 'Write a function to reverse a string.'
         };
         const result = await generateCodingQuestions(input);
         if (result.questions && result.questions.length > 0) {
