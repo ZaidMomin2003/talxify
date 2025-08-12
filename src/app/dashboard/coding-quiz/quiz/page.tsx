@@ -45,7 +45,7 @@ export default function CodingQuizPage() {
 
       try {
         const input: GenerateCodingQuestionsInput = {
-          taskDescription: `Generate ${numQuestions} coding questions about ${topics}`,
+          topics: topics,
           language: 'JavaScript',
           difficulty: difficulty as any,
           count: numQuestions

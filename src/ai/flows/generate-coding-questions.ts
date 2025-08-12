@@ -19,7 +19,7 @@ const CodingQuestionSchema = z.object({
 export type CodingQuestion = z.infer<typeof CodingQuestionSchema>;
 
 const GenerateCodingQuestionsInputSchema = z.object({
-  taskDescription: z.string().describe('The user\'s request for coding questions, including topics.'),
+  topics: z.string().describe('The topics for the coding questions, e.g., "React, JavaScript, Algorithms".'),
   language: z.string().describe('The programming language for the questions.'),
   difficulty: z.enum(['easy', 'moderate', 'difficult']).describe('The difficulty level of the questions.'),
   count: z.number().int().min(1).max(10).describe('The number of questions to generate.'),
@@ -41,7 +41,7 @@ const prompt = ai.definePrompt({
   output: {schema: GenerateCodingQuestionsOutputSchema},
   prompt: `You are an expert programmer and interview question creator. Generate {{count}} coding questions for a quiz.
 
-Task: {{taskDescription}}
+Topics: {{topics}}
 Language: {{language}}
 Difficulty: {{difficulty}}
 
