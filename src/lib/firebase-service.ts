@@ -10,13 +10,16 @@ import { initialPortfolioData } from './initial-data';
 
 export const createUserDocument = async (userId: string, email: string, name: string): Promise<void> => {
   const userRef = doc(db, 'users', userId);
-  const initialData: UserData = {
-    ...initialPortfolioData,
-    activity: [],
-  };
-  initialData.portfolio.personalInfo.email = email;
-  initialData.portfolio.personalInfo.name = name;
-  await setDoc(userRef, initialData);
+  const docSnap = await getDoc(userRef);
+  if (!docSnap.exists()) {
+    const initialData: UserData = {
+      ...initialPortfolioData,
+      activity: [],
+    };
+    initialData.portfolio.personalInfo.email = email;
+    initialData.portfolio.personalInfo.name = name;
+    await setDoc(userRef, initialData);
+  }
 };
 
 export const getUserData = async (userId: string): Promise<UserData | null> => {
@@ -37,7 +40,7 @@ export const getPortfolio = async (userId: string): Promise<Portfolio | null> =>
 
 export const updatePortfolio = async (userId: string, portfolio: Portfolio): Promise<void> => {
   const userRef = doc(db, 'users', userId);
-  await updateDoc(userRef, { portfolio });
+  await setDoc(userRef, { portfolio }, { merge: true });
 };
 
 // --- Activity ---
@@ -49,9 +52,11 @@ export const getActivity = async (userId: string): Promise<StoredActivity[]> => 
 
 export const addActivity = async (userId: string, activity: StoredActivity): Promise<void> => {
   const userRef = doc(db, 'users', userId);
-  await updateDoc(userRef, {
+  // Use setDoc with merge to create the document if it doesn't exist,
+  // and to gracefully add to the activity array.
+  await setDoc(userRef, {
     activity: arrayUnion(activity)
-  });
+  }, { merge: true });
 };
 
 export const updateActivity = async (userId: string, updatedActivity: StoredActivity): Promise<void> => {
@@ -67,4 +72,3 @@ export const updateActivity = async (userId: string, updatedActivity: StoredActi
         await updateDoc(userRef, { activity: newActivityArray });
     }
 };
-
