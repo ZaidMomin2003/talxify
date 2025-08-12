@@ -23,6 +23,7 @@ const GenerateCodingQuestionsInputSchema = z.object({
   language: z.string().describe('The programming language for the questions.'),
   difficulty: z.enum(['easy', 'moderate', 'difficult']).describe('The difficulty level of the questions.'),
   count: z.number().int().min(1).max(10).describe('The number of questions to generate.'),
+  example: z.string().optional().describe('An example question to guide the AI, e.g., "Write a function to reverse a string."'),
 });
 export type GenerateCodingQuestionsInput = z.infer<typeof GenerateCodingQuestionsInputSchema>;
 
@@ -44,6 +45,10 @@ const prompt = ai.definePrompt({
 Topics: {{topics}}
 Language: {{language}}
 Difficulty: {{difficulty}}
+
+{{#if example}}
+Example of a good question: "{{example}}"
+{{/if}}
 
 Each question should be a clear, self-contained problem.
 `,
