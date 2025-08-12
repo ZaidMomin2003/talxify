@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -18,7 +19,7 @@ const faqItems: FaqItem[] = [
     id: '1',
     question: 'What is Talxify?',
     answer:
-      'Talxify is an AI-powered platform designed to help you ace your tech interviews. We offer realistic mock interviews, a live coding assistant, and detailed performance analytics to help you prepare effectively.',
+      'Talxify is an AI-powered platform designed to help you ace your tech interviews. We offer realistic mock interviews, a live coding gym, and detailed performance analytics to help you prepare effectively.',
     category: 'general',
   },
   {
@@ -30,7 +31,7 @@ const faqItems: FaqItem[] = [
   },
   {
     id: '3',
-    question: 'What kind of questions are in the coding assistant?',
+    question: 'What kind of questions are in the coding gym?',
     answer:
       "You can generate unlimited coding questions on various topics (like algorithms, data structures) and difficulty levels. Our AI will analyze your solutions and provide feedback and correct examples.",
     category: 'technical',
@@ -60,7 +61,7 @@ const faqItems: FaqItem[] = [
     id: '7',
     question: 'What technologies do you support for coding questions?',
     answer:
-      'Currently, our coding assistant is optimized for JavaScript, but we are actively working on expanding our language support to include Python, Java, and more.',
+      'Currently, our coding gym is optimized for JavaScript, but we are actively working on expanding our language support to include Python, Java, and more.',
     category: 'technical',
   },
   {
@@ -207,3 +208,5 @@ export default function LandingFaq() {
     </section>
   );
 }
+
+    

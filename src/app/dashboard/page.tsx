@@ -21,7 +21,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { useAuth } from "@/context/auth-context";
 import { getActivity, addActivity } from "@/lib/firebase-service";
 
-const codingAssistantSchema = z.object({
+const codingGymSchema = z.object({
   topics: z.string().min(1, "Topics are required."),
   difficulty: z.enum(["easy", "moderate", "difficult"]),
 });
@@ -52,8 +52,8 @@ export default function DashboardPage() {
     fetchActivity();
   }, [fetchActivity]);
 
-  const codingAssistantForm = useForm<z.infer<typeof codingAssistantSchema>>({
-    resolver: zodResolver(codingAssistantSchema),
+  const codingGymForm = useForm<z.infer<typeof codingGymSchema>>({
+    resolver: zodResolver(codingGymSchema),
     defaultValues: {
       topics: "",
       difficulty: "easy",
@@ -68,39 +68,14 @@ export default function DashboardPage() {
     },
   });
 
-  async function onCodingAssistantSubmit(values: z.infer<typeof codingAssistantSchema>) {
-    if (!user) return;
+  async function onCodingGymSubmit(values: z.infer<typeof codingGymSchema>) {
     setIsCodingLoading(true);
-
     const params = new URLSearchParams({
         topics: values.topics,
         difficulty: values.difficulty,
         numQuestions: "3",
     });
-    
-    const newQuizAttempt: QuizResult = {
-        id: `quiz_attempt_${Date.now()}`,
-        type: 'quiz',
-        timestamp: new Date().toISOString(),
-        quizState: [], 
-        analysis: [], 
-        topics: values.topics,
-        difficulty: values.difficulty,
-        details: {
-            topic: values.topics,
-            difficulty: values.difficulty,
-            score: 'Pending',
-        }
-    };
-
-    try {
-        await addActivity(user.uid, newQuizAttempt);
-        sessionStorage.setItem('currentQuizAttemptId', newQuizAttempt.id);
-        router.push(`/dashboard/coding-quiz/instructions?${params.toString()}`);
-    } catch(error) {
-        console.error("Failed to start quiz:", error);
-        setIsCodingLoading(false);
-    }
+    router.push(`/dashboard/coding-quiz/instructions?${params.toString()}`);
   }
 
   async function onMockInterviewSubmit(values: z.infer<typeof mockInterviewSchema>) {
@@ -270,18 +245,18 @@ export default function DashboardPage() {
         </Card>
 
         <Card className="flex flex-col shadow-lg hover:shadow-xl transition-shadow duration-300 border-accent/20">
-          <Form {...codingAssistantForm}>
-            <form onSubmit={codingAssistantForm.handleSubmit(onCodingAssistantSubmit)} className="flex flex-col h-full">
+          <Form {...codingGymForm}>
+            <form onSubmit={codingGymForm.handleSubmit(onCodingGymSubmit)} className="flex flex-col h-full">
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <CardTitle>Coding Assistant</CardTitle>
+                  <CardTitle>Coding Gym</CardTitle>
                   <Code className="h-6 w-6 text-accent" />
                 </div>
                 <CardDescription>Get AI-powered help with your coding problems.</CardDescription>
               </CardHeader>
               <CardContent className="flex-grow space-y-4">
                   <FormField
-                    control={codingAssistantForm.control}
+                    control={codingGymForm.control}
                     name="topics"
                     render={({ field }) => (
                       <FormItem>
@@ -295,7 +270,7 @@ export default function DashboardPage() {
                   />
                   <div className="flex items-end gap-4">
                     <FormField
-                      control={codingAssistantForm.control}
+                      control={codingGymForm.control}
                       name="difficulty"
                       render={({ field }) => (
                         <FormItem className="flex-grow">
@@ -434,3 +409,5 @@ export default function DashboardPage() {
     </main>
   );
 }
+
+    

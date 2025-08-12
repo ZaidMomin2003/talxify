@@ -11,7 +11,7 @@ import { Progress } from '@/components/ui/progress';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
-import { updateActivity } from '@/lib/firebase-service';
+import { addActivity } from '@/lib/firebase-service';
 import type { QuizResult } from '@/lib/types';
 
 
@@ -109,12 +109,7 @@ export default function CodingQuizPage() {
       userAnswer: userAnswers[i],
     }));
     
-    const attemptId = sessionStorage.getItem('currentQuizAttemptId');
-    if (!attemptId) {
-        console.error("No attempt ID found");
-        router.push('/dashboard');
-        return;
-    }
+    const attemptId = `quiz_attempt_${Date.now()}`;
 
     const quizResult: QuizResult = {
         id: attemptId,
@@ -131,7 +126,7 @@ export default function CodingQuizPage() {
         }
     };
     
-    await updateActivity(user.uid, quizResult);
+    await addActivity(user.uid, quizResult);
 
     router.push(`/dashboard/coding-quiz/analysis?id=${attemptId}`);
   };
@@ -194,3 +189,5 @@ export default function CodingQuizPage() {
     </main>
   );
 }
+
+    

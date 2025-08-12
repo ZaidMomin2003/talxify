@@ -41,7 +41,7 @@ const leftFeatures: FeatureItem[] = [
   },
   {
     icon: Code,
-    title: 'Live Coding Assistant',
+    title: 'Live Coding Gym',
     description:
       'Get hints, debug your code, and receive explanations for complex problems on the fly.',
     position: 'left',
@@ -144,3 +144,5 @@ export default function LandingFeatures() {
     </section>
   );
 }
+
+    
