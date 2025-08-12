@@ -31,28 +31,28 @@ export default function CodingQuizAnalysisPage() {
     };
 
     setIsLoading(true);
-
-    const allResults = await getActivity(user.uid);
-    const currentQuizResult = allResults.find(r => r.id === quizId && r.type === 'quiz') as QuizResult | undefined;
-
-    if (!currentQuizResult) {
-        router.replace('/dashboard');
-        return;
-    }
-
-    // If analysis is already present, just display it
-    if (currentQuizResult.analysis.length > 0) {
-        setQuizState(currentQuizResult.quizState);
-        setAnalysis(currentQuizResult.analysis);
-        setIsLoading(false);
-        return;
-    }
-
-    // Otherwise, run the analysis
-    const parsedState: QuizState = currentQuizResult.quizState;
-    setQuizState(parsedState);
-
+    
     try {
+        const allResults = await getActivity(user.uid);
+        const currentQuizResult = allResults.find(r => r.id === quizId && r.type === 'quiz') as QuizResult | undefined;
+
+        if (!currentQuizResult) {
+            router.replace('/dashboard');
+            return;
+        }
+
+        // If analysis is already present, just display it
+        if (currentQuizResult.analysis.length > 0) {
+            setQuizState(currentQuizResult.quizState);
+            setAnalysis(currentQuizResult.analysis);
+            setIsLoading(false);
+            return;
+        }
+
+        // Otherwise, run the analysis
+        const parsedState: QuizState = currentQuizResult.quizState;
+        setQuizState(parsedState);
+
         const input: AnalyzeCodingAnswersInput = { submissions: parsedState };
         const analysisResult = await analyzeCodingAnswers(input);
         setAnalysis(analysisResult.analysis);
@@ -69,9 +69,6 @@ export default function CodingQuizAnalysisPage() {
         };
 
         await updateActivity(user.uid, updatedResult);
-
-        sessionStorage.removeItem('currentQuizAttemptId');
-
     } catch (error) {
         console.error('Failed to analyze answers:', error);
     } finally {

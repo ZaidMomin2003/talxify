@@ -126,9 +126,17 @@ export default function CodingQuizPage() {
         }
     };
     
-    await addActivity(user.uid, quizResult);
-
-    router.push(`/dashboard/coding-quiz/analysis?id=${attemptId}`);
+    try {
+      await addActivity(user.uid, quizResult);
+      router.push(`/dashboard/coding-quiz/analysis?id=${attemptId}`);
+    } catch (error) {
+       console.error("Failed to save quiz results:", error);
+       toast({
+        title: "Save Error",
+        description: "Could not save your quiz. Please try again.",
+        variant: "destructive"
+       })
+    }
   };
 
   if (isLoading) {
@@ -189,5 +197,3 @@ export default function CodingQuizPage() {
     </main>
   );
 }
-
-    
