@@ -15,6 +15,11 @@ export const createUserDocument = async (userId: string, email: string, name: st
     const initialData: UserData = {
       ...initialPortfolioData,
       activity: [],
+      subscription: {
+        plan: 'free',
+        status: 'inactive',
+        endDate: null
+      }
     };
     initialData.portfolio.personalInfo.email = email;
     initialData.portfolio.personalInfo.name = name;
@@ -30,6 +35,30 @@ export const getUserData = async (userId: string): Promise<UserData | null> => {
   }
   return null;
 };
+
+// --- Subscription ---
+
+export const updateSubscription = async (userId: string, plan: 'monthly' | 'yearly'): Promise<void> => {
+  const userRef = doc(db, 'users', userId);
+  const currentDate = new Date();
+  const endDate = new Date(currentDate);
+
+  if (plan === 'monthly') {
+    endDate.setMonth(currentDate.getMonth() + 1);
+  } else if (plan === 'yearly') {
+    endDate.setFullYear(currentDate.getFullYear() + 1);
+  }
+
+  const subscriptionData = {
+    plan,
+    status: 'active',
+    startDate: currentDate.toISOString(),
+    endDate: endDate.toISOString()
+  };
+
+  await setDoc(userRef, { subscription: subscriptionData }, { merge: true });
+};
+
 
 // --- Portfolio ---
 

@@ -29,4 +29,9 @@ export const initialPortfolioData: UserData = {
         faqs: [{ question: 'What are you most passionate about in software development?', answer: 'I am most passionate about creating elegant solutions to complex problems and building products that have a meaningful impact on people\'s lives. I love the blend of creativity and logic that software engineering requires.' }],
     },
     activity: [],
+    subscription: {
+        plan: 'free',
+        status: 'inactive',
+        endDate: null
+    }
 };

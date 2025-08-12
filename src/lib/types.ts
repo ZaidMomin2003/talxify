@@ -54,6 +54,15 @@ export interface InterviewActivity extends BaseActivity {
 export interface UserData {
     portfolio: Portfolio;
     activity: StoredActivity[];
+    subscription: Subscription;
+}
+
+// --- Subscription ---
+export interface Subscription {
+    plan: 'free' | 'monthly' | 'yearly';
+    status: 'active' | 'inactive' | 'cancelled';
+    startDate?: string;
+    endDate: string | null;
 }
 
 
