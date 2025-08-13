@@ -164,7 +164,7 @@ export default function DashboardPage() {
       </div>
 
       <div className="mb-6 grid grid-cols-2 gap-6 lg:grid-cols-4">
-        <Card className="bg-blue-500/10 text-blue-50 border border-blue-500/20 shadow-lg shadow-blue-500/10">
+        <Card className="bg-blue-900/40 text-blue-100 border border-blue-500/50 shadow-lg shadow-blue-500/30">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Interviews Completed</CardTitle>
             <Briefcase className="h-4 w-4 text-blue-300" />
@@ -174,7 +174,7 @@ export default function DashboardPage() {
             <p className="text-xs text-blue-200/80">Practice mock interviews to increase this.</p>
           </CardContent>
         </Card>
-        <Card className="bg-yellow-500/10 text-yellow-50 border border-yellow-500/20 shadow-lg shadow-yellow-500/10">
+        <Card className="bg-yellow-900/40 text-yellow-100 border border-yellow-500/50 shadow-lg shadow-yellow-500/30">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Coding Questions Solved</CardTitle>
             <Code className="h-4 w-4 text-yellow-300" />
@@ -184,7 +184,7 @@ export default function DashboardPage() {
             <p className="text-xs text-yellow-200/80">Across all completed quizzes.</p>
           </CardContent>
         </Card>
-        <Card className="bg-red-500/10 text-red-50 border border-red-500/20 shadow-lg shadow-red-500/10">
+        <Card className="bg-red-900/40 text-red-100 border border-red-500/50 shadow-lg shadow-red-500/30">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Average Score</CardTitle>
             <Percent className="h-4 w-4 text-red-300" />
@@ -194,7 +194,7 @@ export default function DashboardPage() {
             <p className="text-xs text-red-200/80">Based on your performance</p>
           </CardContent>
         </Card>
-        <Card className="bg-green-500/10 text-green-50 border border-green-500/20 shadow-lg shadow-green-500/10">
+        <Card className="bg-green-900/40 text-green-100 border border-green-500/50 shadow-lg shadow-green-500/30">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Plan Expires</CardTitle>
             <CalendarDays className="h-4 w-4 text-green-300" />
