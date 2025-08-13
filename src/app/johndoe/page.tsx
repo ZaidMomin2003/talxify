@@ -10,11 +10,11 @@ import { Github, Linkedin, Instagram, Mail, Phone, Link as LinkIcon, Award, Brie
 import Link from "next/link";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
-import React, { Suspense, useEffect, useState, useCallback } from "react";
+import React, { Suspense, useEffect, useState, useCallback, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
-import { getPortfolio } from "@/lib/firebase-service";
-import type { Portfolio } from "@/lib/types";
+import { getPortfolio, getUserData } from "@/lib/firebase-service";
+import type { Portfolio, UserData, QuizResult, InterviewActivity } from "@/lib/types";
 import { initialPortfolioData } from "@/lib/initial-data";
 
 const Section = ({ icon, title, children, className }: { icon: React.ReactNode, title: string, children: React.ReactNode, className?: string }) => (
@@ -31,27 +31,51 @@ const Section = ({ icon, title, children, className }: { icon: React.ReactNode, 
 
 function PortfolioComponent() {
     const { user } = useAuth();
-    const [portfolio, setPortfolio] = useState<Portfolio | null>(null);
+    const [userData, setUserData] = useState<UserData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
-    const searchParams = useSearchParams();
-    const themeColor = searchParams.get('color') || '221.2 83.2% 53.3%';
 
-    const fetchPortfolio = useCallback(async () => {
+    const fetchUserData = useCallback(async () => {
         if (!user) {
-            // Use initial data for non-logged in view or preview
-            setPortfolio(initialPortfolioData.portfolio);
+            setUserData(initialPortfolioData);
             setIsLoading(false);
             return;
         }
         setIsLoading(true);
-        const data = await getPortfolio(user.uid);
-        setPortfolio(data ?? initialPortfolioData.portfolio);
+        const data = await getUserData(user.uid);
+        setUserData(data ?? initialPortfolioData);
         setIsLoading(false);
     }, [user]);
 
     useEffect(() => {
-        fetchPortfolio();
-    }, [fetchPortfolio]);
+        fetchUserData();
+    }, [fetchUserData]);
+
+    const portfolio = userData?.portfolio;
+
+    const { questionsSolved, interviewsCompleted, averageScore } = useMemo(() => {
+        if (!userData?.activity) {
+            return { questionsSolved: 12, interviewsCompleted: 57, averageScore: 78 };
+        }
+        const quizzes = userData.activity.filter(item => item.type === 'quiz') as QuizResult[];
+        const interviews = userData.activity.filter(item => item.type === 'interview');
+        const completedQuizzes = quizzes.filter(item => item.analysis.length > 0);
+    
+        const solved = completedQuizzes.reduce((acc, quiz) => acc + quiz.quizState.length, 0);
+    
+        const totalScore = completedQuizzes.reduce((sum, quiz) => {
+            const quizScore = quiz.analysis.reduce((s, a) => s + a.score, 0);
+            return sum + (quizScore / quiz.analysis.length);
+        }, 0);
+        
+        const avgScore = completedQuizzes.length > 0 ? Math.round((totalScore / completedQuizzes.length) * 100) : 0;
+    
+        return {
+            questionsSolved: solved,
+            interviewsCompleted: interviews.length,
+            averageScore: avgScore,
+        };
+      }, [userData?.activity]);
+
 
     if (isLoading || !portfolio) {
         return (
@@ -116,8 +140,8 @@ function PortfolioComponent() {
                             <Briefcase className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">12</div>
-                            <p className="text-xs text-muted-foreground">+2 since last month</p>
+                            <div className="text-2xl font-bold">{interviewsCompleted}</div>
+                            <p className="text-xs text-muted-foreground">Practice makes perfect</p>
                         </CardContent>
                     </Card>
                     <Card>
@@ -126,17 +150,17 @@ function PortfolioComponent() {
                             <Code className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">57</div>
-                            <p className="text-xs text-muted-foreground">+10 since last month</p>
+                            <div className="text-2xl font-bold">{questionsSolved}</div>
+                            <p className="text-xs text-muted-foreground">Across all quizzes</p>
                         </CardContent>
                     </Card>
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between pb-2">
-                            <CardTitle className="text-sm font-medium">Job Likelihood</CardTitle>
+                            <CardTitle className="text-sm font-medium">Average Score</CardTitle>
                             <Percent className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">78%</div>
+                            <div className="text-2xl font-bold">{averageScore}%</div>
                             <p className="text-xs text-muted-foreground">Based on your performance</p>
                         </CardContent>
                     </Card>

@@ -14,12 +14,14 @@ import { z } from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useRouter } from "next/navigation";
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import type { StoredActivity, QuizResult, InterviewActivity } from "@/lib/types";
+import type { StoredActivity, QuizResult, InterviewActivity, UserData } from "@/lib/types";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { useAuth } from "@/context/auth-context";
-import { getActivity, addActivity } from "@/lib/firebase-service";
+import { getActivity, addActivity, getUserData } from "@/lib/firebase-service";
+import { differenceInDays, format } from 'date-fns';
+
 
 const codingGymSchema = z.object({
   topics: z.string().min(1, "Topics are required."),
@@ -37,20 +39,22 @@ export default function DashboardPage() {
   
   const [isCodingLoading, setIsCodingLoading] = useState(false);
   const [isInterviewLoading, setIsInterviewLoading] = useState(false);
-  const [allActivity, setAllActivity] = useState<StoredActivity[]>([]);
+  const [userData, setUserData] = useState<UserData | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedQuiz, setSelectedQuiz] = useState<QuizResult | null>(null);
 
-  const fetchActivity = useCallback(async () => {
+  const fetchUserData = useCallback(async () => {
     if (user) {
-        const activities = await getActivity(user.uid);
-        setAllActivity(activities);
+        const data = await getUserData(user.uid);
+        setUserData(data);
     }
   }, [user]);
 
   useEffect(() => {
-    fetchActivity();
-  }, [fetchActivity]);
+    fetchUserData();
+  }, [fetchUserData]);
+
+  const allActivity = userData?.activity || [];
 
   const codingGymForm = useForm<z.infer<typeof codingGymSchema>>({
     resolver: zodResolver(codingGymSchema),
@@ -105,19 +109,36 @@ export default function DashboardPage() {
     }
   }
 
-  const { questionsSolved, interviewsCompleted, recentQuizzes } = useMemo(() => {
+  const { questionsSolved, interviewsCompleted, recentQuizzes, averageScore } = useMemo(() => {
     const quizzes = allActivity.filter(item => item.type === 'quiz') as QuizResult[];
     const interviews = allActivity.filter(item => item.type === 'interview');
-    const solved = quizzes
-      .filter(item => item.analysis.length > 0)
-      .reduce((acc, quiz) => acc + quiz.quizState.length, 0);
+    const completedQuizzes = quizzes.filter(item => item.analysis.length > 0);
+
+    const solved = completedQuizzes.reduce((acc, quiz) => acc + quiz.quizState.length, 0);
+
+    const totalScore = completedQuizzes.reduce((sum, quiz) => {
+        const quizScore = quiz.analysis.reduce((s, a) => s + a.score, 0);
+        return sum + (quizScore / quiz.analysis.length);
+    }, 0);
+    
+    const avgScore = completedQuizzes.length > 0 ? Math.round((totalScore / completedQuizzes.length) * 100) : 0;
 
     return {
         questionsSolved: solved,
         interviewsCompleted: interviews.length,
-        recentQuizzes: quizzes.sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+        recentQuizzes: quizzes.sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()),
+        averageScore: avgScore
     };
   }, [allActivity]);
+
+  const planExpiresDays = useMemo(() => {
+    if (userData?.subscription?.endDate) {
+        const diff = differenceInDays(new Date(userData.subscription.endDate), new Date());
+        return diff > 0 ? diff : 0;
+    }
+    return null;
+  }, [userData]);
+
 
   const filteredQuizzes = useMemo(() => {
     return recentQuizzes.filter(quiz => 
@@ -179,8 +200,8 @@ export default function DashboardPage() {
             <Percent className="h-4 w-4" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">78%</div>
-            <p className="text-xs text-white/80">Based on your performance (Dummy)</p>
+            <div className="text-2xl font-bold">{averageScore}%</div>
+            <p className="text-xs text-white/80">Based on your performance</p>
           </CardContent>
         </Card>
         <Card className="bg-green-500/90 text-white border-none shadow-lg shadow-green-500/20">
@@ -189,8 +210,17 @@ export default function DashboardPage() {
             <CalendarDays className="h-4 w-4" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">21 Days</div>
-            <p className="text-xs text-white/80">on your current plan (Dummy)</p>
+             {planExpiresDays !== null ? (
+                <>
+                    <div className="text-2xl font-bold">{planExpiresDays} Days</div>
+                    <p className="text-xs text-white/80">left on your current plan.</p>
+                </>
+             ) : (
+                <>
+                    <div className="text-2xl font-bold">N/A</div>
+                    <p className="text-xs text-white/80">You are on the free plan.</p>
+                </>
+             )}
           </CardContent>
         </Card>
       </div>

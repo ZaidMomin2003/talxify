@@ -31,13 +31,13 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { Bot, Code, LayoutGrid, MessageSquare, BarChart, Settings, History, Search, User, LogOut, Gem, LifeBuoy, Sun, Moon, Briefcase } from "lucide-react";
-import type { StoredActivity, QuizResult } from "@/lib/types";
+import type { StoredActivity, QuizResult, UserData } from "@/lib/types";
 import { formatDistanceToNow } from 'date-fns';
 import { useAuth } from "@/context/auth-context";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import { Switch } from "@/components/ui/switch";
-import { getActivity } from "@/lib/firebase-service";
+import { getActivity, getUserData } from "@/lib/firebase-service";
 import { ThemeProvider } from "@/components/theme-provider";
 
 function DashboardLayoutContent({
@@ -49,39 +49,40 @@ function DashboardLayoutContent({
   const router = useRouter();
   const { user, loading, logout } = useAuth();
   const { theme, setTheme } = useTheme();
-  const [recentActivity, setRecentActivity] = useState<StoredActivity[]>([]);
+  const [userData, setUserData] = useState<UserData | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isActivityLoading, setIsActivityLoading] = useState(true);
 
-  const fetchActivity = useCallback(async () => {
-    if (user) {
-      const activities = await getActivity(user.uid);
-      setRecentActivity(activities.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()));
-    }
-  }, [user]);
-  
+
   useEffect(() => {
     if (!loading && !user) {
       router.push('/login');
+      return;
+    }
+    if (user) {
+      setIsActivityLoading(true);
+      getUserData(user.uid).then(data => {
+        setUserData(data);
+        setIsActivityLoading(false);
+      });
     }
   }, [user, loading, router]);
 
-
-  useEffect(() => {
-    fetchActivity();
-  }, [pathname, fetchActivity]);
 
   const menuItems = [
     { href: "/dashboard", label: "Dashboard", icon: LayoutGrid },
     { href: "/dashboard/portfolio", label: "Portfolio", icon: User },
     { href: "/dashboard/performance", label: "Performance", icon: BarChart },
   ];
+  
+  const recentActivity = userData?.activity?.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()) || [];
 
   const filteredActivity = recentActivity.filter(item =>
     item.type === 'quiz' ?
     (item.details.topic.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    item.details.difficulty.toLowerCase().includes(searchQuery.toLowerCase())) :
+    (item as QuizResult).difficulty.toLowerCase().includes(searchQuery.toLowerCase())) :
     (item.details.topic.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    item.details.role.toLowerCase().includes(searchQuery.toLowerCase()))
+    (item.details.role && item.details.role.toLowerCase().includes(searchQuery.toLowerCase())))
   );
   
   if (loading || !user) {
@@ -91,6 +92,10 @@ function DashboardLayoutContent({
         </div>
     );
   }
+
+  const subscriptionStatus = userData?.subscription?.plan ? 
+    `${userData.subscription.plan.charAt(0).toUpperCase() + userData.subscription.plan.slice(1)} Plan` :
+    'Free Plan';
 
   return (
     <SidebarProvider>
@@ -144,7 +149,7 @@ function DashboardLayoutContent({
                   </Avatar>
                   <div className="flex-1 overflow-hidden">
                     <p className="text-sm font-semibold truncate">{user.displayName || user.email}</p>
-                    <p className="text-xs text-muted-foreground">Pro Member</p>
+                    <p className="text-xs text-muted-foreground capitalize">{subscriptionStatus}</p>
                   </div>
                    <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
                       <Settings className="h-4 w-4"/>
@@ -217,7 +222,9 @@ function DashboardLayoutContent({
                       </div>
                     </div>
                     <DropdownMenuSeparator />
-                    {filteredActivity.length > 0 ? (
+                    {isActivityLoading ? (
+                        <div className="p-4 text-center text-sm text-muted-foreground">Loading...</div>
+                    ) : filteredActivity.length > 0 ? (
                       filteredActivity.slice(0, 5).map((item) => (
                         <DropdownMenuItem key={item.id} asChild>
                           <Link href={item.type === 'quiz' ? `/dashboard/coding-quiz/analysis?id=${item.id}` : '#'} className="cursor-pointer">

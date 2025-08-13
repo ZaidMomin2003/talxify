@@ -9,6 +9,9 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import type { SignInForm } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
+import { sendPasswordResetEmail } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -17,6 +20,9 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [githubLoading, setGithubLoading] = useState(false);
+  const [isForgotPassOpen, setIsForgotPassOpen] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetLoading, setResetLoading] = useState(false);
 
   const { signIn, signInWithGoogle, signInWithGitHub } = useAuth();
   const router = useRouter();
@@ -62,7 +68,7 @@ export default function LoginPage() {
     try {
       await signInWithGitHub();
       router.push('/dashboard');
-    } catch (error: any) {
+    } catch (error: any) => {
       console.error(error);
       toast({
         title: "GitHub sign-in failed",
@@ -74,8 +80,28 @@ export default function LoginPage() {
     }
   };
 
+  const handlePasswordReset = async () => {
+    if (!resetEmail) {
+      toast({ title: "Email required", description: "Please enter your email address.", variant: "destructive" });
+      return;
+    }
+    setResetLoading(true);
+    try {
+      await sendPasswordResetEmail(auth, resetEmail);
+      toast({ title: "Password Reset Email Sent", description: "Check your inbox for instructions to reset your password." });
+      setIsForgotPassOpen(false);
+      setResetEmail("");
+    } catch (error: any) {
+      console.error(error);
+      toast({ title: "Error", description: error.message || "Failed to send password reset email.", variant: "destructive" });
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
 
   return (
+    <>
     <div className="relative flex min-h-screen w-full items-center justify-center overflow-hidden p-4 bg-background">
       <div className="z-10 w-full max-w-6xl">
         <div className="bg-card/50 backdrop-blur-sm overflow-hidden rounded-2xl shadow-lg border border-border/20 md:rounded-3xl lg:grid lg:grid-cols-2">
@@ -173,9 +199,9 @@ export default function LoginPage() {
                     <input type="checkbox" className="border-border text-primary h-4 w-4 rounded focus:ring-primary" />
                     <span className="ml-2">Remember me</span>
                   </label>
-                  <a href="#" className="text-primary hover:text-primary/80 text-sm font-medium">
+                  <button type="button" onClick={() => setIsForgotPassOpen(true)} className="text-primary hover:text-primary/80 text-sm font-medium">
                     Forgot password?
-                  </a>
+                  </button>
                 </div>
 
                 <Button type="submit" className="w-full" size="lg" disabled={loading || googleLoading || githubLoading}>
@@ -210,5 +236,35 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+    <Dialog open={isForgotPassOpen} onOpenChange={setIsForgotPassOpen}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Reset Password</DialogTitle>
+          <DialogDescription>
+            Enter your email address below and we'll send you a link to reset your password.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4 py-2">
+            <label htmlFor="reset-email" className="text-sm font-medium">Email</label>
+            <Input 
+                id="reset-email" 
+                type="email" 
+                placeholder="you@example.com"
+                value={resetEmail}
+                onChange={(e) => setResetEmail(e.target.value)}
+            />
+        </div>
+        <DialogFooter>
+          <DialogClose asChild>
+            <Button type="button" variant="secondary">Cancel</Button>
+          </DialogClose>
+          <Button type="button" onClick={handlePasswordReset} disabled={resetLoading}>
+            {resetLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Send Reset Link
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }
