@@ -50,7 +50,11 @@ export default function MockInterviewSessionPage() {
                 audioRef.current.src = audioDataUri;
                 audioRef.current.play();
                 audioRef.current.onended = () => {
-                    setInterviewState('listening');
+                    if (messages.length >= 3) {
+                         setInterviewState('finished');
+                    } else {
+                        setInterviewState('listening');
+                    }
                 };
             }
         } catch (error) {
@@ -58,11 +62,11 @@ export default function MockInterviewSessionPage() {
             toast({ title: 'Audio Error', description: 'Could not play the AI response.', variant: 'destructive' });
             setInterviewState('listening'); // Even if TTS fails, allow user to respond
         }
-    }, [toast]);
+    }, [toast, messages.length]);
     
     const handleUserResponse = useCallback(async (transcript: string) => {
         if (!transcript.trim()) {
-            setInterviewState('listening'); // If empty transcript, just go back to listening
+            setInterviewState('listening');
             return;
         }
         
@@ -71,30 +75,14 @@ export default function MockInterviewSessionPage() {
         setMessages(newHistory);
         setCurrentTranscript('');
 
-        try {
-            const result = await conductInterviewTurn({
-                history: newHistory,
-                interviewContext: interviewContext,
-            });
-            const aiResponse = result.response;
-            setMessages(prev => [...prev, { role: 'model', content: aiResponse }]);
-            
-            // Check for concluding remarks to end the session
-            const lowerCaseResponse = aiResponse.toLowerCase();
-            if(lowerCaseResponse.includes("concludes") || lowerCaseResponse.includes("thank you for your time")) {
-                setInterviewState('finished');
-                 speakResponse(aiResponse);
-            } else {
-                speakResponse(aiResponse);
-            }
+        // --- SIMULATION LOGIC ---
+        // Bypassing LLM for TTS/STT testing
+        const aiResponse = "That's great to hear! Tell me about yourself.";
+        setMessages(prev => [...prev, { role: 'model', content: aiResponse }]);
+        speakResponse(aiResponse);
+        // --- END SIMULATION LOGIC ---
 
-        } catch(error) {
-            console.error('Error conducting interview turn:', error);
-            toast({ title: 'AI Error', description: 'The AI failed to respond. Please try again.', variant: 'destructive' });
-            setInterviewState('listening');
-        }
-
-    }, [messages, interviewContext, speakResponse, toast]);
+    }, [messages, speakResponse]);
 
     const startInterview = useCallback(async () => {
         if (hasCameraPermission === false) {
@@ -102,10 +90,12 @@ export default function MockInterviewSessionPage() {
              return;
         }
         setInterviewState('generating_response');
-        const initialMessage = `Hello! Thank you for joining me. I'll be conducting a ${interviewType} interview for the ${role} role at ${company}. Let's begin.`;
+        // --- SIMULATION LOGIC ---
+        const initialMessage = "Let's start the interview.";
+        // --- END SIMULATION LOGIC ---
         setMessages([{ role: 'model', content: initialMessage }]);
         speakResponse(initialMessage);
-    }, [role, company, interviewType, toast, hasCameraPermission, speakResponse]);
+    }, [toast, hasCameraPermission, speakResponse]);
 
     useEffect(() => {
         async function getPermissions() {
@@ -179,7 +169,7 @@ export default function MockInterviewSessionPage() {
         });
     
         connection.on(LiveTranscriptionEvents.Close, () => {
-            console.log('Deepgram connection closed.');
+            // console.log('Deepgram connection closed.');
         });
     
         connection.on(LiveTranscriptionEvents.Error, (e) => {
@@ -253,7 +243,7 @@ export default function MockInterviewSessionPage() {
             case 'processing_response':
                 return <div className="flex items-center space-x-2"><Loader2 className="animate-spin" /> <p>Processing your response...</p></div>;
             case 'finished':
-                return <Button size="lg" onClick={() => router.push('/dashboard')}>Interview Complete! Back to Dashboard</Button>;
+                return <Button size="lg" onClick={() => router.push('/dashboard')}>Test Complete! Back to Dashboard</Button>;
              case 'error':
                  return (
                     <div className="text-center text-destructive flex flex-col items-center gap-2">
@@ -359,7 +349,3 @@ export default function MockInterviewSessionPage() {
         </main>
     );
 }
-
-    
-
-    
