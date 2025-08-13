@@ -59,6 +59,9 @@ export default function DashboardPage() {
   }, [fetchUserData]);
 
   const allActivity = userData?.activity || [];
+  const isFreePlan = !userData?.subscription?.plan || userData?.subscription?.plan === 'free';
+  const plan = userData?.subscription?.plan || 'free';
+
 
   const codingGymForm = useForm<z.infer<typeof codingGymSchema>>({
     resolver: zodResolver(codingGymSchema),
@@ -99,7 +102,7 @@ export default function DashboardPage() {
     router.push(`/dashboard/mock-interview/instructions?${params.toString()}`);
   }
 
-  const { questionsSolved, interviewsCompleted, recentQuizzes, averageScore } = useMemo(() => {
+  const { questionsSolved, interviewsCompleted, recentQuizzes, averageScore, hasTakenQuiz } = useMemo(() => {
     const quizzes = allActivity.filter(item => item.type === 'quiz') as QuizResult[];
     const interviews = allActivity.filter(item => item.type === 'interview') as InterviewActivity[];
     const completedQuizzes = quizzes.filter(item => item.analysis.length > 0);
@@ -112,14 +115,34 @@ export default function DashboardPage() {
     }, 0);
     
     const avgScore = completedQuizzes.length > 0 ? Math.round((totalScore / completedQuizzes.length) * 100) : 0;
+    
+    const quizTaken = completedQuizzes.length > 0;
 
     return {
         questionsSolved: solved,
         interviewsCompleted: interviews.length,
         recentQuizzes: quizzes.sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()),
-        averageScore: avgScore
+        averageScore: avgScore,
+        hasTakenQuiz: quizTaken
     };
   }, [allActivity]);
+
+  const planLimits = useMemo(() => {
+    switch (plan) {
+      case 'monthly':
+        return { interviews: 20, quizzes: Infinity };
+      case 'yearly':
+        return { interviews: 300, quizzes: Infinity };
+      default: // free
+        return { interviews: 1, quizzes: 1 };
+    }
+  }, [plan]);
+
+  const interviewsLeft = planLimits.interviews - interviewsCompleted;
+  const quizzesLeft = planLimits.quizzes === Infinity ? Infinity : planLimits.quizzes - (hasTakenQuiz ? 1: 0);
+
+  const canTakeInterview = isFreePlan ? interviewsCompleted < 1 : true;
+  const canTakeQuiz = isFreePlan ? !hasTakenQuiz : true;
 
   const planExpiresDays = useMemo(() => {
     if (userData?.subscription?.endDate) {
@@ -156,10 +179,6 @@ export default function DashboardPage() {
     setSelectedQuiz(quiz);
   }
 
-  const isFreePlan = !userData?.subscription?.plan || userData?.subscription?.plan === 'free';
-  const hasTakenInterview = useMemo(() => interviewsCompleted > 0, [interviewsCompleted]);
-  const hasTakenQuiz = useMemo(() => recentQuizzes.some(q => q.analysis && q.analysis.length > 0), [recentQuizzes]);
-
   return (
     <main className="flex-1 overflow-auto p-4 sm:p-6">
       <div className="mb-8">
@@ -168,27 +187,29 @@ export default function DashboardPage() {
       </div>
 
       <div className="mb-6 grid grid-cols-2 gap-6 lg:grid-cols-4">
-        <Card className="bg-blue-900/40 text-blue-100 border border-blue-500/50 shadow-lg shadow-blue-500/30">
+        <Card className="bg-gradient-to-br from-blue-900 via-blue-800 to-blue-900 text-blue-100 border border-blue-500/50 shadow-lg shadow-blue-500/30">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Interviews Completed</CardTitle>
             <Briefcase className="h-4 w-4 text-blue-300" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{interviewsCompleted}</div>
-            <p className="text-xs text-blue-200/80">Practice mock interviews to increase this.</p>
+            <div className="text-2xl font-bold">{interviewsCompleted} / {planLimits.interviews}</div>
+            <p className="text-xs text-blue-200/80">{interviewsLeft} interviews left this cycle.</p>
           </CardContent>
         </Card>
-        <Card className="bg-yellow-900/40 text-yellow-100 border border-yellow-500/50 shadow-lg shadow-yellow-500/30">
+        <Card className="bg-gradient-to-br from-yellow-900 via-yellow-800 to-yellow-900 text-yellow-100 border border-yellow-500/50 shadow-lg shadow-yellow-500/30">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Coding Questions Solved</CardTitle>
+            <CardTitle className="text-sm font-medium">Coding Quizzes Taken</CardTitle>
             <Code className="h-4 w-4 text-yellow-300" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{questionsSolved}</div>
-            <p className="text-xs text-yellow-200/80">Across all completed quizzes.</p>
+             <div className="text-2xl font-bold">{hasTakenQuiz ? 1 : 0} / {isFreePlan ? 1 : '∞'}</div>
+             <p className="text-xs text-yellow-200/80">
+                {isFreePlan ? `${quizzesLeft === 0 ? '0' : '1'} quiz left.` : 'Unlimited quizzes.'}
+             </p>
           </CardContent>
         </Card>
-        <Card className="bg-red-900/40 text-red-100 border border-red-500/50 shadow-lg shadow-red-500/30">
+        <Card className="bg-gradient-to-br from-red-900 via-red-800 to-red-900 text-red-100 border border-red-500/50 shadow-lg shadow-red-500/30">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Average Score</CardTitle>
             <Percent className="h-4 w-4 text-red-300" />
@@ -198,7 +219,7 @@ export default function DashboardPage() {
             <p className="text-xs text-red-200/80">Based on your performance</p>
           </CardContent>
         </Card>
-        <Card className="bg-green-900/40 text-green-100 border border-green-500/50 shadow-lg shadow-green-500/30">
+        <Card className="bg-gradient-to-br from-green-900 via-green-800 to-green-900 text-green-100 border border-green-500/50 shadow-lg shadow-green-500/30">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Plan Expires</CardTitle>
             <CalendarDays className="h-4 w-4 text-green-300" />
@@ -299,14 +320,14 @@ export default function DashboardPage() {
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <div className="w-full">
-                            <Button type="submit" size="lg" className="w-full" disabled={isInterviewLoading || (isFreePlan && hasTakenInterview)}>
+                            <Button type="submit" size="lg" className="w-full" disabled={isInterviewLoading || !canTakeInterview}>
                                 {isInterviewLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                {isFreePlan && hasTakenInterview && <Lock className="mr-2 h-4 w-4" />}
+                                {!canTakeInterview && <Lock className="mr-2 h-4 w-4" />}
                                 Start Interview
                             </Button>
                           </div>
                         </TooltipTrigger>
-                        {(isFreePlan && hasTakenInterview) && (
+                        {!canTakeInterview && (
                            <TooltipContent>
                             <p>Upgrade to Pro to take more interviews.</p>
                           </TooltipContent>
@@ -319,7 +340,7 @@ export default function DashboardPage() {
         </Card>
 
         <Card className="flex flex-col shadow-lg hover:shadow-xl transition-shadow duration-300 border-accent/20">
-          {(isFreePlan && hasTakenQuiz) ? (
+          {!canTakeQuiz ? (
             <div className="flex flex-col h-full justify-center items-center text-center p-6">
                 <div className="bg-accent/10 text-accent rounded-full p-3 mb-4">
                   <Lock className="w-8 h-8" />
@@ -529,3 +550,4 @@ export default function DashboardPage() {
     
 
     
+
