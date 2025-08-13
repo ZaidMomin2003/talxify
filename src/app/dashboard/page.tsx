@@ -97,7 +97,7 @@ export default function DashboardPage() {
 
   const { questionsSolved, interviewsCompleted, recentQuizzes, averageScore } = useMemo(() => {
     const quizzes = allActivity.filter(item => item.type === 'quiz') as QuizResult[];
-    const interviews = allActivity.filter(item => item.type === 'interview');
+    const interviews = allActivity.filter(item => item.type === 'interview') as InterviewActivity[];
     const completedQuizzes = quizzes.filter(item => item.analysis.length > 0);
 
     const solved = completedQuizzes.reduce((acc, quiz) => acc + quiz.quizState.length, 0);
@@ -153,8 +153,8 @@ export default function DashboardPage() {
   }
 
   const isFreePlan = !userData?.subscription?.plan || userData?.subscription?.plan === 'free';
-  const hasTakenInterview = interviewsCompleted > 0;
-  const hasTakenQuiz = useMemo(() => recentQuizzes.length > 0, [recentQuizzes]);
+  const hasTakenInterview = useMemo(() => interviewsCompleted > 0, [interviewsCompleted]);
+  const hasTakenQuiz = useMemo(() => recentQuizzes.some(q => q.analysis && q.analysis.length > 0), [recentQuizzes]);
 
   return (
     <main className="flex-1 overflow-auto p-4 sm:p-6">
@@ -302,12 +302,12 @@ export default function DashboardPage() {
                       </FormItem>
                     )}
                   />
-                  <div className="flex items-end gap-4">
+                  <div className="grid grid-cols-2 gap-4">
                     <FormField
                       control={codingGymForm.control}
                       name="difficulty"
                       render={({ field }) => (
-                        <FormItem className="w-1/2">
+                        <FormItem>
                           <FormLabel>Difficulty</FormLabel>
                           <Select onValueChange={field.onChange} defaultValue={field.value}>
                             <FormControl>
@@ -329,7 +329,7 @@ export default function DashboardPage() {
                       control={codingGymForm.control}
                       name="numQuestions"
                       render={({ field }) => (
-                        <FormItem className="w-1/2">
+                        <FormItem>
                           <FormLabel>Questions</FormLabel>
                           <Select onValueChange={field.onChange} defaultValue={field.value}>
                             <FormControl>
@@ -348,27 +348,27 @@ export default function DashboardPage() {
                       )}
                     />
                   </div>
-                  <div className="pt-4">
-                     <TooltipProvider>
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <div className="w-full">
-                                    <Button type="submit" size="lg" variant="secondary" className="w-full" disabled={isCodingLoading || (isFreePlan && hasTakenQuiz)}>
-                                        {isCodingLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                        {isFreePlan && hasTakenQuiz && <Lock className="mr-2 h-4 w-4" />}
-                                        Start Coding
-                                    </Button>
-                                </div>
-                            </TooltipTrigger>
-                            {(isFreePlan && hasTakenQuiz) && (
-                                <TooltipContent>
-                                    <p>Upgrade to Pro for unlimited coding questions.</p>
-                                </TooltipContent>
-                            )}
-                        </Tooltip>
-                     </TooltipProvider>
-                  </div>
               </CardContent>
+              <CardFooter>
+                 <TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <div className="w-full">
+                                <Button type="submit" size="lg" variant="secondary" className="w-full" disabled={isCodingLoading || (isFreePlan && hasTakenQuiz)}>
+                                    {isCodingLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                    {isFreePlan && hasTakenQuiz && <Lock className="mr-2 h-4 w-4" />}
+                                    Start Coding
+                                </Button>
+                            </div>
+                        </TooltipTrigger>
+                        {(isFreePlan && hasTakenQuiz) && (
+                            <TooltipContent>
+                                <p>Upgrade to Pro for unlimited coding questions.</p>
+                            </TooltipContent>
+                        )}
+                    </Tooltip>
+                 </TooltipProvider>
+              </CardFooter>
             </form>
           </Form>
         </Card>
@@ -481,3 +481,5 @@ export default function DashboardPage() {
     </main>
   );
 }
+
+    
