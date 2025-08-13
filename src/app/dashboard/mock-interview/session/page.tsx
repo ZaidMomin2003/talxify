@@ -36,9 +36,11 @@ export default function MockInterviewSessionPage() {
     const audioRef = useRef<HTMLAudioElement>(null);
     const videoRef = useRef<HTMLVideoElement>(null);
 
-    const topic = searchParams.get('topic') || 'general';
+    const company = searchParams.get('company') || 'a leading tech company';
     const role = searchParams.get('role') || 'Software Engineer';
-    const interviewContext = `This is a mock interview for a ${role} role, focusing on ${topic}.`;
+    const interviewType = (searchParams.get('type') as 'technical' | 'behavioural') || 'technical';
+    
+    const interviewContext = { company, role, type: interviewType };
 
     const speakResponse = useCallback(async (text: string) => {
         setInterviewState('speaking_response');
@@ -72,11 +74,20 @@ export default function MockInterviewSessionPage() {
         try {
             const result = await conductInterviewTurn({
                 history: newHistory,
-                questionContext: interviewContext,
+                interviewContext: interviewContext,
             });
             const aiResponse = result.response;
             setMessages(prev => [...prev, { role: 'model', content: aiResponse }]);
-            speakResponse(aiResponse);
+            
+            // Check for concluding remarks to end the session
+            const lowerCaseResponse = aiResponse.toLowerCase();
+            if(lowerCaseResponse.includes("concludes") || lowerCaseResponse.includes("thank you for your time")) {
+                setInterviewState('finished');
+                 speakResponse(aiResponse);
+            } else {
+                speakResponse(aiResponse);
+            }
+
         } catch(error) {
             console.error('Error conducting interview turn:', error);
             toast({ title: 'AI Error', description: 'The AI failed to respond. Please try again.', variant: 'destructive' });
@@ -91,10 +102,10 @@ export default function MockInterviewSessionPage() {
              return;
         }
         setInterviewState('generating_response');
-        const initialMessage = `Hello! Thank you for joining me. I'll be interviewing you for a ${role} position focused on ${topic}. Are you ready to begin?`;
+        const initialMessage = `Hello! Thank you for joining me. I'll be conducting a ${interviewType} interview for the ${role} role at ${company}. Let's begin.`;
         setMessages([{ role: 'model', content: initialMessage }]);
         speakResponse(initialMessage);
-    }, [role, topic, toast, hasCameraPermission, speakResponse]);
+    }, [role, company, interviewType, toast, hasCameraPermission, speakResponse]);
 
     useEffect(() => {
         async function getPermissions() {
@@ -330,3 +341,5 @@ export default function MockInterviewSessionPage() {
         </main>
     );
 }
+
+    

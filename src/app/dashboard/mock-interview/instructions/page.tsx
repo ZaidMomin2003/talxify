@@ -10,12 +10,14 @@ import React from 'react';
 
 export default function MockInterviewInstructionsPage() {
   const searchParams = useSearchParams();
-  const topic = searchParams.get('topic');
+  const company = searchParams.get('company');
   const role = searchParams.get('role');
+  const type = searchParams.get('type');
 
   const sessionParams = new URLSearchParams({
-    topic: topic || '',
+    company: company || '',
     role: role || '',
+    type: type || 'technical',
   });
 
   return (
@@ -33,8 +35,9 @@ export default function MockInterviewInstructionsPage() {
             <div className="space-y-4">
                 <h2 className="font-semibold text-2xl">Interview Details</h2>
                 <ul className="list-disc list-inside space-y-2 text-muted-foreground bg-muted p-4 rounded-lg">
-                    <li><strong className="text-foreground">Topic:</strong> {topic}</li>
+                    <li><strong className="text-foreground">Company:</strong> {company}</li>
                     <li><strong className="text-foreground">Role:</strong> <span className="capitalize">{role}</span></li>
+                    <li><strong className="text-foreground">Interview Type:</strong> <span className="capitalize">{type}</span></li>
                 </ul>
             </div>
             
@@ -50,3 +53,5 @@ export default function MockInterviewInstructionsPage() {
     </main>
   );
 }
+
+    

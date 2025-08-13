@@ -19,7 +19,11 @@ const MessageSchema = z.object({
 
 const ConductInterviewTurnInputSchema = z.object({
   history: z.array(MessageSchema).describe('The history of the conversation so far.'),
-  questionContext: z.string().describe('The overall topic or role for the interview, e.g., "React Developer".'),
+  interviewContext: z.object({
+      company: z.string().describe('The target company for the interview.'),
+      role: z.string().describe('The target role for the interview.'),
+      type: z.enum(['technical', 'behavioural']).describe('The type of interview being conducted.'),
+  }),
 });
 export type ConductInterviewTurnInput = z.infer<typeof ConductInterviewTurnInputSchema>;
 
@@ -38,26 +42,39 @@ const prompt = ai.definePrompt({
   name: 'conductInterviewTurnPrompt',
   input: {schema: ConductInterviewTurnInputSchema},
   output: {schema: ConductInterviewTurnOutputSchema},
-  prompt: `You are an AI interviewer conducting a temporary, single-question interview for UI testing purposes.
-
-  Interview Topic: {{{questionContext}}}
+  prompt: `You are an expert AI interviewer.
   
-  Your task is to respond based on the conversation history.
+  Your goal is to conduct a mock interview for a candidate. You will ask one single, relevant question based on the provided context, wait for the user's response, and then provide a brief concluding remark to end the interview.
+  
+  **Interview Context:**
+  - **Company:** {{{interviewContext.company}}}
+  - **Role:** {{{interviewContext.role}}}
+  - **Interview Type:** {{{interviewContext.type}}}
+  
+  **Your Task:**
   
   {{#if (lt history.length 2)}}
-  // The history only contains the initial greeting from the model.
-  // Your task is to ask one single, relevant technical question based on the Interview Topic.
+  // This is the beginning of the interview. The history only contains the initial greeting from the model.
+  // Your task is to ask one single, relevant question based on the interview context.
+  
+  {{#if (eq interviewContext.type "technical")}}
+  Ask a technical question that a candidate for the "{{interviewContext.role}}" role at "{{interviewContext.company}}" might receive.
+  {{else}}
+  Ask a behavioral question that would assess a candidate's fit for the "{{interviewContext.role}}" role at "{{interviewContext.company}}".
+  {{/if}}
+  
   Ask one question now.
+  
   {{else}}
   // The user has responded to your question.
   // Your task is to provide a brief, concluding remark and end the interview.
   // For example: "Thank you for your answer. This concludes our single-question session."
   Acknowledge their answer and end the interview now.
   {{/if}}
-
-  Current Conversation:
+  
+  **Current Conversation History:**
   {{#each history}}
-  - {{this.role}}: {{{this.content}}}
+  - {{role}}: {{{content}}}
   {{/each}}
   `,
 });
@@ -81,3 +98,5 @@ const conductInterviewTurnFlow = ai.defineFlow(
     }
   }
 );
+
+    

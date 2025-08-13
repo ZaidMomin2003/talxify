@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Rocket, Code, Briefcase, Percent, Search, RefreshCw, BarChart, Info, CalendarDays, Loader2, Lock } from "lucide-react";
+import { Rocket, Code, Briefcase, Percent, Search, RefreshCw, BarChart, Info, CalendarDays, Loader2, Lock, Building, BrainCircuit, User } from "lucide-react";
 import Link from "next/link";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useForm } from "react-hook-form";
@@ -22,6 +22,7 @@ import { useAuth } from "@/context/auth-context";
 import { getUserData } from "@/lib/firebase-service";
 import { differenceInDays, format } from 'date-fns';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 
 const codingGymSchema = z.object({
@@ -31,8 +32,9 @@ const codingGymSchema = z.object({
 });
 
 const mockInterviewSchema = z.object({
-  topic: z.string().min(1, "Topic is required."),
-  role: z.string().min(1, "Role is required."),
+  targetCompany: z.string().min(1, "Target company is required."),
+  targetRole: z.string().min(1, "Target role is required."),
+  interviewType: z.enum(["technical", "behavioural"]),
 });
 
 export default function DashboardPage() {
@@ -70,8 +72,9 @@ export default function DashboardPage() {
   const mockInterviewForm = useForm<z.infer<typeof mockInterviewSchema>>({
     resolver: zodResolver(mockInterviewSchema),
     defaultValues: {
-      topic: "",
-      role: "",
+      targetCompany: "",
+      targetRole: "",
+      interviewType: "technical",
     },
   });
 
@@ -89,8 +92,9 @@ export default function DashboardPage() {
     setIsInterviewLoading(true);
 
     const params = new URLSearchParams({
-        topic: values.topic,
-        role: values.role,
+        company: values.targetCompany,
+        role: values.targetRole,
+        type: values.interviewType,
     });
     router.push(`/dashboard/mock-interview/instructions?${params.toString()}`);
   }
@@ -227,38 +231,75 @@ export default function DashboardPage() {
                 <CardDescription>Simulate a real-time interview with an AI.</CardDescription>
               </CardHeader>
               <CardContent className="flex-grow space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <FormField
                     control={mockInterviewForm.control}
-                    name="topic"
+                    name="targetCompany"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Topic</FormLabel>
+                        <FormLabel>Target Company</FormLabel>
                         <FormControl>
-                          <Input placeholder="e.g., React, System Design" {...field} />
+                          <Input placeholder="e.g., Google, Amazon" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  <div className="flex items-end gap-4">
-                    <FormField
-                      control={mockInterviewForm.control}
-                      name="role"
-                      render={({ field }) => (
-                        <FormItem className="flex-grow">
-                          <FormLabel>Role</FormLabel>
-                           <FormControl>
-                              <Input placeholder="e.g., Software Engineer" {...field} />
-                           </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <TooltipProvider>
+                  <FormField
+                    control={mockInterviewForm.control}
+                    name="targetRole"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Target Role</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g., Frontend Developer" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <FormField
+                  control={mockInterviewForm.control}
+                  name="interviewType"
+                  render={({ field }) => (
+                    <FormItem className="space-y-3">
+                      <FormLabel>Interview Type</FormLabel>
+                      <FormControl>
+                        <RadioGroup
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                          className="flex flex-col sm:flex-row gap-4"
+                        >
+                          <FormItem className="flex items-center space-x-3 space-y-0">
+                            <FormControl>
+                              <RadioGroupItem value="technical" />
+                            </FormControl>
+                            <FormLabel className="font-normal flex items-center gap-2">
+                              <BrainCircuit className="w-4 h-4" /> Technical
+                            </FormLabel>
+                          </FormItem>
+                          <FormItem className="flex items-center space-x-3 space-y-0">
+                            <FormControl>
+                              <RadioGroupItem value="behavioural" />
+                            </FormControl>
+                            <FormLabel className="font-normal flex items-center gap-2">
+                              <User className="w-4 h-4" /> Behavioural
+                            </FormLabel>
+                          </FormItem>
+                        </RadioGroup>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </CardContent>
+              <CardFooter>
+                  <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <div className="inline-block">
-                            <Button type="submit" size="lg" disabled={isInterviewLoading || (isFreePlan && hasTakenInterview)}>
+                          <div className="w-full">
+                            <Button type="submit" size="lg" className="w-full" disabled={isInterviewLoading || (isFreePlan && hasTakenInterview)}>
                                 {isInterviewLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                 {isFreePlan && hasTakenInterview && <Lock className="mr-2 h-4 w-4" />}
                                 Start Interview
@@ -272,8 +313,7 @@ export default function DashboardPage() {
                         )}
                       </Tooltip>
                     </TooltipProvider>
-                  </div>
-              </CardContent>
+              </CardFooter>
             </form>
           </Form>
         </Card>
@@ -481,5 +521,7 @@ export default function DashboardPage() {
     </main>
   );
 }
+
+    
 
     
