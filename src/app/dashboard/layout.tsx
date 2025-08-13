@@ -30,9 +30,9 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { Bot, Code, LayoutGrid, MessageSquare, BarChart, Settings, History, Search, User, LogOut, Gem, LifeBuoy, Sun, Moon, Briefcase } from "lucide-react";
+import { Bot, Code, LayoutGrid, MessageSquare, BarChart, Settings, History, Search, User, LogOut, Gem, LifeBuoy, Sun, Moon, Briefcase, CalendarDays } from "lucide-react";
 import type { StoredActivity, QuizResult, UserData } from "@/lib/types";
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow, format } from 'date-fns';
 import { useAuth } from "@/context/auth-context";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
@@ -54,19 +54,24 @@ function DashboardLayoutContent({
   const [isActivityLoading, setIsActivityLoading] = useState(true);
 
 
+  const fetchUserData = useCallback(async () => {
+    if (user) {
+        setIsActivityLoading(true);
+        const data = await getUserData(user.uid);
+        setUserData(data);
+        setIsActivityLoading(false);
+    }
+  }, [user]);
+
   useEffect(() => {
     if (!loading && !user) {
       router.push('/login');
       return;
     }
     if (user) {
-      setIsActivityLoading(true);
-      getUserData(user.uid).then(data => {
-        setUserData(data);
-        setIsActivityLoading(false);
-      });
+      fetchUserData();
     }
-  }, [user, loading, router]);
+  }, [user, loading, router, fetchUserData]);
 
 
   const menuItems = [
@@ -85,7 +90,7 @@ function DashboardLayoutContent({
     (item.details.role && item.details.role.toLowerCase().includes(searchQuery.toLowerCase())))
   );
   
-  if (loading || !user) {
+  if (loading || !user || !userData) {
     return (
         <div className="flex h-screen items-center justify-center">
             <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
@@ -96,6 +101,8 @@ function DashboardLayoutContent({
   const subscriptionStatus = userData?.subscription?.plan ? 
     `${userData.subscription.plan.charAt(0).toUpperCase() + userData.subscription.plan.slice(1)} Plan` :
     'Free Plan';
+
+  const isFreePlan = !userData.subscription || userData.subscription.plan === 'free';
 
   return (
     <SidebarProvider>
@@ -133,12 +140,23 @@ function DashboardLayoutContent({
         </SidebarContent>
         <SidebarFooter>
            <div className="p-2">
-             <Button asChild className="w-full bg-gradient-to-r from-purple-500 to-blue-500 text-white hover:from-purple-600 hover:to-blue-600 shadow-lg">
-                <Link href="/dashboard/pricing">
-                    <Gem className="mr-2 h-4 w-4" />
-                    Upgrade to Pro
-                </Link>
-             </Button>
+            {isFreePlan ? (
+                 <Button asChild className="w-full bg-gradient-to-r from-purple-500 to-blue-500 text-white hover:from-purple-600 hover:to-blue-600 shadow-lg">
+                    <Link href="/dashboard/pricing">
+                        <Gem className="mr-2 h-4 w-4" />
+                        Upgrade to Pro
+                    </Link>
+                 </Button>
+            ) : (
+                <div className="rounded-lg bg-muted p-3 text-center">
+                    <p className="text-sm font-semibold text-foreground">Pro Member</p>
+                    {userData.subscription.endDate && (
+                        <p className="text-xs text-muted-foreground">
+                            Expires on {format(new Date(userData.subscription.endDate), 'MMM d, yyyy')}
+                        </p>
+                    )}
+                </div>
+            )}
            </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
