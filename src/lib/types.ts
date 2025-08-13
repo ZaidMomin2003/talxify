@@ -120,16 +120,19 @@ export interface Project {
     description: string;
     link: string;
     tags: string;
+    imageUrl: string;
 }
 
 export interface Certificate {
     name: string;
     body: string;
     date: string;
+    imageUrl: string;
 }
 
 export interface Achievement {
     description: string;
+    imageUrl: string;
 }
 
 export interface Testimonial {

@@ -215,7 +215,8 @@ function PortfolioComponent() {
                 <Section icon={<Sparkles />} title="Projects">
                     <div className="space-y-8">
                         {portfolio.projects.map((project, index) => (
-                            <Card key={index} className="shadow-lg hover:shadow-xl transition-shadow duration-300">
+                            <Card key={index} className="shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden">
+                                {project.imageUrl && <Image src={project.imageUrl} alt={project.title} width={1200} height={630} className="w-full h-auto object-cover" data-ai-hint="project screenshot" />}
                                 <CardHeader>
                                     <CardTitle className="flex items-center justify-between">
                                         {project.title}
@@ -240,9 +241,7 @@ function PortfolioComponent() {
                     <div className="space-y-4">
                         {portfolio.certificates.map((cert, index) => (
                             <Card key={index} className="p-4 flex items-center gap-4">
-                                <div className="bg-muted text-muted-foreground rounded-full p-2">
-                                    <GraduationCap className="w-5 h-5" />
-                                </div>
+                                {cert.imageUrl && <Image src={cert.imageUrl} alt={cert.name} width={64} height={64} className="rounded-md object-cover" data-ai-hint="certificate logo" />}
                                 <div>
                                     <p className="font-semibold">{cert.name}</p>
                                     <p className="text-sm text-muted-foreground">{cert.body} - {cert.date}</p>
@@ -255,11 +254,14 @@ function PortfolioComponent() {
                 {/* Achievements Section */}
                 <Section icon={<Award />} title="Achievements">
                     <Card className="p-6">
-                        <ul className="space-y-3 list-inside">
+                        <ul className="space-y-4">
                             {portfolio.achievements.map((ach, index) => (
-                                <li key={index} className="flex items-start gap-3">
-                                    <Star className="w-4 h-4 text-primary mt-1 shrink-0" />
-                                    <span className="text-muted-foreground">{ach.description}</span>
+                                <li key={index} className="flex items-start gap-4">
+                                    {ach.imageUrl && <Image src={ach.imageUrl} alt="Achievement" width={40} height={40} className="rounded-md mt-1 object-cover" data-ai-hint="achievement award" />}
+                                    <div className="flex-1">
+                                        <Star className="w-4 h-4 text-primary inline-block mr-2" />
+                                        <span className="text-muted-foreground">{ach.description}</span>
+                                    </div>
                                 </li>
                             ))}
                         </ul>
@@ -315,5 +317,3 @@ export default function PortfolioPreviewPage() {
         </Suspense>
     )
 }
-
-    
