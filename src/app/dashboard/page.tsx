@@ -152,7 +152,7 @@ export default function DashboardPage() {
     setSelectedQuiz(quiz);
   }
 
-  const isFreePlan = userData?.subscription?.plan === 'free';
+  const isFreePlan = !userData?.subscription?.plan || userData?.subscription?.plan === 'free';
   const hasTakenInterview = interviewsCompleted > 0;
   const hasTakenQuiz = recentQuizzes.length > 0;
 
@@ -164,51 +164,51 @@ export default function DashboardPage() {
       </div>
 
       <div className="mb-6 grid grid-cols-2 gap-6 lg:grid-cols-4">
-        <Card className="bg-primary/90 text-primary-foreground border-none shadow-lg shadow-primary/20">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Interviews Completed</CardTitle>
-            <Briefcase className="h-4 w-4" />
+            <Briefcase className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{interviewsCompleted}</div>
-            <p className="text-xs text-primary-foreground/80">Practice mock interviews to increase this.</p>
+            <p className="text-xs text-muted-foreground">Practice mock interviews to increase this.</p>
           </CardContent>
         </Card>
-        <Card className="bg-yellow-500/90 text-white border-none shadow-lg shadow-yellow-500/20">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Coding Questions Solved</CardTitle>
-            <Code className="h-4 w-4" />
+            <Code className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{questionsSolved}</div>
-            <p className="text-xs text-white/80">Across all completed quizzes.</p>
+            <p className="text-xs text-muted-foreground">Across all completed quizzes.</p>
           </CardContent>
         </Card>
-        <Card className="bg-red-500/90 text-white border-none shadow-lg shadow-red-500/20">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Job Likelihood</CardTitle>
-            <Percent className="h-4 w-4" />
+            <CardTitle className="text-sm font-medium">Average Score</CardTitle>
+            <Percent className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{averageScore}%</div>
-            <p className="text-xs text-white/80">Based on your performance</p>
+            <p className="text-xs text-muted-foreground">Based on your performance</p>
           </CardContent>
         </Card>
-        <Card className="bg-green-500/90 text-white border-none shadow-lg shadow-green-500/20">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Plan Expires</CardTitle>
-            <CalendarDays className="h-4 w-4" />
+            <CalendarDays className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-             {planExpiresDays !== null ? (
+             {planExpiresDays !== null && userData?.subscription.plan !== 'free' ? (
                 <>
                     <div className="text-2xl font-bold">{planExpiresDays} Days</div>
-                    <p className="text-xs text-white/80">left on your current plan.</p>
+                    <p className="text-xs text-muted-foreground">left on your current plan.</p>
                 </>
              ) : (
                 <>
                     <div className="text-2xl font-bold">N/A</div>
-                    <p className="text-xs text-white/80">You are on the free plan.</p>
+                    <p className="text-xs text-muted-foreground">You are on the free plan.</p>
                 </>
              )}
           </CardContent>
@@ -265,7 +265,7 @@ export default function DashboardPage() {
                             </Button>
                           </div>
                         </TooltipTrigger>
-                        {isFreePlan && hasTakenInterview && (
+                        {(isFreePlan && hasTakenInterview) && (
                            <TooltipContent>
                             <p>Upgrade to Pro to take more interviews.</p>
                           </TooltipContent>
@@ -360,7 +360,7 @@ export default function DashboardPage() {
                                     </Button>
                                 </div>
                             </TooltipTrigger>
-                            {isFreePlan && hasTakenQuiz && (
+                            {(isFreePlan && hasTakenQuiz) && (
                                 <TooltipContent>
                                     <p>Upgrade to Pro for unlimited coding questions.</p>
                                 </TooltipContent>
