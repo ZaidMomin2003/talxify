@@ -38,8 +38,9 @@ import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import { Switch } from "@/components/ui/switch";
 import { getActivity } from "@/lib/firebase-service";
+import { ThemeProvider } from "@/components/theme-provider";
 
-export default function DashboardLayout({
+function DashboardLayoutContent({
   children,
 }: {
   children: React.ReactNode;
@@ -250,4 +251,22 @@ export default function DashboardLayout({
       </SidebarInset>
     </SidebarProvider>
   );
+}
+
+
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <ThemeProvider
+        attribute="class"
+        defaultTheme="dark"
+        enableSystem
+        disableTransitionOnChange
+    >
+        <DashboardLayoutContent>{children}</DashboardLayoutContent>
+    </ThemeProvider>
+  )
 }
