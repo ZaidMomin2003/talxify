@@ -4,8 +4,8 @@
 import { useSearchParams, useRouter } from 'next/navigation';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Loader2, Mic, AlertTriangle, Video, Bot, User, Keyboard, StopCircle } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Loader2, Mic, AlertTriangle, Video, Bot, User, Keyboard, StopCircle, RefreshCw } from 'lucide-react';
 import { textToSpeech } from '@/ai/flows/text-to-speech';
 import { conductInterviewTurn } from '@/ai/flows/analyze-interview-response';
 import { useToast } from '@/hooks/use-toast';
@@ -118,12 +118,6 @@ export default function MockInterviewSessionPage() {
             } catch (error) {
                 console.error('Error accessing camera/mic:', error);
                 setHasCameraPermission(false);
-                toast({
-                    variant: 'destructive',
-                    title: 'Permissions Denied',
-                    description: 'Please enable camera and microphone permissions to use this feature.',
-                    duration: 5000,
-                });
             }
         }
         getPermissions();
@@ -138,7 +132,7 @@ export default function MockInterviewSessionPage() {
                 deepgramConnectionRef.current = null;
             }
         };
-    }, [toast]);
+    }, []);
     
     const startListening = useCallback(async () => {
         if (isRecording || interviewState !== 'listening') return;
@@ -274,6 +268,42 @@ export default function MockInterviewSessionPage() {
     
     const lastMessage = messages[messages.length - 1];
 
+    if (hasCameraPermission === false) {
+        return (
+            <main className="flex flex-col h-screen bg-background items-center justify-center p-4">
+                <Card className="max-w-md w-full text-center shadow-lg border-destructive">
+                    <CardHeader>
+                        <div className="mx-auto bg-destructive/10 text-destructive rounded-full p-3 w-fit">
+                            <Video className="h-8 w-8" />
+                        </div>
+                        <CardTitle className="text-2xl font-bold">Permissions Required</CardTitle>
+                        <CardDescription>
+                            Talxify needs access to your camera and microphone for the mock interview. Please enable these permissions in your browser settings.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex flex-col gap-4">
+                        <Button onClick={() => window.location.reload()}>
+                            <RefreshCw className="mr-2 h-4 w-4" />
+                            Refresh and Try Again
+                        </Button>
+                        <Button variant="ghost" onClick={() => router.push('/dashboard')}>
+                            Back to Dashboard
+                        </Button>
+                    </CardContent>
+                </Card>
+            </main>
+        );
+    }
+    
+    if (hasCameraPermission === null) {
+        return (
+             <main className="flex flex-col h-screen bg-background items-center justify-center p-4">
+                <Loader2 className="h-16 w-16 animate-spin text-primary" />
+                <p className="mt-4 text-muted-foreground">Accessing camera and microphone...</p>
+             </main>
+        )
+    }
+
     return (
         <main className="flex flex-col h-screen bg-black text-white p-4">
             <audio ref={audioRef} style={{ display: 'none' }} />
@@ -293,18 +323,6 @@ export default function MockInterviewSessionPage() {
                     </div>
                 </Card>
             </div>
-            
-            {hasCameraPermission === false && (
-                <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
-                     <Alert variant="destructive" className="max-w-md">
-                        <Video className="h-4 w-4" />
-                        <AlertTitle>Camera and Microphone Required</AlertTitle>
-                        <AlertDescription>
-                            Talxify needs access to your camera and microphone for the mock interview. Please enable permissions in your browser settings and refresh the page.
-                        </AlertDescription>
-                    </Alert>
-                </div>
-            )}
 
             <div className="w-full mt-4">
                 <Card className="bg-background/80 backdrop-blur-sm border-border/30">
@@ -341,5 +359,3 @@ export default function MockInterviewSessionPage() {
         </main>
     );
 }
-
-    

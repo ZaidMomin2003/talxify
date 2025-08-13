@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Loader2, CheckCircle, XCircle, Sparkles } from 'lucide-react';
+import { Loader2, CheckCircle, XCircle, Sparkles, AlertTriangle } from 'lucide-react';
 import type { QuizState } from '../quiz/page';
 import { analyzeCodingAnswers, AnalyzeCodingAnswersInput, AnswerAnalysis } from '@/ai/flows/analyze-coding-answers';
 import type { QuizResult, StoredActivity } from '@/lib/types';
@@ -87,21 +87,36 @@ export default function CodingQuizAnalysisPage() {
   }, [analysis]);
 
 
-  if (isLoading || !quizState) {
+  if (isLoading) {
     return (
-      <div className="flex h-full w-full flex-col items-center justify-center">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        <p className="mt-4 text-muted-foreground">Our AI is analyzing your answers...</p>
+      <div className="flex h-full w-full flex-col items-center justify-center p-4">
+        <div className="flex flex-col items-center gap-4 text-center">
+            <Loader2 className="h-16 w-16 animate-spin text-primary" />
+            <h2 className="text-2xl font-semibold">Analyzing Your Quiz</h2>
+            <p className="max-w-md text-muted-foreground">Our AI is reviewing your answers and generating detailed feedback. This might take a moment.</p>
+        </div>
       </div>
     );
   }
 
-  if (!analysis) {
+  if (!analysis || !quizState) {
      return (
-      <div className="flex h-full w-full flex-col items-center justify-center">
-        <p className="text-muted-foreground">Could not load analysis. Please try again later.</p>
-         <Button onClick={() => router.push('/dashboard')} className="mt-4">Back to Dashboard</Button>
-      </div>
+        <div className="flex h-full w-full flex-col items-center justify-center p-4">
+            <Card className="max-w-md w-full text-center shadow-lg">
+                <CardHeader>
+                    <div className="mx-auto bg-destructive/10 text-destructive rounded-full p-3 w-fit">
+                      <AlertTriangle className="h-8 w-8" />
+                    </div>
+                    <CardTitle className="text-2xl font-bold">Analysis Failed</CardTitle>
+                    <CardDescription>
+                        We couldn't retrieve or process the analysis for this quiz. Please try again later or return to your dashboard.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Button onClick={() => router.push('/dashboard')}>Back to Dashboard</Button>
+                </CardContent>
+            </Card>
+        </div>
     )
   }
 

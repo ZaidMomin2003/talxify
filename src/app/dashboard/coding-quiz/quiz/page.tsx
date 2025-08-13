@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Textarea } from '@/components/ui/textarea';
 import { generateCodingQuestions, GenerateCodingQuestionsInput, CodingQuestion } from '@/ai/flows/generate-coding-questions';
 import { Progress } from '@/components/ui/progress';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertTriangle, Lightbulb } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { addActivity } from '@/lib/firebase-service';
@@ -142,18 +142,33 @@ export default function CodingQuizPage() {
 
   if (isLoading) {
     return (
-      <div className="flex h-full w-full flex-col items-center justify-center">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        <p className="mt-4 text-muted-foreground">Generating your quiz...</p>
+       <div className="flex h-full w-full flex-col items-center justify-center p-4">
+        <div className="flex flex-col items-center gap-4 text-center">
+            <Loader2 className="h-16 w-16 animate-spin text-primary" />
+            <h2 className="text-2xl font-semibold">Generating Your Quiz</h2>
+            <p className="max-w-md text-muted-foreground">Our AI is crafting challenging questions based on your selections. This may take a few seconds.</p>
+        </div>
       </div>
     );
   }
 
   if (questions.length === 0) {
     return (
-      <div className="flex h-full w-full flex-col items-center justify-center">
-        <p className="text-muted-foreground">Could not load questions. Please go back and try again.</p>
-         <Button onClick={() => router.back()} className="mt-4">Go Back</Button>
+      <div className="flex h-full w-full flex-col items-center justify-center p-4">
+        <Card className="max-w-md w-full text-center shadow-lg">
+            <CardHeader>
+                 <div className="mx-auto bg-destructive/10 text-destructive rounded-full p-3 w-fit">
+                    <AlertTriangle className="h-8 w-8" />
+                 </div>
+                <CardTitle className="text-2xl font-bold">Failed to Generate Quiz</CardTitle>
+                <CardDescription>
+                    The AI couldn't create questions for the topic <span className="font-semibold text-foreground">{topics}</span>. Please try a different or broader topic.
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Button onClick={() => router.back()}>Go Back & Try Again</Button>
+            </CardContent>
+        </Card>
       </div>
     )
   }
