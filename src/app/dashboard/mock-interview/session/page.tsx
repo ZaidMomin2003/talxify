@@ -50,7 +50,7 @@ export default function MockInterviewSessionPage() {
                 audioRef.current.src = audioDataUri;
                 audioRef.current.play();
                 audioRef.current.onended = () => {
-                    if (messages.length >= 3) {
+                    if (messages.length >= 3) { // End after user responds to first question
                          setInterviewState('finished');
                     } else {
                         setInterviewState('listening');
@@ -63,7 +63,7 @@ export default function MockInterviewSessionPage() {
             setInterviewState('listening'); // Even if TTS fails, allow user to respond
         }
     }, [toast, messages.length]);
-    
+
     const handleUserResponse = useCallback(async (transcript: string) => {
         if (!transcript.trim()) {
             setInterviewState('listening');
@@ -75,14 +75,21 @@ export default function MockInterviewSessionPage() {
         setMessages(newHistory);
         setCurrentTranscript('');
 
-        // --- SIMULATION LOGIC ---
-        // Bypassing LLM for TTS/STT testing
-        const aiResponse = "That's great to hear! Tell me about yourself.";
-        setMessages(prev => [...prev, { role: 'model', content: aiResponse }]);
-        speakResponse(aiResponse);
-        // --- END SIMULATION LOGIC ---
+        try {
+            const { response } = await conductInterviewTurn({
+                history: newHistory,
+                interviewContext
+            });
+            setMessages(prev => [...prev, { role: 'model', content: response }]);
+            speakResponse(response);
+        } catch(error) {
+            console.error("AI turn failed:", error);
+            toast({ title: "AI Error", description: "The AI failed to respond. Please try again.", variant: "destructive"});
+            setInterviewState('error');
+        }
 
-    }, [messages, speakResponse]);
+    }, [messages, speakResponse, interviewContext, toast]);
+
 
     const startInterview = useCallback(async () => {
         if (hasCameraPermission === false) {
@@ -90,12 +97,16 @@ export default function MockInterviewSessionPage() {
              return;
         }
         setInterviewState('generating_response');
-        // --- SIMULATION LOGIC ---
-        const initialMessage = "Let's start the interview.";
-        // --- END SIMULATION LOGIC ---
-        setMessages([{ role: 'model', content: initialMessage }]);
-        speakResponse(initialMessage);
-    }, [toast, hasCameraPermission, speakResponse]);
+        try {
+            const { response } = await conductInterviewTurn({ history: [], interviewContext });
+            setMessages([{ role: 'model', content: response }]);
+            speakResponse(response);
+        } catch (error) {
+            console.error("Failed to start interview:", error);
+            toast({ title: "Interview Start Failed", description: "Could not generate the first question.", variant: "destructive"});
+            setInterviewState('error');
+        }
+    }, [toast, hasCameraPermission, speakResponse, interviewContext]);
 
     useEffect(() => {
         async function getPermissions() {
@@ -137,6 +148,7 @@ export default function MockInterviewSessionPage() {
             model: 'nova-2',
             smart_format: true,
             interim_results: true,
+            utterance_end_ms: 1000,
         });
     
         connection.on(LiveTranscriptionEvents.Open, async () => {
@@ -164,8 +176,12 @@ export default function MockInterviewSessionPage() {
         connection.on(LiveTranscriptionEvents.Transcript, (data) => {
             const transcript = data.channel.alternatives[0].transcript;
             if (transcript) {
-               setCurrentTranscript(transcript);
+               setCurrentTranscript(prev => prev ? `${prev} ${transcript}` : transcript);
             }
+        });
+
+        connection.on(LiveTranscriptionEvents.UtteranceEnd, () => {
+            stopListening();
         });
     
         connection.on(LiveTranscriptionEvents.Close, () => {
@@ -181,7 +197,7 @@ export default function MockInterviewSessionPage() {
     }, [isRecording, interviewState, toast]);
 
     const stopListening = useCallback(() => {
-        if (mediaRecorderRef.current) {
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
             mediaRecorderRef.current.stop();
             mediaRecorderRef.current = null;
         }
@@ -193,15 +209,17 @@ export default function MockInterviewSessionPage() {
         if(currentTranscript){
             handleUserResponse(currentTranscript);
         } else {
-            setInterviewState('listening');
+            // Only reset if we didn't capture anything, otherwise let handleUserResponse manage state
+            if(interviewState === 'listening') setInterviewState('listening'); 
         }
-    }, [currentTranscript, handleUserResponse]);
+    }, [currentTranscript, handleUserResponse, interviewState]);
 
     // Handle Spacebar press for push-to-talk
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.code === 'Space' && !e.repeat && interviewState === 'listening' && !isRecording) {
                 e.preventDefault();
+                setCurrentTranscript(''); // Reset transcript for new utterance
                 startListening();
             }
         };
@@ -243,7 +261,7 @@ export default function MockInterviewSessionPage() {
             case 'processing_response':
                 return <div className="flex items-center space-x-2"><Loader2 className="animate-spin" /> <p>Processing your response...</p></div>;
             case 'finished':
-                return <Button size="lg" onClick={() => router.push('/dashboard')}>Test Complete! Back to Dashboard</Button>;
+                return <Button size="lg" onClick={() => router.push('/dashboard')}>Interview Complete! Back to Dashboard</Button>;
              case 'error':
                  return (
                     <div className="text-center text-destructive flex flex-col items-center gap-2">
@@ -318,9 +336,9 @@ export default function MockInterviewSessionPage() {
                 <Card className="bg-background/80 backdrop-blur-sm border-border/30">
                     <CardContent className="p-4">
                        <div className="min-h-[6rem] text-center flex flex-col justify-center">
-                           {isRecording && currentTranscript ? (
+                           {(isRecording && currentTranscript) || (interviewState === 'generating_response' && currentTranscript) ? (
                                 <div>
-                                    <p className="text-sm font-semibold text-primary mb-1">Listening...</p>
+                                    <p className="text-sm font-semibold text-primary mb-1">You said:</p>
                                     <p className="text-xl text-foreground">{currentTranscript}</p>
                                 </div>
                            ) : lastMessage ? (
