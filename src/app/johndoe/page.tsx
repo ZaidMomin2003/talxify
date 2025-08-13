@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Github, Linkedin, Instagram, Mail, Phone, Link as LinkIcon, Award, Briefcase, MessageSquare, GraduationCap, Sparkles, Building, Calendar, Star, Code, Twitter, Globe, School, Percent, Loader2 } from "lucide-react";
+import { Github, Linkedin, Instagram, Mail, Phone, Link as LinkIcon, Award, Briefcase, MessageSquare, GraduationCap, Sparkles, Building, Calendar, Star, Code, Twitter, Globe, School, Percent, Loader2, Bot } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
@@ -64,7 +64,7 @@ function PortfolioComponent() {
     
         const totalScore = completedQuizzes.reduce((sum, quiz) => {
             const quizScore = quiz.analysis.reduce((s, a) => s + a.score, 0);
-            return sum + (quizScore / quiz.analysis.length);
+            return sum + (quizScore / Math.max(quiz.analysis.length, 1));
         }, 0);
         
         const avgScore = completedQuizzes.length > 0 ? Math.round((totalScore / completedQuizzes.length) * 100) : 0;
@@ -293,7 +293,11 @@ function PortfolioComponent() {
                 </Section>
             </main>
 
-            <footer className="text-center p-6 border-t mt-16">
+            <footer className="text-center p-6 border-t mt-16 space-y-4">
+                <a href="https://talxify.space" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-primary font-bold hover:underline">
+                    <Bot />
+                    <span>Ace the job with Talxify</span>
+                </a>
                 <p className="text-muted-foreground">© {new Date().getFullYear()} {portfolio.personalInfo.name}. All rights reserved.</p>
             </footer>
         </div>
@@ -311,3 +315,5 @@ export default function PortfolioPreviewPage() {
         </Suspense>
     )
 }
+
+    

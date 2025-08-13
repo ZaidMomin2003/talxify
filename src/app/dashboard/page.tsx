@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Rocket, Code, Briefcase, Percent, Search, RefreshCw, BarChart, Info, CalendarDays, Loader2 } from "lucide-react";
+import { Rocket, Code, Briefcase, Percent, Search, RefreshCw, BarChart, Info, CalendarDays, Loader2, Lock } from "lucide-react";
 import Link from "next/link";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useForm } from "react-hook-form";
@@ -21,6 +21,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { useAuth } from "@/context/auth-context";
 import { getActivity, addActivity, getUserData } from "@/lib/firebase-service";
 import { differenceInDays, format } from 'date-fns';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 
 const codingGymSchema = z.object({
@@ -118,7 +119,7 @@ export default function DashboardPage() {
 
     const totalScore = completedQuizzes.reduce((sum, quiz) => {
         const quizScore = quiz.analysis.reduce((s, a) => s + a.score, 0);
-        return sum + (quizScore / quiz.analysis.length);
+        return sum + (quizScore / Math.max(quiz.analysis.length, 1));
     }, 0);
     
     const avgScore = completedQuizzes.length > 0 ? Math.round((totalScore / completedQuizzes.length) * 100) : 0;
@@ -165,6 +166,10 @@ export default function DashboardPage() {
   const handleInfoClick = (quiz: QuizResult) => {
     setSelectedQuiz(quiz);
   }
+
+  const isFreePlan = userData?.subscription?.plan === 'free';
+  const hasTakenInterview = interviewsCompleted > 0;
+  const hasTakenQuiz = recentQuizzes.length > 0;
 
   return (
     <main className="flex-1 overflow-auto p-4 sm:p-6">
@@ -264,10 +269,24 @@ export default function DashboardPage() {
                         </FormItem>
                       )}
                     />
-                    <Button type="submit" size="lg" disabled={isInterviewLoading}>
-                        {isInterviewLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Start Interview
-                    </Button>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="inline-block">
+                            <Button type="submit" size="lg" disabled={isInterviewLoading || (isFreePlan && hasTakenInterview)}>
+                                {isInterviewLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                {isFreePlan && hasTakenInterview && <Lock className="mr-2 h-4 w-4" />}
+                                Start Interview
+                            </Button>
+                          </div>
+                        </TooltipTrigger>
+                        {isFreePlan && hasTakenInterview && (
+                          <TooltipContent>
+                            <p>Upgrade to Pro to take more interviews.</p>
+                          </TooltipContent>
+                        )}
+                      </Tooltip>
+                    </TooltipProvider>
                   </div>
               </CardContent>
             </form>
@@ -321,10 +340,24 @@ export default function DashboardPage() {
                         </FormItem>
                       )}
                     />
-                     <Button type="submit" size="lg" variant="secondary" disabled={isCodingLoading}>
-                        {isCodingLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Start Coding
-                    </Button>
+                     <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <div className="inline-block">
+                                    <Button type="submit" size="lg" variant="secondary" disabled={isCodingLoading || (isFreePlan && hasTakenQuiz)}>
+                                        {isCodingLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                        {isFreePlan && hasTakenQuiz && <Lock className="mr-2 h-4 w-4" />}
+                                        Start Coding
+                                    </Button>
+                                </div>
+                            </TooltipTrigger>
+                            {isFreePlan && hasTakenQuiz && (
+                                <TooltipContent>
+                                    <p>Upgrade to Pro for unlimited coding questions.</p>
+                                </TooltipContent>
+                            )}
+                        </Tooltip>
+                     </TooltipProvider>
                   </div>
               </CardContent>
             </form>
