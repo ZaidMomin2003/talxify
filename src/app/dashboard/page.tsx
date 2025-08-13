@@ -153,7 +153,7 @@ export default function DashboardPage() {
       </div>
 
       <div className="mb-6 grid grid-cols-2 gap-6 lg:grid-cols-4">
-        <Card className="bg-primary/90 text-primary-foreground border-none">
+        <Card className="bg-primary/90 text-primary-foreground border-none shadow-lg shadow-primary/20">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Interviews Completed</CardTitle>
             <Briefcase className="h-4 w-4" />
@@ -163,34 +163,34 @@ export default function DashboardPage() {
             <p className="text-xs text-primary-foreground/80">Practice mock interviews to increase this.</p>
           </CardContent>
         </Card>
-        <Card className="bg-background text-foreground border">
+        <Card className="bg-yellow-500/90 text-white border-none shadow-lg shadow-yellow-500/20">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Coding Questions Solved</CardTitle>
-            <Code className="h-4 w-4 text-muted-foreground" />
+            <Code className="h-4 w-4" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{questionsSolved}</div>
-            <p className="text-xs text-muted-foreground">Across all completed quizzes.</p>
+            <p className="text-xs text-white/80">Across all completed quizzes.</p>
           </CardContent>
         </Card>
-        <Card className="bg-background text-foreground border">
+        <Card className="bg-red-500/90 text-white border-none shadow-lg shadow-red-500/20">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Job Likelihood</CardTitle>
-            <Percent className="h-4 w-4 text-muted-foreground" />
+            <Percent className="h-4 w-4" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">78%</div>
-            <p className="text-xs text-muted-foreground">Based on your performance (Dummy)</p>
+            <p className="text-xs text-white/80">Based on your performance (Dummy)</p>
           </CardContent>
         </Card>
-        <Card className="bg-background text-foreground border">
+        <Card className="bg-green-500/90 text-white border-none shadow-lg shadow-green-500/20">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Plan Expires</CardTitle>
-            <CalendarDays className="h-4 w-4 text-muted-foreground" />
+            <CalendarDays className="h-4 w-4" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">21 Days</div>
-            <p className="text-xs text-muted-foreground">on your current plan (Dummy)</p>
+            <p className="text-xs text-white/80">on your current plan (Dummy)</p>
           </CardContent>
         </Card>
       </div>
