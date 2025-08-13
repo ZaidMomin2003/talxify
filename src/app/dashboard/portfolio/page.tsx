@@ -136,7 +136,7 @@ export default function PortfolioPage() {
               <Label htmlFor="bannerUrl">Portfolio Banner URL</Label>
               <Input id="bannerUrl" placeholder="e.g., https://imgur.com/your-banner.png" value={portfolio.personalInfo.bannerUrl} onChange={(e) => setPortfolio({...portfolio, personalInfo: {...portfolio.personalInfo, bannerUrl: e.target.value}})} />
               <p className="text-sm text-muted-foreground mt-1">
-                Tip: Use a free image host like <a href="https://imgur.com/upload" target="_blank" rel="noopener noreferrer" className="text-primary underline">Imgur</a>, then paste the direct image link here.
+                Tip: Upload to a host like Imgur, or use a Google Drive link (ensure sharing is public). Then paste the direct link here.
               </p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -253,7 +253,7 @@ export default function PortfolioPage() {
                         <Label>Image URL</Label>
                         <Input value={item.imageUrl} onChange={(e) => handleFieldChange('projects', index, 'imageUrl', e.target.value)} />
                         <p className="text-sm text-muted-foreground mt-1">
-                            Tip: Use a free image host like <a href="https://imgur.com/upload" target="_blank" rel="noopener noreferrer" className="text-primary underline">Imgur</a>, then paste the direct image link here.
+                          Tip: Upload to a host like Imgur, or use a Google Drive link (ensure sharing is public). Then paste the direct link here.
                         </p>
                     </div>
                     <div><Label>Description</Label><Textarea value={item.description} onChange={(e) => handleFieldChange('projects', index, 'description', e.target.value)} /></div>
@@ -276,7 +276,7 @@ export default function PortfolioPage() {
                         <Label>Image URL</Label>
                         <Input value={item.imageUrl} onChange={(e) => handleFieldChange('certificates', index, 'imageUrl', e.target.value)} />
                          <p className="text-sm text-muted-foreground mt-1">
-                            Tip: Use a free image host like <a href="https://imgur.com/upload" target="_blank" rel="noopener noreferrer" className="text-primary underline">Imgur</a>, then paste the direct image link here.
+                           Tip: Upload to a host like Imgur, or use a Google Drive link (ensure sharing is public). Then paste the direct link here.
                         </p>
                     </div>
                 </div>
@@ -296,7 +296,7 @@ export default function PortfolioPage() {
                             <Label>Image URL</Label>
                             <Input value={item.imageUrl} onChange={(e) => handleSimpleListChange('achievements', index, 'imageUrl', e.target.value)} />
                              <p className="text-sm text-muted-foreground mt-1">
-                                Tip: Use a free image host like <a href="https://imgur.com/upload" target="_blank" rel="noopener noreferrer" className="text-primary underline">Imgur</a>, then paste the direct image link here.
+                               Tip: Upload to a host like Imgur, or use a Google Drive link (ensure sharing is public). Then paste the direct link here.
                             </p>
                         </div>
                     </div>
