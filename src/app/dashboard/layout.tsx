@@ -148,10 +148,13 @@ function DashboardLayoutContent({
                     </Link>
                  </Button>
             ) : (
-                <div className="rounded-lg bg-muted p-3 text-center">
-                    <p className="text-sm font-semibold text-foreground">Pro Member</p>
+                <div className="rounded-lg bg-gradient-to-br from-purple-900 via-primary to-blue-800 p-4 text-center text-primary-foreground shadow-lg">
+                    <div className="flex items-center justify-center gap-2 mb-2">
+                        <Gem className="h-5 w-5" />
+                        <p className="text-lg font-bold">Pro Member</p>
+                    </div>
                     {userData.subscription.endDate && (
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-xs text-primary-foreground/80">
                             Expires on {format(new Date(userData.subscription.endDate), 'MMM d, yyyy')}
                         </p>
                     )}
