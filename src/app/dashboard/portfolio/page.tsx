@@ -134,7 +134,10 @@ export default function PortfolioPage() {
             </div>
              <div>
               <Label htmlFor="bannerUrl">Portfolio Banner URL</Label>
-              <Input id="bannerUrl" value={portfolio.personalInfo.bannerUrl} onChange={(e) => setPortfolio({...portfolio, personalInfo: {...portfolio.personalInfo, bannerUrl: e.target.value}})} />
+              <Input id="bannerUrl" placeholder="e.g., https://imgur.com/your-banner.png" value={portfolio.personalInfo.bannerUrl} onChange={(e) => setPortfolio({...portfolio, personalInfo: {...portfolio.personalInfo, bannerUrl: e.target.value}})} />
+              <p className="text-sm text-muted-foreground mt-1">
+                Tip: Use a free image host like <a href="https://imgur.com/upload" target="_blank" rel="noopener noreferrer" className="text-primary underline">Imgur</a>, then paste the direct image link here.
+              </p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -246,7 +249,13 @@ export default function PortfolioPage() {
                     <div><Label>Project Title</Label><Input value={item.title} onChange={(e) => handleFieldChange('projects', index, 'title', e.target.value)} /></div>
                     <div><Label>Tags (comma separated)</Label><Input value={item.tags} onChange={(e) => handleFieldChange('projects', index, 'tags', e.target.value)} /></div>
                     <div><Label>Project Link</Label><Input value={item.link} onChange={(e) => handleFieldChange('projects', index, 'link', e.target.value)} /></div>
-                    <div><Label>Image URL</Label><Input value={item.imageUrl} onChange={(e) => handleFieldChange('projects', index, 'imageUrl', e.target.value)} /></div>
+                    <div>
+                        <Label>Image URL</Label>
+                        <Input value={item.imageUrl} onChange={(e) => handleFieldChange('projects', index, 'imageUrl', e.target.value)} />
+                        <p className="text-sm text-muted-foreground mt-1">
+                            Tip: Use a free image host like <a href="https://imgur.com/upload" target="_blank" rel="noopener noreferrer" className="text-primary underline">Imgur</a>, then paste the direct image link here.
+                        </p>
+                    </div>
                     <div><Label>Description</Label><Textarea value={item.description} onChange={(e) => handleFieldChange('projects', index, 'description', e.target.value)} /></div>
                 </div>
             ))}
@@ -263,7 +272,13 @@ export default function PortfolioPage() {
                     <div><Label>Certificate Name</Label><Input value={item.name} onChange={(e) => handleFieldChange('certificates', index, 'name', e.target.value)} /></div>
                     <div><Label>Issuing Body</Label><Input value={item.body} onChange={(e) => handleFieldChange('certificates', index, 'body', e.target.value)} /></div>
                     <div><Label>Date Obtained</Label><Input type="month" value={item.date} onChange={(e) => handleFieldChange('certificates', index, 'date', e.target.value)} /></div>
-                    <div><Label>Image URL</Label><Input value={item.imageUrl} onChange={(e) => handleFieldChange('certificates', index, 'imageUrl', e.target.value)} /></div>
+                    <div>
+                        <Label>Image URL</Label>
+                        <Input value={item.imageUrl} onChange={(e) => handleFieldChange('certificates', index, 'imageUrl', e.target.value)} />
+                         <p className="text-sm text-muted-foreground mt-1">
+                            Tip: Use a free image host like <a href="https://imgur.com/upload" target="_blank" rel="noopener noreferrer" className="text-primary underline">Imgur</a>, then paste the direct image link here.
+                        </p>
+                    </div>
                 </div>
             ))}
             <Button variant="outline" className="w-full" onClick={() => handleAddItem('certificates', { name: '', body: '', date: '', imageUrl: 'https://placehold.co/100x100.png' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Certificate</Button>
@@ -277,7 +292,13 @@ export default function PortfolioPage() {
                     <div key={index} className="space-y-4 p-4 border rounded-lg relative">
                         <Button variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => handleRemoveItem('achievements', index)}><Trash2 className="w-4 h-4" /></Button>
                         <div><Label>Description</Label><Input value={item.description} onChange={(e) => handleSimpleListChange('achievements', index, 'description', e.target.value)} /></div>
-                        <div><Label>Image URL</Label><Input value={item.imageUrl} onChange={(e) => handleSimpleListChange('achievements', index, 'imageUrl', e.target.value)} /></div>
+                        <div>
+                            <Label>Image URL</Label>
+                            <Input value={item.imageUrl} onChange={(e) => handleSimpleListChange('achievements', index, 'imageUrl', e.target.value)} />
+                             <p className="text-sm text-muted-foreground mt-1">
+                                Tip: Use a free image host like <a href="https://imgur.com/upload" target="_blank" rel="noopener noreferrer" className="text-primary underline">Imgur</a>, then paste the direct image link here.
+                            </p>
+                        </div>
                     </div>
                 ))}
                 <Button variant="outline" className="w-full" onClick={() => handleAddItem('achievements', { description: '', imageUrl: 'https://placehold.co/100x100.png' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Achievement</Button>
