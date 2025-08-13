@@ -68,7 +68,7 @@ export default function LoginPage() {
     try {
       await signInWithGitHub();
       router.push('/dashboard');
-    } catch (error: any) => {
+    } catch (error: any) {
       console.error(error);
       toast({
         title: "GitHub sign-in failed",
