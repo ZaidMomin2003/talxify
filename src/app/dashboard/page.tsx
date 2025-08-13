@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Rocket, Code, Briefcase, Percent, Search, RefreshCw, BarChart, Info, CalendarDays, Loader2, Lock, Building, BrainCircuit, User } from "lucide-react";
+import { Rocket, Code, Briefcase, Percent, Search, RefreshCw, BarChart, Info, CalendarDays, Loader2, Lock, Building, BrainCircuit, User, Gem } from "lucide-react";
 import Link from "next/link";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useForm } from "react-hook-form";
@@ -319,98 +319,102 @@ export default function DashboardPage() {
         </Card>
 
         <Card className="flex flex-col shadow-lg hover:shadow-xl transition-shadow duration-300 border-accent/20">
-          <Form {...codingGymForm}>
-            <form onSubmit={codingGymForm.handleSubmit(onCodingGymSubmit)} className="flex flex-col h-full">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle>Coding Gym</CardTitle>
-                  <Code className="h-6 w-6 text-accent" />
+          {(isFreePlan && hasTakenQuiz) ? (
+            <div className="flex flex-col h-full justify-center items-center text-center p-6">
+                <div className="bg-accent/10 text-accent rounded-full p-3 mb-4">
+                  <Lock className="w-8 h-8" />
                 </div>
-                <CardDescription>Get AI-powered help with your coding problems.</CardDescription>
-              </CardHeader>
-              <CardContent className="flex-grow space-y-4">
-                  <FormField
-                    control={codingGymForm.control}
-                    name="topics"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Topics</FormLabel>
-                        <FormControl>
-                          <Input placeholder="e.g., JavaScript, Algorithms" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={codingGymForm.control}
-                      name="difficulty"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Difficulty</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select a difficulty" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="easy">Easy</SelectItem>
-                              <SelectItem value="moderate">Moderate</SelectItem>
-                              <SelectItem value="difficult">Difficult</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={codingGymForm.control}
-                      name="numQuestions"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Questions</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="# of Questions" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="3">3</SelectItem>
-                              <SelectItem value="5">5</SelectItem>
-                              <SelectItem value="10">10</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                <h3 className="text-xl font-bold mb-2">Unlock Unlimited Practice</h3>
+                <p className="text-muted-foreground mb-4">
+                  You've used your free quiz attempt. Upgrade to Pro to solve unlimited coding questions and ace your interviews.
+                </p>
+                <Button asChild size="lg" className="w-full">
+                  <Link href="/dashboard/pricing">
+                    <Gem className="mr-2 h-4 w-4" />
+                    Upgrade to Pro
+                  </Link>
+                </Button>
+            </div>
+          ) : (
+            <Form {...codingGymForm}>
+              <form onSubmit={codingGymForm.handleSubmit(onCodingGymSubmit)} className="flex flex-col h-full">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle>Coding Gym</CardTitle>
+                    <Code className="h-6 w-6 text-accent" />
                   </div>
-              </CardContent>
-              <CardFooter>
-                 <TooltipProvider>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <div className="w-full">
-                                <Button type="submit" size="lg" variant="secondary" className="w-full" disabled={isCodingLoading || (isFreePlan && hasTakenQuiz)}>
-                                    {isCodingLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    {isFreePlan && hasTakenQuiz && <Lock className="mr-2 h-4 w-4" />}
-                                    Start Coding
-                                </Button>
-                            </div>
-                        </TooltipTrigger>
-                        {(isFreePlan && hasTakenQuiz) && (
-                            <TooltipContent>
-                                <p>Upgrade to Pro for unlimited coding questions.</p>
-                            </TooltipContent>
+                  <CardDescription>Get AI-powered help with your coding problems.</CardDescription>
+                </CardHeader>
+                <CardContent className="flex-grow space-y-4">
+                    <FormField
+                      control={codingGymForm.control}
+                      name="topics"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Topics</FormLabel>
+                          <FormControl>
+                            <Input placeholder="e.g., JavaScript, Algorithms" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={codingGymForm.control}
+                        name="difficulty"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Difficulty</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select a difficulty" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="easy">Easy</SelectItem>
+                                <SelectItem value="moderate">Moderate</SelectItem>
+                                <SelectItem value="difficult">Difficult</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
                         )}
-                    </Tooltip>
-                 </TooltipProvider>
-              </CardFooter>
-            </form>
-          </Form>
+                      />
+                      <FormField
+                        control={codingGymForm.control}
+                        name="numQuestions"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Questions</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="# of Questions" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="3">3</SelectItem>
+                                <SelectItem value="5">5</SelectItem>
+                                <SelectItem value="10">10</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                </CardContent>
+                <CardFooter>
+                    <Button type="submit" size="lg" variant="secondary" className="w-full" disabled={isCodingLoading}>
+                        {isCodingLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Start Coding
+                    </Button>
+                </CardFooter>
+              </form>
+            </Form>
+          )}
         </Card>
       </div>
       
