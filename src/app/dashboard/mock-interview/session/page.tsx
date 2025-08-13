@@ -316,7 +316,7 @@ export default function MockInterviewSessionPage() {
                     </div>
                 </Card>
                  <Card className="relative bg-muted/20 border-primary/20 overflow-hidden">
-                    <Image src="https://placehold.co/1280x720.png" alt="AI Interviewer" layout="fill" objectFit="cover" className="opacity-80" data-ai-hint="abstract background" />
+                    <Image src="/interview.webp" alt="AI Interviewer" layout="fill" objectFit="cover" className="opacity-80" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
                     <div className="absolute bottom-4 left-4 bg-black/50 backdrop-blur-sm text-white px-3 py-1 rounded-lg flex items-center gap-2">
                         <Bot size={16} /> <span>AI Interviewer</span>
@@ -359,5 +359,7 @@ export default function MockInterviewSessionPage() {
         </main>
     );
 }
+
+    
 
     
