@@ -19,7 +19,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { useAuth } from "@/context/auth-context";
-import { getActivity, addActivity, getUserData } from "@/lib/firebase-service";
+import { getUserData } from "@/lib/firebase-service";
 import { differenceInDays, format } from 'date-fns';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -27,6 +27,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 const codingGymSchema = z.object({
   topics: z.string().min(1, "Topics are required."),
   difficulty: z.enum(["easy", "moderate", "difficult"]),
+  numQuestions: z.string(),
 });
 
 const mockInterviewSchema = z.object({
@@ -62,6 +63,7 @@ export default function DashboardPage() {
     defaultValues: {
       topics: "",
       difficulty: "easy",
+      numQuestions: "3"
     },
   });
 
@@ -78,36 +80,19 @@ export default function DashboardPage() {
     const params = new URLSearchParams({
         topics: values.topics,
         difficulty: values.difficulty,
-        numQuestions: "3",
+        numQuestions: values.numQuestions,
     });
     router.push(`/dashboard/coding-quiz/instructions?${params.toString()}`);
   }
 
   async function onMockInterviewSubmit(values: z.infer<typeof mockInterviewSchema>) {
-    if(!user) return;
     setIsInterviewLoading(true);
 
     const params = new URLSearchParams({
         topic: values.topic,
         role: values.role,
     });
-     const newInterview: InterviewActivity = {
-        id: `interview_${Date.now()}`,
-        type: 'interview',
-        timestamp: new Date().toISOString(),
-        details: {
-            topic: values.topic,
-            role: values.role,
-        }
-    };
-
-    try {
-        await addActivity(user.uid, newInterview);
-        router.push(`/dashboard/mock-interview/instructions?${params.toString()}`);
-    } catch(error) {
-        console.error("Failed to start interview:", error);
-        setIsInterviewLoading(false);
-    }
+    router.push(`/dashboard/mock-interview/instructions?${params.toString()}`);
   }
 
   const { questionsSolved, interviewsCompleted, recentQuizzes, averageScore } = useMemo(() => {
@@ -281,7 +266,7 @@ export default function DashboardPage() {
                           </div>
                         </TooltipTrigger>
                         {isFreePlan && hasTakenInterview && (
-                          <TooltipContent>
+                           <TooltipContent>
                             <p>Upgrade to Pro to take more interviews.</p>
                           </TooltipContent>
                         )}
@@ -322,7 +307,7 @@ export default function DashboardPage() {
                       control={codingGymForm.control}
                       name="difficulty"
                       render={({ field }) => (
-                        <FormItem className="flex-grow">
+                        <FormItem className="w-1/2">
                           <FormLabel>Difficulty</FormLabel>
                           <Select onValueChange={field.onChange} defaultValue={field.value}>
                             <FormControl>
@@ -340,11 +325,35 @@ export default function DashboardPage() {
                         </FormItem>
                       )}
                     />
+                    <FormField
+                      control={codingGymForm.control}
+                      name="numQuestions"
+                      render={({ field }) => (
+                        <FormItem className="w-1/2">
+                          <FormLabel>Questions</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="# of Questions" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="3">3</SelectItem>
+                              <SelectItem value="5">5</SelectItem>
+                              <SelectItem value="10">10</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  <div className="pt-4">
                      <TooltipProvider>
                         <Tooltip>
                             <TooltipTrigger asChild>
-                                <div className="inline-block">
-                                    <Button type="submit" size="lg" variant="secondary" disabled={isCodingLoading || (isFreePlan && hasTakenQuiz)}>
+                                <div className="inline-block w-full">
+                                    <Button type="submit" size="lg" variant="secondary" className="w-full" disabled={isCodingLoading || (isFreePlan && hasTakenQuiz)}>
                                         {isCodingLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                         {isFreePlan && hasTakenQuiz && <Lock className="mr-2 h-4 w-4" />}
                                         Start Coding
@@ -472,5 +481,3 @@ export default function DashboardPage() {
     </main>
   );
 }
-
-    
