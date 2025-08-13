@@ -61,7 +61,7 @@ export default function LandingFooter() {
               <ul className="space-y-3">
                 <li><Link href="/login" className="text-muted-foreground hover:text-primary">Login</Link></li>
                 <li><Link href="/signup" className="text-muted-foreground hover:text-primary">Sign Up</Link></li>
-                <li><Link href="#" className="text-muted-foreground hover:text-primary">Forgot Password</Link></li>
+                <li><Link href="/login" className="text-muted-foreground hover:text-primary">Forgot Password</Link></li>
                  <li><Link href="/about" className="text-muted-foreground hover:text-primary">About Us</Link></li>
               </ul>
             </div>
