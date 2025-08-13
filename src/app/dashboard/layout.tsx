@@ -165,7 +165,7 @@ function DashboardLayoutContent({
             <DropdownMenuTrigger asChild>
                 <div className="flex items-center gap-3 rounded-lg bg-muted p-2.5 cursor-pointer hover:bg-accent transition-colors">
                   <Avatar className="h-10 w-10 border-2 border-primary">
-                    <AvatarImage src={user.photoURL || "https://placehold.co/40x40.png"} alt="User avatar" data-ai-hint="person avatar" />
+                    <AvatarImage src={user.photoURL || undefined} alt="User avatar" />
                     <AvatarFallback>{user.email?.[0].toUpperCase()}</AvatarFallback>
                   </Avatar>
                   <div className="flex-1 overflow-hidden">
