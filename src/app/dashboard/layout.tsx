@@ -124,7 +124,9 @@ export default function DashboardLayout({
               )
             })}
           </SidebarMenu>
-           <div className="p-2 mt-auto">
+        </SidebarContent>
+        <SidebarFooter>
+           <div className="p-2">
              <Button asChild className="w-full bg-gradient-to-r from-purple-500 to-blue-500 text-white hover:from-purple-600 hover:to-blue-600 shadow-lg">
                 <Link href="/dashboard/pricing">
                     <Gem className="mr-2 h-4 w-4" />
@@ -132,8 +134,6 @@ export default function DashboardLayout({
                 </Link>
              </Button>
            </div>
-        </SidebarContent>
-        <SidebarFooter>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
                 <div className="flex items-center gap-3 rounded-lg bg-muted p-2.5 cursor-pointer hover:bg-accent transition-colors">
