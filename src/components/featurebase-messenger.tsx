@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect } from "react";
@@ -11,10 +10,6 @@ const FeaturebaseMessenger = () => {
   const { theme } = useTheme();
 
   useEffect(() => {
-    // We only want to boot the messenger if the user is logged in
-    // or if you want it to be available for anonymous users as well.
-    // For this implementation, we will boot it for all users.
-    
     const win = window as any;
     
     // Initialize Featurebase if it doesn't exist
@@ -24,16 +19,18 @@ const FeaturebaseMessenger = () => {
       };
     }
     
-    // Boot Featurebase messenger with configuration
-    win.Featurebase("boot", {
-      appId: "689df97845396713701c443c",
-      // Pass user data if available
-      ...(user && {
+    // Prepare user data object, ensuring metadata exists before access
+    const featurebaseUser = user && user.metadata ? {
         email: user.email,
         userId: user.uid,
         createdAt: user.metadata.creationTime,
-      }),
-      theme: theme || 'dark', // Use the app's current theme
+    } : {};
+
+    // Boot Featurebase messenger with configuration
+    win.Featurebase("boot", {
+      appId: "689df97845396713701c443c",
+      ...featurebaseUser,
+      theme: theme || 'dark',
       language: "en",
     });
 
