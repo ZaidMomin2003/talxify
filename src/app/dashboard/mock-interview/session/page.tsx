@@ -50,7 +50,13 @@ export default function MockInterviewSessionPage() {
 
     const endInterview = useCallback(async () => {
         setInterviewState('finished');
-        if (!user || messages.length < 2) {
+        if (!user) {
+            router.push('/login');
+            return;
+        }
+
+        // Even if the interview is short, proceed to analysis
+        if (messages.length === 0) {
             router.push('/dashboard');
             return;
         }
@@ -418,3 +424,5 @@ export default function MockInterviewSessionPage() {
         </main>
     );
 }
+
+    
