@@ -17,7 +17,7 @@ const MessageSchema = z.object({
   content: z.string(),
 });
 
-export const AnalyzeInterviewTranscriptInputSchema = z.object({
+const AnalyzeInterviewTranscriptInputSchema = z.object({
   history: z.array(MessageSchema).describe('The history of the conversation so far.'),
   interviewContext: z.object({
       company: z.string().describe('The target company for the interview.'),
@@ -27,7 +27,7 @@ export const AnalyzeInterviewTranscriptInputSchema = z.object({
 });
 export type AnalyzeInterviewTranscriptInput = z.infer<typeof AnalyzeInterviewTranscriptInputSchema>;
 
-export const InterviewAnalysisSchema = z.object({
+const InterviewAnalysisSchema = z.object({
   overallScore: z.number().min(0).max(10).describe('An overall score for the interview from 0 to 10.'),
   overallFeedback: z.string().describe('A summary of the candidate\'s performance, highlighting strengths and key weaknesses.'),
   questionAnalysis: z.array(z.object({
