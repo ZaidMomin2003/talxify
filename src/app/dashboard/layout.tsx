@@ -29,8 +29,11 @@ import {
   SidebarInset,
   SidebarProvider,
   SidebarTrigger,
+  SidebarSeparator,
+  SidebarGroup,
+  SidebarGroupLabel,
 } from "@/components/ui/sidebar";
-import { Bot, Code, LayoutGrid, MessageSquare, BarChart, Settings, History, Search, User, LogOut, Gem, LifeBuoy, Sun, Moon, Briefcase, CalendarDays } from "lucide-react";
+import { Bot, Code, LayoutGrid, MessageSquare, BarChart, Settings, History, Search, User, LogOut, Gem, LifeBuoy, Sun, Moon, Briefcase, CalendarDays, BrainCircuit } from "lucide-react";
 import type { StoredActivity, QuizResult, UserData } from "@/lib/types";
 import { formatDistanceToNow, format } from 'date-fns';
 import { useAuth } from "@/context/auth-context";
@@ -77,6 +80,11 @@ function DashboardLayoutContent({
     { href: "/dashboard", label: "Dashboard", icon: LayoutGrid },
     { href: "/dashboard/portfolio", label: "Portfolio", icon: User },
     { href: "/dashboard/performance", label: "Performance", icon: BarChart },
+  ];
+
+  const toolsItems = [
+    { href: "/dashboard", label: "Mock Interview", icon: BrainCircuit },
+    { href: "/dashboard", label: "Coding Quiz", icon: Code },
   ];
   
   const recentActivity = userData?.activity?.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()) || [];
@@ -136,6 +144,24 @@ function DashboardLayoutContent({
               )
             })}
           </SidebarMenu>
+          <SidebarSeparator />
+           <SidebarGroup>
+                <SidebarGroupLabel className="flex items-center">
+                    <span className="flex-1">Tools</span>
+                </SidebarGroupLabel>
+                <SidebarMenu>
+                    {toolsItems.map((item) => (
+                        <SidebarMenuItem key={item.label}>
+                        <SidebarMenuButton asChild isActive={pathname.startsWith(item.href)} size="sm">
+                            <Link href={item.href}>
+                            <item.icon />
+                            {item.label}
+                            </Link>
+                        </SidebarMenuButton>
+                        </SidebarMenuItem>
+                    ))}
+                </SidebarMenu>
+            </SidebarGroup>
         </SidebarContent>
         <SidebarFooter>
            <div className="p-2">
