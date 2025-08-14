@@ -3,7 +3,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check, Star, Loader2, UserRound, Sparkles, Info } from 'lucide-react';
+import { Check, Star, Loader2, UserRound, Sparkles, Info, Ticket } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import React, { useState } from 'react';
 import { createOrder, verifyPayment } from '@/app/actions/razorpay';
@@ -15,6 +15,7 @@ import { useRouter } from 'next/navigation';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Input } from '@/components/ui/input';
 
 const freePlan = {
     name: 'Free',
@@ -32,12 +33,14 @@ const proPlans = {
         name: 'Monthly',
         price: 1699,
         originalPrice: null,
+        discountedPrice: 1299,
         interviews: '20 AI Mock Interviews',
     },
     yearly: {
         name: 'Yearly',
         price: 16990,
         originalPrice: null,
+        discountedPrice: 12990,
         interviews: '300 AI Mock Interviews',
     }
 };
@@ -57,8 +60,28 @@ export default function PricingPage() {
     const router = useRouter();
     const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
     const [isYearly, setIsYearly] = useState(false);
+    const [couponCode, setCouponCode] = useState('');
+    const [isCouponApplied, setIsCouponApplied] = useState(false);
 
     const activeProPlan = isYearly ? proPlans.yearly : proPlans.monthly;
+    const finalPrice = isCouponApplied ? activeProPlan.discountedPrice : activeProPlan.price;
+
+    const handleApplyCoupon = () => {
+        if (couponCode.toUpperCase() === 'FIRST1000') {
+            setIsCouponApplied(true);
+            toast({
+                title: "Coupon Applied!",
+                description: "The discount has been applied to your plan.",
+            });
+        } else {
+            toast({
+                title: "Invalid Coupon",
+                description: "The coupon code you entered is not valid.",
+                variant: "destructive",
+            });
+        }
+    };
+
 
     const handlePayment = async () => {
         if (!user) {
@@ -69,7 +92,7 @@ export default function PricingPage() {
         setLoadingPlan(activeProPlan.name);
 
         try {
-            const order = await createOrder(activeProPlan.price);
+            const order = await createOrder(finalPrice);
 
             const options = {
                 key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
@@ -135,14 +158,6 @@ export default function PricingPage() {
                     </p>
                 </div>
 
-                 <Alert className="max-w-4xl mx-auto mb-8 bg-primary/5 border-primary/20">
-                    <Info className="h-4 w-4 text-primary" />
-                    <AlertTitle className="text-primary">Launch Offer!</AlertTitle>
-                    <AlertDescription>
-                        Use coupon code <strong className="text-foreground">FIRST1000</strong> during Razorpay checkout to get a special discount on our Pro plans.
-                    </AlertDescription>
-                </Alert>
-
 
                 <div className="flex justify-center items-center gap-4 mb-10">
                     <Label htmlFor="billing-cycle" className={cn("font-medium", !isYearly && "text-primary")}>Monthly</Label>
@@ -193,15 +208,19 @@ export default function PricingPage() {
                             <Sparkles className="h-10 w-10 mx-auto text-primary mb-2" />
                             <CardTitle className="text-3xl font-bold font-headline">Pro</CardTitle>
                              <div className="flex items-baseline justify-center gap-2">
-                                {activeProPlan.originalPrice && (
-                                     <span className="text-3xl font-medium text-muted-foreground line-through">₹{activeProPlan.originalPrice}</span>
+                                {isCouponApplied ? (
+                                    <>
+                                        <span className="text-3xl font-medium text-muted-foreground line-through">₹{activeProPlan.price}</span>
+                                        <span className="text-5xl font-bold tracking-tighter">₹{activeProPlan.discountedPrice}</span>
+                                    </>
+                                ) : (
+                                    <span className="text-5xl font-bold tracking-tighter">₹{activeProPlan.price}</span>
                                 )}
-                                <span className="text-5xl font-bold tracking-tighter">₹{activeProPlan.price}</span>
                                 <span className="text-muted-foreground text-lg">/{isYearly ? 'year' : 'month'}</span>
                             </div>
                             <CardDescription>Unlock your full potential and land your dream job.</CardDescription>
                         </CardHeader>
-                        <CardContent className="flex-grow">
+                        <CardContent className="flex-grow space-y-6">
                             <ul className="space-y-4">
                                 {[activeProPlan.interviews, ...proFeatures].map((feature, index) => (
                                     <li key={index} className="flex items-center gap-3">
@@ -212,6 +231,21 @@ export default function PricingPage() {
                                     </li>
                                 ))}
                             </ul>
+                             <div className="space-y-2 pt-4 border-t">
+                                <Label htmlFor="coupon" className="flex items-center gap-2 text-muted-foreground"><Ticket className="h-4 w-4"/> Have a coupon?</Label>
+                                <div className="flex gap-2">
+                                    <Input 
+                                        id="coupon" 
+                                        placeholder="Enter FIRST1000"
+                                        value={couponCode}
+                                        onChange={(e) => setCouponCode(e.target.value)}
+                                        disabled={isCouponApplied}
+                                    />
+                                    <Button onClick={handleApplyCoupon} disabled={isCouponApplied}>
+                                        {isCouponApplied ? 'Applied' : 'Apply'}
+                                    </Button>
+                                </div>
+                            </div>
                         </CardContent>
                         <CardFooter>
                             <Button
