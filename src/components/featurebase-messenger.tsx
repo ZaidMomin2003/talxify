@@ -26,7 +26,7 @@ const FeaturebaseMessenger = () => {
     
     // Boot Featurebase messenger with configuration
     win.Featurebase("boot", {
-      appId: "YOUR_APP_ID_HERE", // IMPORTANT: Replace with your actual Featurebase App ID
+      appId: "689df97845396713701c443c",
       // Pass user data if available
       ...(user && {
         email: user.email,
