@@ -19,22 +19,22 @@ const FeaturebaseMessenger = () => {
       };
     }
     
-    // Prepare user data object, ensuring metadata exists before access
-    const featurebaseUser = user && user.metadata ? {
-        email: user.email,
+    // Prepare user data, ensuring it exists before passing
+    const featurebaseUser = user ? {
+        email: user.email ?? undefined,
         userId: user.uid,
-        createdAt: user.metadata.creationTime,
+        createdAt: user.metadata?.creationTime,
     } : {};
 
     // Boot Featurebase messenger with configuration
     win.Featurebase("boot", {
       appId: "689df97845396713701c443c",
       ...featurebaseUser,
-      theme: theme || 'dark',
+      theme: theme || 'dark', // Pass theme, default to dark
       language: "en",
     });
 
-  }, [user, theme]);
+  }, [user, theme]); // Re-run effect if user or theme changes
 
   return (
     <>
