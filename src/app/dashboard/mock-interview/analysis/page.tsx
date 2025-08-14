@@ -122,7 +122,9 @@ export default function InterviewAnalysisPage() {
                     <p className="text-6xl font-bold text-primary">{analysis.overallScore}/10</p>
                 </div>
                 <Progress value={analysis.overallScore * 10} className="w-1/2 mx-auto mt-2 h-2" />
-                 <p className="text-sm text-muted-foreground mt-4 max-w-2xl mx-auto">{analysis.overallFeedback.summary}</p>
+                 {analysis.overallFeedback?.summary && (
+                    <p className="text-sm text-muted-foreground mt-4 max-w-2xl mx-auto">{analysis.overallFeedback.summary}</p>
+                 )}
             </CardContent>
         </Card>
         
@@ -132,18 +134,22 @@ export default function InterviewAnalysisPage() {
               <CardTitle>Overall Feedback</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-                <div>
-                    <h3 className="font-semibold flex items-center gap-2 mb-2"><CheckCircle className="text-green-500"/> Strengths</h3>
-                    <ul className="list-disc list-inside space-y-1 text-muted-foreground pl-2">
-                        {analysis.overallFeedback.strengths.map((item, index) => <li key={index}>{item}</li>)}
-                    </ul>
-                </div>
-                 <div>
-                    <h3 className="font-semibold flex items-center gap-2 mb-2"><XCircle className="text-red-500"/> Areas for Improvement</h3>
-                    <ul className="list-disc list-inside space-y-1 text-muted-foreground pl-2">
-                        {analysis.overallFeedback.areasForImprovement.map((item, index) => <li key={index}>{item}</li>)}
-                    </ul>
-                </div>
+                {analysis.overallFeedback?.strengths && (
+                    <div>
+                        <h3 className="font-semibold flex items-center gap-2 mb-2"><CheckCircle className="text-green-500"/> Strengths</h3>
+                        <ul className="list-disc list-inside space-y-1 text-muted-foreground pl-2">
+                            {analysis.overallFeedback.strengths.map((item, index) => <li key={index}>{item}</li>)}
+                        </ul>
+                    </div>
+                )}
+                 {analysis.overallFeedback?.areasForImprovement && (
+                     <div>
+                        <h3 className="font-semibold flex items-center gap-2 mb-2"><XCircle className="text-red-500"/> Areas for Improvement</h3>
+                        <ul className="list-disc list-inside space-y-1 text-muted-foreground pl-2">
+                            {analysis.overallFeedback.areasForImprovement.map((item, index) => <li key={index}>{item}</li>)}
+                        </ul>
+                    </div>
+                 )}
             </CardContent>
           </Card>
           <Card>
@@ -151,7 +157,7 @@ export default function InterviewAnalysisPage() {
               <CardTitle>Skills Breakdown</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {analysis.skillsBreakdown.map(skill => (
+              {analysis.skillsBreakdown?.map(skill => (
                 <div key={skill.skill}>
                   <div className="flex justify-between items-center mb-1">
                     <span className="font-medium capitalize">{skill.skill}</span>
@@ -167,7 +173,7 @@ export default function InterviewAnalysisPage() {
 
         <h2 className="text-2xl font-bold mb-4">Question-by-Question Breakdown</h2>
         <Accordion type="single" collapsible className="w-full" defaultValue="item-0">
-          {analysis.questionAnalysis.map((qa, index) => (
+          {analysis.questionAnalysis?.map((qa, index) => (
             <AccordionItem value={`item-${index}`} key={index}>
               <AccordionTrigger className="text-lg text-left hover:no-underline">
                 <span>Q{index + 1}: {qa.question}</span>
