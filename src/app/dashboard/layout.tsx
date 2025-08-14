@@ -38,7 +38,6 @@ import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import { Switch } from "@/components/ui/switch";
 import { getActivity, getUserData } from "@/lib/firebase-service";
-import { ThemeProvider } from "@/components/theme-provider";
 
 function DashboardLayoutContent({
   children,
@@ -288,13 +287,8 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <ThemeProvider
-        attribute="class"
-        defaultTheme="dark"
-        enableSystem
-        disableTransitionOnChange
-    >
-        <DashboardLayoutContent>{children}</DashboardLayoutContent>
-    </ThemeProvider>
+    // The ThemeProvider is now in the root layout, 
+    // so it doesn't need to be here.
+    <DashboardLayoutContent>{children}</DashboardLayoutContent>
   )
 }
