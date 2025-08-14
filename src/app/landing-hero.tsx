@@ -66,9 +66,9 @@ export default function LandingHero() {
   // Animation to count up numbers
   useEffect(() => {
     const intervals = [
-      setInterval(() => setStats(prev => ({ ...prev, users: Math.min(5000, prev.users + 125) })), 50),
-      setInterval(() => setStats(prev => ({ ...prev, interviews: Math.min(10000, prev.interviews + 250) })), 50),
-      setInterval(() => setStats(prev => ({ ...prev, problems: Math.min(25000, prev.problems + 625) })), 50),
+      setInterval(() => setStats(prev => ({ ...prev, users: Math.min(500, prev.users + 13) })), 50),
+      setInterval(() => setStats(prev => ({ ...prev, interviews: Math.min(8000, prev.interviews + 200) })), 50),
+      setInterval(() => setStats(prev => ({ ...prev, problems: Math.min(18000, prev.problems + 450) })), 50),
     ];
     
     setTimeout(() => intervals.forEach(clearInterval), 2000); // Stop after 2 seconds
@@ -121,6 +121,14 @@ export default function LandingHero() {
       },
     },
   };
+  
+    const socialProofUsers = [
+        "https://randomuser.me/api/portraits/women/68.jpg",
+        "https://randomuser.me/api/portraits/men/75.jpg",
+        "https://randomuser.me/api/portraits/women/79.jpg",
+        "https://randomuser.me/api/portraits/men/55.jpg",
+        "https://randomuser.me/api/portraits/women/56.jpg",
+    ]
 
   return (
     <section className="relative flex min-h-screen w-full flex-col items-center overflow-hidden bg-black py-16 text-white sm:px-6 lg:px-8 lg:py-2">
@@ -296,12 +304,8 @@ export default function LandingHero() {
                 Gemini
               </div>
               <div className="flex cursor-pointer items-center gap-2 rounded-full border border-slate-800 bg-slate-900/60 px-2 py-1 text-xs font-medium text-slate-300 backdrop-blur-sm transition-all hover:bg-purple-950">
-                <div className="h-2 w-2 rounded-full bg-purple-400"></div>
-                React
-              </div>
-              <div className="flex cursor-pointer items-center gap-2 rounded-full border border-slate-800 bg-slate-900/60 px-2 py-1 text-xs font-medium text-slate-300 backdrop-blur-sm transition-all hover:bg-purple-950">
-                <div className="h-2 w-2 rounded-full bg-green-400"></div>
-                Next.js
+                <div className="h-2 w-2 rounded-full bg-red-400"></div>
+                Deepgram
               </div>
               <div className="flex cursor-pointer items-center gap-2 rounded-full border border-slate-800 bg-slate-900/60 px-2 py-1 text-xs font-medium text-slate-300 backdrop-blur-sm transition-all hover:bg-purple-950">
                 <div className="h-2 w-2 rounded-full bg-yellow-400"></div>
@@ -346,17 +350,19 @@ export default function LandingHero() {
               className="mx-auto flex items-center gap-3 rounded-full border border-slate-800 bg-slate-900/50 px-3 py-1 backdrop-blur-sm lg:mx-0 lg:ml-auto"
             >
               <div className="flex -space-x-2">
-                {[1, 2, 3, 4, 5].map((i) => (
-                  <div
-                    key={i}
-                    className="h-6 w-6 overflow-hidden rounded-full border-2 border-slate-900 bg-slate-800"
-                  >
-                    <div className="h-full w-full bg-gradient-to-br from-purple-500 to-blue-600 opacity-80"></div>
-                  </div>
+                {socialProofUsers.map((src, i) => (
+                    <Image
+                        key={i}
+                        src={src}
+                        alt={`user ${i + 1}`}
+                        width={24}
+                        height={24}
+                        className="h-6 w-6 overflow-hidden rounded-full border-2 border-slate-900"
+                    />
                 ))}
               </div>
               <span className="text-xs text-slate-300">
-                <span className="font-semibold text-white">5,000+</span>{' '}
+                <span className="font-semibold text-white">500+</span>{' '}
                 developers already preparing
               </span>
               <ArrowUpRight className="h-3 w-3 text-purple-400" />
