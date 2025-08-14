@@ -98,7 +98,7 @@ export default function LandingHeader() {
         className={`fixed top-0 right-0 left-0 z-50 transition-all duration-500 ${
           isScrolled
             ? 'border-border/50 bg-background/80 border-b shadow-sm backdrop-blur-md'
-            : 'bg-transparent text-white'
+            : 'bg-transparent'
         }`}
         variants={containerVariants}
         initial="hidden"
@@ -119,7 +119,7 @@ export default function LandingHeader() {
                   </div>
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-lg font-bold">
+                  <span className={`text-lg font-bold ${isScrolled ? 'text-foreground' : 'text-white'}`}>
                     Talxify
                   </span>
                   <span className={`text-xs -mt-1 ${isScrolled ? 'text-muted-foreground' : 'text-slate-400'}`}>AI Job Assistant</span>
@@ -139,7 +139,7 @@ export default function LandingHeader() {
                   <Link
                     href={item.href}
                     onClick={(e) => handleLinkClick(e, item.href)}
-                    className="relative rounded-lg px-4 py-2 text-sm font-medium transition-colors duration-200"
+                    className={`relative rounded-lg px-4 py-2 text-sm font-medium transition-colors duration-200 ${isScrolled ? 'text-foreground' : 'text-white'}`}
                   >
                     {hoveredItem === item.name && (
                       <motion.div
@@ -183,7 +183,7 @@ export default function LandingHeader() {
                 <>
                   <Link
                     href="/login"
-                    className="px-4 py-2 text-sm font-medium transition-colors duration-200"
+                    className={`px-4 py-2 text-sm font-medium transition-colors duration-200 ${isScrolled ? 'text-foreground' : 'text-white'}`}
                   >
                     Sign In
                   </Link>
@@ -203,7 +203,7 @@ export default function LandingHeader() {
             </motion.div>
 
             <motion.button
-              className="p-2 transition-colors duration-200 lg:hidden"
+              className={`p-2 transition-colors duration-200 lg:hidden ${isScrolled ? 'text-foreground' : 'text-white'}`}
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               variants={itemVariants}
               whileTap={{ scale: 0.95 }}
@@ -229,7 +229,7 @@ export default function LandingHeader() {
               onClick={() => setIsMobileMenuOpen(false)}
             />
             <motion.div
-              className="border-border bg-background fixed top-16 right-4 z-50 w-80 overflow-hidden rounded-2xl border shadow-2xl lg:hidden"
+              className="border-border bg-background fixed top-4 right-4 z-50 w-80 overflow-hidden rounded-2xl border shadow-2xl lg:hidden"
               variants={mobileMenuVariants}
               initial="closed"
               animate="open"
@@ -241,7 +241,7 @@ export default function LandingHeader() {
                     <motion.div key={item.name} variants={mobileItemVariants}>
                       <Link
                         href={item.href}
-                        className="block rounded-lg px-4 py-3 font-medium transition-colors duration-200"
+                        className="block rounded-lg px-4 py-3 font-medium transition-colors duration-200 hover:bg-muted"
                         onClick={(e) => handleLinkClick(e, item.href)}
                       >
                         {item.name}
@@ -257,7 +257,7 @@ export default function LandingHeader() {
                   {user ? (
                       <Link
                         href="/dashboard"
-                        className="bg-foreground text-background block w-full rounded-lg py-3 text-center font-medium transition-all duration-200"
+                        className="bg-primary text-primary-foreground block w-full rounded-lg py-3 text-center font-medium transition-all duration-200 hover:bg-primary/90"
                         onClick={() => setIsMobileMenuOpen(false)}
                       >
                         Go to Dashboard
@@ -266,14 +266,14 @@ export default function LandingHeader() {
                     <>
                       <Link
                         href="/login"
-                        className="block w-full rounded-lg py-3 text-center font-medium transition-colors duration-200"
+                        className="block w-full rounded-lg py-3 text-center font-medium transition-colors duration-200 hover:bg-muted"
                         onClick={() => setIsMobileMenuOpen(false)}
                       >
                         Sign In
                       </Link>
                       <Link
                         href="/signup"
-                        className="bg-foreground text-background block w-full rounded-lg py-3 text-center font-medium transition-all duration-200"
+                        className="bg-primary text-primary-foreground block w-full rounded-lg py-3 text-center font-medium transition-all duration-200 hover:bg-primary/90"
                         onClick={() => setIsMobileMenuOpen(false)}
                       >
                         Get Started
