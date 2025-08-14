@@ -170,7 +170,7 @@ export default function LandingHero() {
         </div>
 
         {/* Enhanced glow spots */}
-        <div className="absolute top-20 -left-20 h-60 w-60 rounded-full bg-purple-600/20 blur-[100px]"></div>
+        <div className="absolute top-20 -left-20 h-60 w-60 rounded-full bg-blue-600/20 blur-[100px]"></div>
         <div className="absolute -right-20 bottom-20 h-60 w-60 rounded-full bg-blue-600/20 blur-[100px]"></div>
         <motion.div
           animate={glowAnimation}
@@ -178,7 +178,7 @@ export default function LandingHero() {
         ></motion.div>
         <motion.div
           animate={glowAnimation}
-          className="absolute right-1/4 bottom-1/3 h-40 w-40 rounded-full bg-purple-500/10 blur-[80px]"
+          className="absolute right-1/4 bottom-1/3 h-40 w-40 rounded-full bg-blue-500/10 blur-[80px]"
         ></motion.div>
 
         {/* Particle effects - subtle dots */}
@@ -198,11 +198,11 @@ export default function LandingHero() {
           variants={tooltipVariants}
           initial="hidden"
           animate="visible"
-          className="absolute top-4 -left-4 rounded-lg border border-purple-500/30 bg-black/80 p-2 backdrop-blur-md lg:top-1/4 lg:-left-20"
+          className="absolute top-4 -left-4 rounded-lg border border-blue-500/30 bg-black/80 p-2 backdrop-blur-md lg:top-1/4 lg:-left-20"
         >
           <div className="flex items-center gap-2">
-            <BrainCircuit className="h-4 w-4 text-purple-400" />
-            <span className="text-xs font-medium text-purple-200">
+            <BrainCircuit className="h-4 w-4 text-blue-400" />
+            <span className="text-xs font-medium text-blue-200">
               AI Mock Interviews
             </span>
           </div>
@@ -248,9 +248,9 @@ export default function LandingHero() {
           <div className="w-full lg:w-auto">
             <motion.div
               variants={itemVariants}
-              className="mb-4 inline-flex items-center rounded-full border border-purple-500/30 bg-purple-500/10 px-3 py-1 text-sm text-purple-300"
+              className="mb-4 inline-flex items-center rounded-full border border-blue-500/30 bg-blue-500/10 px-3 py-1 text-sm text-blue-300"
             >
-              <span className="mr-2 rounded-full bg-purple-500 px-2 py-0.5 text-xs font-semibold text-white">
+              <span className="mr-2 rounded-full bg-blue-500 px-2 py-0.5 text-xs font-semibold text-white">
                 New
               </span>
               Introducing Talxify Platform
@@ -261,7 +261,7 @@ export default function LandingHero() {
               className="mb-6 bg-gradient-to-r from-white/70 via-white to-slate-500/80 bg-clip-text text-3xl leading-tight text-transparent sm:text-4xl md:text-5xl lg:text-6xl"
             >
               Win your interviews <br className="hidden sm:inline" />
-              <span className="bg-gradient-to-r from-purple-400 via-blue-400 to-purple-400 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-blue-400 via-sky-400 to-blue-400 bg-clip-text text-transparent">
                 with AI Assistance
               </span>
             </motion.h1>
@@ -271,7 +271,7 @@ export default function LandingHero() {
               variants={itemVariants}
               className="mb-6 flex flex-wrap justify-center gap-4 md:gap-6 lg:justify-start"
             >
-              <div className="rounded-lg border border-purple-500/20 bg-black/40 px-4 py-2 backdrop-blur-sm">
+              <div className="rounded-lg border border-blue-500/20 bg-black/40 px-4 py-2 backdrop-blur-sm">
                 <p className="text-2xl font-bold text-white">
                   {stats.users.toLocaleString()}+
                 </p>
@@ -299,15 +299,15 @@ export default function LandingHero() {
               <span className="text-xs font-medium text-gray-400">
                 Powered by:
               </span>
-              <div className="flex cursor-pointer items-center gap-2 rounded-full border border-slate-800 bg-slate-900/60 px-2 py-1 text-xs font-medium text-slate-300 backdrop-blur-sm transition-all hover:bg-purple-950">
+              <div className="flex cursor-pointer items-center gap-2 rounded-full border border-slate-800 bg-slate-900/60 px-2 py-1 text-xs font-medium text-slate-300 backdrop-blur-sm transition-all hover:bg-blue-950">
                 <div className="h-2 w-2 rounded-full bg-blue-400"></div>
                 Gemini
               </div>
-              <div className="flex cursor-pointer items-center gap-2 rounded-full border border-slate-800 bg-slate-900/60 px-2 py-1 text-xs font-medium text-slate-300 backdrop-blur-sm transition-all hover:bg-purple-950">
+              <div className="flex cursor-pointer items-center gap-2 rounded-full border border-slate-800 bg-slate-900/60 px-2 py-1 text-xs font-medium text-slate-300 backdrop-blur-sm transition-all hover:bg-blue-950">
                 <div className="h-2 w-2 rounded-full bg-red-400"></div>
                 Deepgram
               </div>
-              <div className="flex cursor-pointer items-center gap-2 rounded-full border border-slate-800 bg-slate-900/60 px-2 py-1 text-xs font-medium text-slate-300 backdrop-blur-sm transition-all hover:bg-purple-950">
+              <div className="flex cursor-pointer items-center gap-2 rounded-full border border-slate-800 bg-slate-900/60 px-2 py-1 text-xs font-medium text-slate-300 backdrop-blur-sm transition-all hover:bg-blue-950">
                 <div className="h-2 w-2 rounded-full bg-yellow-400"></div>
                 Genkit
               </div>
@@ -326,7 +326,7 @@ export default function LandingHero() {
               className="mb-8 flex flex-col flex-wrap gap-4 sm:flex-row lg:justify-end"
             >
               <Button asChild
-                className="group rounded-full border-t border-purple-400 bg-gradient-to-b from-purple-700 to-slate-950/80 px-6 py-6 text-white shadow-lg shadow-purple-600/20 transition-all hover:shadow-purple-600/40"
+                className="group rounded-full border-t border-blue-400 bg-gradient-to-b from-blue-700 to-slate-950/80 px-6 py-6 text-white shadow-lg shadow-blue-600/20 transition-all hover:shadow-blue-600/40"
                 size="lg"
               >
                 <Link href="/signup">
@@ -337,7 +337,7 @@ export default function LandingHero() {
 
               <Button asChild
                 variant="outline"
-                className="rounded-full border-purple-500/30 bg-transparent text-white hover:bg-purple-500/10 hover:text-white"
+                className="rounded-full border-blue-500/30 bg-transparent text-white hover:bg-blue-500/10 hover:text-white"
                 size="lg"
               >
                 <Link href="/login">Sign In</Link>
@@ -365,7 +365,7 @@ export default function LandingHero() {
                 <span className="font-semibold text-white">500+</span>{' '}
                 developers already preparing
               </span>
-              <ArrowUpRight className="h-3 w-3 text-purple-400" />
+              <ArrowUpRight className="h-3 w-3 text-blue-400" />
             </motion.div>
           </div>
         </motion.div>
