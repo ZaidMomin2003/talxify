@@ -11,3 +11,5 @@ import '@/ai/flows/generate-coding-questions.ts';
 import '@/ai/flows/analyze-coding-answers.ts';
 import '@/ai/flows/text-to-speech.ts';
 import '@/ai/flows/speech-to-text.ts';
+import '@/ai/flows/analyze-interview-transcript.ts';
+

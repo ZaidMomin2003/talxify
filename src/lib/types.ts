@@ -1,5 +1,7 @@
 
+
 import type { AnswerAnalysis } from "@/ai/flows/analyze-coding-answers";
+import type { InterviewAnalysis } from "@/ai/flows/analyze-interview-transcript";
 import type { QuizState } from "@/app/dashboard/coding-quiz/quiz/page";
 
 export interface SignUpForm {
@@ -44,9 +46,17 @@ export interface QuizResult extends BaseActivity {
 // A specific type for initiated interviews
 export interface InterviewActivity extends BaseActivity {
     type: 'interview';
+    transcript: { role: 'user' | 'model', content: string }[];
+    analysis: InterviewAnalysis | null;
+    interviewContext: {
+        company: string;
+        role: string;
+        type: 'technical' | 'behavioural';
+    };
     details: {
         topic: string;
         role: string;
+        company: string;
     }
 }
 

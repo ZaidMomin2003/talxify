@@ -12,6 +12,10 @@ import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import Image from 'next/image';
 import { createClient, LiveClient, LiveTranscriptionEvents } from '@deepgram/sdk';
+import { useAuth } from '@/context/auth-context';
+import type { InterviewActivity, InterviewAnalysis } from '@/lib/types';
+import { addActivity } from '@/lib/firebase-service';
+
 
 type Message = {
   role: 'user' | 'model';
@@ -24,6 +28,7 @@ export default function MockInterviewSessionPage() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const { toast } = useToast();
+    const { user } = useAuth();
 
     const [interviewState, setInterviewState] = useState<InterviewState>('idle');
     const [messages, setMessages] = useState<Message[]>([]);
@@ -42,6 +47,39 @@ export default function MockInterviewSessionPage() {
     
     const interviewContext = { company, role, type: interviewType };
 
+    const endInterview = useCallback(async () => {
+        setInterviewState('finished');
+        if (!user || messages.length < 2) return;
+
+        const attemptId = `interview_attempt_${Date.now()}`;
+        const interviewActivity: InterviewActivity = {
+            id: attemptId,
+            type: 'interview',
+            timestamp: new Date().toISOString(),
+            transcript: messages,
+            analysis: null,
+            interviewContext: interviewContext,
+            details: {
+                topic: `Interview for ${interviewContext.role}`,
+                role: interviewContext.role,
+                company: interviewContext.company,
+            }
+        };
+
+        try {
+            await addActivity(user.uid, interviewActivity);
+            router.push(`/dashboard/mock-interview/analysis?id=${attemptId}`);
+        } catch (error) {
+            console.error("Failed to save interview results:", error);
+            toast({
+                title: "Save Error",
+                description: "Could not save your interview session. Please try again.",
+                variant: "destructive"
+            });
+            router.push('/dashboard'); // Fallback to dashboard
+        }
+    }, [user, messages, interviewContext, router, toast]);
+
     const speakResponse = useCallback(async (text: string) => {
         setInterviewState('speaking_response');
         try {
@@ -50,8 +88,9 @@ export default function MockInterviewSessionPage() {
                 audioRef.current.src = audioDataUri;
                 audioRef.current.play();
                 audioRef.current.onended = () => {
-                    if (messages.length >= 3) { // End after user responds to first question
-                         setInterviewState('finished');
+                    // The interview ends after the AI gives its concluding remark.
+                    if (messages.length >= 3) {
+                         endInterview();
                     } else {
                         setInterviewState('listening');
                     }
@@ -62,7 +101,7 @@ export default function MockInterviewSessionPage() {
             toast({ title: 'Audio Error', description: 'Could not play the AI response.', variant: 'destructive' });
             setInterviewState('listening'); // Even if TTS fails, allow user to respond
         }
-    }, [toast, messages.length]);
+    }, [toast, messages.length, endInterview]);
 
     const handleUserResponse = useCallback(async (transcript: string) => {
         if (!transcript.trim()) {
@@ -261,7 +300,7 @@ export default function MockInterviewSessionPage() {
             case 'processing_response':
                 return <div className="flex items-center space-x-2"><Loader2 className="animate-spin" /> <p>Processing your response...</p></div>;
             case 'finished':
-                return <Button size="lg" onClick={() => router.push('/dashboard')}>Interview Complete! Back to Dashboard</Button>;
+                return <div className="flex items-center space-x-2"><Loader2 className="animate-spin" /> <p>Finalizing session and saving results...</p></div>;
              case 'error':
                  return (
                     <div className="text-center text-destructive flex flex-col items-center gap-2">
@@ -324,7 +363,7 @@ export default function MockInterviewSessionPage() {
                     </div>
                 </Card>
                  <Card className="relative bg-muted/20 border-primary/20 overflow-hidden">
-                    <Image src="/interview.webp" alt="AI Interviewer" layout="fill" objectFit="cover" className="opacity-80" />
+                    <Image src="/interview.webp" alt="AI Interviewer" layout="fill" objectFit="cover" className="opacity-80" data-ai-hint="professional woman" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
                     <div className="absolute bottom-4 left-4 bg-black/50 backdrop-blur-sm text-white px-3 py-1 rounded-lg flex items-center gap-2">
                         <Bot size={16} /> <span>AI Interviewer</span>
@@ -353,9 +392,9 @@ export default function MockInterviewSessionPage() {
                        <div className="h-16 flex items-center justify-center border-t border-border/30 mt-4 pt-4">
                             <div className="flex items-center gap-4">
                                 {interviewState !== 'finished' && (
-                                     <Button variant="destructive" onClick={() => router.push('/dashboard')}>
+                                     <Button variant="destructive" onClick={endInterview}>
                                         <StopCircle className="mr-2 h-4 w-4" />
-                                        Quit
+                                        End & Get Report
                                     </Button>
                                 )}
                                 {renderInterviewStatus()}
