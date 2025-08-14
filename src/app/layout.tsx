@@ -5,8 +5,8 @@ import { AuthProvider } from '@/context/auth-context';
 import PromotionalPopup from '@/components/disclaimer-dialog';
 
 export const metadata: Metadata = {
-  title: 'Talxify',
-  description: 'AI-powered coding and mock interviews',
+  title: 'Talxify: AI-Powered Interview & Coding Prep',
+  description: 'Ace your tech interviews with AI-powered mock interviews, a coding assistant, and detailed performance analytics. Land your dream job with Talxify.',
 };
 
 export default function RootLayout({
