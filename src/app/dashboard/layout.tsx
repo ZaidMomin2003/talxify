@@ -7,6 +7,13 @@ import React, { useState, useEffect, useCallback } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -33,7 +40,7 @@ import {
   SidebarGroup,
   SidebarGroupLabel,
 } from "@/components/ui/sidebar";
-import { Bot, Code, LayoutGrid, MessageSquare, BarChart, Settings, History, Search, User, LogOut, Gem, LifeBuoy, Sun, Moon, Briefcase, CalendarDays, BrainCircuit } from "lucide-react";
+import { Bot, Code, LayoutGrid, MessageSquare, BarChart, Settings, History, Search, User, LogOut, Gem, LifeBuoy, Sun, Moon, Briefcase, CalendarDays, BrainCircuit, PlayCircle, X } from "lucide-react";
 import type { StoredActivity, QuizResult, UserData } from "@/lib/types";
 import { formatDistanceToNow, format } from 'date-fns';
 import { useAuth } from "@/context/auth-context";
@@ -54,6 +61,7 @@ function DashboardLayoutContent({
   const [userData, setUserData] = useState<UserData | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [isActivityLoading, setIsActivityLoading] = useState(true);
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
 
 
   const fetchUserData = useCallback(async () => {
@@ -164,7 +172,32 @@ function DashboardLayoutContent({
             </SidebarGroup>
         </SidebarContent>
         <SidebarFooter>
-           <div className="p-2">
+           <div className="p-2 space-y-2">
+            <Dialog open={isHelpOpen} onOpenChange={setIsHelpOpen}>
+              <DialogTrigger asChild>
+                 <div className="group cursor-pointer rounded-lg border-2 border-dashed border-border p-4 text-center hover:border-primary hover:bg-primary/5 transition-all">
+                    <div className="flex justify-center mb-2">
+                        <div className="rounded-full bg-primary/10 p-3 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+                            <PlayCircle className="h-6 w-6" />
+                        </div>
+                    </div>
+                    <p className="font-semibold text-foreground">How to use Talxify</p>
+                    <p className="text-xs text-muted-foreground">Watch a quick video guide</p>
+                </div>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl p-0">
+                 <div className="aspect-video">
+                    <iframe
+                        className="w-full h-full"
+                        src="https://www.youtube.com/embed/3tXVSpImzXk?autoplay=1"
+                        title="YouTube video player"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        allowFullScreen
+                    ></iframe>
+                </div>
+              </DialogContent>
+            </Dialog>
+            
             {isFreePlan ? (
                  <Button asChild className="w-full bg-gradient-to-r from-purple-500 to-blue-500 text-white hover:from-purple-600 hover:to-blue-600 shadow-lg">
                     <Link href="/dashboard/pricing">
