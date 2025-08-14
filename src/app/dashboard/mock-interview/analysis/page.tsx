@@ -14,19 +14,58 @@ import { analyzeInterviewTranscript } from '@/ai/flows/analyze-interview-transcr
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 
+const dummyAnalysis: InterviewAnalysis = {
+  overallScore: 8,
+  overallFeedback: {
+    summary: "A strong interview performance. You demonstrated solid technical knowledge and clear communication. The main area for improvement is providing more structured answers to behavioral questions using a framework like STAR.",
+    strengths: [
+      "Excellent communication and articulation.",
+      "In-depth knowledge of React hooks.",
+      "Good problem-solving approach to technical questions."
+    ],
+    areasForImprovement: [
+      "Structure behavioral answers using the STAR method.",
+      "Provide more detailed examples from past projects.",
+      "Elaborate on the trade-offs of technical decisions."
+    ]
+  },
+  skillsBreakdown: [
+    { skill: 'React Knowledge', score: 9 },
+    { skill: 'Problem Solving', score: 8 },
+    { skill: 'Communication', score: 9 },
+    { skill: 'Behavioral (STAR Method)', score: 6 }
+  ],
+  questionAnalysis: [
+    {
+      question: "Can you explain the difference between `useEffect` and `useLayoutEffect` in React?",
+      userAnswer: "useEffect runs after the render is committed to the screen, while useLayoutEffect runs synchronously after all DOM mutations but before the browser has painted. So you'd use useLayoutEffect if you need to make DOM measurements and mutations before the user sees them.",
+      feedback: "This is a great, concise answer. You correctly identified the key difference in timing and the primary use case for `useLayoutEffect`.",
+      suggestedAnswer: "Your answer was excellent. To make it even better, you could add a quick example: 'For instance, if I needed to get the height of a DOM element after it renders to position a tooltip, I'd use useLayoutEffect to avoid a visual flicker that might happen with useEffect.'"
+    },
+    {
+      question: "Tell me about a time you had a conflict with a team member.",
+      userAnswer: "There was a time when a colleague and I disagreed on the best way to implement a feature. We just talked it out and eventually figured out a solution.",
+      feedback: "The answer is a bit too brief. It's good that you resolved it, but the interviewer wants to understand the situation, your specific actions, and the result.",
+      suggestedAnswer: "A better answer would follow the STAR method (Situation, Task, Action, Result). For example: '(Situation) In my previous project, a colleague and I had differing opinions on which state management library to use. (Task) My task was to ensure we chose the best tool for the project's long-term health. (Action) I scheduled a meeting, prepared a document comparing the pros and cons of both libraries with project requirements in mind, and we walked through it together. (Result) We agreed on a solution that combined the best of both approaches, and our lead developer praised our collaborative solution.'"
+    }
+  ]
+};
+
 export default function InterviewAnalysisPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useAuth();
 
-  const [analysis, setAnalysis] = useState<InterviewAnalysis | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [analysis, setAnalysis] = useState<InterviewAnalysis | null>(dummyAnalysis);
+  const [isLoading, setIsLoading] = useState(false);
   const [interview, setInterview] = useState<InterviewActivity | null>(null);
 
   const getAnalysis = useCallback(async () => {
     const interviewId = searchParams.get('id');
     if (!user || !interviewId) {
         setIsLoading(false);
+        // Keep dummy data for preview
+        setAnalysis(dummyAnalysis);
         return;
     };
 
@@ -37,38 +76,46 @@ export default function InterviewAnalysisPage() {
         const currentInterview = allResults.find(r => r.id === interviewId && r.type === 'interview') as InterviewActivity | undefined;
 
         if (!currentInterview) {
-            router.replace('/dashboard');
+            // Set dummy data if interview not found, for UI development
+            setInterview(null);
+            setAnalysis(dummyAnalysis);
+            // router.replace('/dashboard');
             return;
         }
         
         setInterview(currentInterview);
 
-        // If analysis is already present, just display it
         if (currentInterview.analysis) {
             setAnalysis(currentInterview.analysis);
         } else {
-            // Otherwise, run the analysis
+             // If live analysis is needed, uncomment this block
+            /*
             const analysisResult = await analyzeInterviewTranscript({
                 history: currentInterview.transcript,
                 interviewContext: currentInterview.interviewContext,
             });
             setAnalysis(analysisResult);
 
-            // Save the analysis back to Firestore
             const updatedInterview: InterviewActivity = {
                 ...currentInterview,
                 analysis: analysisResult,
             };
             await updateActivity(user.uid, updatedInterview);
+            */
+           // For now, we'll just use dummy data if no analysis exists
+           setAnalysis(dummyAnalysis);
         }
     } catch (error) {
         console.error('Failed to analyze interview:', error);
+        setAnalysis(dummyAnalysis); // Fallback to dummy data on error
     } finally {
         setIsLoading(false);
     }
   }, [user, searchParams, router]);
 
   useEffect(() => {
+    // We call getAnalysis to potentially load real data, but the component
+    // will initially render with and fall back to dummy data.
     getAnalysis();
   }, [getAnalysis]);
 
@@ -84,7 +131,7 @@ export default function InterviewAnalysisPage() {
     );
   }
 
-  if (!analysis || !interview) {
+  if (!analysis) { // This will now only happen if dummyAnalysis is also null
      return (
         <div className="flex h-full w-full flex-col items-center justify-center p-4">
             <Card className="max-w-md w-full text-center shadow-lg">
@@ -113,7 +160,7 @@ export default function InterviewAnalysisPage() {
                 <Sparkles className="mx-auto h-12 w-12 text-primary mb-4" />
                 <h1 className="font-headline text-4xl font-bold">Interview Analysis</h1>
                 <CardDescription className="text-lg capitalize">
-                    {interview.interviewContext.type} interview for {interview.interviewContext.role} at {interview.interviewContext.company}
+                    {interview?.interviewContext.type || 'Technical'} interview for {interview?.interviewContext.role || 'Software Engineer'} at {interview?.interviewContext.company || 'a Tech Company'}
                 </CardDescription>
             </CardHeader>
             <CardContent className="text-center">
