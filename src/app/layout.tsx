@@ -2,7 +2,7 @@ import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from '@/context/auth-context';
-import DisclaimerDialog from '@/components/disclaimer-dialog';
+import PromotionalPopup from '@/components/disclaimer-dialog';
 
 export const metadata: Metadata = {
   title: 'Talxify',
@@ -24,7 +24,7 @@ export default function RootLayout({
       <body className="font-body antialiased">
           <AuthProvider>
             {children}
-            <DisclaimerDialog />
+            <PromotionalPopup />
           </AuthProvider>
           <Toaster />
       </body>

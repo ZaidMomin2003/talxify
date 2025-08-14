@@ -1,9 +1,8 @@
-
 'use client';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check, Star, Loader2, UserRound, Sparkles } from 'lucide-react';
+import { Check, Star, Loader2, UserRound, Sparkles, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import React, { useState } from 'react';
 import { createOrder, verifyPayment } from '@/app/actions/razorpay';
@@ -14,6 +13,7 @@ import { updateSubscription } from '@/lib/firebase-service';
 import { useRouter } from 'next/navigation';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const freePlan = {
     name: 'Free',
@@ -29,12 +29,14 @@ const freePlan = {
 const proPlans = {
     monthly: {
         name: 'Monthly',
-        price: 1099,
+        price: 1699,
+        originalPrice: null,
         interviews: '20 AI Mock Interviews',
     },
     yearly: {
         name: 'Yearly',
-        price: 10999, // Assuming 1099 * 10 (approx 20% off from 12 months)
+        price: 16990,
+        originalPrice: null,
         interviews: '300 AI Mock Interviews',
     }
 };
@@ -132,6 +134,15 @@ export default function PricingPage() {
                     </p>
                 </div>
 
+                 <Alert className="max-w-4xl mx-auto mb-8 bg-primary/5 border-primary/20">
+                    <Info className="h-4 w-4 text-primary" />
+                    <AlertTitle className="text-primary">Launch Offer!</AlertTitle>
+                    <AlertDescription>
+                        Use coupon code <strong className="text-foreground">FIRST1000</strong> at checkout to get a special discount on our Pro plans.
+                    </AlertDescription>
+                </Alert>
+
+
                 <div className="flex justify-center items-center gap-4 mb-10">
                     <Label htmlFor="billing-cycle" className={cn("font-medium", !isYearly && "text-primary")}>Monthly</Label>
                     <Switch
@@ -142,7 +153,7 @@ export default function PricingPage() {
                     />
                     <Label htmlFor="billing-cycle" className={cn("font-medium relative", isYearly && "text-primary")}>
                         Yearly
-                        <span className="absolute -top-4 -right-12 text-xs bg-destructive text-destructive-foreground font-bold px-2 py-0.5 rounded-full rotate-12">Save 20%</span>
+                        <span className="absolute -top-4 -right-12 text-xs bg-destructive text-destructive-foreground font-bold px-2 py-0.5 rounded-full rotate-12">Save 17%</span>
                     </Label>
                 </div>
 
@@ -180,7 +191,10 @@ export default function PricingPage() {
                          <CardHeader className="text-center">
                             <Sparkles className="h-10 w-10 mx-auto text-primary mb-2" />
                             <CardTitle className="text-3xl font-bold font-headline">Pro</CardTitle>
-                            <div className="flex items-baseline justify-center gap-1">
+                             <div className="flex items-baseline justify-center gap-2">
+                                {activeProPlan.originalPrice && (
+                                     <span className="text-3xl font-medium text-muted-foreground line-through">₹{activeProPlan.originalPrice}</span>
+                                )}
                                 <span className="text-5xl font-bold tracking-tighter">₹{activeProPlan.price}</span>
                                 <span className="text-muted-foreground text-lg">/{isYearly ? 'year' : 'month'}</span>
                             </div>
@@ -218,5 +232,3 @@ export default function PricingPage() {
         </>
     );
 }
-
-    

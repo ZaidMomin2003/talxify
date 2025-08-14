@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -25,13 +24,13 @@ const freePlan = {
 const proPlans = {
     monthly: {
         name: 'Monthly',
-        price: '₹1099',
+        price: '₹1699',
         period: '/month',
         interviews: '20 AI Mock Interviews',
     },
     yearly: {
         name: 'Yearly',
-        price: '₹10999',
+        price: '₹16990',
         period: '/year',
         interviews: '300 AI Mock Interviews',
     }
@@ -74,7 +73,7 @@ export default function LandingPricing() {
             />
             <Label htmlFor="billing-cycle-landing" className={cn("font-medium relative", isYearly && "text-primary")}>
                 Yearly
-                <span className="absolute -top-4 -right-12 text-xs bg-destructive text-destructive-foreground font-bold px-2 py-0.5 rounded-full rotate-12">Save 20%</span>
+                <span className="absolute -top-4 -right-12 text-xs bg-destructive text-destructive-foreground font-bold px-2 py-0.5 rounded-full rotate-12">Save 17%</span>
             </Label>
         </div>
 
@@ -140,5 +139,3 @@ export default function LandingPricing() {
     </section>
   );
 }
-
-    
