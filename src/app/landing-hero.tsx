@@ -174,7 +174,7 @@ export default function LandingHero() {
         <div className="absolute -right-20 bottom-20 h-60 w-60 rounded-full bg-blue-600/20 blur-[100px]"></div>
         <motion.div
           animate={glowAnimation}
-          className="absolute top-1/3 left-1/4 h-40 w-40 rounded-full bg-indigo-500/10 blur-[80px]"
+          className="absolute top-1/3 left-1/4 h-40 w-40 rounded-full bg-blue-500/10 blur-[80px]"
         ></motion.div>
         <motion.div
           animate={glowAnimation}
@@ -226,11 +226,11 @@ export default function LandingHero() {
           variants={tooltipVariants}
            initial="hidden"
           animate="visible"
-          className="absolute bottom-4 left-4 rounded-lg border border-indigo-500/30 bg-black/80 p-2 backdrop-blur-md lg:bottom-1/4 lg:left-8"
+          className="absolute bottom-4 left-4 rounded-lg border border-blue-500/30 bg-black/80 p-2 backdrop-blur-md lg:bottom-1/4 lg:left-8"
         >
           <div className="flex items-center gap-2">
-            <BarChart className="h-4 w-4 text-indigo-400" />
-            <span className="text-xs font-medium text-indigo-200">
+            <BarChart className="h-4 w-4 text-blue-400" />
+            <span className="text-xs font-medium text-blue-200">
               Performance Analytics
             </span>
           </div>
@@ -283,7 +283,7 @@ export default function LandingHero() {
                 </p>
                 <p className="text-xs text-gray-400">Interviews Taken</p>
               </div>
-              <div className="rounded-lg border border-indigo-500/20 bg-black/40 px-4 py-2 backdrop-blur-sm">
+              <div className="rounded-lg border border-blue-500/20 bg-black/40 px-4 py-2 backdrop-blur-sm">
                 <p className="text-2xl font-bold text-white">
                   {stats.problems.toLocaleString()}+
                 </p>
