@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -138,7 +139,7 @@ export default function PricingPage() {
                     <Info className="h-4 w-4 text-primary" />
                     <AlertTitle className="text-primary">Launch Offer!</AlertTitle>
                     <AlertDescription>
-                        Use coupon code <strong className="text-foreground">FIRST1000</strong> at checkout to get a special discount on our Pro plans.
+                        Use coupon code <strong className="text-foreground">FIRST1000</strong> during Razorpay checkout to get a special discount on our Pro plans.
                     </AlertDescription>
                 </Alert>
 
