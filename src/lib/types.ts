@@ -1,8 +1,12 @@
 
 
+
 import type { AnswerAnalysis } from "@/ai/flows/analyze-coding-answers";
-import type { InterviewAnalysis } from "@/ai/flows/analyze-interview-transcript";
+import type { InterviewAnalysis as AIInterviewAnalysis } from "@/ai/flows/analyze-interview-transcript";
 import type { QuizState } from "@/app/dashboard/coding-quiz/quiz/page";
+
+// Re-exporting the AI type to avoid naming conflicts
+export type InterviewAnalysis = AIInterviewAnalysis;
 
 export interface SignUpForm {
     name: string;

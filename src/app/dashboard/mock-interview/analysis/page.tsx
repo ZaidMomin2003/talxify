@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Loader2, Sparkles, AlertTriangle, MessageSquare, Bot, User, BrainCircuit } from 'lucide-react';
+import { Loader2, Sparkles, AlertTriangle, MessageSquare, Bot, User, BrainCircuit, CheckCircle, XCircle } from 'lucide-react';
 import type { InterviewActivity, InterviewAnalysis } from '@/lib/types';
 import { useAuth } from '@/context/auth-context';
 import { getActivity, updateActivity } from '@/lib/firebase-service';
@@ -122,20 +122,48 @@ export default function InterviewAnalysisPage() {
                     <p className="text-6xl font-bold text-primary">{analysis.overallScore}/10</p>
                 </div>
                 <Progress value={analysis.overallScore * 10} className="w-1/2 mx-auto mt-2 h-2" />
+                 <p className="text-sm text-muted-foreground mt-4 max-w-2xl mx-auto">{analysis.overallFeedback.summary}</p>
             </CardContent>
         </Card>
         
-        <Card className="mb-8">
+        <div className="grid md:grid-cols-2 gap-8 mb-8">
+          <Card>
             <CardHeader>
-                <div className='flex items-center gap-3'>
-                    <BrainCircuit className="h-6 w-6 text-primary" />
-                    <CardTitle>Overall Feedback</CardTitle>
-                </div>
+              <CardTitle>Overall Feedback</CardTitle>
             </CardHeader>
-            <CardContent>
-                <p className='text-muted-foreground'>{analysis.overallFeedback}</p>
+            <CardContent className="space-y-6">
+                <div>
+                    <h3 className="font-semibold flex items-center gap-2 mb-2"><CheckCircle className="text-green-500"/> Strengths</h3>
+                    <ul className="list-disc list-inside space-y-1 text-muted-foreground pl-2">
+                        {analysis.overallFeedback.strengths.map((item, index) => <li key={index}>{item}</li>)}
+                    </ul>
+                </div>
+                 <div>
+                    <h3 className="font-semibold flex items-center gap-2 mb-2"><XCircle className="text-red-500"/> Areas for Improvement</h3>
+                    <ul className="list-disc list-inside space-y-1 text-muted-foreground pl-2">
+                        {analysis.overallFeedback.areasForImprovement.map((item, index) => <li key={index}>{item}</li>)}
+                    </ul>
+                </div>
             </CardContent>
-        </Card>
+          </Card>
+          <Card>
+             <CardHeader>
+              <CardTitle>Skills Breakdown</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {analysis.skillsBreakdown.map(skill => (
+                <div key={skill.skill}>
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="font-medium capitalize">{skill.skill}</span>
+                    <span className="text-sm font-semibold text-primary">{skill.score}/10</span>
+                  </div>
+                  <Progress value={skill.score * 10} className="h-2" />
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </div>
+
 
         <h2 className="text-2xl font-bold mb-4">Question-by-Question Breakdown</h2>
         <Accordion type="single" collapsible className="w-full" defaultValue="item-0">

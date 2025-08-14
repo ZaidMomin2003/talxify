@@ -5,7 +5,6 @@
  * @fileOverview A flow to analyze a full mock interview transcript.
  *
  * - analyzeInterviewTranscript - The main function to trigger the analysis.
- * - AnalyzeInterviewTranscriptInput - The input type for the analysis flow.
  * - InterviewAnalysis - The output type (the analysis itself).
  */
 
@@ -29,7 +28,15 @@ export type AnalyzeInterviewTranscriptInput = z.infer<typeof AnalyzeInterviewTra
 
 const InterviewAnalysisSchema = z.object({
   overallScore: z.number().min(0).max(10).describe('An overall score for the interview from 0 to 10.'),
-  overallFeedback: z.string().describe('A summary of the candidate\'s performance, highlighting strengths and key weaknesses.'),
+  overallFeedback: z.object({
+      summary: z.string().describe("A one-paragraph summary of the candidate's performance."),
+      strengths: z.array(z.string()).describe("A list of key strengths, as bullet points."),
+      areasForImprovement: z.array(z.string()).describe("A list of key areas for improvement, as bullet points."),
+  }).describe('A summary of the candidate\'s performance, highlighting strengths and key weaknesses.'),
+  skillsBreakdown: z.array(z.object({
+      skill: z.string().describe("The specific skill being evaluated (e.g., 'Problem Solving', 'Communication', 'React Knowledge')."),
+      score: z.number().min(0).max(10).describe("The user's score for this specific skill from 0 to 10."),
+  })).describe('A breakdown of performance across key skills.'),
   questionAnalysis: z.array(z.object({
     question: z.string().describe("The question asked by the interviewer."),
     userAnswer: z.string().describe("The user's answer to the question."),
@@ -60,8 +67,12 @@ const prompt = ai.definePrompt({
 
   Please provide the following analysis:
   1.  **overallScore**: A score from 0-10, where 10 is outstanding.
-  2.  **overallFeedback**: A paragraph summarizing the candidate's performance. Mention their strengths (e.g., good use of examples, clear communication) and main areas for improvement.
-  3.  **questionAnalysis**: An array of feedback for each question the user answered. For each, provide:
+  2.  **overallFeedback**: An object containing:
+      - A one-paragraph **summary** of the candidate's performance.
+      - A list of **strengths** as bullet points.
+      - A list of **areasForImprovement** as bullet points.
+  3.  **skillsBreakdown**: An array of objects, where each object has a 'skill' (e.g., 'Problem Solving') and a 'score' from 0-10. Identify 3-5 key skills from the interview.
+  4.  **questionAnalysis**: An array of feedback for each question the user answered. For each, provide:
       - The question asked by the model.
       - The user's answer.
       - Specific, constructive feedback on their answer.
