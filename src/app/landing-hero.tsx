@@ -261,7 +261,7 @@ export default function LandingHero() {
               className="mb-6 bg-gradient-to-r from-white/70 via-white to-slate-500/80 bg-clip-text text-3xl leading-tight text-transparent sm:text-4xl md:text-5xl lg:text-6xl"
             >
               Win your interviews <br className="hidden sm:inline" />
-              <span className="bg-gradient-to-r from-blue-400 via-sky-400 to-blue-400 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-sky-400 to-purple-500 bg-clip-text text-transparent">
                 with AI Assistance
               </span>
             </motion.h1>
