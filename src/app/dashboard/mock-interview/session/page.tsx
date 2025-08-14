@@ -35,6 +35,7 @@ export default function MockInterviewSessionPage() {
     const [isRecording, setIsRecording] = useState(false);
     const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
     const [currentTranscript, setCurrentTranscript] = useState('');
+    const [finishedInterviewId, setFinishedInterviewId] = useState<string | null>(null);
     
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
     const deepgramConnectionRef = useRef<LiveClient | null>(null);
@@ -49,7 +50,10 @@ export default function MockInterviewSessionPage() {
 
     const endInterview = useCallback(async () => {
         setInterviewState('finished');
-        if (!user || messages.length < 2) return;
+        if (!user || messages.length < 2) {
+            router.push('/dashboard');
+            return;
+        }
 
         const attemptId = `interview_attempt_${Date.now()}`;
         const interviewActivity: InterviewActivity = {
@@ -68,7 +72,7 @@ export default function MockInterviewSessionPage() {
 
         try {
             await addActivity(user.uid, interviewActivity);
-            router.push(`/dashboard/mock-interview/analysis?id=${attemptId}`);
+            setFinishedInterviewId(attemptId);
         } catch (error) {
             console.error("Failed to save interview results:", error);
             toast({
@@ -79,6 +83,12 @@ export default function MockInterviewSessionPage() {
             router.push('/dashboard'); // Fallback to dashboard
         }
     }, [user, messages, interviewContext, router, toast]);
+
+    useEffect(() => {
+        if (finishedInterviewId) {
+            router.push(`/dashboard/mock-interview/analysis?id=${finishedInterviewId}`);
+        }
+    }, [finishedInterviewId, router]);
 
     const speakResponse = useCallback(async (text: string) => {
         setInterviewState('speaking_response');
@@ -105,7 +115,9 @@ export default function MockInterviewSessionPage() {
 
     const handleUserResponse = useCallback(async (transcript: string) => {
         if (!transcript.trim()) {
-            setInterviewState('listening');
+            if(interviewState === 'listening') {
+                setInterviewState('listening');
+            }
             return;
         }
         
@@ -127,7 +139,7 @@ export default function MockInterviewSessionPage() {
             setInterviewState('error');
         }
 
-    }, [messages, speakResponse, interviewContext, toast]);
+    }, [messages, speakResponse, interviewContext, toast, interviewState]);
 
 
     const startInterview = useCallback(async () => {
