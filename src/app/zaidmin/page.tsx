@@ -49,10 +49,6 @@ const AdminDashboard = () => {
   }, [fetchData]);
 
   const { totalRevenue, totalSales, totalUsers, revenueData } = useMemo(() => {
-    if (!users || users.length === 0) {
-        return { totalRevenue: 0, totalSales: 0, totalUsers: 0, revenueData: [] };
-    }
-
     let revenue = 0;
     const proUsers = users.filter(u => u.subscription && u.subscription.plan !== 'free');
     const sales = proUsers.length;
