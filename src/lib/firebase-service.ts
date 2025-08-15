@@ -1,7 +1,7 @@
 
 'use client';
 
-import { doc, getDoc, setDoc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, arrayUnion, collection, getDocs } from 'firebase/firestore';
 import { db } from './firebase';
 import type { UserData, Portfolio, StoredActivity } from './types';
 import { initialPortfolioData } from './initial-data';
@@ -35,6 +35,17 @@ export const getUserData = async (userId: string): Promise<UserData | null> => {
   }
   return null;
 };
+
+export const getAllUsers = async (): Promise<UserData[]> => {
+    const usersCollection = collection(db, 'users');
+    const querySnapshot = await getDocs(usersCollection);
+    const users: UserData[] = [];
+    querySnapshot.forEach((doc) => {
+        users.push(doc.data() as UserData);
+    });
+    return users;
+};
+
 
 // --- Subscription ---
 
@@ -74,7 +85,7 @@ export const updatePortfolio = async (userId: string, portfolio: Portfolio): Pro
 
 // --- Activity ---
 
-export const getActivity = async (userId: string): Promise<StoredActivity[]> => {
+export const getActivity = async (userId:string): Promise<StoredActivity[]> => {
   const userData = await getUserData(userId);
   return userData?.activity ?? [];
 };
