@@ -76,7 +76,10 @@ const AdminDashboard = () => {
   if (isLoading) {
     return (
       <div className="flex h-screen items-center justify-center">
-        <Loader2 className="h-16 w-16 animate-spin text-primary" />
+        <div className="flex flex-col items-center gap-4">
+            <Loader2 className="h-16 w-16 animate-spin text-primary" />
+            <p className="text-muted-foreground">Fetching admin data...</p>
+        </div>
       </div>
     );
   }
