@@ -37,25 +37,6 @@ export const getUserData = async (userId: string): Promise<UserData | null> => {
   return null;
 };
 
-export const getAllUsers = async (): Promise<UserData[]> => {
-    try {
-        const usersCollection = collection(db, 'users');
-        const querySnapshot = await getDocs(usersCollection);
-        const users: UserData[] = [];
-        querySnapshot.forEach((doc) => {
-            // Basic validation to ensure the document looks like a UserData object
-            const data = doc.data();
-            if (data && data.portfolio && data.subscription) {
-                users.push(data as UserData);
-            }
-        });
-        return users;
-    } catch (error) {
-        console.error("Error fetching all users from Firestore:", error);
-        return []; // Return an empty array on error to prevent crashes
-    }
-};
-
 
 // --- Subscription ---
 

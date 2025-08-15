@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useEffect, useState, useMemo, useCallback } from 'react';
@@ -12,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Bot, DollarSign, Users, ShoppingCart, Loader2, LogIn, AlertTriangle } from 'lucide-react';
 import type { UserData } from '@/lib/types';
-import { getAllUsers } from '@/lib/firebase-service';
+import { getAllUsersAdmin } from './actions';
 import { format, subDays, eachDayOfInterval } from 'date-fns';
 
 const CustomTooltip = ({ active, payload, label }: any) => {
@@ -36,7 +35,7 @@ const AdminDashboard = () => {
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const fetchedUsers = await getAllUsers();
+      const fetchedUsers = await getAllUsersAdmin();
       setUsers(fetchedUsers);
     } catch (error) {
       console.error("Failed to fetch users:", error);
@@ -50,17 +49,6 @@ const AdminDashboard = () => {
   }, [fetchData]);
 
   const dashboardData = useMemo(() => {
-    if (!users || users.length === 0) {
-      return {
-        totalRevenue: 0,
-        totalSales: 0,
-        totalUsers: 0,
-        revenueData: [],
-        recentUsers: [],
-        allUsers: [],
-      };
-    }
-
     let revenue = 0;
     const proUsers = users.filter(u => u.subscription && u.subscription.plan !== 'free');
     const sales = proUsers.length;
