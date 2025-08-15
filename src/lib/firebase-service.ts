@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { doc, getDoc, setDoc, updateDoc, arrayUnion, collection, getDocs } from 'firebase/firestore';
@@ -37,13 +38,22 @@ export const getUserData = async (userId: string): Promise<UserData | null> => {
 };
 
 export const getAllUsers = async (): Promise<UserData[]> => {
-    const usersCollection = collection(db, 'users');
-    const querySnapshot = await getDocs(usersCollection);
-    const users: UserData[] = [];
-    querySnapshot.forEach((doc) => {
-        users.push(doc.data() as UserData);
-    });
-    return users;
+    try {
+        const usersCollection = collection(db, 'users');
+        const querySnapshot = await getDocs(usersCollection);
+        const users: UserData[] = [];
+        querySnapshot.forEach((doc) => {
+            // Basic validation to ensure the document looks like a UserData object
+            const data = doc.data();
+            if (data && data.portfolio && data.subscription) {
+                users.push(data as UserData);
+            }
+        });
+        return users;
+    } catch (error) {
+        console.error("Error fetching all users from Firestore:", error);
+        return []; // Return an empty array on error to prevent crashes
+    }
 };
 
 
