@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -32,15 +32,21 @@ const AdminDashboard = () => {
   const [users, setUsers] = useState<UserData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    async function fetchData() {
-      setIsLoading(true);
-      const allUsers = await getAllUsers();
-      setUsers(allUsers);
-      setIsLoading(false);
+  const fetchData = useCallback(async () => {
+    setIsLoading(true);
+    try {
+        const allUsers = await getAllUsers();
+        setUsers(allUsers);
+    } catch (error) {
+        console.error("Failed to fetch users:", error);
+    } finally {
+        setIsLoading(false);
     }
-    fetchData();
   }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const { totalRevenue, totalSales, totalUsers, revenueData } = useMemo(() => {
     let revenue = 0;
