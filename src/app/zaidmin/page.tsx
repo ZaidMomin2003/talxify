@@ -32,49 +32,72 @@ const AdminDashboard = () => {
   const [users, setUsers] = useState<UserData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchData = useCallback(async () => {
-    setIsLoading(true);
-    try {
-        const allUsers = await getAllUsers();
-        setUsers(allUsers);
-    } catch (error) {
+  useEffect(() => {
+    async function fetchData() {
+      setIsLoading(true);
+      try {
+        const fetchedUsers = await getAllUsers();
+        setUsers(fetchedUsers);
+      } catch (error) {
         console.error("Failed to fetch users:", error);
-    } finally {
+      } finally {
         setIsLoading(false);
+      }
     }
+    fetchData();
   }, []);
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  const dashboardData = useMemo(() => {
+    if (!users || users.length === 0) {
+      return {
+        totalRevenue: 0,
+        totalSales: 0,
+        totalUsers: 0,
+        revenueData: [],
+        recentUsers: [],
+        allUsers: [],
+      };
+    }
 
-  const { totalRevenue, totalSales, totalUsers, revenueData } = useMemo(() => {
     let revenue = 0;
     const proUsers = users.filter(u => u.subscription && u.subscription.plan !== 'free');
     const sales = proUsers.length;
     const userCount = users.length;
-
+    
     const dailyRevenue = new Map<string, number>();
 
     proUsers.forEach(user => {
-        const price = user.subscription.plan === 'monthly' ? 1299 : 12990;
-        revenue += price;
-        if(user.subscription.startDate) {
-            const date = format(new Date(user.subscription.startDate), 'MMM d');
-            dailyRevenue.set(date, (dailyRevenue.get(date) || 0) + price);
-        }
+      const price = user.subscription.plan === 'monthly' ? 1299 : 12990;
+      revenue += price;
+      if (user.subscription.startDate) {
+        const date = format(new Date(user.subscription.startDate), 'MMM d');
+        dailyRevenue.set(date, (dailyRevenue.get(date) || 0) + price);
+      }
     });
 
     const last30Days = eachDayOfInterval({ start: subDays(new Date(), 29), end: new Date() });
     const chartData = last30Days.map(day => {
-        const formattedDate = format(day, 'MMM d');
-        return {
-            name: formattedDate,
-            revenue: dailyRevenue.get(formattedDate) || 0,
-        };
+      const formattedDate = format(day, 'MMM d');
+      return {
+        name: formattedDate,
+        revenue: dailyRevenue.get(formattedDate) || 0,
+      };
     });
 
-    return { totalRevenue: revenue, totalSales: sales, totalUsers: userCount, revenueData: chartData };
+    const sortedUsers = [...users].sort((a, b) => {
+        const dateA = a.subscription?.startDate ? new Date(a.subscription.startDate).getTime() : 0;
+        const dateB = b.subscription?.startDate ? new Date(b.subscription.startDate).getTime() : 0;
+        return dateB - dateA;
+    });
+
+    return {
+      totalRevenue: revenue,
+      totalSales: sales,
+      totalUsers: userCount,
+      revenueData: chartData,
+      recentUsers: sortedUsers.slice(0, 5),
+      allUsers: sortedUsers,
+    };
   }, [users]);
   
   if (isLoading) {
@@ -90,7 +113,7 @@ const AdminDashboard = () => {
 
   return (
     <div className="flex min-h-screen w-full flex-col">
-      <header className="sticky top-0 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6">
+      <header className="sticky top-0 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6 z-10">
         <nav className="flex-col gap-6 text-lg font-medium md:flex md:flex-row md:items-center md:gap-5 md:text-sm lg:gap-6">
             <div className="flex items-center gap-2 text-lg font-semibold md:text-base">
                 <Bot className="h-6 w-6 text-primary" />
@@ -106,7 +129,7 @@ const AdminDashboard = () => {
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">₹{totalRevenue.toLocaleString()}</div>
+              <div className="text-2xl font-bold">₹{dashboardData.totalRevenue.toLocaleString()}</div>
               <p className="text-xs text-muted-foreground">Based on all-time subscription sales</p>
             </CardContent>
           </Card>
@@ -116,7 +139,7 @@ const AdminDashboard = () => {
               <ShoppingCart className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">+{totalSales.toLocaleString()}</div>
+              <div className="text-2xl font-bold">+{dashboardData.totalSales.toLocaleString()}</div>
               <p className="text-xs text-muted-foreground">Number of subscriptions sold</p>
             </CardContent>
           </Card>
@@ -126,7 +149,7 @@ const AdminDashboard = () => {
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{totalUsers.toLocaleString()}</div>
+              <div className="text-2xl font-bold">{dashboardData.totalUsers.toLocaleString()}</div>
               <p className="text-xs text-muted-foreground">Total registered users on the platform</p>
             </CardContent>
           </Card>
@@ -139,7 +162,7 @@ const AdminDashboard = () => {
             </CardHeader>
             <CardContent className="h-[350px] w-full">
                <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={revenueData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
+                <AreaChart data={dashboardData.revenueData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
                   <defs>
                     <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.4}/>
@@ -161,8 +184,8 @@ const AdminDashboard = () => {
               <CardDescription>The last 5 users who signed up.</CardDescription>
             </CardHeader>
             <CardContent className="grid gap-8">
-              {users.slice(-5).reverse().map((user, index) => (
-                <div className="flex items-center gap-4" key={index}>
+              {dashboardData.recentUsers.map((user, index) => (
+                <div className="flex items-center gap-4" key={user.portfolio.personalInfo.email + index}>
                   <div className="grid gap-1">
                     <p className="text-sm font-medium leading-none">{user.portfolio.personalInfo.name}</p>
                     <p className="text-sm text-muted-foreground">{user.portfolio.personalInfo.email}</p>
@@ -190,8 +213,8 @@ const AdminDashboard = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {[...users].reverse().map((user, index) => (
-                  <TableRow key={index}>
+                {dashboardData.allUsers.map((user, index) => (
+                  <TableRow key={user.portfolio.personalInfo.email + index}>
                     <TableCell>
                       <div className="font-medium">{user.portfolio.personalInfo.name}</div>
                       <div className="hidden text-sm text-muted-foreground md:inline">
