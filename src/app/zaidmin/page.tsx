@@ -53,7 +53,7 @@ const AdminDashboard = () => {
     let sales = 0;
     const userCount = users.length;
 
-    const proUsers = users.filter(u => u.subscription.plan !== 'free');
+    const proUsers = users.filter(u => u.subscription && u.subscription.plan !== 'free');
     sales = proUsers.length;
 
     const dailyRevenue = new Map<string, number>();
