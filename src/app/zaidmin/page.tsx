@@ -49,12 +49,14 @@ const AdminDashboard = () => {
   }, [fetchData]);
 
   const { totalRevenue, totalSales, totalUsers, revenueData } = useMemo(() => {
-    let revenue = 0;
-    let sales = 0;
-    const userCount = users.length;
+    if (!users || users.length === 0) {
+        return { totalRevenue: 0, totalSales: 0, totalUsers: 0, revenueData: [] };
+    }
 
+    let revenue = 0;
     const proUsers = users.filter(u => u.subscription && u.subscription.plan !== 'free');
-    sales = proUsers.length;
+    const sales = proUsers.length;
+    const userCount = users.length;
 
     const dailyRevenue = new Map<string, number>();
 
