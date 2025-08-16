@@ -162,12 +162,7 @@ export default function LandingHero() {
       {/* Background effects */}
       <div className="absolute inset-0 z-0">
         {/* Radial gradient */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-blue-500/30 via-black/70 to-gray-950 blur-3xl"></div>
-
-        {/* Grid pattern */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="h-full w-full bg-[linear-gradient(to_right,rgba(255,255,255,0.22)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.2)_1px,transparent_1px)] bg-[size:4rem_4rem]"></div>
-        </div>
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-primary/30 via-black/70 to-gray-950 blur-3xl"></div>
 
         {/* Enhanced glow spots */}
         <div className="absolute top-20 -left-20 h-60 w-60 rounded-full bg-primary/20 blur-[100px]"></div>
