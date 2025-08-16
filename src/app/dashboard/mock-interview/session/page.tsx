@@ -4,16 +4,15 @@
 import { useSearchParams, useRouter } from 'next/navigation';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Loader2, Mic, AlertTriangle, Video, Bot, User, Keyboard, StopCircle, RefreshCw } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Loader2, Mic, Video, Bot, User, Keyboard, StopCircle, RefreshCw } from 'lucide-react';
 import { textToSpeech } from '@/ai/flows/text-to-speech';
 import { conductInterviewTurn } from '@/ai/flows/analyze-interview-response';
 import { useToast } from '@/hooks/use-toast';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import Image from 'next/image';
 import { createClient, LiveClient, LiveTranscriptionEvents } from '@deepgram/sdk';
 import { useAuth } from '@/context/auth-context';
-import type { InterviewActivity, InterviewAnalysis } from '@/lib/types';
+import type { InterviewActivity } from '@/lib/types';
 import { addActivity } from '@/lib/firebase-service';
 
 
@@ -22,7 +21,7 @@ type Message = {
   content: string;
 };
 
-type InterviewState = 'idle' | 'generating_response' | 'speaking_response' | 'listening' | 'processing_response' | 'finished' | 'error';
+type InterviewState = 'idle' | 'generating_response' | 'speaking_response' | 'listening' | 'finished' | 'error';
 
 export default function MockInterviewSessionPage() {
     const router = useRouter();
@@ -48,14 +47,18 @@ export default function MockInterviewSessionPage() {
     
     const interviewContext = { company, role, type: interviewType };
 
-    const endInterview = useCallback(async () => {
+    const endInterviewAndAnalyze = useCallback(async () => {
         setInterviewState('finished');
+        if (deepgramConnectionRef.current) {
+            deepgramConnectionRef.current.close();
+            deepgramConnectionRef.current = null;
+        }
+
         if (!user) {
             router.push('/login');
             return;
         }
 
-        // Even if the interview is short, proceed to analysis
         if (messages.length === 0) {
             router.push('/dashboard');
             return;
@@ -86,7 +89,7 @@ export default function MockInterviewSessionPage() {
                 description: "Could not save your interview session. Please try again.",
                 variant: "destructive"
             });
-            router.push('/dashboard'); // Fallback to dashboard
+            router.push('/dashboard'); 
         }
     }, [user, messages, interviewContext, router, toast]);
 
@@ -99,14 +102,13 @@ export default function MockInterviewSessionPage() {
     const speakResponse = useCallback(async (text: string) => {
         setInterviewState('speaking_response');
         try {
-            const { audioDataUri } = await textToSpeech({ text });
+            const { audioDataUri } = await textToSpeech({ text, voice: "aura-asteria-en" });
             if (audioRef.current) {
                 audioRef.current.src = audioDataUri;
                 audioRef.current.play();
                 audioRef.current.onended = () => {
-                    // The interview ends after the AI gives its concluding remark.
-                    if (messages.length >= 3) {
-                         endInterview();
+                    if (messages.length >= 2) { 
+                         endInterviewAndAnalyze();
                     } else {
                         setInterviewState('listening');
                     }
@@ -115,15 +117,17 @@ export default function MockInterviewSessionPage() {
         } catch (error) {
             console.error('Text-to-speech failed:', error);
             toast({ title: 'Audio Error', description: 'Could not play the AI response.', variant: 'destructive' });
-            setInterviewState('listening'); // Even if TTS fails, allow user to respond
+            if (messages.length >= 2) {
+                endInterviewAndAnalyze();
+            } else {
+                setInterviewState('listening');
+            }
         }
-    }, [toast, messages.length, endInterview]);
+    }, [toast, messages.length, endInterviewAndAnalyze]);
 
     const handleUserResponse = useCallback(async (transcript: string) => {
         if (!transcript.trim()) {
-            if(interviewState === 'listening') {
-                setInterviewState('listening');
-            }
+            setInterviewState('listening');
             return;
         }
         
@@ -144,15 +148,11 @@ export default function MockInterviewSessionPage() {
             toast({ title: "AI Error", description: "The AI failed to respond. Please try again.", variant: "destructive"});
             setInterviewState('error');
         }
-
-    }, [messages, speakResponse, interviewContext, toast, interviewState]);
+    }, [messages, speakResponse, interviewContext, toast]);
 
 
     const startInterview = useCallback(async () => {
-        if (hasCameraPermission === false) {
-             toast({ title: 'Cannot Start Interview', description: 'Permissions for camera and microphone are required.', variant: 'destructive' });
-             return;
-        }
+        if (hasCameraPermission === false) return;
         setInterviewState('generating_response');
         try {
             const { response } = await conductInterviewTurn({ history: [], interviewContext });
@@ -169,9 +169,7 @@ export default function MockInterviewSessionPage() {
         async function getPermissions() {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-                if (videoRef.current) {
-                    videoRef.current.srcObject = stream;
-                }
+                if (videoRef.current) videoRef.current.srcObject = stream;
                 setHasCameraPermission(true);
             } catch (error) {
                 console.error('Error accessing camera/mic:', error);
@@ -179,11 +177,9 @@ export default function MockInterviewSessionPage() {
             }
         }
         getPermissions();
-
         return () => {
              if (videoRef.current && videoRef.current.srcObject) {
-                const stream = videoRef.current.srcObject as MediaStream;
-                stream.getTracks().forEach(track => track.stop());
+                (videoRef.current.srcObject as MediaStream).getTracks().forEach(track => track.stop());
             }
              if (deepgramConnectionRef.current) {
                 deepgramConnectionRef.current.close();
@@ -205,27 +201,23 @@ export default function MockInterviewSessionPage() {
             model: 'nova-2',
             smart_format: true,
             interim_results: true,
-            utterance_end_ms: 1000,
+            utterance_end_ms: 1000, // End utterance after 1s of silence
         });
     
         connection.on(LiveTranscriptionEvents.Open, async () => {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 const recorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
-    
                 recorder.ondataavailable = (event) => {
                     if (event.data.size > 0 && connection.getReadyState() === 1) {
                         connection.send(event.data);
                     }
                 };
-    
                 mediaRecorderRef.current = recorder;
                 setIsRecording(true);
                 recorder.start(250);
-    
             } catch (error) {
                 console.error('Error getting user media:', error);
-                toast({ title: 'Microphone Error', description: 'Could not access your microphone.', variant: 'destructive' });
                 if (connection.getReadyState() === 1) connection.close();
             }
         });
@@ -233,58 +225,44 @@ export default function MockInterviewSessionPage() {
         connection.on(LiveTranscriptionEvents.Transcript, (data) => {
             const transcript = data.channel.alternatives[0].transcript;
             if (transcript) {
-               setCurrentTranscript(prev => prev ? `${prev} ${transcript}` : transcript);
+               setCurrentTranscript(transcript);
             }
         });
 
         connection.on(LiveTranscriptionEvents.UtteranceEnd, () => {
-            stopListening();
+            if (deepgramConnectionRef.current) {
+                deepgramConnectionRef.current.finish();
+            }
         });
     
         connection.on(LiveTranscriptionEvents.Close, () => {
-            // console.log('Deepgram connection closed.');
-        });
-    
-        connection.on(LiveTranscriptionEvents.Error, (e) => {
-            console.error("Deepgram Error: ", e);
-            toast({ title: 'Real-time Error', description: 'A transcription error occurred.', variant: 'destructive' });
+            if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+                mediaRecorderRef.current.stop();
+                mediaRecorderRef.current = null;
+            }
+            setIsRecording(false);
+            if (currentTranscript) {
+                handleUserResponse(currentTranscript);
+            }
         });
     
         deepgramConnectionRef.current = connection;
-    }, [isRecording, interviewState, toast]);
-
-    const stopListening = useCallback(() => {
-        if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-            mediaRecorderRef.current.stop();
-            mediaRecorderRef.current = null;
-        }
-        if (deepgramConnectionRef.current) {
-            deepgramConnectionRef.current.finish();
-            deepgramConnectionRef.current = null;
-        }
-        setIsRecording(false);
-        if(currentTranscript){
-            handleUserResponse(currentTranscript);
-        } else {
-            // Only reset if we didn't capture anything, otherwise let handleUserResponse manage state
-            if(interviewState === 'listening') setInterviewState('listening'); 
-        }
-    }, [currentTranscript, handleUserResponse, interviewState]);
+    }, [isRecording, interviewState, toast, currentTranscript, handleUserResponse]);
 
     // Handle Spacebar press for push-to-talk
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.code === 'Space' && !e.repeat && interviewState === 'listening' && !isRecording) {
                 e.preventDefault();
-                setCurrentTranscript(''); // Reset transcript for new utterance
+                setCurrentTranscript('');
                 startListening();
             }
         };
 
         const handleKeyUp = (e: KeyboardEvent) => {
-            if (e.code === 'Space' && isRecording) {
+            if (e.code === 'Space' && isRecording && deepgramConnectionRef.current) {
                 e.preventDefault();
-                stopListening();
+                deepgramConnectionRef.current.finish();
             }
         };
 
@@ -295,12 +273,12 @@ export default function MockInterviewSessionPage() {
             window.removeEventListener('keydown', handleKeyDown);
             window.removeEventListener('keyup', handleKeyUp);
         };
-    }, [interviewState, isRecording, startListening, stopListening]);
+    }, [interviewState, isRecording, startListening]);
 
     const renderInterviewStatus = () => {
         switch (interviewState) {
             case 'idle':
-                return <Button size="lg" onClick={startInterview} disabled={hasCameraPermission === false}>Start Interview</Button>;
+                return <Button size="lg" onClick={startInterview} disabled={hasCameraPermission !== true}>Start Interview</Button>;
             case 'generating_response':
                 return <div className="flex items-center space-x-2"><Loader2 className="animate-spin" /> <p>AI is thinking...</p></div>;
             case 'speaking_response':
@@ -310,23 +288,15 @@ export default function MockInterviewSessionPage() {
                     <div className="flex flex-col items-center gap-2 text-center">
                         <div className="flex items-center gap-2 text-primary font-semibold">
                             <Mic className={isRecording ? "text-destructive animate-pulse" : ""} />
-                            <span>{isRecording ? "Recording..." : "Ready to listen"}</span>
+                            <span>{isRecording ? "Listening..." : "Ready for your response"}</span>
                         </div>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground"><Keyboard size={16} /> Press and hold Spacebar to talk</div>
                     </div>
                 );
-            case 'processing_response':
-                return <div className="flex items-center space-x-2"><Loader2 className="animate-spin" /> <p>Processing your response...</p></div>;
             case 'finished':
-                return <div className="flex items-center space-x-2"><Loader2 className="animate-spin" /> <p>Finalizing session and saving results...</p></div>;
-             case 'error':
-                 return (
-                    <div className="text-center text-destructive flex flex-col items-center gap-2">
-                         <AlertTriangle className="h-8 w-8" />
-                         <p>An error occurred. Please refresh or go back.</p>
-                         <Button variant="secondary" className="mt-2" onClick={() => router.push('/dashboard')}>Back to Dashboard</Button>
-                    </div>
-                 );
+                return <div className="flex items-center space-x-2"><Loader2 className="animate-spin" /> <p>Finalizing & Analyzing...</p></div>;
+            case 'error':
+                 return <Button variant="destructive" onClick={() => router.push('/dashboard')}>End Session</Button>;
             default: return null;
         }
     };
@@ -335,26 +305,12 @@ export default function MockInterviewSessionPage() {
 
     if (hasCameraPermission === false) {
         return (
-            <main className="flex flex-col h-screen bg-background items-center justify-center p-4">
-                <Card className="max-w-md w-full text-center shadow-lg border-destructive">
-                    <CardHeader>
-                        <div className="mx-auto bg-destructive/10 text-destructive rounded-full p-3 w-fit">
-                            <Video className="h-8 w-8" />
-                        </div>
-                        <CardTitle className="text-2xl font-bold">Permissions Required</CardTitle>
-                        <CardDescription>
-                            Talxify needs access to your camera and microphone for the mock interview. Please enable these permissions in your browser settings.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="flex flex-col gap-4">
-                        <Button onClick={() => window.location.reload()}>
-                            <RefreshCw className="mr-2 h-4 w-4" />
-                            Refresh and Try Again
-                        </Button>
-                        <Button variant="ghost" onClick={() => router.push('/dashboard')}>
-                            Back to Dashboard
-                        </Button>
-                    </CardContent>
+            <main className="flex h-screen items-center justify-center p-4">
+                <Card className="max-w-md w-full text-center p-8">
+                    <Video className="h-12 w-12 mx-auto text-destructive mb-4" />
+                    <h2 className="text-2xl font-bold">Permissions Required</h2>
+                    <p className="text-muted-foreground mt-2 mb-6">This feature requires camera and microphone access. Please enable them in your browser settings.</p>
+                    <Button onClick={() => window.location.reload()}><RefreshCw className="mr-2" /> Try Again</Button>
                 </Card>
             </main>
         );
@@ -362,9 +318,8 @@ export default function MockInterviewSessionPage() {
     
     if (hasCameraPermission === null) {
         return (
-             <main className="flex flex-col h-screen bg-background items-center justify-center p-4">
+             <main className="flex h-screen items-center justify-center">
                 <Loader2 className="h-16 w-16 animate-spin text-primary" />
-                <p className="mt-4 text-muted-foreground">Accessing camera and microphone...</p>
              </main>
         )
     }
@@ -393,11 +348,8 @@ export default function MockInterviewSessionPage() {
                 <Card className="bg-background/80 backdrop-blur-sm border-border/30">
                     <CardContent className="p-4">
                        <div className="min-h-[6rem] text-center flex flex-col justify-center">
-                           {(isRecording && currentTranscript) || (interviewState === 'generating_response' && currentTranscript) ? (
-                                <div>
-                                    <p className="text-sm font-semibold text-primary mb-1">You said:</p>
-                                    <p className="text-xl text-foreground">{currentTranscript}</p>
-                                </div>
+                           {currentTranscript ? (
+                                <p className="text-xl text-foreground">{currentTranscript}</p>
                            ) : lastMessage ? (
                                 <div>
                                     <p className="text-sm font-semibold text-primary mb-1">{lastMessage.role === 'model' ? 'AI Interviewer:' : 'You said:'}</p>
@@ -409,8 +361,8 @@ export default function MockInterviewSessionPage() {
                        </div>
                        <div className="h-16 flex items-center justify-center border-t border-border/30 mt-4 pt-4">
                             <div className="flex items-center gap-4">
-                                {interviewState !== 'finished' && (
-                                     <Button variant="destructive" onClick={endInterview}>
+                                {interviewState !== 'finished' && interviewState !== 'idle' && (
+                                     <Button variant="destructive" onClick={endInterviewAndAnalyze}>
                                         <StopCircle className="mr-2 h-4 w-4" />
                                         End & Get Report
                                     </Button>
@@ -424,5 +376,3 @@ export default function MockInterviewSessionPage() {
         </main>
     );
 }
-
-    

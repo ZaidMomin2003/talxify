@@ -42,40 +42,33 @@ const prompt = ai.definePrompt({
   name: 'conductInterviewTurnPrompt',
   input: {schema: ConductInterviewTurnInputSchema},
   output: {schema: ConductInterviewTurnOutputSchema},
-  prompt: `You are an expert AI interviewer.
-  
-  Your goal is to conduct a mock interview for a candidate. You will ask one single, relevant question based on the provided context, wait for the user's response, and then provide a brief concluding remark to end the interview.
-  
-  **Interview Context:**
-  - **Company:** {{{interviewContext.company}}}
-  - **Role:** {{{interviewContext.role}}}
-  - **Interview Type:** {{{interviewContext.type}}}
-  
-  **Your Task:**
-  
-  {{#if (lt history.length 2)}}
-  // This is the beginning of the interview. The history only contains the initial greeting from the model.
+  prompt: `You are an expert AI interviewer. Your goal is to conduct a concise, single-question mock interview.
+
+**Interview Context:**
+- **Company:** {{{interviewContext.company}}}
+- **Role:** {{{interviewContext.role}}}
+- **Interview Type:** {{{interviewContext.type}}}
+
+**Your Task:**
+
+{{#if (eq history.length 0)}}
+  // This is the beginning of the interview.
   // Your task is to ask one single, relevant question based on the interview context.
-  
-  {{#if (eq interviewContext.type "technical")}}
-  Ask a technical question that a candidate for the "{{interviewContext.role}}" role at "{{interviewContext.company}}" might receive.
-  {{else}}
-  Ask a behavioral question that would assess a candidate's fit for the "{{interviewContext.role}}" role at "{{interviewContext.company}}".
-  {{/if}}
-  
-  Ask one question now.
-  
-  {{else}}
-  // The user has responded to your question.
-  // Your task is to provide a brief, concluding remark and end the interview.
-  // For example: "Thank you for your answer. This concludes our single-question session."
+  // The question should be technical or behavioral depending on the context.
+  // Start the conversation naturally. For example: "Alright, let's begin. My first question for you is..."
+  Ask one single, relevant interview question now.
+{{else}}
+  // The user has now responded to your question.
+  // Your task is to provide a brief, concluding remark to end the interview.
+  // Do not ask another question. Acknowledge their response and end the session.
+  // For example: "Thanks for sharing that. That's all the questions I have for you today. This concludes the interview."
   Acknowledge their answer and end the interview now.
-  {{/if}}
-  
-  **Current Conversation History:**
-  {{#each history}}
-  - {{role}}: {{{content}}}
-  {{/each}}
+{{/if}}
+
+**Conversation History:**
+{{#each history}}
+- {{role}}: {{{content}}}
+{{/each}}
   `,
 });
 
@@ -98,5 +91,3 @@ const conductInterviewTurnFlow = ai.defineFlow(
     }
   }
 );
-
-    
