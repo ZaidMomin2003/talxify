@@ -132,7 +132,7 @@ export default function LandingHero() {
 
   return (
     <section className="relative flex min-h-screen w-full flex-col items-center overflow-hidden bg-black py-16 text-white sm:px-6 lg:px-8 lg:py-2">
-      <div className="absolute inset-0 z-0 h-full w-full rotate-180 items-center px-5 py-24 opacity-80 [background:radial-gradient(125%_125%_at_50%_10%,#000_40%,hsl(var(--primary))_100%)]"></div>
+      <div className="absolute inset-0 z-0 h-full w-full rotate-180 items-center px-5 py-24 opacity-80 [background:radial-gradient(125%_125%_at_50%_10%,#000_40%,#007cf0_100%)]"></div>
       <svg
         id="noice"
         className="absolute inset-0 z-10 h-full w-full opacity-30"
@@ -162,7 +162,7 @@ export default function LandingHero() {
       {/* Background effects */}
       <div className="absolute inset-0 z-0">
         {/* Radial gradient */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-primary/30 via-black/70 to-gray-950 blur-3xl"></div>
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-blue-500/30 via-black/70 to-gray-950 blur-3xl"></div>
 
         {/* Grid pattern */}
         <div className="absolute inset-0 opacity-10">
