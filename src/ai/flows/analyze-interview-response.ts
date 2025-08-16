@@ -51,7 +51,7 @@ const prompt = ai.definePrompt({
 
 **Your Task:**
 
-{{#if (eq history.length 0)}}
+{{#unless history}}
   // This is the beginning of the interview.
   // Your task is to ask one single, relevant question based on the interview context.
   // The question should be technical or behavioral depending on the context.
@@ -63,7 +63,7 @@ const prompt = ai.definePrompt({
   // Do not ask another question. Acknowledge their response and end the session.
   // For example: "Thanks for sharing that. That's all the questions I have for you today. This concludes the interview."
   Acknowledge their answer and end the interview now.
-{{/if}}
+{{/unless}}
 
 **Conversation History:**
 {{#each history}}
