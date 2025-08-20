@@ -186,8 +186,8 @@ export default function DashboardPage() {
         <p className="text-muted-foreground">Here's your progress overview, welcome back!</p>
       </div>
 
-      <div className="mb-6 grid grid-cols-2 gap-6 lg:grid-cols-4">
-        <Card className="bg-card border-none shadow-neumorphic bg-chart-2/10">
+      <div className="mb-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <Card className="bg-card/70">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Interviews Completed</CardTitle>
             <Briefcase className="h-4 w-4 text-muted-foreground" />
@@ -197,7 +197,7 @@ export default function DashboardPage() {
             <p className="text-xs text-muted-foreground">{interviewsLeft} interviews left this cycle.</p>
           </CardContent>
         </Card>
-        <Card className="bg-card border-none shadow-neumorphic bg-chart-3/10">
+        <Card className="bg-card/70">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Coding Quizzes Taken</CardTitle>
             <Code className="h-4 w-4 text-muted-foreground" />
@@ -209,7 +209,7 @@ export default function DashboardPage() {
              </p>
           </CardContent>
         </Card>
-        <Card className="bg-card border-none shadow-neumorphic bg-chart-4/10">
+        <Card className="bg-card/70">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Average Score</CardTitle>
             <Percent className="h-4 w-4 text-muted-foreground" />
@@ -219,7 +219,7 @@ export default function DashboardPage() {
             <p className="text-xs text-muted-foreground">Based on your performance</p>
           </CardContent>
         </Card>
-        <Card className="bg-card border-none shadow-neumorphic bg-chart-5/10">
+        <Card className="bg-card/70">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Plan Expires</CardTitle>
             <CalendarDays className="h-4 w-4 text-muted-foreground" />
@@ -241,15 +241,17 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Card className="flex flex-col border-none shadow-neumorphic hover:shadow-neumorphic-sm transition-shadow duration-300">
+        <Card className="flex flex-col">
           <Form {...mockInterviewForm}>
             <form onSubmit={mockInterviewForm.handleSubmit(onMockInterviewSubmit)} className="flex flex-col h-full">
               <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle>Mock Interview</CardTitle>
-                  <Rocket className="h-6 w-6 text-primary" />
+                <div className="flex items-center gap-3">
+                    <div className="bg-primary/10 text-primary rounded-lg p-2"><Rocket className="h-6 w-6" /></div>
+                    <div className="flex flex-col">
+                        <CardTitle className="text-xl">Mock Interview</CardTitle>
+                        <CardDescription>Simulate a real-time interview with an AI.</CardDescription>
+                    </div>
                 </div>
-                <CardDescription>Simulate a real-time interview with an AI.</CardDescription>
               </CardHeader>
               <CardContent className="flex-grow space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -260,7 +262,7 @@ export default function DashboardPage() {
                       <FormItem>
                         <FormLabel>Target Company</FormLabel>
                         <FormControl>
-                          <Input placeholder="e.g., Google, Amazon" {...field} className="bg-background shadow-neumorphic-sm-inset"/>
+                          <Input placeholder="e.g., Google, Amazon" {...field}/>
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -273,7 +275,7 @@ export default function DashboardPage() {
                       <FormItem>
                         <FormLabel>Target Role</FormLabel>
                         <FormControl>
-                          <Input placeholder="e.g., Frontend Developer" {...field} className="bg-background shadow-neumorphic-sm-inset"/>
+                          <Input placeholder="e.g., Frontend Developer" {...field}/>
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -339,7 +341,7 @@ export default function DashboardPage() {
           </Form>
         </Card>
 
-        <Card className="flex flex-col border-none shadow-neumorphic hover:shadow-neumorphic-sm transition-shadow duration-300">
+        <Card className="flex flex-col">
           {!canTakeQuiz ? (
             <div className="flex flex-col h-full justify-center items-center text-center p-6">
                 <div className="bg-accent/10 text-accent rounded-full p-3 mb-4">
@@ -360,11 +362,13 @@ export default function DashboardPage() {
             <Form {...codingGymForm}>
               <form onSubmit={codingGymForm.handleSubmit(onCodingGymSubmit)} className="flex flex-col h-full">
                 <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle>Coding Gym</CardTitle>
-                    <Code className="h-6 w-6 text-accent" />
-                  </div>
-                  <CardDescription>Get AI-powered help with your coding problems.</CardDescription>
+                   <div className="flex items-center gap-3">
+                     <div className="bg-secondary/20 text-secondary-foreground rounded-lg p-2"><Code className="h-6 w-6" /></div>
+                     <div className="flex flex-col">
+                         <CardTitle className="text-xl">Coding Gym</CardTitle>
+                         <CardDescription>Get AI-powered help with your coding problems.</CardDescription>
+                     </div>
+                 </div>
                 </CardHeader>
                 <CardContent className="flex-grow space-y-4">
                     <FormField
@@ -374,7 +378,7 @@ export default function DashboardPage() {
                         <FormItem>
                           <FormLabel>Topics</FormLabel>
                           <FormControl>
-                            <Input placeholder="e.g., JavaScript, Algorithms" {...field} className="bg-background shadow-neumorphic-sm-inset"/>
+                            <Input placeholder="e.g., JavaScript, Algorithms" {...field}/>
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -389,7 +393,7 @@ export default function DashboardPage() {
                             <FormLabel>Difficulty</FormLabel>
                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                               <FormControl>
-                                <SelectTrigger className="bg-card shadow-neumorphic-sm">
+                                <SelectTrigger>
                                   <SelectValue placeholder="Select a difficulty" />
                                 </SelectTrigger>
                               </FormControl>
@@ -411,7 +415,7 @@ export default function DashboardPage() {
                             <FormLabel>Questions</FormLabel>
                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                               <FormControl>
-                                <SelectTrigger className="bg-card shadow-neumorphic-sm">
+                                <SelectTrigger>
                                   <SelectValue placeholder="# of Questions" />
                                 </SelectTrigger>
                               </FormControl>
@@ -440,7 +444,7 @@ export default function DashboardPage() {
       </div>
       
       <div className="mt-8">
-        <Card className="shadow-neumorphic border-none">
+        <Card>
           <CardHeader>
             <CardTitle>Activity</CardTitle>
             <CardDescription>Review your past coding quizzes and retake them to improve.</CardDescription>
@@ -448,7 +452,7 @@ export default function DashboardPage() {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <Input 
                     placeholder="Search by topic or difficulty..." 
-                    className="pl-10 bg-background shadow-neumorphic-sm-inset"
+                    className="pl-10"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                 />
@@ -546,12 +550,3 @@ export default function DashboardPage() {
     </main>
   );
 }
-
-    
-
-    
-
-
-
-
-    

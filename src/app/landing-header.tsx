@@ -119,10 +119,9 @@ export default function LandingHeader() {
                   </div>
                 </div>
                 <div className="flex flex-col">
-                  <span className={`text-lg font-bold ${isScrolled ? 'text-foreground' : 'text-white'}`}>
+                  <span className={`text-lg font-bold text-foreground`}>
                     Talxify
                   </span>
-                  <span className={`text-xs -mt-1 ${isScrolled ? 'text-muted-foreground' : 'text-slate-400'}`}>AI Job Assistant</span>
                 </div>
               </Link>
             </motion.div>
@@ -139,7 +138,7 @@ export default function LandingHeader() {
                   <Link
                     href={item.href}
                     onClick={(e) => handleLinkClick(e, item.href)}
-                    className={`relative rounded-lg px-4 py-2 text-sm font-medium transition-colors duration-200 ${isScrolled ? 'text-foreground' : 'text-white'}`}
+                    className={`relative rounded-lg px-4 py-2 text-sm font-medium transition-colors duration-200 text-foreground`}
                   >
                     {hoveredItem === item.name && (
                       <motion.div
@@ -183,7 +182,7 @@ export default function LandingHeader() {
                 <>
                   <Link
                     href="/login"
-                    className={`px-4 py-2 text-sm font-medium transition-colors duration-200 ${isScrolled ? 'text-foreground' : 'text-white'}`}
+                    className={`px-4 py-2 text-sm font-medium transition-colors duration-200 text-foreground`}
                   >
                     Sign In
                   </Link>
@@ -203,7 +202,7 @@ export default function LandingHeader() {
             </motion.div>
 
             <motion.button
-              className={`p-2 transition-colors duration-200 lg:hidden ${isScrolled ? 'text-foreground' : 'text-white'}`}
+              className={`p-2 transition-colors duration-200 lg:hidden text-foreground`}
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               variants={itemVariants}
               whileTap={{ scale: 0.95 }}
