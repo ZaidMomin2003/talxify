@@ -27,6 +27,7 @@ body {
     --border: 0 0% 89.8%;
     --input: 0 0% 89.8%;
     --ring: 21 95% 58%;
+    --radius: 0.5rem;
     --chart-1: 21 95% 58%;
     --chart-2: 0 0% 46.1%;
     --chart-3: 0 0% 63.9%;
@@ -64,6 +65,7 @@ body {
     --border: 0 0% 18%;
     --input: 0 0% 18%;
     --ring: 21 95% 58%;
+    --radius: 0.5rem;
     --chart-1: 21 95% 58%;
     --chart-2: 0 0% 46.1%;
     --chart-3: 0 0% 63.9%;
