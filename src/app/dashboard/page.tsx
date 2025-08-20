@@ -187,53 +187,53 @@ export default function DashboardPage() {
       </div>
 
       <div className="mb-6 grid grid-cols-2 gap-6 lg:grid-cols-4">
-        <Card className="bg-gradient-to-br from-blue-900 via-blue-800 to-blue-900 text-blue-100 border border-blue-500/50 shadow-lg shadow-blue-500/30">
+        <Card className="bg-card border-none shadow-neumorphic">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Interviews Completed</CardTitle>
-            <Briefcase className="h-4 w-4 text-blue-300" />
+            <Briefcase className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{interviewsCompleted} / {planLimits.interviews}</div>
-            <p className="text-xs text-blue-200/80">{interviewsLeft} interviews left this cycle.</p>
+            <p className="text-xs text-muted-foreground">{interviewsLeft} interviews left this cycle.</p>
           </CardContent>
         </Card>
-        <Card className="bg-gradient-to-br from-yellow-900 via-yellow-800 to-yellow-900 text-yellow-100 border border-yellow-500/50 shadow-lg shadow-yellow-500/30">
+        <Card className="bg-card border-none shadow-neumorphic">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Coding Quizzes Taken</CardTitle>
-            <Code className="h-4 w-4 text-yellow-300" />
+            <Code className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
              <div className="text-2xl font-bold">{hasTakenQuiz ? 1 : 0} / {isFreePlan ? 1 : '∞'}</div>
-             <p className="text-xs text-yellow-200/80">
+             <p className="text-xs text-muted-foreground">
                 {isFreePlan ? `${quizzesLeft === 0 ? '0' : '1'} quiz left.` : 'Unlimited quizzes.'}
              </p>
           </CardContent>
         </Card>
-        <Card className="bg-gradient-to-br from-red-900 via-red-800 to-red-900 text-red-100 border border-red-500/50 shadow-lg shadow-red-500/30">
+        <Card className="bg-card border-none shadow-neumorphic">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Average Score</CardTitle>
-            <Percent className="h-4 w-4 text-red-300" />
+            <Percent className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{averageScore}%</div>
-            <p className="text-xs text-red-200/80">Based on your performance</p>
+            <p className="text-xs text-muted-foreground">Based on your performance</p>
           </CardContent>
         </Card>
-        <Card className="bg-gradient-to-br from-green-900 via-green-800 to-green-900 text-green-100 border border-green-500/50 shadow-lg shadow-green-500/30">
+        <Card className="bg-card border-none shadow-neumorphic">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Plan Expires</CardTitle>
-            <CalendarDays className="h-4 w-4 text-green-300" />
+            <CalendarDays className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
              {planExpiresDays !== null && userData?.subscription.plan !== 'free' ? (
                 <>
                     <div className="text-2xl font-bold">{planExpiresDays} Days</div>
-                    <p className="text-xs text-green-200/80">left on your current plan.</p>
+                    <p className="text-xs text-muted-foreground">left on your current plan.</p>
                 </>
              ) : (
                 <>
                     <div className="text-2xl font-bold">N/A</div>
-                    <p className="text-xs text-green-200/80">You are on the free plan.</p>
+                    <p className="text-xs text-muted-foreground">You are on the free plan.</p>
                 </>
              )}
           </CardContent>
@@ -241,7 +241,7 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Card className="flex flex-col shadow-lg hover:shadow-xl transition-shadow duration-300">
+        <Card className="flex flex-col border-none shadow-neumorphic hover:shadow-neumorphic-sm transition-shadow duration-300">
           <Form {...mockInterviewForm}>
             <form onSubmit={mockInterviewForm.handleSubmit(onMockInterviewSubmit)} className="flex flex-col h-full">
               <CardHeader>
@@ -260,7 +260,7 @@ export default function DashboardPage() {
                       <FormItem>
                         <FormLabel>Target Company</FormLabel>
                         <FormControl>
-                          <Input placeholder="e.g., Google, Amazon" {...field} />
+                          <Input placeholder="e.g., Google, Amazon" {...field} className="bg-background shadow-neumorphic-sm-inset"/>
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -273,7 +273,7 @@ export default function DashboardPage() {
                       <FormItem>
                         <FormLabel>Target Role</FormLabel>
                         <FormControl>
-                          <Input placeholder="e.g., Frontend Developer" {...field} />
+                          <Input placeholder="e.g., Frontend Developer" {...field} className="bg-background shadow-neumorphic-sm-inset"/>
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -339,7 +339,7 @@ export default function DashboardPage() {
           </Form>
         </Card>
 
-        <Card className="flex flex-col shadow-lg hover:shadow-xl transition-shadow duration-300 border-accent/20">
+        <Card className="flex flex-col border-none shadow-neumorphic hover:shadow-neumorphic-sm transition-shadow duration-300">
           {!canTakeQuiz ? (
             <div className="flex flex-col h-full justify-center items-center text-center p-6">
                 <div className="bg-accent/10 text-accent rounded-full p-3 mb-4">
@@ -374,7 +374,7 @@ export default function DashboardPage() {
                         <FormItem>
                           <FormLabel>Topics</FormLabel>
                           <FormControl>
-                            <Input placeholder="e.g., JavaScript, Algorithms" {...field} />
+                            <Input placeholder="e.g., JavaScript, Algorithms" {...field} className="bg-background shadow-neumorphic-sm-inset"/>
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -389,7 +389,7 @@ export default function DashboardPage() {
                             <FormLabel>Difficulty</FormLabel>
                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                               <FormControl>
-                                <SelectTrigger>
+                                <SelectTrigger className="bg-card shadow-neumorphic-sm">
                                   <SelectValue placeholder="Select a difficulty" />
                                 </SelectTrigger>
                               </FormControl>
@@ -411,7 +411,7 @@ export default function DashboardPage() {
                             <FormLabel>Questions</FormLabel>
                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                               <FormControl>
-                                <SelectTrigger>
+                                <SelectTrigger className="bg-card shadow-neumorphic-sm">
                                   <SelectValue placeholder="# of Questions" />
                                 </SelectTrigger>
                               </FormControl>
@@ -440,7 +440,7 @@ export default function DashboardPage() {
       </div>
       
       <div className="mt-8">
-        <Card className="shadow-lg">
+        <Card className="shadow-neumorphic border-none">
           <CardHeader>
             <CardTitle>Activity</CardTitle>
             <CardDescription>Review your past coding quizzes and retake them to improve.</CardDescription>
@@ -448,7 +448,7 @@ export default function DashboardPage() {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <Input 
                     placeholder="Search by topic or difficulty..." 
-                    className="pl-10"
+                    className="pl-10 bg-background shadow-neumorphic-sm-inset"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                 />
@@ -467,7 +467,7 @@ export default function DashboardPage() {
                 </TableHeader>
                 <TableBody>
                     {filteredQuizzes.length > 0 ? filteredQuizzes.map((quiz) => (
-                        <TableRow key={quiz.id}>
+                        <TableRow key={quiz.id} className="border-b-border/20">
                             <TableCell className="font-medium capitalize">{quiz.topics}</TableCell>
                             <TableCell className="hidden md:table-cell">
                                 <Badge variant={
@@ -550,4 +550,5 @@ export default function DashboardPage() {
     
 
     
+
 

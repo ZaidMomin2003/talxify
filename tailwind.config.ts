@@ -9,6 +9,12 @@ export default {
   ],
   theme: {
     extend: {
+      boxShadow: {
+        'neumorphic-sm': '4px 4px 8px #0d0d0f, -4px -4px 8px #2d2d31',
+        'neumorphic-sm-inset': 'inset 4px 4px 8px #0d0d0f, inset -4px -4px 8px #2d2d31',
+        'neumorphic': '5px 5px 10px #0d0d0f, -5px -5px 10px #2d2d31',
+        'neumorphic-inset': 'inset 5px 5px 10px #0d0d0f, inset -5px -5px 10px #2d2d31',
+      },
       fontFamily: {
         body: ['Inter', 'sans-serif'],
         headline: ['Space Grotesk', 'sans-serif'],

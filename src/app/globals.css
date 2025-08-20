@@ -27,7 +27,7 @@ body {
     --border: 0 0% 89.8%;
     --input: 0 0% 89.8%;
     --ring: 21 95% 58%;
-    --radius: 0.5rem;
+    --radius: 0.8rem;
     --chart-1: 21 95% 58%;
     --chart-2: 0 0% 46.1%;
     --chart-3: 0 0% 63.9%;
@@ -46,26 +46,26 @@ body {
   }
 
   .dark {
-    --background: 0 0% 0%;
+    --background: 240 10% 4%; /* Darker background */
     --foreground: 0 0% 98%;
-    --card: 0 0% 12%;
+    --card: 240 6% 12%; /* Card color */
     --card-foreground: 0 0% 98%;
-    --popover: 0 0% 8%;
+    --popover: 240 10% 4%;
     --popover-foreground: 0 0% 98%;
     --primary: 21 95% 58%; /* Vibrant Orange */
     --primary-foreground: 0 0% 98%;
-    --secondary: 0 0% 15%;
+    --secondary: 240 6% 18%; /* Darker secondary for buttons etc */
     --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 15%;
+    --muted: 240 6% 18%;
     --muted-foreground: 0 0% 63.9%;
-    --accent: 0 0% 15%;
+    --accent: 240 6% 18%;
     --accent-foreground: 0 0% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 18%;
-    --input: 0 0% 18%;
+    --border: 240 5% 16%;
+    --input: 240 5% 16%;
     --ring: 21 95% 58%;
-    --radius: 0.5rem;
+    --radius: 0.8rem;
     --chart-1: 21 95% 58%;
     --chart-2: 0 0% 46.1%;
     --chart-3: 0 0% 63.9%;
@@ -73,13 +73,13 @@ body {
     --chart-5: 0 0% 14.9%;
 
      /* Dark Theme Sidebar */
-    --sidebar-background: 0 0% 8%;
+    --sidebar-background: 240 10% 4%;
     --sidebar-foreground: 0 0% 98%;
     --sidebar-primary: 21 95% 58%;
     --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 0 0% 20%;
+    --sidebar-accent: 240 6% 18%;
     --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 0 0% 18%;
+    --sidebar-border: 240 5% 16%;
     --sidebar-ring: 21 95% 58%;
   }
 }
