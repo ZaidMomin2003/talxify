@@ -187,7 +187,7 @@ export default function DashboardPage() {
       </div>
 
       <div className="mb-6 grid grid-cols-2 gap-6 lg:grid-cols-4">
-        <Card className="bg-card border-none shadow-neumorphic">
+        <Card className="bg-card border-none shadow-neumorphic bg-chart-2/10">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Interviews Completed</CardTitle>
             <Briefcase className="h-4 w-4 text-muted-foreground" />
@@ -197,7 +197,7 @@ export default function DashboardPage() {
             <p className="text-xs text-muted-foreground">{interviewsLeft} interviews left this cycle.</p>
           </CardContent>
         </Card>
-        <Card className="bg-card border-none shadow-neumorphic">
+        <Card className="bg-card border-none shadow-neumorphic bg-chart-3/10">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Coding Quizzes Taken</CardTitle>
             <Code className="h-4 w-4 text-muted-foreground" />
@@ -209,7 +209,7 @@ export default function DashboardPage() {
              </p>
           </CardContent>
         </Card>
-        <Card className="bg-card border-none shadow-neumorphic">
+        <Card className="bg-card border-none shadow-neumorphic bg-chart-4/10">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Average Score</CardTitle>
             <Percent className="h-4 w-4 text-muted-foreground" />
@@ -219,7 +219,7 @@ export default function DashboardPage() {
             <p className="text-xs text-muted-foreground">Based on your performance</p>
           </CardContent>
         </Card>
-        <Card className="bg-card border-none shadow-neumorphic">
+        <Card className="bg-card border-none shadow-neumorphic bg-chart-5/10">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Plan Expires</CardTitle>
             <CalendarDays className="h-4 w-4 text-muted-foreground" />
@@ -552,3 +552,6 @@ export default function DashboardPage() {
     
 
 
+
+
+    
