@@ -12,30 +12,31 @@ const FeaturebaseMessenger = () => {
   useEffect(() => {
     const win = window as any;
     
-    // Initialize Featurebase if it doesn't exist
+    // Always initialize the Featurebase function
     if (typeof win.Featurebase !== "function") {
       win.Featurebase = function () {
         (win.Featurebase.q = win.Featurebase.q || []).push(arguments);
       };
     }
     
-    // Prepare user data, ensuring it exists before passing
-    const featurebaseUser = user ? {
-        email: user.email ?? undefined,
-        userId: user.uid,
-        createdAt: user.metadata?.creationTime,
-    } : {};
-
-    // Boot Featurebase messenger with configuration
-    win.Featurebase("boot", {
+    const bootConfig: any = {
       appId: "689df97845396713701c443c",
-      ...featurebaseUser,
-      theme: theme || 'dark', // Pass theme, default to dark
+      theme: theme || 'dark',
       language: "en",
       shouldDisableIdentityVerification: true,
-    });
+    };
+    
+    // Only add user details if the user object is available
+    if (user) {
+        bootConfig.email = user.email ?? undefined;
+        bootConfig.userId = user.uid;
+        bootConfig.createdAt = user.metadata?.creationTime;
+    }
 
-  }, [user, theme]); // Re-run effect if user or theme changes
+    // Boot Featurebase messenger with the constructed configuration
+    win.Featurebase("boot", bootConfig);
+
+  }, [user, theme]);
 
   return (
     <>
