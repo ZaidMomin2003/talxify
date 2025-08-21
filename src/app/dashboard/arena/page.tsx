@@ -2,9 +2,9 @@
 'use client';
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription as DialogDescriptionComponent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Swords, Lock, PlayCircle, BookOpen, Code, Briefcase } from "lucide-react";
 import { cn } from '@/lib/utils';
 
@@ -68,9 +68,9 @@ export default function ArenaPage() {
                         <DialogContent>
                             <DialogHeader>
                                 <DialogTitle className="text-2xl font-bold">Day {day} Challenge</DialogTitle>
-                                <DialogDescription>
+                                <DialogDescriptionComponent>
                                     Complete these tasks to master your skills for today.
-                                </DialogDescription>
+                                </DialogDescriptionComponent>
                             </DialogHeader>
                             <div className="my-6 space-y-4">
                                 {dailyTasks.map(task => (
