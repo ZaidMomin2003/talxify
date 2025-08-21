@@ -32,6 +32,7 @@ const FeaturebaseMessenger = () => {
       ...featurebaseUser,
       theme: theme || 'dark', // Pass theme, default to dark
       language: "en",
+      shouldDisableIdentityVerification: true,
     });
 
   }, [user, theme]); // Re-run effect if user or theme changes
