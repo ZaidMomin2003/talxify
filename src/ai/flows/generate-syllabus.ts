@@ -27,7 +27,7 @@ const GenerateSyllabusInputSchema = z.object({
 export type GenerateSyllabusInput = z.infer<typeof GenerateSyllabusInputSchema>;
 
 const GenerateSyllabusOutputSchema = z.object({
-  syllabus: z.array(SyllabusDaySchema).length(30).describe('An array of 30 daily learning topics.'),
+  syllabus: z.array(SyllabusDaySchema).describe('An array of daily learning topics for a 30-day period.'),
 });
 export type GenerateSyllabusOutput = z.infer<typeof GenerateSyllabusOutputSchema>;
 
@@ -46,7 +46,7 @@ And is interested in these companies: {{companies}}
 
 Create a structured, 30-day plan that covers essential topics. Start with fundamentals and gradually move to more advanced concepts. Include a mix of data structures, algorithms, system design, and role-specific topics.
 
-Generate exactly 30 days of content. For each day, provide:
+Generate a plan for exactly 30 days. For each day, provide:
 - day: The day number.
 - topic: The specific topic to focus on.
 - description: A short, encouraging sentence about the day's goal.
