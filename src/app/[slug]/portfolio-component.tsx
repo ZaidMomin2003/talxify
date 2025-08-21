@@ -6,7 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Github, Linkedin, Instagram, Mail, Phone, Link as LinkIcon, Award, Briefcase, MessageSquare, GraduationCap, Sparkles, Building, Calendar, Star, Code, Twitter, Globe, School, Percent, Loader2, Bot, User as UserIcon, BarChart, Youtube, HelpCircle } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Github, Linkedin, Instagram, Mail, Phone, Link as LinkIcon, Award, Briefcase, MessageSquare, GraduationCap, Sparkles, Building, Calendar, Star, Code, Twitter, Globe, School, Percent, Loader2, Bot, User as UserIcon, BarChart, Youtube, HelpCircle, Menu } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
@@ -15,7 +16,7 @@ import type { UserData, QuizResult } from "@/lib/types";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 const Section = ({ icon, title, children, className, id }: { icon: React.ReactNode, title: string, children: React.ReactNode, className?: string, id: string }) => (
-    <section id={id} className={cn("py-12", className)}>
+    <section id={id} className={cn("py-12 scroll-mt-24", className)}>
         <div className="flex items-center gap-4 mb-8">
             <div className="bg-primary/10 text-primary rounded-lg p-3">
                 {icon}
@@ -38,6 +39,63 @@ function CustomTooltip({ active, payload, label }: any) {
     );
   }
   return null;
+}
+
+const navLinks = [
+    { href: "#about", label: "About" },
+    { href: "#stats", label: "Stats" },
+    { href: "#experience", label: "Experience" },
+    { href: "#projects", label: "Projects" },
+    { href: "#testimonials", label: "Testimonials" },
+    { href: "#faqs", label: "FAQs" },
+];
+
+function PortfolioHeader({ name, email }: { name: string, email: string }) {
+    return (
+        <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-sm border-b">
+            <div className="container mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+                <div className="flex items-center justify-between h-16">
+                    <div className="flex items-center gap-4">
+                         <Avatar className="w-10 h-10 border-2 border-primary">
+                            <AvatarImage src="https://placehold.co/40x40.png" alt={name} data-ai-hint="person avatar" />
+                            <AvatarFallback>{name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                        </Avatar>
+                        <span className="font-bold text-lg">{name}</span>
+                    </div>
+                    
+                    <nav className="hidden md:flex items-center gap-1">
+                        {navLinks.map(link => (
+                            <Button key={link.href} variant="ghost" asChild>
+                                <a href={link.href}>{link.label}</a>
+                            </Button>
+                        ))}
+                    </nav>
+
+                    <div className="flex items-center gap-2">
+                        <Button asChild>
+                            <a href={`mailto:${email}`}>Contact Me</a>
+                        </Button>
+                        <div className="md:hidden">
+                             <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="outline" size="icon">
+                                        <Menu className="h-5 w-5" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    {navLinks.map(link => (
+                                         <DropdownMenuItem key={link.href} asChild>
+                                            <a href={link.href}>{link.label}</a>
+                                        </DropdownMenuItem>
+                                    ))}
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+    );
 }
 
 export default function PortfolioComponent({ userData }: { userData: UserData | null }) {
@@ -98,10 +156,11 @@ export default function PortfolioComponent({ userData }: { userData: UserData | 
             className="bg-background min-h-screen"
             style={{ '--primary': portfolio.themeColor } as React.CSSProperties}
         >
+            <PortfolioHeader name={portfolio.personalInfo.name} email={portfolio.personalInfo.email} />
             <div className="container mx-auto max-w-6xl p-4 sm:p-6 lg:p-8">
                 <div className="lg:grid lg:grid-cols-12 lg:gap-12">
                     {/* Sticky Sidebar */}
-                    <aside className="lg:col-span-4 lg:sticky lg:top-8 self-start mb-8 lg:mb-0">
+                    <aside className="lg:col-span-4 lg:sticky lg:top-24 self-start mb-8 lg:mb-0">
                         <Card className="p-6 text-center shadow-lg">
                             <Avatar className="w-32 h-32 mx-auto mb-4 border-4 border-primary shadow-lg">
                                 <AvatarImage src="https://placehold.co/128x128.png" alt={portfolio.personalInfo.name} data-ai-hint="person avatar" />
@@ -344,3 +403,5 @@ export default function PortfolioComponent({ userData }: { userData: UserData | 
         </div>
     );
 }
+
+    
