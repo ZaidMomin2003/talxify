@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useMeeting, usePubSub } from '@videosdk.live/react-sdk';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { generateInterviewResponse } from '@/ai/flows/generate-interview-response';
 import { textToSpeech, TextToSpeechInput } from '@/ai/flows/text-to-speech';
 import { speechToText, SpeechToTextInput } from '@/ai/flows/speech-to-text';
