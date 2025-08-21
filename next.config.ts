@@ -41,6 +41,8 @@ const nextConfig: NextConfig = {
     NEXT_PUBLIC_DEEPGRAM_API_KEY: process.env.DEEPGRAM_API_KEY,
     NEXT_PUBLIC_RAZORPAY_KEY_ID: process.env.RAZORPAY_KEY_ID,
     NEXT_PUBLIC_VIDEOSDK_API_KEY: process.env.VIDEOSDK_API_KEY,
+    VIDEOSDK_API_KEY: process.env.VIDEOSDK_API_KEY,
+    VIDEOSDK_SECRET_KEY: process.env.VIDEOSDK_SECRET_KEY
   }
 };
 
