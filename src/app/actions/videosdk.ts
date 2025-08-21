@@ -18,7 +18,7 @@ export async function generateVideoSDKToken() {
 
   try {
     const token = jwt.sign(payload, secretKey, {
-      expiresIn: '1h', // Token expires in 1 hour
+      expiresIn: '1h',
       algorithm: 'HS256',
     });
     return token;
@@ -27,5 +27,3 @@ export async function generateVideoSDKToken() {
     throw new Error('Could not generate VideoSDK token.');
   }
 }
-
-    
