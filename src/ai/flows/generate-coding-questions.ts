@@ -40,17 +40,25 @@ const prompt = ai.definePrompt({
   name: 'generateCodingQuestionsPrompt',
   input: {schema: GenerateCodingQuestionsInputSchema},
   output: {schema: GenerateCodingQuestionsOutputSchema},
-  prompt: `You are an expert programmer and interview question creator. Generate {{count}} coding questions for a quiz.
+  config: {
+    safetySettings: [
+        {
+            category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+            threshold: 'BLOCK_NONE',
+        },
+    ],
+  },
+  prompt: `You are an expert programmer and interview question creator. Your task is to generate exactly {{count}} coding questions for a quiz based on the provided specifications.
 
 Topics: {{topics}}
 Language: {{language}}
 Difficulty: {{difficulty}}
 
 {{#if example}}
-Example of a good question: "{{example}}"
+Here is an example of a good, well-defined question: "{{example}}"
 {{/if}}
 
-Each question should be a clear, self-contained problem.
+Each question you generate must be a clear, self-contained problem that a developer can solve. Ensure you generate the exact number of questions requested.
 `,
 });
 
