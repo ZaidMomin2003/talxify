@@ -1,16 +1,29 @@
 
 'use client';
 
-import { Suspense } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { MeetingProvider } from '@videosdk.live/react-sdk';
 import { useAuth } from '@/context/auth-context';
 import { Loader2 } from 'lucide-react';
 import { InterviewContainer } from './interview-container';
+import { generateVideoSDKToken } from '@/app/actions/videosdk';
 
 function InterviewPageContent({ params }: { params: { interviewId: string }}) {
     const { user } = useAuth();
+    const [token, setToken] = useState<string | null>(null);
 
-    if (!user || !process.env.NEXT_PUBLIC_DEEPGRAM_API_KEY) {
+    useEffect(() => {
+        if (user) {
+            generateVideoSDKToken()
+                .then(setToken)
+                .catch(err => {
+                    console.error("Failed to get VideoSDK token", err);
+                    // Handle error, maybe show a message to the user
+                });
+        }
+    }, [user]);
+
+    if (!user || !process.env.NEXT_PUBLIC_DEEPGRAM_API_KEY || !token) {
         return (
             <div className="flex h-screen w-full items-center justify-center bg-background text-foreground">
                 <div className="flex flex-col items-center gap-4 text-center">
@@ -29,7 +42,7 @@ function InterviewPageContent({ params }: { params: { interviewId: string }}) {
                 webcamEnabled: true,
                 name: user.displayName || 'Interviewee',
             }}
-            token={""} // We will generate this on the fly if needed, but for now we manage state outside VideoSDK
+            token={token}
         >
             <InterviewContainer interviewId={params.interviewId} />
         </MeetingProvider>
