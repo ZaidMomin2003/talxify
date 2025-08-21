@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Github, Linkedin, Instagram, Mail, Phone, Link as LinkIcon, Award, Briefcase, MessageSquare, GraduationCap, Sparkles, Building, Calendar, Star, Code, Twitter, Globe, School, Percent, Loader2, Bot, User as UserIcon, BarChart, Youtube } from "lucide-react";
+import { Github, Linkedin, Instagram, Mail, Phone, Link as LinkIcon, Award, Briefcase, MessageSquare, GraduationCap, Sparkles, Building, Calendar, Star, Code, Twitter, Globe, School, Percent, Loader2, Bot, User as UserIcon, BarChart, Youtube, HelpCircle } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
@@ -313,7 +313,23 @@ function PortfolioComponent() {
                                 ))}
                             </div>
                         </Section>
-                        
+
+                        <Section id="achievements" icon={<Award />} title="Achievements">
+                            <Card className="p-6">
+                                <ul className="space-y-4">
+                                    {portfolio.achievements.map((ach, index) => (
+                                        <li key={index} className="flex items-start gap-4">
+                                            {ach.imageUrl && <Image src={ach.imageUrl} alt="Achievement" width={40} height={40} className="rounded-md mt-1 object-cover" data-ai-hint="achievement award" />}
+                                            <div className="flex-1">
+                                                <Star className="w-4 h-4 text-primary inline-block mr-2" />
+                                                <span className="text-muted-foreground">{ach.description}</span>
+                                            </div>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </Card>
+                        </Section>
+
                         <Section id="testimonials" icon={<MessageSquare />} title="Testimonials">
                             <div className="space-y-6">
                                 {portfolio.testimonials.map((test, index) => (
@@ -323,6 +339,19 @@ function PortfolioComponent() {
                                     </blockquote>
                                 ))}
                             </div>
+                        </Section>
+
+                        <Section id="faqs" icon={<HelpCircle />} title="FAQs">
+                            <Accordion type="single" collapsible className="w-full">
+                                {portfolio.faqs.map((faq, index) => (
+                                    <AccordionItem value={`item-${index}`} key={index}>
+                                        <AccordionTrigger className="text-lg text-left">{faq.question}</AccordionTrigger>
+                                        <AccordionContent className="text-base text-muted-foreground">
+                                            {faq.answer}
+                                        </AccordionContent>
+                                    </AccordionItem>
+                                ))}
+                            </Accordion>
                         </Section>
                     </main>
                 </div>
@@ -349,3 +378,5 @@ export default function PortfolioPage({ params }: { params: { slug: string } }) 
         </Suspense>
     )
 }
+
+    
