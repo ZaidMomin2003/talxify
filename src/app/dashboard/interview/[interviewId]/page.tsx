@@ -24,27 +24,40 @@ function InterviewPageContent({ params }: { params: { interviewId: string }}) {
     useEffect(() => {
         if (user) {
             setIsLoading(true);
+
+            // First, check for the client-side Deepgram key
+            if (!process.env.NEXT_PUBLIC_DEEPGRAM_API_KEY) {
+                setError("Deepgram API key is not configured. Please add it to your environment variables to use the interview feature.");
+                setIsLoading(false);
+                return;
+            }
+
             generateVideoSDKToken()
                 .then(setToken)
                 .catch(err => {
                     console.error("Failed to get VideoSDK token", err);
-                    setError("Could not initialize the interview session. Please check your configuration and try again.");
+                    setError("Could not initialize the interview session. Please check your VideoSDK API key and secret and try again.");
                     toast({
                         title: "Initialization Failed",
                         description: "Failed to generate a valid session token for the interview.",
                         variant: "destructive"
                     });
                 })
-                .finally(() => setIsLoading(false));
+                .finally(() => {
+                     // Only stop loading if there wasn't a different error first
+                    if (!error) {
+                        setIsLoading(false);
+                    }
+                });
         }
-    }, [user, toast]);
+    }, [user, toast, error]);
 
-    if (isLoading || !user || !process.env.NEXT_PUBLIC_DEEPGRAM_API_KEY) {
+    if (isLoading) {
         return (
             <div className="flex h-screen w-full items-center justify-center bg-background text-foreground">
                 <div className="flex flex-col items-center gap-4 text-center">
                     <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                    <p>Loading configuration...</p>
+                    <p>Initializing interview session...</p>
                 </div>
             </div>
         )
@@ -77,7 +90,7 @@ function InterviewPageContent({ params }: { params: { interviewId: string }}) {
                 meetingId: params.interviewId,
                 micEnabled: true,
                 webcamEnabled: true,
-                name: user.displayName || 'Interviewee',
+                name: user?.displayName || 'Interviewee',
             }}
             token={token}
         >
