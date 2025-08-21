@@ -36,11 +36,7 @@ const nextConfig: NextConfig = {
   allowedDevOrigins: [
     "https://*.cloudworkstations.dev",
     "https://*.firebase.studio"
-  ],
-  env: {
-    NEXT_PUBLIC_DEEPGRAM_API_KEY: process.env.DEEPGRAM_API_KEY,
-    NEXT_PUBLIC_RAZORPAY_KEY_ID: process.env.RAZORPAY_KEY_ID,
-  }
+  ]
 };
 
 export default nextConfig;
