@@ -9,6 +9,9 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { AlertTriangle, BookOpen, BrainCircuit, Code, HelpCircle, Key, Loader2, Star, Lightbulb } from 'lucide-react';
+import { useAuth } from '@/context/auth-context';
+import { addActivity } from '@/lib/firebase-service';
+import type { NoteGenerationActivity } from '@/lib/types';
 
 function StudyNotesLoader() {
     return (
@@ -41,6 +44,7 @@ function StudyNotesError() {
 function NotesComponent() {
   const searchParams = useSearchParams();
   const topic = searchParams.get('topic');
+  const { user } = useAuth();
   
   const [notes, setNotes] = useState<GenerateStudyNotesOutput | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -58,13 +62,26 @@ function NotesComponent() {
     try {
         const result = await generateStudyNotes({ topic });
         setNotes(result);
+        
+        if (user) {
+            const activity: NoteGenerationActivity = {
+                id: `notes_${Date.now()}`,
+                type: 'note-generation',
+                timestamp: new Date().toISOString(),
+                details: {
+                    topic: topic,
+                }
+            };
+            await addActivity(user.uid, activity);
+        }
+
     } catch (err) {
         console.error("Failed to generate study notes:", err);
         setError("An error occurred while generating notes.");
     } finally {
         setIsLoading(false);
     }
-  }, [topic]);
+  }, [topic, user]);
 
   useEffect(() => {
     fetchNotes();

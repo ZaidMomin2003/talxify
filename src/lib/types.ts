@@ -3,21 +3,21 @@ import type { AnswerAnalysis } from "@/ai/flows/analyze-coding-answers";
 import type { QuizState } from "@/app/dashboard/coding-quiz/quiz/page";
 import type { SyllabusDay } from "@/ai/flows/generate-syllabus";
 
-// A generic type for any activity stored in localStorage
-export type StoredActivity = QuizResult;
+// A generic type for any activity stored in the user's document
+export type StoredActivity = QuizResult | InterviewActivity | NoteGenerationActivity;
 
+// The base interface that all activity types extend
 export interface BaseActivity {
     id: string;
-    type: 'quiz';
-    timestamp: string;
+    type: 'quiz' | 'interview' | 'note-generation';
+    timestamp: string; // ISO 8601 date string
     details: {
         topic: string;
         [key: string]: any;
     };
 }
 
-
-// A more specific type for completed quiz results
+// A specific type for completed quiz results
 export interface QuizResult extends BaseActivity {
   type: 'quiz';
   quizState: QuizState;
@@ -30,6 +30,28 @@ export interface QuizResult extends BaseActivity {
     score: string | 'Pending';
   }
 }
+
+// A specific type for completed mock interviews
+export interface InterviewActivity extends BaseActivity {
+    type: 'interview';
+    transcript: { speaker: string; text: string }[];
+    feedback: string;
+    details: {
+        topic: string;
+        role?: string;
+        level?: string;
+        score?: number; // e.g., 0-100
+    }
+}
+
+// A specific type for when a user generates study notes
+export interface NoteGenerationActivity extends BaseActivity {
+    type: 'note-generation';
+    details: {
+        topic: string;
+    }
+}
+
 
 // Data collected during the onboarding process
 export interface OnboardingData {

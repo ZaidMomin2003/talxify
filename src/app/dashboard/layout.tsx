@@ -40,8 +40,8 @@ import {
   SidebarGroup,
   SidebarGroupLabel,
 } from "@/components/ui/sidebar";
-import { Bot, Code, LayoutGrid, MessageSquare, BarChart, Settings, History, Search, User, LogOut, Gem, LifeBuoy, Sun, Moon, Briefcase, CalendarDays, BrainCircuit, PlayCircle, X, CheckCircle, Circle, Swords } from "lucide-react";
-import type { StoredActivity, QuizResult, UserData } from "@/lib/types";
+import { Bot, Code, LayoutGrid, MessageSquare, BarChart, Settings, History, Search, User, LogOut, Gem, LifeBuoy, Sun, Moon, Briefcase, CalendarDays, BrainCircuit, PlayCircle, X, CheckCircle, Circle, Swords, BookOpen } from "lucide-react";
+import type { StoredActivity, QuizResult, UserData, InterviewActivity, NoteGenerationActivity } from "@/lib/types";
 import { formatDistanceToNow, format } from 'date-fns';
 import { useAuth } from "@/context/auth-context";
 import { useRouter } from "next/navigation";
@@ -123,13 +123,50 @@ function DashboardLayoutContent({
   
   const recentActivity = userData?.activity?.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()) || [];
 
-  const filteredActivity = recentActivity.filter(item =>
-    item.type === 'quiz' ?
-    (item.details.topic.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (item as QuizResult).difficulty.toLowerCase().includes(searchQuery.toLowerCase())) :
-    (item.details.topic.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (item.details.role && item.details.role.toLowerCase().includes(searchQuery.toLowerCase())))
-  );
+  const filteredActivity = recentActivity.filter(item => {
+    const query = searchQuery.toLowerCase();
+    if (item.details.topic.toLowerCase().includes(query)) return true;
+
+    switch(item.type) {
+        case 'quiz':
+            return (item as QuizResult).difficulty.toLowerCase().includes(query);
+        case 'interview':
+            const interviewItem = item as InterviewActivity;
+            return interviewItem.details.role?.toLowerCase().includes(query) || interviewItem.details.level?.toLowerCase().includes(query);
+        default:
+            return false;
+    }
+  });
+
+  const getActivityIcon = (type: StoredActivity['type']) => {
+    switch (type) {
+        case 'quiz': return <Code className="h-4 w-4" />;
+        case 'interview': return <Briefcase className="h-4 w-4" />;
+        case 'note-generation': return <BookOpen className="h-4 w-4" />;
+        default: return <CheckCircle className="h-4 w-4" />;
+    }
+  };
+
+  const getActivityTitle = (item: StoredActivity) => {
+    switch (item.type) {
+        case 'quiz': return `${item.details.topic} Quiz`;
+        case 'interview': return `${item.details.topic} Interview`;
+        case 'note-generation': return `Notes for ${item.details.topic}`;
+        default: return 'Completed an activity';
+    }
+  }
+
+  const getActivityLink = (item: StoredActivity) => {
+    switch (item.type) {
+      case 'quiz':
+        return `/dashboard/coding-quiz/analysis?id=${item.id}`;
+      case 'note-generation':
+        return `/dashboard/arena/notes?topic=${encodeURIComponent(item.details.topic)}`;
+      case 'interview':
+      default:
+        return '#'; // No link for interviews yet
+    }
+  };
   
   if (loading || !user || !userData) {
     return (
@@ -321,13 +358,13 @@ function DashboardLayoutContent({
                     ) : filteredActivity.length > 0 ? (
                       filteredActivity.slice(0, 5).map((item) => (
                         <DropdownMenuItem key={item.id} asChild>
-                          <Link href={item.type === 'quiz' ? `/dashboard/coding-quiz/analysis?id=${item.id}` : '#'} className="cursor-pointer">
+                          <Link href={getActivityLink(item)} className="cursor-pointer">
                             <div className="flex items-start gap-3">
                                 <div className="bg-primary/10 text-primary rounded-full p-2">
-                                    {item.type === 'quiz' ? <Code className="h-4 w-4" /> : <Briefcase className="h-4 w-4" />}
+                                    {getActivityIcon(item.type)}
                                 </div>
                                 <div>
-                                    <p className="font-semibold text-sm capitalize">{item.details.topic} {item.type === 'quiz' ? 'Quiz' : 'Interview'}</p>
+                                    <p className="font-semibold text-sm capitalize">{getActivityTitle(item)}</p>
                                     <p className="text-xs text-muted-foreground">
                                       {formatDistanceToNow(new Date(item.timestamp), { addSuffix: true })}
                                     </p>
@@ -366,5 +403,3 @@ export default function DashboardLayout({
     <DashboardLayoutContent>{children}</DashboardLayoutContent>
   )
 }
-
-    
