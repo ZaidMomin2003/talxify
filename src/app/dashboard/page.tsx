@@ -24,6 +24,7 @@ import { differenceInDays, format } from 'date-fns';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
+import { cn } from "@/lib/utils";
 
 
 const codingGymSchema = z.object({
@@ -223,51 +224,51 @@ export default function DashboardPage() {
       </div>
 
       <div className="mb-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="bg-card/70">
+        <Card className="bg-blue-500/10 text-blue-900 dark:bg-blue-950/20 dark:text-blue-200 border-blue-500/20 shadow-lg shadow-blue-500/10">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Interviews Completed</CardTitle>
-            <Briefcase className="h-4 w-4 text-muted-foreground" />
+            <Briefcase className="h-4 w-4 text-blue-400" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{interviewsCompleted}</div>
-            <p className="text-xs text-muted-foreground">Practice makes perfect</p>
+            <p className="text-xs text-blue-400/80">Practice makes perfect</p>
           </CardContent>
         </Card>
-        <Card className="bg-card/70">
+        <Card className="bg-orange-500/10 text-orange-900 dark:bg-orange-950/20 dark:text-orange-200 border-orange-500/20 shadow-lg shadow-orange-500/10">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Coding Questions Solved</CardTitle>
-            <Code className="h-4 w-4 text-muted-foreground" />
+            <Code className="h-4 w-4 text-orange-400" />
           </CardHeader>
           <CardContent>
              <div className="text-2xl font-bold">{questionsSolved}</div>
-             <p className="text-xs text-muted-foreground">Across all quizzes</p>
+             <p className="text-xs text-orange-400/80">Across all quizzes</p>
           </CardContent>
         </Card>
-        <Card className="bg-card/70">
+        <Card className="bg-pink-500/10 text-pink-900 dark:bg-pink-950/20 dark:text-pink-200 border-pink-500/20 shadow-lg shadow-pink-500/10">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Average Score</CardTitle>
-            <Percent className="h-4 w-4 text-muted-foreground" />
+            <Percent className="h-4 w-4 text-pink-400" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{averageScore}%</div>
-            <p className="text-xs text-muted-foreground">Based on your performance</p>
+            <p className="text-xs text-pink-400/80">Based on your performance</p>
           </CardContent>
         </Card>
-        <Card className="bg-card/70">
+        <Card className="bg-yellow-500/10 text-yellow-900 dark:bg-yellow-950/20 dark:text-yellow-200 border-yellow-500/20 shadow-lg shadow-yellow-500/10">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Plan Expires</CardTitle>
-            <CalendarDays className="h-4 w-4 text-muted-foreground" />
+            <CalendarDays className="h-4 w-4 text-yellow-400" />
           </CardHeader>
           <CardContent>
              {planExpiresDays !== null && userData?.subscription.plan !== 'free' ? (
                 <>
                     <div className="text-2xl font-bold">{planExpiresDays} Days</div>
-                    <p className="text-xs text-muted-foreground">left on your current plan.</p>
+                    <p className="text-xs text-yellow-400/80">left on your current plan.</p>
                 </>
              ) : (
                 <>
                     <div className="text-2xl font-bold">N/A</div>
-                    <p className="text-xs text-muted-foreground">You are on the free plan.</p>
+                    <p className="text-xs text-yellow-400/80">You are on the free plan.</p>
                 </>
              )}
           </CardContent>
