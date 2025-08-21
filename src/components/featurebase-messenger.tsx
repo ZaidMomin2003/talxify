@@ -29,7 +29,7 @@ const FeaturebaseMessenger = () => {
       theme: theme || 'dark',
       language: "en",
       // Disable identity verification to prevent hash errors.
-      // This is simpler for now and still allows associating feedback with users.
+      // This is simpler and still allows associating feedback with users.
       shouldDisableIdentityVerification: true, 
     };
     
