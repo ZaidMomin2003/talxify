@@ -40,7 +40,7 @@ import {
   SidebarGroup,
   SidebarGroupLabel,
 } from "@/components/ui/sidebar";
-import { Bot, Code, LayoutGrid, MessageSquare, BarChart, Settings, History, Search, User, LogOut, Gem, LifeBuoy, Sun, Moon, Briefcase, CalendarDays, BrainCircuit, PlayCircle, X, CheckCircle, Circle } from "lucide-react";
+import { Bot, Code, LayoutGrid, MessageSquare, BarChart, Settings, History, Search, User, LogOut, Gem, LifeBuoy, Sun, Moon, Briefcase, CalendarDays, BrainCircuit, PlayCircle, X, CheckCircle, Circle, Swords } from "lucide-react";
 import type { StoredActivity, QuizResult, UserData } from "@/lib/types";
 import { formatDistanceToNow, format } from 'date-fns';
 import { useAuth } from "@/context/auth-context";
@@ -116,6 +116,7 @@ function DashboardLayoutContent({
 
   const menuItems = [
     { href: "/dashboard", label: "Dashboard", icon: LayoutGrid },
+    { href: "/dashboard/arena", label: "Arena", icon: Swords },
     { href: "/dashboard/portfolio", label: "Portfolio", icon: User },
     { href: "/dashboard/performance", label: "Performance", icon: BarChart },
   ];
@@ -161,7 +162,7 @@ function DashboardLayoutContent({
         <SidebarContent>
           <SidebarMenu>
             {menuItems.map((item) => {
-              const isEnabled = item.href === '/dashboard' || item.href === '/dashboard/portfolio' || item.href === '/dashboard/performance';
+              const isEnabled = item.href === '/dashboard' || item.href === '/dashboard/portfolio' || item.href === '/dashboard/performance' || item.href === '/dashboard/arena';
               return (
                 <SidebarMenuItem key={item.label}>
                   <SidebarMenuButton
@@ -365,3 +366,5 @@ export default function DashboardLayout({
     <DashboardLayoutContent>{children}</DashboardLayoutContent>
   )
 }
+
+    
