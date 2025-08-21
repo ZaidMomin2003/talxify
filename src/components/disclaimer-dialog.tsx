@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -10,7 +11,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
 import { BarChart, BrainCircuit, Code, Copy, Sparkles, X } from 'lucide-react';
 import Image from 'next/image';
@@ -27,17 +28,18 @@ export default function PromotionalPopup() {
   const { toast } = useToast();
   const router = useRouter();
   const { user } = useAuth();
+  const pathname = usePathname();
 
   useEffect(() => {
     const hasSeenPromo = sessionStorage.getItem('hasSeenPromo');
-    // Only show the promo if the user hasn't seen it AND is not logged in.
-    if (!hasSeenPromo && !user) {
+    // Only show the promo on the landing page ('/') for non-logged-in users.
+    if (pathname === '/' && !hasSeenPromo && !user) {
       const timer = setTimeout(() => {
         setIsOpen(true);
       }, 2000); // Open after 2 seconds
       return () => clearTimeout(timer);
     }
-  }, [user]);
+  }, [user, pathname]);
 
   const handleDismiss = (andRedirect: boolean = false) => {
     sessionStorage.setItem('hasSeenPromo', 'true');
