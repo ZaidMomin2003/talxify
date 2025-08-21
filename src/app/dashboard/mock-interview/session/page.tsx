@@ -5,7 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Loader2, Mic, Video, Bot, User, StopCircle, RefreshCw, AlertTriangle, PhoneOff } from 'lucide-react';
+import { Loader2, Mic, Bot, User, StopCircle, AlertTriangle, PhoneOff } from 'lucide-react';
 import { textToSpeech } from '@/ai/flows/text-to-speech';
 import { conductInterviewTurn } from '@/ai/flows/analyze-interview-response';
 import { useToast } from '@/hooks/use-toast';
@@ -23,8 +23,6 @@ import {
   useConnection,
   usePubSub,
 } from "@videosdk.live/react-sdk";
-import { Badge } from '@/components/ui/badge';
-
 
 type Message = {
   role: 'user' | 'model';
@@ -33,14 +31,20 @@ type Message = {
 
 type InterviewState = 'idle' | 'generating_response' | 'speaking_response' | 'listening' | 'finished' | 'error';
 
-
 // Main Component for the meeting
-const MeetingView = ({ meetingId, token, onMeetingLeave }: { meetingId: string, token: string, onMeetingLeave: () => void }) => {
-    const { join, leave, toggleMic, toggleWebcam, localParticipant, enableWebcam, disableWebcam } = useMeeting();
-    const { publish } = usePubSub("TRANSCRIPTION");
+const MeetingView = ({ meetingId, token, onMeetingLeave, onMeetingError }: { meetingId: string, token: string, onMeetingLeave: () => void, onMeetingError: (error: string) => void }) => {
+    const { join, leave, localParticipant, enableWebcam } = useMeeting({
+        onMeetingJoined: () => {
+             startInterview();
+        },
+        onError: (error) => {
+            console.error("VideoSDK Meeting Error:", error);
+            onMeetingError(`Video session error: ${error.message}`);
+        }
+    });
 
+    const { publish } = usePubSub("TRANSCRIPTION");
     const router = useRouter();
-    const searchParams = useSearchParams();
     const { toast } = useToast();
     const { user } = useAuth();
     
@@ -55,24 +59,23 @@ const MeetingView = ({ meetingId, token, onMeetingLeave }: { meetingId: string, 
     const audioRef = useRef<HTMLAudioElement>(null);
     const finalTranscriptRef = useRef('');
 
-    const company = searchParams.get('company') || 'a leading tech company';
-    const role = searchParams.get('role') || 'Software Engineer';
-    const interviewType = (searchParams.get('type') as 'technical' | 'behavioural') || 'technical';
+    const searchParams = useSearchParams();
+    const company = useMemo(() => searchParams.get('company') || 'a leading tech company', [searchParams]);
+    const role = useMemo(() => searchParams.get('role') || 'Software Engineer', [searchParams]);
+    const interviewType = useMemo(() => (searchParams.get('type') as 'technical' | 'behavioural') || 'technical', [searchParams]);
     
-    const interviewContext = { company, role, type: interviewType };
+    const interviewContext = useMemo(() => ({ company, role, type: interviewType }), [company, role, interviewType]);
 
     const endInterviewAndAnalyze = useCallback(async () => {
+      if(isEnding) return;
       setIsEnding(true);
       setInterviewState('finished');
 
-      // Stop listening & recording
       if (deepgramConnectionRef.current) {
           deepgramConnectionRef.current.finish();
-          deepgramConnectionRef.current = null;
       }
       if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
         mediaRecorderRef.current.stop();
-        mediaRecorderRef.current = null;
       }
 
       if (!user) {
@@ -80,7 +83,8 @@ const MeetingView = ({ meetingId, token, onMeetingLeave }: { meetingId: string, 
           return;
       }
       if (messages.length === 0) {
-          leave(); // Leave VideoSDK meeting
+          leave();
+          router.push('/dashboard');
           return;
       }
 
@@ -113,7 +117,7 @@ const MeetingView = ({ meetingId, token, onMeetingLeave }: { meetingId: string, 
           leave();
           router.push('/dashboard'); 
       }
-  }, [user, messages, interviewContext, router, toast, leave]);
+  }, [isEnding, user, messages, interviewContext, router, toast, leave]);
 
   const speakResponse = useCallback(async (text: string) => {
       setInterviewState('speaking_response');
@@ -141,31 +145,30 @@ const MeetingView = ({ meetingId, token, onMeetingLeave }: { meetingId: string, 
       }
   }, [toast, messages.length, endInterviewAndAnalyze]);
 
-  const handleUserResponse = useCallback(async (transcript: string) => {
-    if (!transcript.trim() || interviewState !== 'listening') {
-        if(interviewState === 'listening') setInterviewState('listening');
-        return;
-    }
-    
-    setInterviewState('generating_response');
-    const newHistory: Message[] = [...messages, { role: 'user', content: transcript }];
-    setMessages(newHistory);
-    setCurrentTranscript('');
-    finalTranscriptRef.current = ''; // Clear final transcript after processing
+    const handleUserResponse = useCallback(async (transcript: string) => {
+        if (!transcript.trim()) {
+            return;
+        }
+        
+        setInterviewState('generating_response');
+        const newHistory: Message[] = [...messages, { role: 'user', content: transcript }];
+        setMessages(newHistory);
+        setCurrentTranscript('');
+        finalTranscriptRef.current = '';
 
-    try {
-        const { response } = await conductInterviewTurn({
-            history: newHistory,
-            interviewContext
-        });
-        setMessages(prev => [...prev, { role: 'model', content: response }]);
-        speakResponse(response);
-    } catch(error) {
-        console.error("AI turn failed:", error);
-        toast({ title: "AI Error", description: "The AI failed to respond. Please try again.", variant: "destructive"});
-        setInterviewState('error');
-    }
-}, [messages, interviewState, speakResponse, interviewContext, toast]);
+        try {
+            const { response } = await conductInterviewTurn({
+                history: newHistory,
+                interviewContext
+            });
+            setMessages(prev => [...prev, { role: 'model', content: response }]);
+            speakResponse(response);
+        } catch(error) {
+            console.error("AI turn failed:", error);
+            toast({ title: "AI Error", description: "The AI failed to respond. Please try again.", variant: "destructive"});
+            setInterviewState('error');
+        }
+    }, [messages, speakResponse, interviewContext, toast]);
     
     const startInterview = useCallback(async () => {
         setInterviewState('generating_response');
@@ -180,88 +183,96 @@ const MeetingView = ({ meetingId, token, onMeetingLeave }: { meetingId: string, 
         }
     }, [toast, speakResponse, interviewContext]);
 
-
-    // Setup Deepgram connection
-    const setupDeepgram = useCallback(() => {
+    const setupDeepgram = useCallback(async () => {
        if (!process.env.NEXT_PUBLIC_DEEPGRAM_API_KEY) {
             toast({ title: 'Configuration Error', description: 'Deepgram API Key not found.', variant: 'destructive' });
+            setInterviewState('error');
             return;
         }
-        const deepgram = createClient(process.env.NEXT_PUBLIC_DEEPGRAM_API_KEY);
-        const connection = deepgram.listen.live({
-            model: 'nova-2-general',
-            smart_format: true,
-            interim_results: true,
-            utterance_end_ms: 1500, // End utterance after 1.5s of silence
-        });
 
-        connection.on(LiveTranscriptionEvents.Open, async () => {
-           const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-           const recorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
-           recorder.ondataavailable = (event) => {
-               if (event.data.size > 0 && connection.getReadyState() === 1) {
-                   connection.send(event.data);
-               }
-           };
-           mediaRecorderRef.current = recorder;
-           recorder.start(250);
-           setIsRecording(true);
-        });
-
-        connection.on(LiveTranscriptionEvents.Transcript, (data) => {
-            const transcript = data.channel.alternatives[0].transcript;
-            if (data.is_final && transcript) {
-                finalTranscriptRef.current += transcript + ' ';
-            }
-             setCurrentTranscript(finalTranscriptRef.current + transcript);
-             publish(finalTranscriptRef.current + transcript, { persist: true });
-        });
-
-        connection.on(LiveTranscriptionEvents.UtteranceEnd, () => {
-            if (deepgramConnectionRef.current) {
-                deepgramConnectionRef.current.finish();
-            }
-        });
-
-        connection.on(LiveTranscriptionEvents.Close, () => {
-            setIsRecording(false);
-            const finalTranscript = finalTranscriptRef.current.trim();
-            if (finalTranscript) {
-                handleUserResponse(finalTranscript);
-            }
-        });
-        
-        connection.on(LiveTranscriptionEvents.Error, (err) => {
-            console.error(err);
-            toast({ title: "Real-time Transcription Error", variant: "destructive" });
-        });
-
-        deepgramConnectionRef.current = connection;
-    }, [toast, handleUserResponse, publish]);
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const deepgram = createClient(process.env.NEXT_PUBLIC_DEEPGRAM_API_KEY);
+            const connection = deepgram.listen.live({
+                model: 'nova-2-general',
+                smart_format: true,
+                interim_results: true,
+                utterance_end_ms: 1500,
+            });
+    
+            connection.on(LiveTranscriptionEvents.Open, () => {
+               const recorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+               recorder.ondataavailable = (event) => {
+                   if (event.data.size > 0 && connection.getReadyState() === 1) {
+                       connection.send(event.data);
+                   }
+               };
+               mediaRecorderRef.current = recorder;
+               recorder.start(250);
+               setIsRecording(true);
+            });
+    
+            connection.on(LiveTranscriptionEvents.Transcript, (data) => {
+                const transcript = data.channel.alternatives[0].transcript;
+                if (data.is_final && transcript.trim()) {
+                    finalTranscriptRef.current += transcript + ' ';
+                }
+                 const displayTranscript = finalTranscriptRef.current + transcript;
+                 setCurrentTranscript(displayTranscript);
+                 publish(displayTranscript, { persist: true });
+            });
+    
+            connection.on(LiveTranscriptionEvents.UtteranceEnd, () => {
+                if (deepgramConnectionRef.current) {
+                    deepgramConnectionRef.current.finish();
+                }
+            });
+    
+            connection.on(LiveTranscriptionEvents.Close, () => {
+                setIsRecording(false);
+                const finalTranscript = finalTranscriptRef.current.trim();
+                if (finalTranscript) {
+                    handleUserResponse(finalTranscript);
+                }
+                deepgramConnectionRef.current = null;
+            });
+            
+            connection.on(LiveTranscriptionEvents.Error, (err) => {
+                console.error("Deepgram Error:", err);
+                toast({ title: "Real-time Transcription Error", variant: "destructive" });
+                setInterviewState('error');
+            });
+    
+            deepgramConnectionRef.current = connection;
+        } catch (error) {
+            console.error("Failed to get user media:", error);
+            toast({ title: "Microphone Access Denied", description: "Please allow microphone access to continue.", variant: "destructive" });
+            setInterviewState('error');
+        }
+    }, [toast, publish, handleUserResponse]);
 
     useEffect(() => {
-        if (interviewState === 'listening' && !isRecording) {
+        if (interviewState === 'listening' && !isRecording && !deepgramConnectionRef.current) {
             setupDeepgram();
         } else if (interviewState !== 'listening' && isRecording) {
              if (deepgramConnectionRef.current) {
                 deepgramConnectionRef.current.finish();
-                deepgramConnectionRef.current = null;
-            }
-            if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+             }
+             if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
                 mediaRecorderRef.current.stop();
-                mediaRecorderRef.current = null;
-            }
-            setIsRecording(false);
+             }
         }
     }, [interviewState, isRecording, setupDeepgram]);
 
     useEffect(() => {
         join();
         enableWebcam();
-
         return () => {
             leave();
+            if (deepgramConnectionRef.current) deepgramConnectionRef.current.finish();
+            if (mediaRecorderRef.current) mediaRecorderRef.current.stop();
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const lastMessage = messages[messages.length - 1];
@@ -269,7 +280,7 @@ const MeetingView = ({ meetingId, token, onMeetingLeave }: { meetingId: string, 
     const renderInterviewStatus = () => {
         switch (interviewState) {
             case 'idle':
-                return <Button size="lg" onClick={startInterview}>Start Interview</Button>;
+                return <div className="flex items-center space-x-2"><Loader2 className="animate-spin" /> <p>Connecting...</p></div>;
             case 'generating_response':
                 return <div className="flex items-center space-x-2"><Loader2 className="animate-spin" /> <p>AI is thinking...</p></div>;
             case 'speaking_response':
@@ -339,11 +350,8 @@ const MeetingView = ({ meetingId, token, onMeetingLeave }: { meetingId: string, 
     );
 };
 
-
-// Component to render a single participant
 const ParticipantView = ({ participantId }: { participantId: string }) => {
-  const { webcamStream, webcamOn, displayName } = useParticipant(participantId);
-  const { connection } = useConnection(participantId, {});
+  const { webcamStream, webcamOn } = useParticipant(participantId);
   const { message } = usePubSub("TRANSCRIPTION", {});
 
   const videoStream = useMemo(() => {
@@ -356,8 +364,8 @@ const ParticipantView = ({ participantId }: { participantId: string }) => {
 
   return (
     <Card className="relative bg-muted/20 border-primary/20 overflow-hidden">
-      {webcamOn ? (
-        <video ref={(video) => { if(video) video.srcObject = videoStream! }} autoPlay muted className="w-full h-full object-cover" />
+      {webcamOn && videoStream ? (
+        <video ref={(video) => { if(video) video.srcObject = videoStream }} autoPlay muted className="w-full h-full object-cover" />
       ) : (
         <div className="flex h-full w-full items-center justify-center bg-black">
           <User size={64} />
@@ -376,67 +384,59 @@ const ParticipantView = ({ participantId }: { participantId: string }) => {
 };
 
 
-// Parent component to handle token and meeting setup
 export default function MockInterviewSessionPage() {
   const router = useRouter();
-  const [meetingId, setMeetingId] = useState<string | null>(null);
-  const [token, setToken] = useState<string | null>(null);
-  const [error, setError] = useState<string|null>(null);
+  const [meetingState, setMeetingState] = useState<{
+      meetingId: string | null;
+      token: string | null;
+      error: string | null;
+      isLoading: boolean;
+  }>({
+      meetingId: null,
+      token: null,
+      error: null,
+      isLoading: true
+  });
 
   useEffect(() => {
     const initializeMeeting = async () => {
       try {
-        const genToken = await generateVideoSDKToken();
-        setToken(genToken);
+        const token = await generateVideoSDKToken();
         
-        const url = `https://api.videosdk.live/v2/rooms`;
-        const options = {
+        const res = await fetch(`https://api.videosdk.live/v2/rooms`, {
           method: "POST",
           headers: {
-            "Authorization": genToken,
+            "authorization": token,
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ "permissions": ["allow_join", "allow_mod"] }),
-        };
+          body: JSON.stringify({}),
+        });
 
-        const response = await fetch(url, options);
-        if (!response.ok) {
-            const errorBody = await response.text();
-            throw new Error(`Failed to create room: ${response.status} ${response.statusText} - ${errorBody}`);
+        if (!res.ok) {
+            const errorBody = await res.json();
+            throw new Error(`Failed to create room: ${res.status} - ${JSON.stringify(errorBody)}`);
         }
-        const data = await response.json();
-        if (!data.roomId) {
-            throw new Error("Could not retrieve meeting room ID.");
-        }
-        setMeetingId(data.roomId);
+        
+        const { roomId } = await res.json();
+        setMeetingState({ meetingId: roomId, token: token, error: null, isLoading: false });
+
       } catch (e: any) {
         console.error("Failed to initialize meeting:", e);
-        setError(`Could not start the video session. Please check your configuration and try again. Error: ${e.message}`);
+        setMeetingState({ meetingId: null, token: null, error: e.message, isLoading: false });
       }
     };
     initializeMeeting();
   }, []);
 
-  const handleLeave = () => {
+  const handleLeave = useCallback(() => {
     router.push('/dashboard');
-  };
-  
-  if (error) {
-     return (
-        <main className="flex h-screen items-center justify-center p-4">
-            <Card className="max-w-md w-full text-center p-8 shadow-lg">
-                 <div className="mx-auto bg-destructive/10 text-destructive rounded-full p-3 w-fit mb-4">
-                    <AlertTriangle className="h-8 w-8" />
-                 </div>
-                <h2 className="text-2xl font-bold">Session Error</h2>
-                <p className="text-muted-foreground mt-2 mb-6">{error}</p>
-                <Button onClick={() => router.push('/dashboard')}><PhoneOff className="mr-2" /> Back to Dashboard</Button>
-            </Card>
-        </main>
-    );
-  }
+  }, [router]);
 
-  if (!token || !meetingId) {
+  const handleError = useCallback((error: string) => {
+    setMeetingState(prev => ({...prev, error: error, isLoading: false }));
+  }, []);
+  
+  if (meetingState.isLoading) {
     return (
       <main className="flex h-screen items-center justify-center bg-black text-white">
         <div className="flex flex-col items-center gap-4">
@@ -446,20 +446,38 @@ export default function MockInterviewSessionPage() {
       </main>
     )
   }
+  
+  if (meetingState.error || !meetingState.token || !meetingState.meetingId) {
+     return (
+        <main className="flex h-screen items-center justify-center p-4">
+            <Card className="max-w-md w-full text-center p-8 shadow-lg">
+                 <div className="mx-auto bg-destructive/10 text-destructive rounded-full p-3 w-fit mb-4">
+                    <AlertTriangle className="h-8 w-8" />
+                 </div>
+                <h2 className="text-2xl font-bold">Session Error</h2>
+                <p className="text-muted-foreground mt-2 mb-6">Could not start the video session. Please check your configuration and try again. Error: {meetingState.error}</p>
+                <Button onClick={() => router.push('/dashboard')}><PhoneOff className="mr-2" /> Back to Dashboard</Button>
+            </Card>
+        </main>
+    );
+  }
 
   return (
     <MeetingProvider
       config={{
-        meetingId,
+        meetingId: meetingState.meetingId,
         micEnabled: true,
         webcamEnabled: true,
         name: "Participant",
       }}
-      token={token}
+      token={meetingState.token}
     >
-      <MeetingView meetingId={meetingId} token={token} onMeetingLeave={handleLeave} />
+      <MeetingView 
+        meetingId={meetingState.meetingId} 
+        token={meetingState.token} 
+        onMeetingLeave={handleLeave} 
+        onMeetingError={handleError}
+      />
     </MeetingProvider>
   );
 }
-
-

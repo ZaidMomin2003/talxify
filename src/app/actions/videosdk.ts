@@ -7,6 +7,7 @@ export async function generateVideoSDKToken() {
   const secretKey = process.env.VIDEOSDK_SECRET_KEY;
 
   if (!apiKey || !secretKey) {
+    console.error('VideoSDK API key or secret not found in environment variables.');
     throw new Error('VideoSDK API key or secret not configured.');
   }
 
@@ -15,11 +16,13 @@ export async function generateVideoSDKToken() {
     permissions: ['allow_join', 'allow_mod'],
   };
 
+  const options = {
+    expiresIn: '1h',
+    algorithm: 'HS256' as const,
+  };
+
   try {
-    const token = jwt.sign(payload, secretKey, {
-      expiresIn: '1h',
-      algorithm: 'HS256',
-    });
+    const token = jwt.sign(payload, secretKey, options);
     return token;
   } catch (error) {
     console.error('Error generating VideoSDK token:', error);
