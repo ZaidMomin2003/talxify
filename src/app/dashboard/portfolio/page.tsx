@@ -65,36 +65,49 @@ export default function PortfolioPage() {
     }
   }
 
-  const handleFieldChange = (section: keyof Portfolio, index: number, field: string, value: string | number) => {
+ const handleFieldChange = (section: keyof Portfolio, index: number, field: string, value: string | number) => {
     if (!portfolio) return;
-    const newPortfolio = { ...portfolio };
-    // @ts-ignore
-    newPortfolio[section][index][field] = value;
-    setPortfolio(newPortfolio);
+
+    setPortfolio(prev => {
+        if (!prev) return null;
+        const newPortfolio = JSON.parse(JSON.stringify(prev));
+        // @ts-ignore
+        newPortfolio[section][index][field] = value;
+        return newPortfolio;
+    });
   };
-  
+
   const handleSimpleListChange = (section: keyof Portfolio, index: number, field: string, value: string | number) => {
     if (!portfolio) return;
-    const newPortfolio = { ...portfolio };
-    // @ts-ignore
-    newPortfolio[section][index][field] = value;
-    setPortfolio(newPortfolio);
+    setPortfolio(prev => {
+        if (!prev) return null;
+        const newPortfolio = JSON.parse(JSON.stringify(prev));
+        // @ts-ignore
+        newPortfolio[section][index][field] = value;
+        return newPortfolio;
+    });
   };
   
   const handleAddItem = (section: keyof Portfolio, newItem: any) => {
     if (!portfolio) return;
-    const newPortfolio = { ...portfolio };
-    // @ts-ignore
-    newPortfolio[section] = [...newPortfolio[section], newItem];
-    setPortfolio(newPortfolio);
+    setPortfolio(prev => {
+        if (!prev) return null;
+        const newPortfolio = { ...prev };
+         // @ts-ignore
+        newPortfolio[section] = [...newPortfolio[section], newItem];
+        return newPortfolio;
+    });
   };
 
   const handleRemoveItem = (section: keyof Portfolio, index: number) => {
     if (!portfolio) return;
-    const newPortfolio = { ...portfolio };
-    // @ts-ignore
-    newPortfolio[section] = newPortfolio[section].filter((_, i) => i !== index);
-    setPortfolio(newPortfolio);
+    setPortfolio(prev => {
+        if (!prev) return null;
+        const newPortfolio = { ...prev };
+        // @ts-ignore
+        newPortfolio[section] = newPortfolio[section].filter((_, i) => i !== index);
+        return newPortfolio;
+    });
   };
   
   const slugify = (text: string) => {
