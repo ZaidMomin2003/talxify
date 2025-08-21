@@ -1,3 +1,4 @@
+
 'use server';
 
 import jwt from 'jsonwebtoken';
@@ -26,3 +27,5 @@ export async function generateVideoSDKToken() {
     throw new Error('Could not generate VideoSDK token.');
   }
 }
+
+    
