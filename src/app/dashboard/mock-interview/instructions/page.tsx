@@ -3,13 +3,16 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { BrainCircuit, Video, Mic, User } from 'lucide-react';
+import { BrainCircuit, Video, Mic, User, Loader2 } from 'lucide-react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
-import React from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
+import React, { useState } from 'react';
 
 export default function MockInterviewInstructionsPage() {
   const searchParams = useSearchParams();
+  const router = useRouter();
+  const [isStarting, setIsStarting] = useState(false);
+
   const company = searchParams.get('company');
   const role = searchParams.get('role');
   const type = searchParams.get('type');
@@ -19,6 +22,11 @@ export default function MockInterviewInstructionsPage() {
     role: role || '',
     type: type || 'technical',
   });
+
+  const handleStart = () => {
+    setIsStarting(true);
+    router.push(`/dashboard/mock-interview/session?${sessionParams.toString()}`);
+  }
 
   return (
     <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
@@ -76,8 +84,15 @@ export default function MockInterviewInstructionsPage() {
             
             <div className="text-center space-y-4 pt-4">
               <p className="text-2xl font-semibold text-primary">All the best!</p>
-              <Button asChild size="lg">
-                <Link href={`/dashboard/mock-interview/session?${sessionParams.toString()}`}>Start Interview</Link>
+              <Button onClick={handleStart} size="lg" disabled={isStarting}>
+                {isStarting ? (
+                    <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Starting Interview...
+                    </>
+                ) : (
+                    'Start Interview'
+                )}
               </Button>
             </div>
           </CardContent>
@@ -86,5 +101,3 @@ export default function MockInterviewInstructionsPage() {
     </main>
   );
 }
-
-    
