@@ -4,7 +4,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useMeeting, usePubSub } from '@videosdk.live/react-sdk';
 import { useSearchParams } from 'next/navigation';
-import { generateInterviewResponse, InterviewState } from '@/ai/flows/generate-interview-response';
+import { generateInterviewResponse } from '@/ai/flows/generate-interview-response';
 import { textToSpeech, TextToSpeechInput } from '@/ai/flows/text-to-speech';
 import { speechToText, SpeechToTextInput } from '@/ai/flows/speech-to-text';
 import { useToast } from '@/hooks/use-toast';
@@ -16,6 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Mic, MicOff, Video, VideoOff, Phone, Loader2, MessageSquare, Bot } from 'lucide-react';
 import { MessageData } from 'genkit/model';
+import type { InterviewState } from '@/lib/interview-types';
 
 type TranscriptEntry = {
   speaker: 'user' | 'ai';
