@@ -36,3 +36,27 @@ export async function getAllUsersAdmin(): Promise<UserData[]> {
         return [];
     }
 }
+
+export async function getUserBySlug(slug: string): Promise<UserData | null> {
+    const formattedSlug = slug.toLowerCase().replace(/-/g, ' ');
+    try {
+        const usersCollection = db.collection('users');
+        const snapshot = await usersCollection.get();
+        if (snapshot.empty) {
+            return null;
+        }
+
+        let foundUser: UserData | null = null;
+        snapshot.forEach(doc => {
+            const data = doc.data() as UserData;
+            if (data.portfolio?.personalInfo?.name.toLowerCase() === formattedSlug) {
+                foundUser = data;
+            }
+        });
+
+        return foundUser;
+    } catch (error) {
+        console.error("Error fetching user by slug from Firestore with Admin SDK:", error);
+        return null;
+    }
+}

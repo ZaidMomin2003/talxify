@@ -11,11 +11,10 @@ import Link from "next/link";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import React, { Suspense, useEffect, useState, useCallback, useMemo } from "react";
-import { useAuth } from "@/context/auth-context";
-import { getUserData } from "@/lib/firebase-service";
 import type { UserData, QuizResult } from "@/lib/types";
 import { initialPortfolioData } from "@/lib/initial-data";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { getUserBySlug } from "../zaidmin/actions";
 
 const Section = ({ icon, title, children, className, id }: { icon: React.ReactNode, title: string, children: React.ReactNode, className?: string, id: string }) => (
     <section id={id} className={cn("py-12", className)}>
@@ -44,22 +43,22 @@ function CustomTooltip({ active, payload, label }: any) {
   return null;
 }
 
-function PortfolioComponent() {
-    const { user } = useAuth();
+function PortfolioComponent({ slug }: { slug: string }) {
     const [userData, setUserData] = useState<UserData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
     const fetchUserData = useCallback(async () => {
-        if (!user) {
-            setUserData(initialPortfolioData);
-            setIsLoading(false);
-            return;
-        }
         setIsLoading(true);
-        const data = await getUserData(user.uid);
-        setUserData(data ?? initialPortfolioData);
-        setIsLoading(false);
-    }, [user]);
+        try {
+            const data = await getUserBySlug(slug);
+            setUserData(data ?? initialPortfolioData);
+        } catch (error) {
+            console.error("Failed to fetch user data by slug:", error);
+            setUserData(initialPortfolioData);
+        } finally {
+            setIsLoading(false);
+        }
+    }, [slug]);
 
     useEffect(() => {
         fetchUserData();
@@ -374,7 +373,7 @@ export default function PortfolioPage({ params }: { params: { slug: string } }) 
                 <Loader2 className="h-16 w-16 animate-spin text-primary" />
             </div>
         }>
-            <PortfolioComponent />
+            <PortfolioComponent slug={params.slug}/>
         </Suspense>
     )
 }
