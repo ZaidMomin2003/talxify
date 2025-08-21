@@ -399,10 +399,20 @@ export default function MockInterviewSessionPage() {
             "Authorization": genToken,
             "Content-Type": "application/json",
           },
+          body: JSON.stringify({
+            permissions: ["allow_join", "allow_mod"],
+          }),
         };
 
         const response = await fetch(url, options);
+        if (!response.ok) {
+            const errorBody = await response.json();
+            throw new Error(errorBody.error || 'Failed to create room');
+        }
         const data = await response.json();
+        if (!data.roomId) {
+            throw new Error("Could not retrieve meeting room ID.");
+        }
         setMeetingId(data.roomId);
       } catch (e: any) {
         console.error("Failed to initialize meeting:", e);
@@ -457,4 +467,3 @@ export default function MockInterviewSessionPage() {
   );
 }
 
-    
