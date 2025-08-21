@@ -32,14 +32,14 @@ export default function PromotionalPopup() {
 
   useEffect(() => {
     const hasSeenPromo = sessionStorage.getItem('hasSeenPromo');
-    // Only show the promo on the landing page ('/') for non-logged-in users.
-    if (pathname === '/' && !hasSeenPromo && !user) {
+    // Only show the promo on the landing page ('/')
+    if (pathname === '/' && !hasSeenPromo) {
       const timer = setTimeout(() => {
         setIsOpen(true);
       }, 2000); // Open after 2 seconds
       return () => clearTimeout(timer);
     }
-  }, [user, pathname]);
+  }, [pathname]);
 
   const handleDismiss = (andRedirect: boolean = false) => {
     sessionStorage.setItem('hasSeenPromo', 'true');
