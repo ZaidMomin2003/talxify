@@ -66,7 +66,7 @@ function GettingStartedList({ activity }: { activity: StoredActivity[] }) {
         <SidebarMenu>
             {checklistItems.map(item => (
                 <SidebarMenuItem key={item.name}>
-                    <SidebarMenuButton asChild size="sm" className="justify-start text-muted-foreground hover:text-foreground disabled:opacity-100 disabled:cursor-auto" disabled={!item.completed}>
+                    <SidebarMenuButton asChild size="sm" className="justify-start text-muted-foreground hover:text-foreground">
                          <Link href={item.href}>
                            {item.completed ? 
                                 <CheckCircle className="text-green-500" /> : 
