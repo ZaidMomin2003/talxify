@@ -68,7 +68,7 @@ function PortfolioComponent({ slug }: { slug: string }) {
 
     const { questionsSolved, interviewsCompleted, averageScore } = useMemo(() => {
         if (!userData?.activity) {
-            return { questionsSolved: 12, interviewsCompleted: 57, averageScore: 78 };
+            return { questionsSolved: 0, interviewsCompleted: 0, averageScore: 0 };
         }
         const quizzes = userData.activity.filter(item => item.type === 'quiz') as QuizResult[];
         const interviews = userData.activity.filter(item => item.type === 'interview');
