@@ -48,7 +48,7 @@ export default function InterviewResultsPage() {
 
     return (
         <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
-            <div className="max-w-4xl mx-auto space-y-8">
+            <div className="max-w-6xl mx-auto space-y-8">
                 {/* Header */}
                 <div>
                      <Button variant="ghost" onClick={() => router.push('/dashboard')} className="mb-4">
@@ -63,95 +63,93 @@ export default function InterviewResultsPage() {
                                 Here's a detailed breakdown of your mock interview performance.
                             </CardDescription>
                         </CardHeader>
-                        <CardContent className="text-center space-y-4">
-                            <p className="text-muted-foreground">Overall Performance Score</p>
-                            <div className="relative w-32 h-32 mx-auto">
-                                <svg className="w-full h-full" viewBox="0 0 36 36">
-                                    <path className="text-muted/20" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" strokeWidth="3"></path>
-                                    <path className="text-primary" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" strokeWidth="3" strokeDasharray={`${results.overallScore}, 100`} strokeLinecap="round"></path>
-                                </svg>
-                                <div className="absolute inset-0 flex items-center justify-center">
-                                    <span className="text-4xl font-bold text-foreground">{results.overallScore}</span>
-                                    <span className="text-lg text-muted-foreground">%</span>
-                                </div>
-                            </div>
-                        </CardContent>
                     </Card>
                 </div>
 
-                {/* Summary */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-3"><Bot className="h-6 w-6"/> AI Summary & Feedback</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                        <p className="text-muted-foreground text-base">{results.summary}</p>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="bg-green-500/10 p-4 rounded-lg">
-                                <h3 className="font-semibold text-green-700 dark:text-green-400 mb-2">Strengths</h3>
-                                <ul className="space-y-1">
-                                    {results.strengths.map(item => (
-                                        <li key={item} className="flex items-center gap-2 text-sm">
-                                            <CheckCircle className="h-4 w-4 text-green-500" />
-                                            {item}
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                             <div className="bg-amber-500/10 p-4 rounded-lg">
-                                <h3 className="font-semibold text-amber-700 dark:text-amber-400 mb-2">Areas for Improvement</h3>
-                                <ul className="space-y-1">
-                                    {results.areasForImprovement.map(item => (
-                                        <li key={item} className="flex items-center gap-2 text-sm">
-                                            <XCircle className="h-4 w-4 text-amber-500" />
-                                            {item}
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    {/* Left Column - Summary */}
+                    <div className="lg:col-span-1 space-y-8">
+                        <Card>
+                             <CardHeader>
+                                <CardTitle>Overall Score</CardTitle>
+                             </CardHeader>
+                             <CardContent className="text-center">
+                                 <span className="text-7xl font-bold text-primary">{results.overallScore}</span>
+                                 <span className="text-3xl text-muted-foreground">%</span>
+                             </CardContent>
+                        </Card>
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-3"><Bot className="h-6 w-6"/> AI Summary</CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                <p className="text-muted-foreground text-base">{results.summary}</p>
+                                <div className="bg-green-500/10 p-4 rounded-lg">
+                                    <h3 className="font-semibold text-green-700 dark:text-green-400 mb-2">Strengths</h3>
+                                    <ul className="space-y-1">
+                                        {results.strengths.map(item => (
+                                            <li key={item} className="flex items-center gap-2 text-sm">
+                                                <CheckCircle className="h-4 w-4 text-green-500" />
+                                                {item}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                                <div className="bg-amber-500/10 p-4 rounded-lg">
+                                    <h3 className="font-semibold text-amber-700 dark:text-amber-400 mb-2">Areas for Improvement</h3>
+                                    <ul className="space-y-1">
+                                        {results.areasForImprovement.map(item => (
+                                            <li key={item} className="flex items-center gap-2 text-sm">
+                                                <XCircle className="h-4 w-4 text-amber-500" />
+                                                {item}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
 
-                {/* Detailed Analysis */}
-                <div>
-                     <h2 className="text-2xl font-bold mb-4 flex items-center gap-3">
-                        <BarChart className="h-6 w-6" /> Detailed Question Analysis
-                    </h2>
-                    <Accordion type="single" collapsible className="w-full space-y-4" defaultValue="item-0">
-                        {results.questions.map((q, index) => (
-                             <AccordionItem value={`item-${index}`} key={index} asChild>
-                                 <Card className="overflow-hidden">
-                                    <AccordionTrigger className="flex justify-between items-center w-full p-6 text-lg text-left hover:no-underline data-[state=open]:border-b">
-                                        <span className="truncate flex-1 pr-4">Question {index + 1}: {q.questionText}</span>
-                                        <div className="ml-4 flex items-center gap-2 shrink-0">
-                                            <Badge variant={q.score > 80 ? 'default' : q.score > 60 ? 'secondary' : 'destructive'}>{q.score}%</Badge>
-                                        </div>
-                                    </AccordionTrigger>
-                                    <AccordionContent>
-                                        <div className="p-6 pt-4 space-y-6">
-                                            <div>
-                                                <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2"><User className="h-5 w-5 text-blue-500"/> Your Answer</h3>
-                                                <blockquote className="p-4 bg-muted rounded-md italic text-muted-foreground border-l-4 border-blue-500">{q.userAnswer}</blockquote>
+                    {/* Right Column - Detailed Analysis */}
+                    <div className="lg:col-span-2">
+                         <h2 className="text-3xl font-bold mb-4 flex items-center gap-3">
+                            <BarChart className="h-8 w-8" /> Detailed Question Analysis
+                        </h2>
+                        <Accordion type="single" collapsible className="w-full space-y-4" defaultValue="item-0">
+                            {results.questions.map((q, index) => (
+                                <AccordionItem value={`item-${index}`} key={index} asChild>
+                                    <Card className="overflow-hidden">
+                                        <AccordionTrigger className="flex justify-between items-center w-full p-6 text-lg text-left hover:no-underline data-[state=open]:border-b">
+                                            <span className="truncate flex-1 pr-4">Question {index + 1}: {q.questionText}</span>
+                                            <div className="ml-4 flex items-center gap-2 shrink-0">
+                                                <Badge variant={q.score > 80 ? 'default' : q.score > 60 ? 'secondary' : 'destructive'}>{q.score}%</Badge>
                                             </div>
-                                            <div>
-                                                <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2"><Bot className="h-5 w-5 text-primary"/> AI Feedback</h3>
-                                                <div className="p-4 bg-muted rounded-md text-muted-foreground">{q.feedback}</div>
+                                        </AccordionTrigger>
+                                        <AccordionContent>
+                                            <div className="p-6 pt-4 space-y-6 bg-muted/30">
+                                                <div>
+                                                    <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2"><User className="h-5 w-5 text-blue-500"/> Your Answer</h3>
+                                                    <blockquote className="p-4 bg-background rounded-md italic text-muted-foreground border-l-4 border-blue-500">{q.userAnswer}</blockquote>
+                                                </div>
+                                                <div>
+                                                    <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2"><Bot className="h-5 w-5 text-primary"/> AI Feedback</h3>
+                                                    <div className="p-4 bg-background rounded-md text-muted-foreground">{q.feedback}</div>
+                                                </div>
+                                                <div>
+                                                    <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2"><CheckCircle className="h-5 w-5 text-green-500"/> Ideal Answer</h3>
+                                                    <div className="p-4 bg-background rounded-md text-muted-foreground">{q.idealAnswer}</div>
+                                                </div>
                                             </div>
-                                            <div>
-                                                <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2"><CheckCircle className="h-5 w-5 text-green-500"/> Ideal Answer</h3>
-                                                <div className="p-4 bg-muted rounded-md text-muted-foreground">{q.idealAnswer}</div>
-                                            </div>
-                                        </div>
-                                    </AccordionContent>
-                                 </Card>
-                            </AccordionItem>
-                        ))}
-                    </Accordion>
+                                        </AccordionContent>
+                                    </Card>
+                                </AccordionItem>
+                            ))}
+                        </Accordion>
+                    </div>
                 </div>
 
-                <div className="text-center">
-                    <Button onClick={() => router.push('/dashboard/interview/setup')}>
+                <div className="text-center pt-8">
+                    <Button onClick={() => router.push('/dashboard/interview/setup')} size="lg">
                        <Mic className="mr-2 h-4 w-4"/> Try Another Interview
                     </Button>
                 </div>
@@ -159,5 +157,3 @@ export default function InterviewResultsPage() {
         </main>
     )
 }
-
-    
