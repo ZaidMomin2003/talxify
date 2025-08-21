@@ -50,6 +50,9 @@ export default function OnboardingPage() {
     roles: [],
     companies: [],
   });
+  const [customRole, setCustomRole] = useState('');
+  const [customCompany, setCustomCompany] = useState('');
+
 
   useEffect(() => {
     if (user && user.displayName && !formData.name) {
@@ -76,6 +79,20 @@ export default function OnboardingPage() {
         return {...prev, [field]: newValues};
     });
   }
+
+  const handleAddCustomRole = () => {
+    if (customRole && !formData.roles.includes(customRole)) {
+        setFormData(prev => ({ ...prev, roles: [...prev.roles, customRole] }));
+        setCustomRole('');
+    }
+  };
+
+  const handleAddCustomCompany = () => {
+    if (customCompany && !formData.companies.includes(customCompany)) {
+        setFormData(prev => ({ ...prev, companies: [...prev.companies, customCompany] }));
+        setCustomCompany('');
+    }
+  };
 
   const handleSubmit = async () => {
     if (!user) {
@@ -147,6 +164,15 @@ export default function OnboardingPage() {
                 >{role}</Badge>
             ))}
         </div>
+         <div className="flex gap-2 pt-4">
+            <Input 
+                placeholder="Or add your own role" 
+                value={customRole}
+                onChange={(e) => setCustomRole(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddCustomRole(); } }}
+            />
+            <Button onClick={handleAddCustomRole} type="button">Add</Button>
+        </div>
         <div className="flex gap-4">
              <Button onClick={handleBack} variant="outline" size="lg">Back</Button>
              <Button onClick={handleNext} size="lg" disabled={formData.roles.length === 0}>Next</Button>
@@ -168,6 +194,15 @@ export default function OnboardingPage() {
                     )}
                 >{company}</Badge>
             ))}
+        </div>
+        <div className="flex gap-2 pt-4">
+            <Input 
+                placeholder="Or add a company" 
+                value={customCompany}
+                onChange={(e) => setCustomCompany(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddCustomCompany(); } }}
+            />
+            <Button onClick={handleAddCustomCompany} type="button">Add</Button>
         </div>
         <div className="flex gap-4">
             <Button onClick={handleBack} variant="outline" size="lg">Back</Button>
