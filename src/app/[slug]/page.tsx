@@ -43,29 +43,7 @@ function CustomTooltip({ active, payload, label }: any) {
   return null;
 }
 
-function PortfolioComponent({ slug }: { slug: string }) {
-    const [userData, setUserData] = useState<UserData | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
-
-    const fetchUserData = useCallback(async () => {
-        setIsLoading(true);
-        try {
-            const data = await getUserBySlug(slug);
-            // If data is found for the slug, use it. Otherwise, use the initial placeholder.
-            setUserData(data ?? initialPortfolioData);
-        } catch (error) {
-            console.error("Failed to fetch user data by slug:", error);
-            // On error, fall back to placeholder data.
-            setUserData(initialPortfolioData);
-        } finally {
-            setIsLoading(false);
-        }
-    }, [slug]);
-
-    useEffect(() => {
-        fetchUserData();
-    }, [fetchUserData]);
-
+function PortfolioComponent({ userData }: { userData: UserData | null }) {
     const portfolio = userData?.portfolio;
 
     const { questionsSolved, interviewsCompleted, averageScore } = useMemo(() => {
@@ -105,16 +83,18 @@ function PortfolioComponent({ slug }: { slug: string }) {
         return `https://www.youtube.com/embed/${videoId}`;
     };
 
-    const youtubeEmbedUrl = getYouTubeEmbedUrl(portfolio?.personalInfo.youtubeVideoUrl);
-
-
-    if (isLoading || !portfolio) {
+    if (!portfolio) {
         return (
             <div className="flex h-screen items-center justify-center">
-                <Loader2 className="h-16 w-16 animate-spin text-primary" />
+                 <Card className="text-center p-8">
+                    <CardTitle>Portfolio Not Found</CardTitle>
+                    <CardDescription>We couldn't find a portfolio with that slug.</CardDescription>
+                </Card>
             </div>
         );
     }
+    
+    const youtubeEmbedUrl = getYouTubeEmbedUrl(portfolio?.personalInfo.youtubeVideoUrl);
     
     return (
         <div 
@@ -368,14 +348,16 @@ function PortfolioComponent({ slug }: { slug: string }) {
     );
 }
 
-export default function PortfolioPage({ params }: { params: { slug: string } }) {
+// This page now fetches data on the server
+export default async function PortfolioPage({ params }: { params: { slug: string } }) {
+    const userData = await getUserBySlug(params.slug);
+
+    // If no user is found, we can pass the initial data to show a template/default view
+    const portfolioData = userData ?? initialPortfolioData;
+    
     return (
-        <Suspense fallback={
-            <div className="flex h-screen items-center justify-center">
-                <Loader2 className="h-16 w-16 animate-spin text-primary" />
-            </div>
-        }>
-            <PortfolioComponent slug={params.slug}/>
-        </Suspense>
+        <PortfolioComponent userData={portfolioData}/>
     )
 }
+
+    
