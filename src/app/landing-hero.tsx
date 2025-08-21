@@ -19,8 +19,20 @@ export default function AppHero() {
     interviews: 0,
     problems: 0,
   });
+  
+  const [sparkles, setSparkles] = useState<{ top: string; left: string; duration: number; delay: number; }[]>([]);
 
   useEffect(() => {
+    // Generate sparkles only on the client
+    setSparkles(
+      Array.from({ length: 20 }).map(() => ({
+        top: `${Math.random() * 100}%`,
+        left: `${Math.random() * 100}%`,
+        duration: 3 + Math.random() * 2,
+        delay: Math.random() * 2,
+      }))
+    );
+
     const targets = { users: 500, interviews: 7800, problems: 17550 };
     const increments = { users: 10, interviews: 156, problems: 351 };
     
@@ -109,16 +121,16 @@ export default function AppHero() {
         <motion.div animate={glowAnimation} className="absolute top-1/3 left-1/4 h-40 w-40 rounded-full bg-indigo-500/10 blur-[80px]"></motion.div>
         <motion.div animate={glowAnimation} className="absolute right-1/4 bottom-1/3 h-40 w-40 rounded-full bg-red-500/10 blur-[80px]"></motion.div>
         <div className="absolute inset-0 opacity-20">
-          {Array.from({ length: 20 }).map((_, i) => (
+          {sparkles.map((sparkle, i) => (
             <motion.div
               key={i}
               className="absolute h-1 w-1 rounded-full bg-white"
               style={{
-                top: `${Math.random() * 100}%`,
-                left: `${Math.random() * 100}%`,
+                top: sparkle.top,
+                left: sparkle.left,
               }}
               animate={{ opacity: [0.2, 0.8, 0.2], scale: [1, 1.5, 1] }}
-              transition={{ duration: 3 + Math.random() * 2, repeat: Infinity, ease: 'easeInOut', delay: Math.random() * 2 }}
+              transition={{ duration: sparkle.duration, repeat: Infinity, ease: 'easeInOut', delay: sparkle.delay }}
             />
           ))}
         </div>
