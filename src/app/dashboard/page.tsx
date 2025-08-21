@@ -31,18 +31,11 @@ const codingGymSchema = z.object({
   numQuestions: z.string(),
 });
 
-const mockInterviewSchema = z.object({
-  targetCompany: z.string().min(1, "Target company is required."),
-  targetRole: z.string().min(1, "Target role is required."),
-  interviewType: z.enum(["technical", "behavioural"]),
-});
-
 export default function DashboardPage() {
   const router = useRouter();
   const { user } = useAuth();
   
   const [isCodingLoading, setIsCodingLoading] = useState(false);
-  const [isInterviewLoading, setIsInterviewLoading] = useState(false);
   const [userData, setUserData] = useState<UserData | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedQuiz, setSelectedQuiz] = useState<QuizResult | null>(null);
@@ -72,15 +65,6 @@ export default function DashboardPage() {
     },
   });
 
-  const mockInterviewForm = useForm<z.infer<typeof mockInterviewSchema>>({
-    resolver: zodResolver(mockInterviewSchema),
-    defaultValues: {
-      targetCompany: "",
-      targetRole: "",
-      interviewType: "technical",
-    },
-  });
-
   async function onCodingGymSubmit(values: z.infer<typeof codingGymSchema>) {
     setIsCodingLoading(true);
     const params = new URLSearchParams({
@@ -89,17 +73,6 @@ export default function DashboardPage() {
         numQuestions: values.numQuestions,
     });
     router.push(`/dashboard/coding-quiz/instructions?${params.toString()}`);
-  }
-
-  async function onMockInterviewSubmit(values: z.infer<typeof mockInterviewSchema>) {
-    setIsInterviewLoading(true);
-
-    const params = new URLSearchParams({
-        company: values.targetCompany,
-        role: values.targetRole,
-        type: values.interviewType,
-    });
-    router.push(`/dashboard/mock-interview/instructions?${params.toString()}`);
   }
 
   const { questionsSolved, interviewsCompleted, recentQuizzes, averageScore, hasTakenQuiz } = useMemo(() => {
@@ -138,10 +111,8 @@ export default function DashboardPage() {
     }
   }, [plan]);
 
-  const interviewsLeft = planLimits.interviews - interviewsCompleted;
   const quizzesLeft = planLimits.quizzes === Infinity ? Infinity : planLimits.quizzes - (hasTakenQuiz ? 1: 0);
 
-  const canTakeInterview = isFreePlan ? interviewsCompleted < 1 : true;
   const canTakeQuiz = isFreePlan ? !hasTakenQuiz : true;
 
   const planExpiresDays = useMemo(() => {
@@ -194,7 +165,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{interviewsCompleted} / {planLimits.interviews}</div>
-            <p className="text-xs text-muted-foreground">{interviewsLeft} interviews left this cycle.</p>
+            <p className="text-xs text-muted-foreground">This feature is coming soon!</p>
           </CardContent>
         </Card>
         <Card className="bg-card/70">
@@ -240,107 +211,7 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card className="flex flex-col">
-          <Form {...mockInterviewForm}>
-            <form onSubmit={mockInterviewForm.handleSubmit(onMockInterviewSubmit)} className="flex flex-col h-full">
-              <CardHeader>
-                <div className="flex items-center gap-3">
-                    <div className="bg-primary/10 text-primary rounded-lg p-2"><Rocket className="h-6 w-6" /></div>
-                    <div className="flex flex-col">
-                        <CardTitle className="text-xl">Mock Interview</CardTitle>
-                        <CardDescription>Simulate a real-time interview with an AI.</CardDescription>
-                    </div>
-                </div>
-              </CardHeader>
-              <CardContent className="flex-grow space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <FormField
-                    control={mockInterviewForm.control}
-                    name="targetCompany"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Target Company</FormLabel>
-                        <FormControl>
-                          <Input placeholder="e.g., Google, Amazon" {...field}/>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={mockInterviewForm.control}
-                    name="targetRole"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Target Role</FormLabel>
-                        <FormControl>
-                          <Input placeholder="e.g., Frontend Developer" {...field}/>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                <FormField
-                  control={mockInterviewForm.control}
-                  name="interviewType"
-                  render={({ field }) => (
-                    <FormItem className="space-y-3">
-                      <FormLabel>Interview Type</FormLabel>
-                      <FormControl>
-                        <RadioGroup
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                          className="flex flex-col sm:flex-row gap-4"
-                        >
-                          <FormItem className="flex items-center space-x-3 space-y-0">
-                            <FormControl>
-                              <RadioGroupItem value="technical" />
-                            </FormControl>
-                            <FormLabel className="font-normal flex items-center gap-2">
-                              <BrainCircuit className="w-4 h-4" /> Technical
-                            </FormLabel>
-                          </FormItem>
-                          <FormItem className="flex items-center space-x-3 space-y-0">
-                            <FormControl>
-                              <RadioGroupItem value="behavioural" />
-                            </FormControl>
-                            <FormLabel className="font-normal flex items-center gap-2">
-                              <User className="w-4 h-4" /> Behavioural
-                            </FormLabel>
-                          </FormItem>
-                        </RadioGroup>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </CardContent>
-              <CardFooter>
-                  <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div className="w-full">
-                            <Button type="submit" size="lg" className="w-full" disabled={isInterviewLoading || !canTakeInterview}>
-                                {isInterviewLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                {!canTakeInterview && <Lock className="mr-2 h-4 w-4" />}
-                                Start Interview
-                            </Button>
-                          </div>
-                        </TooltipTrigger>
-                        {!canTakeInterview && (
-                           <TooltipContent>
-                            <p>Upgrade to Pro to take more interviews.</p>
-                          </TooltipContent>
-                        )}
-                      </Tooltip>
-                    </TooltipProvider>
-              </CardFooter>
-            </form>
-          </Form>
-        </Card>
-
+      <div className="grid gap-6">
         <Card className="flex flex-col">
           {!canTakeQuiz ? (
             <div className="flex flex-col h-full justify-center items-center text-center p-6">

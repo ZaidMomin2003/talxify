@@ -320,7 +320,7 @@ function DashboardLayoutContent({
                     ) : filteredActivity.length > 0 ? (
                       filteredActivity.slice(0, 5).map((item) => (
                         <DropdownMenuItem key={item.id} asChild>
-                          <Link href={item.type === 'quiz' ? `/dashboard/coding-quiz/analysis?id=${item.id}` : `/dashboard/mock-interview/analysis?id=${item.id}`} className="cursor-pointer">
+                          <Link href={item.type === 'quiz' ? `/dashboard/coding-quiz/analysis?id=${item.id}` : '#'} className="cursor-pointer">
                             <div className="flex items-start gap-3">
                                 <div className="bg-primary/10 text-primary rounded-full p-2">
                                     {item.type === 'quiz' ? <Code className="h-4 w-4" /> : <Briefcase className="h-4 w-4" />}
