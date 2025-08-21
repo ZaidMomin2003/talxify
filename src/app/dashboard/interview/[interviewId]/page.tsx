@@ -22,35 +22,35 @@ function InterviewPageContent({ params }: { params: { interviewId: string }}) {
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        if (user) {
-            setIsLoading(true);
+        const initializeSession = async () => {
+            if (!user) return;
 
-            // First, check for the client-side Deepgram key
+            // --- Configuration Checks ---
             if (!process.env.NEXT_PUBLIC_DEEPGRAM_API_KEY) {
-                setError("Deepgram API key is not configured. Please add it to your environment variables to use the interview feature.");
+                setError("Deepgram API key is not configured. Please add NEXT_PUBLIC_DEEPGRAM_API_KEY to your environment variables to use the interview feature.");
                 setIsLoading(false);
                 return;
             }
 
-            generateVideoSDKToken()
-                .then(setToken)
-                .catch(err => {
-                    console.error("Failed to get VideoSDK token", err);
-                    setError("Could not initialize the interview session. Please check your VideoSDK API key and secret and try again.");
-                    toast({
-                        title: "Initialization Failed",
-                        description: "Failed to generate a valid session token for the interview.",
-                        variant: "destructive"
-                    });
-                })
-                .finally(() => {
-                     // Only stop loading if there wasn't a different error first
-                    if (!error) {
-                        setIsLoading(false);
-                    }
-                });
-        }
-    }, [user, toast, error]);
+            try {
+                // --- Token Generation ---
+                const generatedToken = await generateVideoSDKToken();
+                if (!generatedToken) {
+                    throw new Error("Generated token is null or undefined.");
+                }
+                setToken(generatedToken);
+            } catch (err) {
+                console.error("Failed to get VideoSDK token", err);
+                setError("Could not initialize the interview session. Please ensure your VideoSDK API Key and Secret are correct and try again.");
+                setIsLoading(false);
+                return; // Stop execution if token generation fails
+            }
+            
+            setIsLoading(false);
+        };
+
+        initializeSession();
+    }, [user]);
 
     if (isLoading) {
         return (
@@ -63,7 +63,7 @@ function InterviewPageContent({ params }: { params: { interviewId: string }}) {
         )
     }
 
-    if (error || !token) {
+    if (error) {
         return (
             <div className="flex h-screen w-full items-center justify-center bg-background text-foreground p-4">
                 <Card className="max-w-md w-full text-center shadow-lg">
@@ -73,7 +73,29 @@ function InterviewPageContent({ params }: { params: { interviewId: string }}) {
                         </div>
                         <CardTitle className="text-2xl font-bold">Session Error</CardTitle>
                         <CardDescription>
-                            {error || "An unknown error occurred while setting up the interview."}
+                            {error}
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Button onClick={() => router.push('/dashboard')}>Back to Dashboard</Button>
+                    </CardContent>
+                </Card>
+            </div>
+        )
+    }
+    
+    if (!token) {
+        // This case handles when loading is finished but token is still null for some reason.
+         return (
+            <div className="flex h-screen w-full items-center justify-center bg-background text-foreground p-4">
+                <Card className="max-w-md w-full text-center shadow-lg">
+                    <CardHeader>
+                        <div className="mx-auto bg-destructive/10 text-destructive rounded-full p-3 w-fit">
+                        <AlertTriangle className="h-8 w-8" />
+                        </div>
+                        <CardTitle className="text-2xl font-bold">Initialization Failed</CardTitle>
+                        <CardDescription>
+                            Failed to generate a valid session token for the interview.
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
