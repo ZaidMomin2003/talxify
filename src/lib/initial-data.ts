@@ -33,5 +33,7 @@ export const initialPortfolioData: UserData = {
         plan: 'free',
         status: 'inactive',
         endDate: null
-    }
+    },
+    onboardingCompleted: false,
+    syllabus: [],
 };

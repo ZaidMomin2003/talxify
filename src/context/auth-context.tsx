@@ -6,7 +6,7 @@ import { User, onAuthStateChanged, signOut, createUserWithEmailAndPassword, sign
 import { auth, googleProvider, githubProvider } from '@/lib/firebase';
 import type { SignUpForm, SignInForm } from '@/lib/types';
 import { useRouter } from 'next/navigation';
-import { createUserDocument } from '@/lib/firebase-service';
+import { createUserDocument, getUserData } from '@/lib/firebase-service';
 
 interface AuthContextType {
   user: User | null;
@@ -26,13 +26,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const router = useRouter();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        const userData = await getUserData(user.uid);
+        if (!userData?.onboardingCompleted) {
+          router.push('/onboarding');
+        }
+      }
       setUser(user);
       setLoading(false);
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [router]);
 
   const signUp = async (data: SignUpForm) => {
     const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
@@ -47,19 +53,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
      return signInWithEmailAndPassword(auth, data.email, data.password);
   };
 
-  const signInWithGoogle = async () => {
-    const result = await signInWithPopup(auth, googleProvider);
+  const handleSocialSignIn = async (provider: 'google' | 'github') => {
+    const authProvider = provider === 'google' ? googleProvider : githubProvider;
+    const result = await signInWithPopup(auth, authProvider);
     const user = result.user;
-    await createUserDocument(user.uid, user.email!, user.displayName!);
+    // Check if the user document already exists before creating a new one
+    const existingUser = await getUserData(user.uid);
+    if (!existingUser) {
+        await createUserDocument(user.uid, user.email!, user.displayName!);
+    }
     return result;
-  };
+  }
 
-  const signInWithGitHub = async () => {
-    const result = await signInWithPopup(auth, githubProvider);
-    const user = result.user;
-    await createUserDocument(user.uid, user.email!, user.displayName!);
-    return result;
-  };
+  const signInWithGoogle = () => handleSocialSignIn('google');
+  const signInWithGitHub = () => handleSocialSignIn('github');
+
 
   const logout = async () => {
     await signOut(auth);

@@ -1,30 +1,14 @@
 
-
-
 import type { AnswerAnalysis } from "@/ai/flows/analyze-coding-answers";
-import type { InterviewAnalysis as AIInterviewAnalysis } from "@/ai/flows/analyze-interview-transcript";
 import type { QuizState } from "@/app/dashboard/coding-quiz/quiz/page";
-
-// Re-exporting the AI type to avoid naming conflicts
-export type InterviewAnalysis = AIInterviewAnalysis;
-
-export interface SignUpForm {
-    name: string;
-    email: string;
-    password: string
-}
-
-export interface SignInForm {
-    email: string;
-    password: string
-}
+import type { SyllabusDay } from "@/ai/flows/generate-syllabus";
 
 // A generic type for any activity stored in localStorage
-export type StoredActivity = QuizResult | InterviewActivity;
+export type StoredActivity = QuizResult;
 
 export interface BaseActivity {
     id: string;
-    type: 'quiz' | 'interview';
+    type: 'quiz';
     timestamp: string;
     details: {
         topic: string;
@@ -47,21 +31,13 @@ export interface QuizResult extends BaseActivity {
   }
 }
 
-// A specific type for initiated interviews
-export interface InterviewActivity extends BaseActivity {
-    type: 'interview';
-    transcript: { role: 'user' | 'model', content: string }[];
-    analysis: InterviewAnalysis | null;
-    interviewContext: {
-        company: string;
-        role: string;
-        type: 'technical' | 'behavioural';
-    };
-    details: {
-        topic: string;
-        role: string;
-        company: string;
-    }
+// Data collected during the onboarding process
+export interface OnboardingData {
+    name: string;
+    university: string;
+    major: string;
+    roles: string[];
+    companies: string[];
 }
 
 // All data stored under a user's document in Firestore
@@ -69,6 +45,20 @@ export interface UserData {
     portfolio: Portfolio;
     activity: StoredActivity[];
     subscription: Subscription;
+    onboardingCompleted: boolean;
+    syllabus: SyllabusDay[];
+}
+
+// --- Auth ---
+export interface SignUpForm {
+    name: string;
+    email: string;
+    password: string
+}
+
+export interface SignInForm {
+    email: string;
+    password: string
 }
 
 // --- Subscription ---

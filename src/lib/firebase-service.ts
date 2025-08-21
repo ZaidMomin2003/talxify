@@ -1,11 +1,11 @@
 
-
 'use client';
 
 import { doc, getDoc, setDoc, updateDoc, arrayUnion, collection, getDocs } from 'firebase/firestore';
 import { db } from './firebase';
-import type { UserData, Portfolio, StoredActivity } from './types';
+import type { UserData, Portfolio, StoredActivity, OnboardingData } from './types';
 import { initialPortfolioData } from './initial-data';
+import type { SyllabusDay } from '@/ai/flows/generate-syllabus';
 
 // --- User Data ---
 
@@ -20,7 +20,9 @@ export const createUserDocument = async (userId: string, email: string, name: st
         plan: 'free',
         status: 'inactive',
         endDate: null
-      }
+      },
+      onboardingCompleted: false,
+      syllabus: [],
     };
     initialData.portfolio.personalInfo.email = email;
     initialData.portfolio.personalInfo.name = name;
@@ -37,6 +39,20 @@ export const getUserData = async (userId: string): Promise<UserData | null> => {
   return null;
 };
 
+export const updateUserOnboardingData = async (userId: string, onboardingData: OnboardingData, syllabus: SyllabusDay[]): Promise<void> => {
+    const userRef = doc(db, 'users', userId);
+    const updateData = {
+        'portfolio.personalInfo.name': onboardingData.name,
+        'portfolio.education': [{
+            institution: onboardingData.university,
+            degree: onboardingData.major,
+            year: 'N/A'
+        }],
+        onboardingCompleted: true,
+        syllabus: syllabus
+    };
+    await setDoc(userRef, updateData, { merge: true });
+}
 
 // --- Subscription ---
 
