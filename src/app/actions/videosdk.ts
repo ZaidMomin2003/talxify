@@ -13,7 +13,7 @@ export async function generateVideoSDKToken() {
 
   const payload = {
     apikey: apiKey,
-    permissions: ['allow_join', 'allow_mod'], // 'allow_mod' allows starting/stopping recordings, etc.
+    permissions: ['allow_join', 'allow_mod'],
   };
 
   try {
