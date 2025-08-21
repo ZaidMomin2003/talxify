@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -40,7 +40,7 @@ import {
   SidebarGroup,
   SidebarGroupLabel,
 } from "@/components/ui/sidebar";
-import { Bot, Code, LayoutGrid, MessageSquare, BarChart, Settings, History, Search, User, LogOut, Gem, LifeBuoy, Sun, Moon, Briefcase, CalendarDays, BrainCircuit, PlayCircle, X } from "lucide-react";
+import { Bot, Code, LayoutGrid, MessageSquare, BarChart, Settings, History, Search, User, LogOut, Gem, LifeBuoy, Sun, Moon, Briefcase, CalendarDays, BrainCircuit, PlayCircle, X, CheckCircle, Circle } from "lucide-react";
 import type { StoredActivity, QuizResult, UserData } from "@/lib/types";
 import { formatDistanceToNow, format } from 'date-fns';
 import { useAuth } from "@/context/auth-context";
@@ -48,6 +48,36 @@ import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import { Switch } from "@/components/ui/switch";
 import { getActivity, getUserData } from "@/lib/firebase-service";
+
+function GettingStartedList({ activity }: { activity: StoredActivity[] }) {
+    const hasTakenInterview = useMemo(() => activity.some(a => a.type === 'interview'), [activity]);
+    const hasTakenQuiz = useMemo(() => activity.some(a => a.type === 'quiz'), [activity]);
+    const canDeployPortfolio = hasTakenInterview && hasTakenQuiz;
+
+    const checklistItems = [
+        { name: "Take an Interview", completed: hasTakenInterview, href: "/dashboard" },
+        { name: "Take a Coding Quiz", completed: hasTakenQuiz, href: "/dashboard" },
+        { name: "Deploy your Portfolio", completed: canDeployPortfolio, href: "/dashboard/portfolio" }
+    ];
+
+    return (
+        <SidebarMenu>
+            {checklistItems.map(item => (
+                <SidebarMenuItem key={item.name}>
+                    <SidebarMenuButton asChild size="sm" className="justify-start text-muted-foreground hover:text-foreground disabled:opacity-100 disabled:cursor-auto" disabled={!item.completed}>
+                         <Link href={item.href}>
+                           {item.completed ? 
+                                <CheckCircle className="text-green-500" /> : 
+                                <Circle className="text-muted-foreground/50" />
+                            }
+                            <span className={item.completed ? "text-foreground" : ""}>{item.name}</span>
+                         </Link>
+                    </SidebarMenuButton>
+                </SidebarMenuItem>
+            ))}
+        </SidebarMenu>
+    );
+}
 
 function DashboardLayoutContent({
   children,
@@ -88,11 +118,6 @@ function DashboardLayoutContent({
     { href: "/dashboard", label: "Dashboard", icon: LayoutGrid },
     { href: "/dashboard/portfolio", label: "Portfolio", icon: User },
     { href: "/dashboard/performance", label: "Performance", icon: BarChart },
-  ];
-
-  const toolsItems = [
-    { href: "/dashboard", label: "Mock Interview", icon: BrainCircuit },
-    { href: "/dashboard", label: "Coding Quiz", icon: Code },
   ];
   
   const recentActivity = userData?.activity?.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()) || [];
@@ -155,20 +180,9 @@ function DashboardLayoutContent({
           <SidebarSeparator />
            <SidebarGroup>
                 <SidebarGroupLabel className="flex items-center">
-                    <span className="flex-1">Tools</span>
+                    <span className="flex-1">Getting Started</span>
                 </SidebarGroupLabel>
-                <SidebarMenu>
-                    {toolsItems.map((item) => (
-                        <SidebarMenuItem key={item.label}>
-                        <SidebarMenuButton asChild isActive={pathname.startsWith(item.href)} size="sm">
-                            <Link href={item.href}>
-                            <item.icon />
-                            {item.label}
-                            </Link>
-                        </SidebarMenuButton>
-                        </SidebarMenuItem>
-                    ))}
-                </SidebarMenu>
+                 <GettingStartedList activity={userData.activity || []} />
             </SidebarGroup>
         </SidebarContent>
         <SidebarFooter>
