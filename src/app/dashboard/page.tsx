@@ -128,6 +128,41 @@ export default function DashboardPage() {
         performanceData: perfData
     };
   }, [allActivity]);
+  
+   const { dailyTasks, currentDay } = useMemo(() => {
+    const completedDays = 0; // This would be calculated based on activity in a real scenario
+    const today = userData?.syllabus?.find(d => d.day === completedDays + 1);
+    
+    if (!today) {
+        return { dailyTasks: [], currentDay: null };
+    }
+
+    const tasks = [
+        {
+            icon: <BookOpen className="h-6 w-6 text-yellow-500" />,
+            title: `Learn: ${today.topic}`,
+            description: "Study today's core concepts.",
+            isCompleted: false, // Add logic later
+            action: () => router.push(`/dashboard/arena/notes?topic=${encodeURIComponent(today.topic)}`)
+        },
+        {
+            icon: <Code className="h-6 w-6 text-blue-500" />,
+            title: "Take a Quiz",
+            description: "Test your new knowledge.",
+            isCompleted: false, // Add logic later
+            action: () => router.push(`/dashboard/coding-quiz/instructions?topics=${encodeURIComponent(today.topic)}&difficulty=easy&numQuestions=3`)
+        },
+        {
+            icon: <Briefcase className="h-6 w-6 text-green-500" />,
+            title: "Mock Interview",
+            description: "Practice your interview skills.",
+            isCompleted: false, // Add logic later
+            action: () => router.push(`/dashboard/interview/setup?topic=${encodeURIComponent(today.topic)}`)
+        }
+    ];
+    return { dailyTasks: tasks, currentDay: today };
+  }, [userData?.syllabus, router]);
+
 
   const planLimits = useMemo(() => {
     switch (plan) {
@@ -179,29 +214,6 @@ export default function DashboardPage() {
     setSelectedQuiz(quiz);
   }
   
-  const tasks = [
-    { 
-        icon: <BookOpen className="h-6 w-6 text-yellow-500" />,
-        title: "Learn a Random Topic",
-        description: "Expand your knowledge with a new subject.",
-        isCompleted: false,
-        action: () => {}
-    },
-    { 
-        icon: <Code className="h-6 w-6 text-blue-500" />,
-        title: "Solve Questions",
-        description: "Sharpen your skills with a coding quiz.",
-        isCompleted: hasTakenQuiz,
-        action: () => router.push('/dashboard/coding-quiz/instructions?topics=JavaScript&difficulty=easy&numQuestions=3')
-    },
-    { 
-        icon: <Briefcase className="h-6 w-6 text-green-500" />,
-        title: "Take an Interview",
-        description: "Practice your interview skills with an AI.",
-        isCompleted: interviewsCompleted > 0,
-        action: () => {}
-    }
-  ]
 
   return (
     <main className="flex-1 overflow-auto p-4 sm:p-6">
@@ -306,58 +318,71 @@ export default function DashboardPage() {
             </CardContent>
         </Card>
         <Card className="flex flex-col">
-            <CardHeader>
-                <div className="flex items-center gap-3">
-                    <div className="bg-secondary/20 text-secondary-foreground rounded-lg p-2"><Star className="h-6 w-6" /></div>
-                    <div className="flex flex-col">
-                        <CardTitle className="text-xl">Daily Tasks</CardTitle>
-                        <CardDescription>Complete these to sharpen your skills.</CardDescription>
-                    </div>
-                </div>
-            </CardHeader>
-            <CardContent className="flex-grow space-y-4">
-                {tasks.map((task, index) => (
-                    <Dialog key={index}>
-                        <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                            <div className="flex items-center gap-4">
-                                {task.icon}
-                                <div>
-                                    <p className="font-semibold text-foreground">{task.title}</p>
-                                    <p className="text-xs text-muted-foreground">{task.description}</p>
-                                </div>
-                            </div>
-                            {task.isCompleted ? (
-                                <div className="flex items-center gap-2 text-green-500">
-                                    <CheckCircle className="h-5 w-5" />
-                                    <span className="text-sm font-medium">Done</span>
-                                </div>
-                            ) : (
-                                <DialogTrigger asChild>
-                                    <Button size="sm" variant="secondary">Start</Button>
-                                </DialogTrigger>
-                            )}
-                        </div>
-                        <DialogContent>
-                            <DialogHeader>
-                                <DialogTitle className="flex items-center gap-3 text-2xl">
-                                    {task.icon} {task.title}
-                                </DialogTitle>
-                                <DialogDescription>
-                                    Welcome! Get ready to start your task.
-                                </DialogDescription>
-                            </DialogHeader>
-                            <div className="py-6 text-center">
-                                <p className="text-muted-foreground">Click the button below to begin.</p>
-                            </div>
-                            <DialogFooter>
-                                <Button onClick={task.action} size="lg">
-                                    <PlayCircle className="mr-2 h-4 w-4"/> Let's Go
-                                </Button>
-                            </DialogFooter>
-                        </DialogContent>
-                    </Dialog>
-                ))}
-            </CardContent>
+          <CardHeader>
+              <div className="flex items-center gap-3">
+                  <div className="bg-secondary/20 text-secondary-foreground rounded-lg p-2"><Star className="h-6 w-6" /></div>
+                  <div className="flex flex-col">
+                      <CardTitle className="text-xl">
+                          {currentDay ? `Day ${currentDay.day}: ${currentDay.topic}` : "Daily Tasks"}
+                      </CardTitle>
+                      <CardDescription>
+                          {currentDay ? currentDay.description : "Complete your onboarding to get started!"}
+                      </CardDescription>
+                  </div>
+              </div>
+          </CardHeader>
+          <CardContent className="flex-grow space-y-4">
+              {dailyTasks.length > 0 ? (
+                  dailyTasks.map((task, index) => (
+                      <Dialog key={index}>
+                          <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                              <div className="flex items-center gap-4">
+                                  {task.icon}
+                                  <div>
+                                      <p className="font-semibold text-foreground">{task.title}</p>
+                                      <p className="text-xs text-muted-foreground">{task.description}</p>
+                                  </div>
+                              </div>
+                              {task.isCompleted ? (
+                                  <div className="flex items-center gap-2 text-green-500">
+                                      <CheckCircle className="h-5 w-5" />
+                                      <span className="text-sm font-medium">Done</span>
+                                  </div>
+                              ) : (
+                                  <DialogTrigger asChild>
+                                      <Button size="sm" variant="secondary">Start</Button>
+                                  </DialogTrigger>
+                              )}
+                          </div>
+                          <DialogContent>
+                              <DialogHeader>
+                                  <DialogTitle className="flex items-center gap-3 text-2xl">
+                                      {task.icon} {task.title}
+                                  </DialogTitle>
+                                  <DialogDescription>
+                                      Welcome! Get ready to start your task.
+                                  </DialogDescription>
+                              </DialogHeader>
+                              <div className="py-6 text-center">
+                                  <p className="text-muted-foreground">Click the button below to begin.</p>
+                              </div>
+                              <DialogFooter>
+                                  <Button onClick={task.action} size="lg">
+                                      <PlayCircle className="mr-2 h-4 w-4"/> Let's Go
+                                  </Button>
+                              </DialogFooter>
+                          </DialogContent>
+                      </Dialog>
+                  ))
+              ) : (
+                  <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground p-4">
+                      <p>Your daily tasks will appear here once you've completed onboarding.</p>
+                      <Button asChild variant="link" className="mt-2">
+                        <Link href="/onboarding">Go to Onboarding</Link>
+                      </Button>
+                  </div>
+              )}
+          </CardContent>
         </Card>
       </div>
       
@@ -468,5 +493,7 @@ export default function DashboardPage() {
     </main>
   );
 }
+
+    
 
     
