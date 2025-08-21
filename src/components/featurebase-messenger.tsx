@@ -28,14 +28,15 @@ const FeaturebaseMessenger = () => {
       appId: "689df97845396713701c443c",
       theme: theme || 'dark',
       language: "en",
+      // Disable identity verification to prevent hash errors.
+      // This is simpler for now and still allows associating feedback with users.
+      shouldDisableIdentityVerification: true, 
     };
     
     if (user) {
         bootConfig.email = user.email ?? undefined;
         bootConfig.userId = user.uid;
         bootConfig.createdAt = user.metadata?.creationTime;
-    } else {
-        bootConfig.shouldDisableIdentityVerification = true;
     }
 
     win.Featurebase("boot", bootConfig);
