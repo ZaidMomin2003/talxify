@@ -224,7 +224,7 @@ export default function DashboardPage() {
       </div>
 
       <div className="mb-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="bg-blue-500/10 text-blue-900 dark:bg-blue-950/20 dark:text-blue-200 border-blue-500/20 shadow-lg shadow-blue-500/10">
+        <Card className="bg-blue-500/20 text-blue-950 dark:text-blue-200 border-blue-500/30 shadow-lg shadow-blue-500/20">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Interviews Completed</CardTitle>
             <Briefcase className="h-4 w-4 text-blue-400" />
@@ -234,7 +234,7 @@ export default function DashboardPage() {
             <p className="text-xs text-blue-400/80">Practice makes perfect</p>
           </CardContent>
         </Card>
-        <Card className="bg-orange-500/10 text-orange-900 dark:bg-orange-950/20 dark:text-orange-200 border-orange-500/20 shadow-lg shadow-orange-500/10">
+        <Card className="bg-orange-500/20 text-orange-950 dark:text-orange-200 border-orange-500/30 shadow-lg shadow-orange-500/20">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Coding Questions Solved</CardTitle>
             <Code className="h-4 w-4 text-orange-400" />
@@ -244,7 +244,7 @@ export default function DashboardPage() {
              <p className="text-xs text-orange-400/80">Across all quizzes</p>
           </CardContent>
         </Card>
-        <Card className="bg-pink-500/10 text-pink-900 dark:bg-pink-950/20 dark:text-pink-200 border-pink-500/20 shadow-lg shadow-pink-500/10">
+        <Card className="bg-pink-500/20 text-pink-950 dark:text-pink-200 border-pink-500/30 shadow-lg shadow-pink-500/20">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Average Score</CardTitle>
             <Percent className="h-4 w-4 text-pink-400" />
@@ -254,7 +254,7 @@ export default function DashboardPage() {
             <p className="text-xs text-pink-400/80">Based on your performance</p>
           </CardContent>
         </Card>
-        <Card className="bg-yellow-500/10 text-yellow-900 dark:bg-yellow-950/20 dark:text-yellow-200 border-yellow-500/20 shadow-lg shadow-yellow-500/10">
+        <Card className="bg-yellow-500/20 text-yellow-950 dark:text-yellow-200 border-yellow-500/30 shadow-lg shadow-yellow-500/20">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Plan Expires</CardTitle>
             <CalendarDays className="h-4 w-4 text-yellow-400" />
@@ -490,3 +490,4 @@ export default function DashboardPage() {
     </main>
   );
 }
+
