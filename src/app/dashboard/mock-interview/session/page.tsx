@@ -399,15 +399,13 @@ export default function MockInterviewSessionPage() {
             "Authorization": genToken,
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({
-            permissions: ["allow_join", "allow_mod"],
-          }),
+          body: JSON.stringify({ "permissions": ["allow_join", "allow_mod"] }),
         };
 
         const response = await fetch(url, options);
         if (!response.ok) {
             const errorBody = await response.json();
-            throw new Error(errorBody.error || 'Failed to create room');
+            throw new Error(`Failed to create room: ${response.status} ${response.statusText} - ${errorBody.error || JSON.stringify(errorBody)}`);
         }
         const data = await response.json();
         if (!data.roomId) {
@@ -416,7 +414,7 @@ export default function MockInterviewSessionPage() {
         setMeetingId(data.roomId);
       } catch (e: any) {
         console.error("Failed to initialize meeting:", e);
-        setError("Could not start the video session. Please check your configuration and try again.");
+        setError(`Could not start the video session. Please check your configuration and try again. Error: ${e.message}`);
       }
     };
     initializeMeeting();
