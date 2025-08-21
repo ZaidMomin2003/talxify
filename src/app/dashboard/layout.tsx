@@ -50,12 +50,14 @@ import { Switch } from "@/components/ui/switch";
 import { getActivity, getUserData } from "@/lib/firebase-service";
 
 function GettingStartedList({ activity }: { activity: StoredActivity[] }) {
+    const hasGeneratedNotes = useMemo(() => activity.some(a => a.type === 'note-generation'), [activity]);
     const hasTakenInterview = useMemo(() => activity.some(a => a.type === 'interview'), [activity]);
     const hasTakenQuiz = useMemo(() => activity.some(a => a.type === 'quiz'), [activity]);
-    const canDeployPortfolio = hasTakenInterview && hasTakenQuiz;
+    const canDeployPortfolio = hasTakenInterview && hasTakenQuiz && hasGeneratedNotes;
 
     const checklistItems = [
-        { name: "Take an Interview", completed: hasTakenInterview, href: "/dashboard" },
+        { name: "Generate Study Notes", completed: hasGeneratedNotes, href: "/dashboard/arena" },
+        { name: "Take an Interview", completed: hasTakenInterview, href: "/dashboard/interview/setup" },
         { name: "Take a Coding Quiz", completed: hasTakenQuiz, href: "/dashboard" },
         { name: "Deploy your Portfolio", completed: canDeployPortfolio, href: "/dashboard/portfolio" }
     ];
@@ -163,8 +165,9 @@ function DashboardLayoutContent({
       case 'note-generation':
         return `/dashboard/arena/notes?topic=${encodeURIComponent(item.details.topic)}`;
       case 'interview':
+        return `/dashboard/interview/${item.id}/results`;
       default:
-        return '#'; // No link for interviews yet
+        return '#'; 
     }
   };
   
