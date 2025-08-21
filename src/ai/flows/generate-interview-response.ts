@@ -11,14 +11,14 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import { Message } from 'genkit/model';
+import { MessageData, MessageSchema } from 'genkit/model';
 
 export const InterviewStateSchema = z.object({
   interviewId: z.string().describe('A unique identifier for this interview session.'),
   topic: z.string().describe('The primary technical topic for the interview (e.g., "React Hooks").'),
   level: z.string().describe('The candidate\'s experience level (e.g., "entry-level", "senior").'),
   role: z.string().describe('The job role the candidate is interviewing for (e.g., "Frontend Developer").'),
-  history: z.array(Message).describe('The history of the conversation so far.'),
+  history: z.array(MessageSchema).describe('The history of the conversation so far.'),
   questionsAsked: z.number().int().describe('The number of main questions the AI has already asked.'),
   isComplete: z.boolean().describe('A flag indicating if the interview has concluded.'),
 });
@@ -70,7 +70,7 @@ const interviewFlow = ai.defineFlow(
     const { output } = await ai.generate({
       model: 'googleai/gemini-1.5-flash-latest',
       system: promptContext,
-      history: state.history,
+      history: state.history as MessageData[],
       prompt: "Based on the rules and the conversation history, what is your next response?",
       output: {
           schema: z.object({
@@ -89,8 +89,10 @@ const interviewFlow = ai.defineFlow(
     
     // Update the interview state
     const newState = { ...state };
-    newState.history.push({ role: 'user', parts: [{ text: "..." }] }); // Placeholder for user's last turn
-    newState.history.push({ role: 'model', parts: [{ text: output.response }] });
+    // This is a temporary placeholder to simulate the user's turn for the AI's context.
+    // The actual user response is added on the client-side.
+    // We add the AI's response to keep the history for the next turn.
+    newState.history.push({ role: 'model', content: [{ text: output.response }] });
     
     if (output.questionWasAsked) {
       newState.questionsAsked += 1;

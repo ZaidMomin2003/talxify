@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Mic, MicOff, Video, VideoOff, Phone, Loader2, MessageSquare, Bot } from 'lucide-react';
+import { MessageData } from 'genkit/model';
 
 type TranscriptEntry = {
   speaker: 'user' | 'ai';
@@ -63,10 +64,9 @@ export function InterviewContainer({ interviewId }: { interviewId: string }) {
               if (userTranscript) {
                   setTranscript(prev => [...prev, { speaker: 'user', text: userTranscript }]);
                   
-                  const newHistory = [...interviewState.history, { role: 'user' as const, parts: [{ text: userTranscript }] }];
+                  const newHistory: MessageData[] = [...interviewState.history, { role: 'user', content: [{ text: userTranscript }] }];
                   const updatedState = { ...interviewState, history: newHistory };
-                  setInterviewState(updatedState);
-
+                  
                   // Get AI response
                   const aiResult = await generateInterviewResponse(updatedState);
                   setInterviewState(aiResult.newState);
@@ -283,4 +283,3 @@ export function InterviewContainer({ interviewId }: { interviewId: string }) {
     </div>
   );
 }
-
