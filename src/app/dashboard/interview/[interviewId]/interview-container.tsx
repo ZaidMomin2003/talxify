@@ -14,7 +14,7 @@ import type { InterviewActivity } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Mic, MicOff, Video, VideoOff, Phone, Loader2, MessageSquare, Bot } from 'lucide-react';
+import { Mic, MicOff, Video, VideoOff, Phone, Loader2, MessageSquare, Bot, Power, User } from 'lucide-react';
 import { MessageData } from 'genkit/model';
 import type { InterviewState } from '@/lib/interview-types';
 
@@ -23,10 +23,13 @@ type TranscriptEntry = {
   text: string;
 };
 
+type SessionStatus = 'idle' | 'listening' | 'processing' | 'speaking';
+
 export function InterviewContainer({ interviewId }: { interviewId: string }) {
   const searchParams = useSearchParams();
   const { toast } = useToast();
   const { user } = useAuth();
+  const router = useRouter();
 
   const [interviewState, setInterviewState] = useState<InterviewState>({
     interviewId: interviewId,
@@ -39,58 +42,64 @@ export function InterviewContainer({ interviewId }: { interviewId: string }) {
   });
 
   const [transcript, setTranscript] = useState<TranscriptEntry[]>([]);
-  const [isRecording, setIsRecording] = useState(false);
-  const [isAiSpeaking, setIsAiSpeaking] = useState(false);
-  const [isUserSpeaking, setIsUserSpeaking] = useState(false);
   const [isSessionActive, setIsSessionActive] = useState(false);
+  const [status, setStatus] = useState<SessionStatus>('idle');
 
   const audioPlayerRef = useRef<HTMLAudioElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const silenceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const { join, leave, toggleMic, toggleWebcam, localWebcamOn, localMicOn } = useMeeting();
+  const { join, leave, toggleWebcam, localWebcamOn } = useMeeting();
 
   const processUserSpeech = useCallback(async (audioBlob: Blob) => {
-      setIsRecording(false);
-      setIsUserSpeaking(false);
-      
-      const reader = new FileReader();
-      reader.readAsDataURL(audioBlob);
-      reader.onloadend = async () => {
-          const base64Audio = reader.result as string;
-          if (!base64Audio) return;
+    setStatus('processing');
+    
+    const reader = new FileReader();
+    reader.readAsDataURL(audioBlob);
+    reader.onloadend = async () => {
+        const base64Audio = reader.result as string;
+        if (!base64Audio) {
+            setStatus('idle');
+            return;
+        }
 
-          try {
-              const { transcript: userTranscript } = await speechToText({ audioDataUri: base64Audio });
-              if (userTranscript) {
-                  setTranscript(prev => [...prev, { speaker: 'user', text: userTranscript }]);
-                  
-                  const newHistory: MessageData[] = [...interviewState.history, { role: 'user', content: [{ text: userTranscript }] }];
-                  const updatedState = { ...interviewState, history: newHistory };
-                  
-                  // Get AI response
-                  const aiResult = await generateInterviewResponse(updatedState);
+        try {
+            const { transcript: userTranscript } = await speechToText({ audioDataUri: base64Audio });
+            if (userTranscript && userTranscript.trim()) {
+                setTranscript(prev => [...prev, { speaker: 'user', text: userTranscript }]);
+                
+                const newHistory: MessageData[] = [...interviewState.history, { role: 'user', content: [{ text: userTranscript }] }];
+                const updatedState = { ...interviewState, history: newHistory };
+                setInterviewState(updatedState);
+                
+                // Get AI response
+                setStatus('speaking');
+                const aiResult = await generateInterviewResponse(updatedState);
+                
+                if (aiResult.newState) {
                   setInterviewState(aiResult.newState);
-                  setTranscript(prev => [...prev, { speaker: 'ai', text: aiResult.response }]);
-                  
-                  // Convert AI response to speech
-                  const { audioDataUri } = await textToSpeech({ text: aiResult.response });
-                  if (audioPlayerRef.current) {
-                      setIsAiSpeaking(true);
-                      audioPlayerRef.current.src = audioDataUri;
-                      audioPlayerRef.current.play();
-                  }
+                }
+                
+                setTranscript(prev => [...prev, { speaker: 'ai', text: aiResult.response }]);
+                
+                const { audioDataUri } = await textToSpeech({ text: aiResult.response });
+                if (audioPlayerRef.current) {
+                    audioPlayerRef.current.src = audioDataUri;
+                    audioPlayerRef.current.play();
+                }
 
-                  if (aiResult.newState.isComplete) {
-                     // End of interview logic
-                    if(user){
-                       const finalTranscript = transcript.map(t => ({speaker: t.speaker, text: t.text}));
+                if (aiResult.newState.isComplete) {
+                   if(user){
+                       const finalTranscript = [...transcript, { speaker: 'user', text: userTranscript }, { speaker: 'ai', text: aiResult.response }];
                        const interviewActivity: InterviewActivity = {
                             id: interviewId,
                             type: 'interview',
                             timestamp: new Date().toISOString(),
                             transcript: finalTranscript,
-                            feedback: aiResult.response, // The final response is the feedback
+                            feedback: aiResult.response,
                             details: {
                                 topic: interviewState.topic,
                                 role: interviewState.role,
@@ -98,79 +107,135 @@ export function InterviewContainer({ interviewId }: { interviewId: string }) {
                             }
                        }
                        await addActivity(user.uid, interviewActivity);
-                    }
-                    setTimeout(() => setIsSessionActive(false), 5000);
-                  }
-              }
-          } catch (error) {
-              console.error("Error processing speech:", error);
-              toast({ variant: "destructive", title: "Transcription Error", description: "Could not process your audio." });
-          }
-      };
-  }, [interviewState, toast, user, interviewId, transcript]);
+                   }
+                   setTimeout(() => {
+                      setIsSessionActive(false);
+                      setStatus('idle');
+                      toast({ title: "Interview Complete!", description: "Your results have been saved to your activity log."});
+                      router.push('/dashboard');
+                   }, 5000);
+                }
+            } else {
+                // If transcript is empty, just go back to listening
+                setStatus('listening');
+            }
+        } catch (error) {
+            console.error("Error processing speech:", error);
+            toast({ variant: "destructive", title: "Processing Error", description: "Could not process your audio. Please try again." });
+            setStatus('listening');
+        }
+    };
+  }, [interviewState, toast, user, interviewId, transcript, router]);
+
+  const stopRecording = useCallback(() => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+      mediaRecorderRef.current.stop();
+    }
+    if (audioContextRef.current && audioContextRef.current.state === 'running') {
+        audioContextRef.current.suspend();
+    }
+    if (silenceTimeoutRef.current) {
+        clearTimeout(silenceTimeoutRef.current);
+    }
+  }, []);
   
   const startRecording = useCallback(() => {
     if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
         navigator.mediaDevices.getUserMedia({ audio: true })
             .then(stream => {
+                // Setup MediaRecorder
                 mediaRecorderRef.current = new MediaRecorder(stream);
                 mediaRecorderRef.current.ondataavailable = event => {
                     audioChunksRef.current.push(event.data);
                 };
                 mediaRecorderRef.current.onstop = () => {
                     const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-                    processUserSpeech(audioBlob);
+                    if (audioBlob.size > 1000) { // Only process if there's some audio
+                        processUserSpeech(audioBlob);
+                    } else {
+                        // If no audio, just go back to listening
+                        setStatus('listening');
+                    }
                     audioChunksRef.current = [];
                 };
-                mediaRecorderRef.current.start();
-                setIsRecording(true);
+
+                // Setup VAD
+                audioContextRef.current = new window.AudioContext();
+                analyserRef.current = audioContextRef.current.createAnalyser();
+                const source = audioContextRef.current.createMediaStreamSource(stream);
+                source.connect(analyserRef.current);
+                analyserRef.current.fftSize = 512;
+                const bufferLength = analyserRef.current.frequencyBinCount;
+                const dataArray = new Uint8Array(bufferLength);
+                
+                let isSpeaking = false;
+                const speakingThreshold = 20; // Adjust as needed
+                const silenceDelay = 1500; // 1.5 seconds of silence to stop
+
+                const detectSpeech = () => {
+                    if (status !== 'listening') return;
+
+                    analyserRef.current?.getByteFrequencyData(dataArray);
+                    const average = dataArray.reduce((acc, val) => acc + val, 0) / bufferLength;
+
+                    if (average > speakingThreshold) {
+                        if (!isSpeaking) {
+                            isSpeaking = true;
+                            if (mediaRecorderRef.current?.state === 'inactive') {
+                                mediaRecorderRef.current.start();
+                            }
+                        }
+                        if (silenceTimeoutRef.current) {
+                            clearTimeout(silenceTimeoutRef.current);
+                        }
+                    } else if (isSpeaking) {
+                        if (!silenceTimeoutRef.current) {
+                            silenceTimeoutRef.current = setTimeout(() => {
+                                isSpeaking = false;
+                                stopRecording();
+                            }, silenceDelay);
+                        }
+                    }
+                    requestAnimationFrame(detectSpeech);
+                };
+                
+                setStatus('listening');
+                detectSpeech();
             })
-            .catch(err => console.error("Mic access error:", err));
+            .catch(err => {
+                console.error("Mic access error:", err);
+                toast({ variant: 'destructive', title: 'Microphone Access Denied', description: 'Please enable microphone access to start the interview.' });
+                setIsSessionActive(false);
+            });
     }
-  }, [processUserSpeech]);
-
-
-  const stopRecording = useCallback(() => {
-    if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop();
-    }
-  }, [isRecording]);
-
-
-  // VAD logic - simplified for demo
-  useEffect(() => {
-    let silenceTimeout: NodeJS.Timeout;
-    if(isSessionActive && !isAiSpeaking) {
-        // This is a simplified VAD. A real implementation would analyze the audio stream.
-        // For now, we use a button to start/stop recording.
-    }
-
-    return () => clearTimeout(silenceTimeout);
-  }, [isAiSpeaking, isUserSpeaking, stopRecording, isSessionActive]);
+  }, [processUserSpeech, stopRecording, status, toast]);
 
 
   useEffect(() => {
       const player = audioPlayerRef.current;
       if (!player) return;
-
       const handleAudioEnd = () => {
-          setIsAiSpeaking(false);
+        if (!interviewState.isComplete) {
+            startRecording();
+        } else {
+            setStatus('idle');
+        }
       };
-
       player.addEventListener('ended', handleAudioEnd);
       return () => player.removeEventListener('ended', handleAudioEnd);
-  }, []);
+  }, [startRecording, interviewState.isComplete]);
+
 
   const startSession = async () => {
     join();
     setIsSessionActive(true);
+    setStatus('speaking');
     try {
         const result = await generateInterviewResponse(interviewState);
         setInterviewState(result.newState);
         setTranscript(prev => [...prev, { speaker: 'ai', text: result.response }]);
         const { audioDataUri } = await textToSpeech({ text: result.response });
         if (audioPlayerRef.current) {
-            setIsAiSpeaking(true);
             audioPlayerRef.current.src = audioDataUri;
             audioPlayerRef.current.play();
         }
@@ -181,15 +246,25 @@ export function InterviewContainer({ interviewId }: { interviewId: string }) {
     }
   }
 
-  const handleToggleRecording = () => {
-    if(isRecording) {
-        stopRecording();
-        setIsUserSpeaking(false);
-    } else {
-        startRecording();
-        setIsUserSpeaking(true);
-    }
+  const endSession = () => {
+    stopRecording();
+    leave();
+    setIsSessionActive(false);
+    router.push('/dashboard');
   }
+
+  const getStatusIndicator = () => {
+    switch (status) {
+        case 'listening':
+            return <div className="flex items-center justify-center gap-2 text-green-400"><Mic className="h-5 w-5 animate-pulse" /><span>Listening...</span></div>;
+        case 'speaking':
+            return <div className="flex items-center justify-center gap-2 text-blue-400"><Bot className="h-5 w-5" /><span>AI Speaking...</span></div>;
+        case 'processing':
+            return <div className="flex items-center justify-center gap-2 text-yellow-400"><Loader2 className="h-5 w-5 animate-spin" /><span>Processing...</span></div>;
+        default:
+            return <div className="flex items-center justify-center gap-2 text-muted-foreground"><Power className="h-5 w-5" /><span>Session Idle</span></div>;
+    }
+  };
 
 
   if (!isSessionActive) {
@@ -215,8 +290,7 @@ export function InterviewContainer({ interviewId }: { interviewId: string }) {
         <audio ref={audioPlayerRef} hidden />
         
         <div className="flex-grow grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Main content - User Video */}
-            <div className="md:col-span-2 bg-muted rounded-lg overflow-hidden relative">
+            <div className="md:col-span-2 bg-muted rounded-lg overflow-hidden relative flex items-center justify-center">
                 <video
                     ref={(ref) => ref && ref.setAttribute('playsinline', 'true')}
                     autoPlay
@@ -228,9 +302,12 @@ export function InterviewContainer({ interviewId }: { interviewId: string }) {
                         <p>Your camera is off</p>
                     </div>
                 )}
+                <div className="absolute top-4 right-4 bg-black/50 text-white px-3 py-1 rounded-full text-sm flex items-center gap-2">
+                    <User className="w-4 h-4"/>
+                    {user?.displayName || "Interviewee"}
+                </div>
             </div>
 
-            {/* Side Panel - Transcript & AI status */}
             <div className="flex flex-col gap-4">
                 <Card className="flex-grow flex flex-col">
                     <CardHeader>
@@ -239,45 +316,30 @@ export function InterviewContainer({ interviewId }: { interviewId: string }) {
                     <CardContent className="flex-grow overflow-y-auto">
                         <div className="space-y-4">
                             {transcript.map((entry, index) => (
-                                <div key={index} className={`flex gap-2 ${entry.speaker === 'user' ? 'justify-end' : 'justify-start'}`}>
-                                    <div className={`rounded-lg px-4 py-2 max-w-[80%] ${entry.speaker === 'user' ? 'bg-primary text-primary-foreground' : 'bg-secondary'}`}>
+                                <div key={index} className={`flex items-start gap-3 ${entry.speaker === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                    {entry.speaker === 'ai' && <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground"><Bot className="w-5 h-5"/></div>}
+                                    <div className={`rounded-lg px-4 py-2 max-w-[80%] ${entry.speaker === 'user' ? 'bg-secondary' : 'bg-muted'}`}>
                                         <p className="text-sm">{entry.text}</p>
                                     </div>
+                                    {entry.speaker === 'user' && <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white"><User className="w-5 h-5"/></div>}
                                 </div>
                             ))}
-                             {isAiSpeaking && <div className="flex justify-start"><Loader2 className="h-5 w-5 animate-spin"/></div>}
                         </div>
                     </CardContent>
                 </Card>
                 <Card>
                     <CardContent className="p-4 text-center">
-                       {isAiSpeaking ? (
-                           <div className="flex items-center justify-center gap-2 text-primary">
-                               <Bot className="h-5 w-5" />
-                               <span>AI is speaking...</span>
-                           </div>
-                       ) : isUserSpeaking ? (
-                            <div className="flex items-center justify-center gap-2 text-green-500">
-                                <Mic className="h-5 w-5" />
-                               <span>Listening...</span>
-                           </div>
-                       ) : (
-                           <span className="text-muted-foreground">AI is waiting for your response.</span>
-                       )}
+                       {getStatusIndicator()}
                     </CardContent>
                 </Card>
             </div>
         </div>
 
-        {/* Controls */}
         <div className="flex-shrink-0 flex justify-center items-center gap-4">
-            <Button onClick={toggleWebcam} variant={localWebcamOn ? "secondary" : "destructive"} size="icon" className="rounded-full h-12 w-12">
+            <Button onClick={() => toggleWebcam()} variant={localWebcamOn ? "secondary" : "destructive"} size="icon" className="rounded-full h-12 w-12">
                 {localWebcamOn ? <Video /> : <VideoOff />}
             </Button>
-            <Button onClick={handleToggleRecording} size="icon" className={`rounded-full h-16 w-16 transition-all ${isRecording ? 'bg-red-500 hover:bg-red-600 scale-110' : 'bg-green-500 hover:bg-green-600'}`}>
-                {isRecording ? <MicOff /> : <Mic />}
-            </Button>
-            <Button onClick={leave} variant="destructive" size="icon" className="rounded-full h-12 w-12">
+            <Button onClick={endSession} variant="destructive" size="icon" className="rounded-full h-12 w-12">
                 <Phone />
             </Button>
         </div>
