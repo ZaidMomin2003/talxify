@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect } from "react";
@@ -6,13 +7,17 @@ import { useAuth } from "@/context/auth-context";
 import { useTheme } from "next-themes";
 
 const FeaturebaseMessenger = () => {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const { theme } = useTheme();
 
   useEffect(() => {
+    // Do not initialize until the auth state is determined.
+    if (loading) {
+      return;
+    }
+    
     const win = window as any;
     
-    // Always initialize the Featurebase function
     if (typeof win.Featurebase !== "function") {
       win.Featurebase = function () {
         (win.Featurebase.q = win.Featurebase.q || []).push(arguments);
@@ -25,7 +30,6 @@ const FeaturebaseMessenger = () => {
       language: "en",
     };
     
-    // Configure based on whether the user is logged in or not
     if (user) {
         bootConfig.email = user.email ?? undefined;
         bootConfig.userId = user.uid;
@@ -34,14 +38,12 @@ const FeaturebaseMessenger = () => {
         bootConfig.shouldDisableIdentityVerification = true;
     }
 
-    // Boot Featurebase messenger with the constructed configuration
     win.Featurebase("boot", bootConfig);
 
-  }, [user, theme]);
+  }, [user, loading, theme]);
 
   return (
     <>
-      {/* Load the Featurebase SDK */}
       <Script 
         src="https://do.featurebase.app/js/sdk.js" 
         id="featurebase-sdk" 
