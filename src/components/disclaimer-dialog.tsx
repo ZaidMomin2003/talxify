@@ -30,13 +30,14 @@ export default function PromotionalPopup() {
 
   useEffect(() => {
     const hasSeenPromo = sessionStorage.getItem('hasSeenPromo');
-    if (!hasSeenPromo) {
+    // Only show the promo if the user hasn't seen it AND is not logged in.
+    if (!hasSeenPromo && !user) {
       const timer = setTimeout(() => {
         setIsOpen(true);
       }, 2000); // Open after 2 seconds
       return () => clearTimeout(timer);
     }
-  }, []);
+  }, [user]);
 
   const handleDismiss = (andRedirect: boolean = false) => {
     sessionStorage.setItem('hasSeenPromo', 'true');
