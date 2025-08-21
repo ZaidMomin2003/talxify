@@ -122,9 +122,9 @@ export default function InterviewResultsPage() {
                         {results.questions.map((q, index) => (
                              <AccordionItem value={`item-${index}`} key={index} asChild>
                                  <Card className="overflow-hidden">
-                                     <AccordionTrigger className="flex justify-between items-center w-full p-6 text-lg text-left hover:no-underline data-[state=open]:border-b">
-                                        <span className="truncate flex-1">Question {index + 1}: {q.questionText}</span>
-                                        <div className="ml-4 flex items-center gap-2">
+                                    <AccordionTrigger className="flex justify-between items-center w-full p-6 text-lg text-left hover:no-underline data-[state=open]:border-b">
+                                        <span className="truncate flex-1 pr-4">Question {index + 1}: {q.questionText}</span>
+                                        <div className="ml-4 flex items-center gap-2 shrink-0">
                                             <Badge variant={q.score > 80 ? 'default' : q.score > 60 ? 'secondary' : 'destructive'}>{q.score}%</Badge>
                                         </div>
                                     </AccordionTrigger>
@@ -159,3 +159,5 @@ export default function InterviewResultsPage() {
         </main>
     )
 }
+
+    
