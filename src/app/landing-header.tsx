@@ -119,9 +119,10 @@ export default function LandingHeader() {
                   </div>
                 </div>
                 <div className="flex flex-col">
-                  <span className={`text-lg font-bold text-foreground`}>
+                  <span className="text-lg font-bold text-foreground">
                     Talxify
                   </span>
+                   <span className="text-xs -mt-1 text-muted-foreground">AI Job Assistant</span>
                 </div>
               </Link>
             </motion.div>
@@ -165,7 +166,7 @@ export default function LandingHeader() {
               variants={itemVariants}
             >
               {loading ? (
-                <div className="h-9 w-24 animate-pulse rounded-md bg-muted"></div>
+                <div className="h-9 w-32 animate-pulse rounded-md bg-muted"></div>
               ) : user ? (
                  <motion.div
                     whileHover={{ scale: 1.02 }}
@@ -180,19 +181,13 @@ export default function LandingHeader() {
                   </motion.div>
               ) : (
                 <>
-                  <Link
-                    href="/login"
-                    className={`px-4 py-2 text-sm font-medium transition-colors duration-200 text-foreground`}
-                  >
-                    Sign In
-                  </Link>
                   <motion.div
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                   >
                     <Button asChild>
-                      <Link href="/signup">
-                        <span>Get Started</span>
+                      <Link href="/dashboard">
+                        <span>Dashboard</span>
                         <ArrowRight className="h-4 w-4" />
                       </Link>
                     </Button>
