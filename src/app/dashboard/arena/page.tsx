@@ -40,10 +40,15 @@ export default function ArenaPage() {
     }, [fetchSyllabus]);
 
 
-    const handleStartChallenge = (day: number) => {
-        // For now, just navigate to the coding quiz with the day's topic
+    const handleStartChallenge = (day: number, type: 'learn' | 'quiz' | 'interview') => {
         const topic = syllabus.find(d => d.day === day)?.topic || 'JavaScript';
-        router.push(`/dashboard/coding-quiz/instructions?topics=${topic}&difficulty=easy&numQuestions=3`);
+        
+        if (type === 'learn') {
+            router.push(`/dashboard/arena/notes?topic=${encodeURIComponent(topic)}`);
+        } else if (type === 'quiz') {
+            router.push(`/dashboard/coding-quiz/instructions?topics=${encodeURIComponent(topic)}&difficulty=easy&numQuestions=3`);
+        }
+        // Add interview navigation later
     }
 
     if (isLoading) {
@@ -120,32 +125,29 @@ export default function ArenaPage() {
                                     <div className="my-6 space-y-4">
                                         <div className="flex items-start gap-4 p-3 rounded-lg bg-muted/50">
                                             <div className="flex-shrink-0"><BookOpen className="h-5 w-5 text-yellow-500" /></div>
-                                            <div>
+                                            <div className="flex-1">
                                                 <p className="font-semibold text-foreground">Learn: {day.topic}</p>
                                                 <p className="text-xs text-muted-foreground">Study the core concepts of today's topic.</p>
                                             </div>
+                                            <Button size="sm" onClick={() => handleStartChallenge(day.day, 'learn')}>Start</Button>
                                         </div>
                                         <div className="flex items-start gap-4 p-3 rounded-lg bg-muted/50">
                                             <div className="flex-shrink-0"><Code className="h-5 w-5 text-blue-500" /></div>
-                                            <div>
+                                            <div className="flex-1">
                                                 <p className="font-semibold text-foreground">Complete Coding Quiz</p>
                                                 <p className="text-xs text-muted-foreground">Test your knowledge on {day.topic}.</p>
                                             </div>
+                                            <Button size="sm" onClick={() => handleStartChallenge(day.day, 'quiz')}>Start</Button>
                                         </div>
                                         <div className="flex items-start gap-4 p-3 rounded-lg bg-muted/50">
                                             <div className="flex-shrink-0"><Briefcase className="h-5 w-5 text-green-500" /></div>
-                                            <div>
+                                            <div className="flex-1">
                                                 <p className="font-semibold text-foreground">Take a Mock Interview</p>
                                                 <p className="text-xs text-muted-foreground">This feature is coming soon.</p>
                                             </div>
+                                             <Button size="sm" disabled>Start</Button>
                                         </div>
                                     </div>
-                                    <DialogFooter>
-                                        <Button size="lg" className="w-full" onClick={() => handleStartChallenge(day.day)}>
-                                            <PlayCircle className="mr-2 h-4 w-4" />
-                                            Let's Start Day {day.day}
-                                        </Button>
-                                    </DialogFooter>
                                 </>
                              ) : (
                                  <DialogHeader className="text-center py-8">
