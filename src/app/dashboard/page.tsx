@@ -229,22 +229,18 @@ export default function DashboardPage() {
             <Briefcase className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{interviewsCompleted} / {planLimits.interviews}</div>
-            <Button asChild variant="link" size="sm" className="p-0 h-auto">
-              <Link href="/dashboard/interview/demo/results">View Demo Results</Link>
-            </Button>
+            <div className="text-2xl font-bold">{interviewsCompleted}</div>
+            <p className="text-xs text-muted-foreground">Practice makes perfect</p>
           </CardContent>
         </Card>
         <Card className="bg-card/70">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Coding Quizzes Taken</CardTitle>
+            <CardTitle className="text-sm font-medium">Coding Questions Solved</CardTitle>
             <Code className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-             <div className="text-2xl font-bold">{hasTakenQuiz ? 1 : 0} / {isFreePlan ? 1 : '∞'}</div>
-             <p className="text-xs text-muted-foreground">
-                {isFreePlan ? `${quizzesLeft === 0 ? '0' : '1'} quiz left.` : 'Unlimited quizzes.'}
-             </p>
+             <div className="text-2xl font-bold">{questionsSolved}</div>
+             <p className="text-xs text-muted-foreground">Across all quizzes</p>
           </CardContent>
         </Card>
         <Card className="bg-card/70">
@@ -493,7 +489,3 @@ export default function DashboardPage() {
     </main>
   );
 }
-
-    
-
-    
