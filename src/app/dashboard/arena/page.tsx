@@ -47,8 +47,9 @@ export default function ArenaPage() {
             router.push(`/dashboard/arena/notes?topic=${encodeURIComponent(topic)}`);
         } else if (type === 'quiz') {
             router.push(`/dashboard/coding-quiz/instructions?topics=${encodeURIComponent(topic)}&difficulty=easy&numQuestions=3`);
+        } else if (type === 'interview') {
+            router.push(`/dashboard/interview/setup?topic=${encodeURIComponent(topic)}`);
         }
-        // Add interview navigation later
     }
 
     if (isLoading) {
@@ -143,9 +144,9 @@ export default function ArenaPage() {
                                             <div className="flex-shrink-0"><Briefcase className="h-5 w-5 text-green-500" /></div>
                                             <div className="flex-1">
                                                 <p className="font-semibold text-foreground">Take a Mock Interview</p>
-                                                <p className="text-xs text-muted-foreground">This feature is coming soon.</p>
+                                                <p className="text-xs text-muted-foreground">Practice your interview skills.</p>
                                             </div>
-                                             <Button size="sm" disabled>Start</Button>
+                                             <Button size="sm" onClick={() => handleStartChallenge(day.day, 'interview')}>Start</Button>
                                         </div>
                                     </div>
                                 </>
