@@ -218,7 +218,9 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{interviewsCompleted} / {planLimits.interviews}</div>
-            <p className="text-xs text-muted-foreground">This feature is coming soon!</p>
+            <Button asChild variant="link" size="sm" className="p-0 h-auto">
+              <Link href="/dashboard/interview/demo/results">View Demo Results</Link>
+            </Button>
           </CardContent>
         </Card>
         <Card className="bg-card/70">
@@ -466,7 +468,5 @@ export default function DashboardPage() {
     </main>
   );
 }
-
-    
 
     
