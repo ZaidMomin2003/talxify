@@ -389,9 +389,6 @@ export default function MockInterviewSessionPage() {
         const genToken = await generateVideoSDKToken();
         setToken(genToken);
         
-        const VIDEOSDK_API_KEY = process.env.NEXT_PUBLIC_VIDEOSDK_API_KEY;
-        if (!VIDEOSDK_API_KEY) throw new Error("VideoSDK API Key is not configured.");
-
         const url = `https://api.videosdk.live/v2/rooms`;
         const options = {
           method: "POST",
@@ -404,8 +401,8 @@ export default function MockInterviewSessionPage() {
 
         const response = await fetch(url, options);
         if (!response.ok) {
-            const errorBody = await response.json();
-            throw new Error(`Failed to create room: ${response.status} ${response.statusText} - ${errorBody.error || JSON.stringify(errorBody)}`);
+            const errorBody = await response.text();
+            throw new Error(`Failed to create room: ${response.status} ${response.statusText} - ${errorBody}`);
         }
         const data = await response.json();
         if (!data.roomId) {
@@ -464,4 +461,5 @@ export default function MockInterviewSessionPage() {
     </MeetingProvider>
   );
 }
+
 
