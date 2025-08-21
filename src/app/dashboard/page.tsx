@@ -182,8 +182,8 @@ export default function DashboardPage() {
   return (
     <main className="flex-1 overflow-auto p-4 sm:p-6">
       <div className="mb-8">
-        <h1 className="font-headline text-4xl font-bold">Dashboard</h1>
-        <p className="text-muted-foreground">Here's your progress overview, welcome back!</p>
+        <h1 className="font-headline text-4xl font-bold">Welcome, {user?.displayName || 'User'}!</h1>
+        <p className="text-muted-foreground">Here's your progress overview, let's get started!</p>
       </div>
 
       <div className="mb-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
