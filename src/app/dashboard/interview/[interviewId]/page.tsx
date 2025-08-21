@@ -1,34 +1,43 @@
 
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useEffect, useState, use } from 'react';
 import { MeetingProvider } from '@videosdk.live/react-sdk';
 import { useAuth } from '@/context/auth-context';
 import { Loader2 } from 'lucide-react';
 import { InterviewContainer } from './interview-container';
 import { generateVideoSDKToken } from '@/app/actions/videosdk';
-import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 
-function InterviewPageContent({ params }: { params: { interviewId: string }}) {
+function InterviewPageContent() {
     const { user } = useAuth();
-    const { toast } = useToast();
     const router = useRouter();
+    const params = useParams();
+    const interviewId = params.interviewId as string;
+
     const [token, setToken] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         const initializeSession = async () => {
-            if (!user) return;
+            if (!user) {
+                // Wait for user to be available
+                return;
+            }
 
             // --- Configuration Checks ---
             if (!process.env.NEXT_PUBLIC_DEEPGRAM_API_KEY) {
-                setError("Deepgram API key is not configured. Please add NEXT_PUBLIC_DEEPGRAM_API_KEY to your environment variables to use the interview feature.");
+                setError("Deepgram API key is not configured. Please add it to your environment variables to use the interview feature.");
                 setIsLoading(false);
+                return;
+            }
+            if (!process.env.VIDEOSDK_API_KEY || !process.env.VIDEOSDK_SECRET_KEY) {
+                setError("VideoSDK API Key or Secret is not configured. Please check your environment variables.");
+                 setIsLoading(false);
                 return;
             }
 
@@ -41,12 +50,10 @@ function InterviewPageContent({ params }: { params: { interviewId: string }}) {
                 setToken(generatedToken);
             } catch (err) {
                 console.error("Failed to get VideoSDK token", err);
-                setError("Could not initialize the interview session. Please ensure your VideoSDK API Key and Secret are correct and try again.");
+                setError("Could not initialize the interview session. Please ensure your VideoSDK credentials are correct and try again.");
+            } finally {
                 setIsLoading(false);
-                return; // Stop execution if token generation fails
             }
-            
-            setIsLoading(false);
         };
 
         initializeSession();
@@ -109,14 +116,14 @@ function InterviewPageContent({ params }: { params: { interviewId: string }}) {
     return (
         <MeetingProvider
             config={{
-                meetingId: params.interviewId,
+                meetingId: interviewId,
                 micEnabled: true,
                 webcamEnabled: true,
                 name: user?.displayName || 'Interviewee',
             }}
             token={token}
         >
-            <InterviewContainer interviewId={params.interviewId} />
+            <InterviewContainer interviewId={interviewId} />
         </MeetingProvider>
     )
 }
@@ -132,7 +139,7 @@ export default function InterviewPage({ params }: { params: { interviewId: strin
                 </div>
             </div>
         }>
-            <InterviewPageContent params={params}/>
+            <InterviewPageContent />
         </Suspense>
     )
 }
