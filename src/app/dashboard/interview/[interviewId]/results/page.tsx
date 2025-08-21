@@ -120,32 +120,32 @@ export default function InterviewResultsPage() {
                     </h2>
                     <Accordion type="single" collapsible className="w-full space-y-4" defaultValue="item-0">
                         {results.questions.map((q, index) => (
-                             <Card as={AccordionItem} value={`item-${index}`} key={index} className="overflow-hidden">
-                                <CardHeader className="p-0">
-                                    <AccordionTrigger className="flex justify-between items-center w-full p-6 text-lg text-left hover:no-underline">
+                             <AccordionItem value={`item-${index}`} key={index} asChild>
+                                 <Card className="overflow-hidden">
+                                     <AccordionTrigger className="flex justify-between items-center w-full p-6 text-lg text-left hover:no-underline data-[state=open]:border-b">
                                         <span className="truncate flex-1">Question {index + 1}: {q.questionText}</span>
                                         <div className="ml-4 flex items-center gap-2">
                                             <Badge variant={q.score > 80 ? 'default' : q.score > 60 ? 'secondary' : 'destructive'}>{q.score}%</Badge>
                                         </div>
                                     </AccordionTrigger>
-                                </CardHeader>
-                                <AccordionContent>
-                                    <div className="p-6 pt-0 space-y-6">
-                                        <div>
-                                            <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2"><User className="h-5 w-5 text-blue-500"/> Your Answer</h3>
-                                            <blockquote className="p-4 bg-muted rounded-md italic text-muted-foreground border-l-4 border-blue-500">{q.userAnswer}</blockquote>
+                                    <AccordionContent>
+                                        <div className="p-6 pt-4 space-y-6">
+                                            <div>
+                                                <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2"><User className="h-5 w-5 text-blue-500"/> Your Answer</h3>
+                                                <blockquote className="p-4 bg-muted rounded-md italic text-muted-foreground border-l-4 border-blue-500">{q.userAnswer}</blockquote>
+                                            </div>
+                                            <div>
+                                                <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2"><Bot className="h-5 w-5 text-primary"/> AI Feedback</h3>
+                                                <div className="p-4 bg-muted rounded-md text-muted-foreground">{q.feedback}</div>
+                                            </div>
+                                            <div>
+                                                <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2"><CheckCircle className="h-5 w-5 text-green-500"/> Ideal Answer</h3>
+                                                <div className="p-4 bg-muted rounded-md text-muted-foreground">{q.idealAnswer}</div>
+                                            </div>
                                         </div>
-                                         <div>
-                                            <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2"><Bot className="h-5 w-5 text-primary"/> AI Feedback</h3>
-                                            <div className="p-4 bg-muted rounded-md text-muted-foreground">{q.feedback}</div>
-                                        </div>
-                                         <div>
-                                            <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2"><CheckCircle className="h-5 w-5 text-green-500"/> Ideal Answer</h3>
-                                            <div className="p-4 bg-muted rounded-md text-muted-foreground">{q.idealAnswer}</div>
-                                        </div>
-                                    </div>
-                                </AccordionContent>
-                            </Card>
+                                    </AccordionContent>
+                                 </Card>
+                            </AccordionItem>
                         ))}
                     </Accordion>
                 </div>
