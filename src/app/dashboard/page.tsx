@@ -23,6 +23,7 @@ import { getUserData } from "@/lib/firebase-service";
 import { differenceInDays, format } from 'date-fns';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 
 
 const codingGymSchema = z.object({
@@ -30,6 +31,22 @@ const codingGymSchema = z.object({
   difficulty: z.enum(["easy", "moderate", "difficult"]),
   numQuestions: z.string(),
 });
+
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-background/90 backdrop-blur-sm p-4 rounded-lg border border-border shadow-lg">
+        <p className="label text-muted-foreground">{`${label}`}</p>
+        <div style={{ color: payload[0].color }} className="flex items-center gap-2 font-semibold">
+          <div className="w-2.5 h-2.5 rounded-full" style={{backgroundColor: payload[0].fill}}/>
+          Score: {payload[0].value}%
+        </div>
+      </div>
+    );
+  }
+
+  return null;
+};
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -75,7 +92,7 @@ export default function DashboardPage() {
     router.push(`/dashboard/coding-quiz/instructions?${params.toString()}`);
   }
 
-  const { questionsSolved, interviewsCompleted, recentQuizzes, averageScore, hasTakenQuiz } = useMemo(() => {
+  const { questionsSolved, interviewsCompleted, recentQuizzes, averageScore, hasTakenQuiz, performanceData } = useMemo(() => {
     const quizzes = allActivity.filter(item => item.type === 'quiz') as QuizResult[];
     const interviews = allActivity.filter(item => item.type === 'interview') as InterviewActivity[];
     const completedQuizzes = quizzes.filter(item => item.analysis.length > 0);
@@ -90,13 +107,25 @@ export default function DashboardPage() {
     const avgScore = completedQuizzes.length > 0 ? Math.round((totalScore / completedQuizzes.length) * 100) : 0;
     
     const quizTaken = completedQuizzes.length > 0;
+    
+    const perfData = [...completedQuizzes]
+        .sort((a,b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
+        .map((result) => {
+            const totalQuizScore = result.analysis.reduce((sum, item) => sum + item.score, 0);
+            const averageQuizScore = Math.round((totalQuizScore / Math.max(result.analysis.length, 1)) * 100);
+            return {
+                name: format(new Date(result.timestamp), 'MMM d'),
+                score: averageQuizScore,
+            };
+        });
 
     return {
         questionsSolved: solved,
         interviewsCompleted: interviews.length,
         recentQuizzes: quizzes.sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()),
         averageScore: avgScore,
-        hasTakenQuiz: quizTaken
+        hasTakenQuiz: quizTaken,
+        performanceData: perfData
     };
   }, [allActivity]);
 
@@ -211,7 +240,45 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      <div className="grid gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <Card className="lg:col-span-2">
+            <CardHeader>
+                <CardTitle>Performance Over Time</CardTitle>
+                <CardDescription>
+                    Your average quiz scores over time. Complete more quizzes to see your progress!
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="h-[300px] w-full pr-6">
+                 {performanceData.length > 0 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart
+                        data={performanceData}
+                        margin={{
+                            top: 5, right: 10, left: -10, bottom: 5,
+                        }}
+                        >
+                        <defs>
+                            <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.4}/>
+                            <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                            </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                        <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
+                        <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value}%`} />
+                        <RechartsTooltip content={<CustomTooltip />} cursor={{ stroke: 'hsl(var(--primary))', strokeWidth: 1, strokeDasharray: '3 3' }} />
+                        <Area type="monotone" dataKey="score" stroke="hsl(var(--primary))" fillOpacity={1} fill="url(#colorScore)" strokeWidth={2} activeDot={{ r: 6, style: { fill: 'hsl(var(--primary))', stroke: 'hsl(var(--background))' } }} />
+                        </AreaChart>
+                    </ResponsiveContainer>
+                 ) : (
+                    <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
+                        <BarChart className="w-12 h-12 mb-4" />
+                        <p className="font-semibold">No performance data yet</p>
+                        <p className="text-sm">Take a quiz to see your progress.</p>
+                    </div>
+                 )}
+            </CardContent>
+        </Card>
         <Card className="flex flex-col">
           {!canTakeQuiz ? (
             <div className="flex flex-col h-full justify-center items-center text-center p-6">
@@ -237,7 +304,7 @@ export default function DashboardPage() {
                      <div className="bg-secondary/20 text-secondary-foreground rounded-lg p-2"><Code className="h-6 w-6" /></div>
                      <div className="flex flex-col">
                          <CardTitle className="text-xl">Coding Gym</CardTitle>
-                         <CardDescription>Get AI-powered help with your coding problems.</CardDescription>
+                         <CardDescription>Start a new quiz.</CardDescription>
                      </div>
                  </div>
                 </CardHeader>
@@ -421,3 +488,5 @@ export default function DashboardPage() {
     </main>
   );
 }
+
+    
