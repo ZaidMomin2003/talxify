@@ -23,14 +23,15 @@ const FeaturebaseMessenger = () => {
       appId: "689df97845396713701c443c",
       theme: theme || 'dark',
       language: "en",
-      shouldDisableIdentityVerification: true,
     };
     
-    // Only add user details if the user object is available
+    // Configure based on whether the user is logged in or not
     if (user) {
         bootConfig.email = user.email ?? undefined;
         bootConfig.userId = user.uid;
         bootConfig.createdAt = user.metadata?.creationTime;
+    } else {
+        bootConfig.shouldDisableIdentityVerification = true;
     }
 
     // Boot Featurebase messenger with the constructed configuration
