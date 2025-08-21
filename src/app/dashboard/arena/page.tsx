@@ -5,19 +5,27 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription as DialogDescriptionComponent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Swords, Lock, PlayCircle, BookOpen, Code, Briefcase } from "lucide-react";
+import { Swords, Lock, PlayCircle, BookOpen, Code, Briefcase, CheckCircle } from "lucide-react";
 import { cn } from '@/lib/utils';
+import { useRouter } from 'next/navigation';
 
 const dailyTasks = [
-    { icon: <BookOpen className="h-5 w-5 text-yellow-500" />, title: "Learn a New Skill", description: "Study a new data structure or algorithm." },
-    { icon: <Code className="h-5 w-5 text-blue-500" />, title: "Complete Coding Quiz", description: "Test your knowledge with a targeted quiz." },
-    { icon: <Briefcase className="h-5 w-5 text-green-500" />, title: "Take a Mock Interview", description: "Practice your communication and problem-solving." },
+    { icon: <BookOpen className="h-5 w-5 text-yellow-500" />, title: "Learn a New Skill", description: "Study a new data structure or algorithm.", href: "#" },
+    { icon: <Code className="h-5 w-5 text-blue-500" />, title: "Complete Coding Quiz", description: "Test your knowledge with a targeted quiz.", href: "/dashboard/coding-quiz/instructions?topics=JavaScript&difficulty=easy&numQuestions=3" },
+    { icon: <Briefcase className="h-5 w-5 text-green-500" />, title: "Take a Mock Interview", description: "Practice your communication and problem-solving.", href: "#" },
 ];
 
 
 export default function ArenaPage() {
+    const router = useRouter();
     const days = Array.from({ length: 30 }, (_, i) => i + 1);
     const completedDays = 0; // In a real app, this would come from user data
+
+    const handleStartChallenge = (day: number) => {
+        // For now, just navigate to the first actionable item which is the coding quiz
+        // In a real app, this might go to a specific "Day X" page.
+        router.push(dailyTasks.find(t => t.href.startsWith('/'))?.href || '/dashboard');
+    }
 
   return (
     <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
@@ -40,11 +48,12 @@ export default function ArenaPage() {
 
                 return (
                      <Dialog key={day}>
-                        <DialogTrigger asChild disabled={!isUnlocked}>
+                        <DialogTrigger asChild>
                              <Card 
                                 className={cn(
-                                    "text-center transition-all duration-300 transform hover:-translate-y-1",
-                                    isUnlocked ? "cursor-pointer hover:shadow-primary/20 hover:border-primary/50" : "cursor-not-allowed bg-muted/50 text-muted-foreground",
+                                    "text-center transition-all duration-300 transform hover:-translate-y-1 cursor-pointer",
+                                    !isUnlocked && "bg-muted/50 text-muted-foreground hover:shadow-none",
+                                    isUnlocked && "hover:shadow-primary/20 hover:border-primary/50",
                                     isCompleted && "bg-green-500/10 border-green-500/50"
                                 )}
                             >
@@ -56,9 +65,11 @@ export default function ArenaPage() {
                                 </CardHeader>
                                 <CardContent>
                                     {isCompleted ? (
-                                        <p className="text-sm font-semibold text-green-600">Completed</p>
+                                        <div className="flex items-center justify-center gap-2 text-sm font-semibold text-green-600">
+                                            <CheckCircle className="h-4 w-4"/> Completed
+                                        </div>
                                     ) : isUnlocked ? (
-                                        <p className="text-sm text-primary">Start Challenge</p>
+                                        <p className="text-sm text-primary font-semibold">Start Challenge</p>
                                     ) : (
                                         <p className="text-sm">Locked</p>
                                     )}
@@ -66,29 +77,43 @@ export default function ArenaPage() {
                             </Card>
                         </DialogTrigger>
                         <DialogContent>
-                            <DialogHeader>
-                                <DialogTitle className="text-2xl font-bold">Day {day} Challenge</DialogTitle>
-                                <DialogDescriptionComponent>
-                                    Complete these tasks to master your skills for today.
-                                </DialogDescriptionComponent>
-                            </DialogHeader>
-                            <div className="my-6 space-y-4">
-                                {dailyTasks.map(task => (
-                                    <div key={task.title} className="flex items-start gap-4 p-3 rounded-lg bg-muted/50">
-                                        <div className="flex-shrink-0">{task.icon}</div>
-                                        <div>
-                                            <p className="font-semibold text-foreground">{task.title}</p>
-                                            <p className="text-xs text-muted-foreground">{task.description}</p>
-                                        </div>
+                             {isUnlocked ? (
+                                <>
+                                    <DialogHeader>
+                                        <DialogTitle className="text-2xl font-bold">Day {day} Challenge</DialogTitle>
+                                        <DialogDescriptionComponent>
+                                            Complete these tasks to master your skills for today.
+                                        </DialogDescriptionComponent>
+                                    </DialogHeader>
+                                    <div className="my-6 space-y-4">
+                                        {dailyTasks.map(task => (
+                                            <div key={task.title} className="flex items-start gap-4 p-3 rounded-lg bg-muted/50">
+                                                <div className="flex-shrink-0">{task.icon}</div>
+                                                <div>
+                                                    <p className="font-semibold text-foreground">{task.title}</p>
+                                                    <p className="text-xs text-muted-foreground">{task.description}</p>
+                                                </div>
+                                            </div>
+                                        ))}
                                     </div>
-                                ))}
-                            </div>
-                            <DialogFooter>
-                                <Button size="lg" className="w-full">
-                                    <PlayCircle className="mr-2 h-4 w-4" />
-                                    Let's Start Day {day}
-                                </Button>
-                            </DialogFooter>
+                                    <DialogFooter>
+                                        <Button size="lg" className="w-full" onClick={() => handleStartChallenge(day)}>
+                                            <PlayCircle className="mr-2 h-4 w-4" />
+                                            Let's Start Day {day}
+                                        </Button>
+                                    </DialogFooter>
+                                </>
+                             ) : (
+                                 <DialogHeader className="text-center py-8">
+                                     <div className="mx-auto bg-muted text-muted-foreground rounded-full p-4 mb-4">
+                                        <Lock className="h-10 w-10" />
+                                     </div>
+                                    <DialogTitle className="text-2xl font-bold">Day {day} is Locked</DialogTitle>
+                                    <DialogDescriptionComponent className="max-w-xs mx-auto">
+                                        You need to complete all previous challenges before you can unlock this day. Keep going!
+                                    </DialogDescriptionComponent>
+                                </DialogHeader>
+                             )}
                         </DialogContent>
                     </Dialog>
                 );
