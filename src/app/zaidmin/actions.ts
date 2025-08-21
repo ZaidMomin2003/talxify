@@ -39,13 +39,10 @@ export async function getAllUsersAdmin(): Promise<UserData[]> {
 }
 
 export async function getUserBySlug(slug: string): Promise<UserData | null> {
-    const formattedSlug = slug.replace(/-/g, ' ');
     try {
         const usersCollection = db.collection('users');
-        // Firestore queries are case-sensitive. A common workaround is to store a normalized
-        // version of the field you want to query. Since we don't have that, we have to
-        // fetch all and filter, which is inefficient but necessary for case-insensitivity here.
         const snapshot = await usersCollection.get();
+
         if (snapshot.empty) {
             return null;
         }
@@ -53,7 +50,16 @@ export async function getUserBySlug(slug: string): Promise<UserData | null> {
         let foundUser: UserData | null = null;
         snapshot.forEach(doc => {
             const data = doc.data() as UserData;
-            if (data.portfolio?.personalInfo?.name.toLowerCase() === formattedSlug.toLowerCase()) {
+            // Create a slug from the user's name for comparison
+            const userSlug = (data.portfolio?.personalInfo?.name || '')
+                .toLowerCase()
+                .replace(/\s+/g, '-')
+                .replace(/[^\w\-]+/g, '')
+                .replace(/\-\-+/g, '-')
+                .replace(/^-+/, '')
+                .replace(/-+$/, '');
+            
+            if (userSlug === slug) {
                 foundUser = data;
             }
         });
