@@ -5,6 +5,7 @@ export const initialPortfolioData: UserData = {
     portfolio: {
         personalInfo: {
             name: 'John Doe',
+            slug: 'john-doe',
             profession: 'Senior Software Engineer',
             bio: 'A passionate software engineer with a love for building scalable and user-friendly web applications.',
             bannerUrl: 'https://placehold.co/1200x300.png',

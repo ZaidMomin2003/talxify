@@ -2,7 +2,7 @@
 'use server';
 
 import { initializeApp, getApps, App } from 'firebase-admin/app';
-import { getFirestore } from 'firebase-admin/firestore';
+import { getFirestore, Filter } from 'firebase-admin/firestore';
 import { adminConfig } from '@/lib/firebase-admin-config';
 import type { UserData } from '@/lib/types';
 
@@ -41,30 +41,25 @@ export async function getAllUsersAdmin(): Promise<UserData[]> {
 export async function getUserBySlug(slug: string): Promise<UserData | null> {
     try {
         const usersCollection = db.collection('users');
-        const snapshot = await usersCollection.get();
+        // Use a where clause to directly query for the document with the matching slug.
+        // This is much more efficient than fetching all documents.
+        const q = usersCollection.where(
+            'portfolio.personalInfo.slug',
+            '==',
+            slug
+        );
+
+        const snapshot = await q.get();
 
         if (snapshot.empty) {
+            console.log(`No user found with slug: ${slug}`);
             return null;
         }
 
-        let foundUser: UserData | null = null;
-        snapshot.forEach(doc => {
-            const data = doc.data() as UserData;
-            // Create a slug from the user's name for comparison
-            const userSlug = (data.portfolio?.personalInfo?.name || '')
-                .toLowerCase()
-                .replace(/\s+/g, '-')
-                .replace(/[^\w\-]+/g, '')
-                .replace(/\-\-+/g, '-')
-                .replace(/^-+/, '')
-                .replace(/-+$/, '');
-            
-            if (userSlug === slug) {
-                foundUser = data;
-            }
-        });
+        // Since slug should be unique, we expect at most one document.
+        const userDoc = snapshot.docs[0];
+        return userDoc.data() as UserData;
 
-        return foundUser;
     } catch (error) {
         console.error("Error fetching user by slug from Firestore with Admin SDK:", error);
         return null;

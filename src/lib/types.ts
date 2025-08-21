@@ -109,6 +109,7 @@ export interface Portfolio {
 
 export interface PersonalInfo {
     name: string;
+    slug: string;
     profession: string;
     bio: string;
     bannerUrl: string;

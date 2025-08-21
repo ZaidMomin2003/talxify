@@ -110,13 +110,15 @@ export default function PortfolioPage() {
     });
   };
   
-  const slugify = (text: string) => {
-    return text.toString().toLowerCase()
-      .replace(/\s+/g, '-')           // Replace spaces with -
-      .replace(/[^\w\-]+/g, '')       // Remove all non-word chars
-      .replace(/\-\-+/g, '-')         // Replace multiple - with single -
-      .replace(/^-+/, '')             // Trim - from start of text
-      .replace(/-+$/, '');            // Trim - from end of text
+  const handleSlugChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!portfolio) return;
+    const rawSlug = e.target.value;
+    const sanitizedSlug = rawSlug
+      .toLowerCase()
+      .replace(/\s+/g, '-')       // Replace spaces with -
+      .replace(/[^\w\-]+/g, '')   // Remove all non-word chars
+      .replace(/\-\-+/g, '-');    // Replace multiple - with single -
+    setPortfolio({...portfolio, personalInfo: {...portfolio.personalInfo, slug: sanitizedSlug}});
   }
 
   if (isLoading || !portfolio) {
@@ -149,6 +151,16 @@ export default function PortfolioPage() {
                 <Label htmlFor="profession">Profession</Label>
                 <Input id="profession" value={portfolio.personalInfo.profession} onChange={(e) => setPortfolio({...portfolio, personalInfo: {...portfolio.personalInfo, profession: e.target.value}})} />
               </div>
+            </div>
+            <div>
+                <Label htmlFor="slug">Portfolio Slug</Label>
+                <div className="relative">
+                    <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-muted-foreground">
+                       talxify.space/
+                    </span>
+                    <Input id="slug" className="pl-24" value={portfolio.personalInfo.slug} onChange={handleSlugChange} />
+                </div>
+                <p className="text-sm text-muted-foreground mt-1">This will be your unique portfolio URL. Use only letters, numbers, and hyphens.</p>
             </div>
             <div>
               <Label htmlFor="bio">Bio</Label>
@@ -374,7 +386,7 @@ export default function PortfolioPage() {
 
         <div className="flex justify-end gap-2 pt-4">
             <Button asChild variant="outline" size="lg">
-              <Link href={`/${slugify(portfolio.personalInfo.name)}`}>Preview</Link>
+              <Link href={`/${portfolio.personalInfo.slug}`}>Preview</Link>
             </Button>
             <Button size="lg" onClick={handleSave} disabled={isSaving}>
                 {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
