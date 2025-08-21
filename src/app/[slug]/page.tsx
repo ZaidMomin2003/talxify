@@ -51,9 +51,11 @@ function PortfolioComponent({ slug }: { slug: string }) {
         setIsLoading(true);
         try {
             const data = await getUserBySlug(slug);
+            // If data is found for the slug, use it. Otherwise, use the initial placeholder.
             setUserData(data ?? initialPortfolioData);
         } catch (error) {
             console.error("Failed to fetch user data by slug:", error);
+            // On error, fall back to placeholder data.
             setUserData(initialPortfolioData);
         } finally {
             setIsLoading(false);
@@ -377,5 +379,3 @@ export default function PortfolioPage({ params }: { params: { slug: string } }) 
         </Suspense>
     )
 }
-
-    
