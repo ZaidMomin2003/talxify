@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Github, Linkedin, Instagram, Mail, Phone, Link as LinkIcon, Award, Briefcase, MessageSquare, GraduationCap, Sparkles, Building, Calendar, Star, Code, Twitter, Globe, School, Percent, Loader2, Bot } from "lucide-react";
+import { Github, Linkedin, Instagram, Mail, Phone, Link as LinkIcon, Award, Briefcase, MessageSquare, GraduationCap, Sparkles, Building, Calendar, Star, Code, Twitter, Globe, School, Percent, Loader2, Bot, User as UserIcon } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
@@ -16,13 +16,13 @@ import { getUserData } from "@/lib/firebase-service";
 import type { UserData, QuizResult } from "@/lib/types";
 import { initialPortfolioData } from "@/lib/initial-data";
 
-const Section = ({ icon, title, children, className }: { icon: React.ReactNode, title: string, children: React.ReactNode, className?: string }) => (
-    <section className={cn("space-y-6", className)}>
-        <div className="flex items-center gap-3">
-            <div className="bg-primary/10 text-primary rounded-full p-2">
+const Section = ({ icon, title, children, className, id }: { icon: React.ReactNode, title: string, children: React.ReactNode, className?: string, id: string }) => (
+    <section id={id} className={cn("py-12", className)}>
+        <div className="flex items-center gap-4 mb-8">
+            <div className="bg-primary/10 text-primary rounded-lg p-3">
                 {icon}
             </div>
-            <h2 className="text-3xl font-bold">{title}</h2>
+            <h2 className="text-3xl font-bold font-headline">{title}</h2>
         </div>
         {children}
     </section>
@@ -34,8 +34,6 @@ function PortfolioComponent() {
     const [isLoading, setIsLoading] = useState(true);
 
     const fetchUserData = useCallback(async () => {
-        // For a public page, you'd fetch by slug.
-        // For this preview, we fetch the logged-in user's data.
         if (!user) {
             setUserData(initialPortfolioData);
             setIsLoading(false);
@@ -91,218 +89,178 @@ function PortfolioComponent() {
             className="bg-background min-h-screen"
             style={{ '--primary': portfolio.themeColor } as React.CSSProperties}
         >
-            <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur-sm">
-                <div className="container mx-auto flex h-16 items-center justify-between px-4 md:px-6 max-w-4xl">
-                    <Link href="#" className="flex items-center gap-2">
-                        <Avatar>
-                            <AvatarImage src="https://placehold.co/40x40.png" alt={portfolio.personalInfo.name} data-ai-hint="person avatar" />
-                            <AvatarFallback>{portfolio.personalInfo.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                        </Avatar>
-                        <span className="text-xl font-bold">{portfolio.personalInfo.name}</span>
-                    </Link>
-                    <Button asChild>
-                        <a href={`mailto:${portfolio.personalInfo.email}`}>Contact Me</a>
-                    </Button>
-                </div>
-            </header>
-
-            <main className="container mx-auto p-4 md:p-6 lg:p-8 space-y-16 max-w-4xl">
-                {/* Hero Section */}
-                <section className="relative -mt-16 -mx-8">
-                     <Image src={portfolio.personalInfo.bannerUrl || 'https://placehold.co/1200x300.png'} alt="Portfolio Banner" width={1200} height={300} className="w-full h-48 md:h-64 object-cover" data-ai-hint="abstract banner" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent" />
-                    <div className="relative container max-w-4xl mx-auto p-4 md:p-6 lg:p-8 text-center -mt-24">
-                        <Avatar className="w-32 h-32 mx-auto mb-4 border-4 border-primary shadow-lg">
-                            <AvatarImage src="https://placehold.co/128x128.png" alt={portfolio.personalInfo.name} data-ai-hint="person avatar" />
-                            <AvatarFallback>{portfolio.personalInfo.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                        </Avatar>
-                        <h1 className="text-5xl font-headline font-bold mb-2">{portfolio.personalInfo.name}</h1>
-                        <p className="text-2xl text-primary font-semibold mb-4">{portfolio.personalInfo.profession}</p>
-                        <p className="max-w-3xl mx-auto text-lg text-muted-foreground mb-6">{portfolio.personalInfo.bio}</p>
-                        <div className="flex justify-center flex-wrap gap-4 mb-8">
-                            <Button variant="ghost" size="icon" asChild><a href={portfolio.socials.github} target="_blank" rel="noopener noreferrer"><Github /></a></Button>
-                            <Button variant="ghost" size="icon" asChild><a href={portfolio.socials.linkedin} target="_blank" rel="noopener noreferrer"><Linkedin /></a></Button>
-                            <Button variant="ghost" size="icon" asChild><a href={portfolio.socials.twitter} target="_blank" rel="noopener noreferrer"><Twitter /></a></Button>
-                            <Button variant="ghost" size="icon" asChild><a href={portfolio.socials.instagram} target="_blank" rel="noopener noreferrer"><Instagram /></a></Button>
-                            <Button variant="ghost" size="icon" asChild><a href={portfolio.socials.website} target="_blank" rel="noopener noreferrer"><Globe /></a></Button>
-                        </div>
-                        <div className="flex justify-center flex-wrap gap-x-6 gap-y-2">
-                            <a href={`mailto:${portfolio.personalInfo.email}`} className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary"><Mail className="w-4 h-4" />{portfolio.personalInfo.email}</a>
-                            {portfolio.personalInfo.phone && <div className="inline-flex items-center gap-2 text-sm text-muted-foreground"><Phone className="w-4 h-4" />{portfolio.personalInfo.phone}</div>}
-                        </div>
-                    </div>
-                </section>
-
-                {/* Stats Section */}
-                <section className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between pb-2">
-                            <CardTitle className="text-sm font-medium">Interviews Completed</CardTitle>
-                            <Briefcase className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{interviewsCompleted}</div>
-                            <p className="text-xs text-muted-foreground">Practice makes perfect</p>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between pb-2">
-                            <CardTitle className="text-sm font-medium">Coding Questions Solved</CardTitle>
-                            <Code className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{questionsSolved}</div>
-                            <p className="text-xs text-muted-foreground">Across all quizzes</p>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between pb-2">
-                            <CardTitle className="text-sm font-medium">Average Score</CardTitle>
-                            <Percent className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{averageScore}%</div>
-                            <p className="text-xs text-muted-foreground">Based on your performance</p>
-                        </CardContent>
-                    </Card>
-                </section>
-                
-                 {/* Skills Section */}
-                <Section icon={<Code />} title="Skills">
-                    <Card className="p-6">
-                        <div className="flex flex-wrap gap-3">
-                            {portfolio.skills.map((skill) => (
-                                <Badge key={skill.skill} variant="secondary" className="text-base px-4 py-2">{skill.skill}</Badge>
-                            ))}
-                        </div>
-                    </Card>
-                </Section>
-                
-                {/* Work Experience Section */}
-                <Section icon={<Briefcase />} title="Work Experience">
-                    <div className="space-y-8 relative before:absolute before:inset-y-0 before:w-px before:bg-border before:left-6">
-                        {portfolio.experience.map((exp, index) => (
-                            <div key={index} className="relative pl-12">
-                                <div className="absolute left-6 -translate-x-1/2 top-1 w-3 h-3 rounded-full bg-primary" />
-                                <p className="font-semibold text-lg">{exp.role}</p>
-                                <div className="flex items-center gap-x-4 gap-y-1 flex-wrap text-sm text-muted-foreground">
-                                    <p className="inline-flex items-center gap-2"><Building className="w-3.5 h-3.5" /> {exp.company}</p>
-                                    <p className="inline-flex items-center gap-2"><Calendar className="w-3.5 h-3.5" /> {exp.duration}</p>
-                                </div>
-                                <p className="mt-2 text-muted-foreground">{exp.description}</p>
+            <div className="container mx-auto max-w-6xl p-4 sm:p-6 lg:p-8">
+                <div className="lg:grid lg:grid-cols-12 lg:gap-12">
+                    {/* Sticky Sidebar */}
+                    <aside className="lg:col-span-4 lg:sticky lg:top-8 self-start mb-8 lg:mb-0">
+                        <Card className="p-6 text-center shadow-lg">
+                            <Avatar className="w-32 h-32 mx-auto mb-4 border-4 border-primary shadow-lg">
+                                <AvatarImage src="https://placehold.co/128x128.png" alt={portfolio.personalInfo.name} data-ai-hint="person avatar" />
+                                <AvatarFallback>{portfolio.personalInfo.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                            </Avatar>
+                            <h1 className="text-3xl font-headline font-bold mb-1">{portfolio.personalInfo.name}</h1>
+                            <p className="text-lg text-primary font-semibold mb-6">{portfolio.personalInfo.profession}</p>
+                            
+                             <div className="flex justify-center flex-wrap gap-2 mb-6">
+                                <Button variant="ghost" size="icon" asChild><a href={portfolio.socials.github} target="_blank" rel="noopener noreferrer"><Github /></a></Button>
+                                <Button variant="ghost" size="icon" asChild><a href={portfolio.socials.linkedin} target="_blank" rel="noopener noreferrer"><Linkedin /></a></Button>
+                                <Button variant="ghost" size="icon" asChild><a href={portfolio.socials.twitter} target="_blank" rel="noopener noreferrer"><Twitter /></a></Button>
+                                <Button variant="ghost" size="icon" asChild><a href={portfolio.socials.website} target="_blank" rel="noopener noreferrer"><Globe /></a></Button>
                             </div>
-                        ))}
-                    </div>
-                </Section>
-                
-                {/* Education Section */}
-                 <Section icon={<School />} title="Education">
-                    <div className="space-y-4">
-                        {portfolio.education.map((edu, index) => (
-                            <Card key={index} className="p-4 flex items-center gap-4">
-                                <div className="bg-muted text-muted-foreground rounded-full p-3">
-                                    <School className="w-6 h-6" />
+                            
+                            <Button asChild className="w-full">
+                                <a href={`mailto:${portfolio.personalInfo.email}`}>
+                                    <Mail className="mr-2 h-4 w-4" /> Contact Me
+                                </a>
+                            </Button>
+                        </Card>
+                        <Card className="p-6 mt-8 shadow-lg">
+                           <CardTitle className="mb-4 text-xl">Skills</CardTitle>
+                           <CardContent className="p-0">
+                                <div className="flex flex-wrap gap-2">
+                                    {portfolio.skills.map((skill) => (
+                                        <Badge key={skill.skill} variant="secondary" className="text-base px-3 py-1">{skill.skill}</Badge>
+                                    ))}
                                 </div>
-                                <div>
-                                    <p className="font-semibold text-lg">{edu.degree}</p>
-                                    <p className="text-muted-foreground">{edu.institution} - {edu.year}</p>
-                                </div>
-                            </Card>
-                        ))}
-                    </div>
-                </Section>
+                            </CardContent>
+                        </Card>
+                    </aside>
 
-                {/* Projects Section */}
-                <Section icon={<Sparkles />} title="Projects">
-                    <div className="space-y-8">
-                        {portfolio.projects.map((project, index) => (
-                            <Card key={index} className="shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden">
-                                {project.imageUrl && <Image src={project.imageUrl} alt={project.title} width={1200} height={630} className="w-full h-auto object-cover" data-ai-hint="project screenshot" />}
-                                <CardHeader>
-                                    <CardTitle className="flex items-center justify-between">
-                                        {project.title}
-                                        <a href={project.link} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary">
-                                            <LinkIcon className="w-5 h-5" />
-                                        </a>
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <p className="text-muted-foreground mb-4">{project.description}</p>
-                                    <div className="flex flex-wrap gap-2">
-                                        {project.tags.split(',').map(tag => tag.trim() && <Badge key={tag} variant="secondary">{tag}</Badge>)}
+                    {/* Main Content */}
+                    <main className="lg:col-span-8">
+                         <Image src={portfolio.personalInfo.bannerUrl || 'https://placehold.co/1200x300.png'} alt="Portfolio Banner" width={1200} height={300} className="w-full h-48 md:h-64 object-cover rounded-xl shadow-lg" data-ai-hint="abstract banner" />
+
+                        <Section id="about" icon={<UserIcon />} title="About Me">
+                            <p className="text-lg text-muted-foreground leading-relaxed">
+                                {portfolio.personalInfo.bio}
+                            </p>
+                        </Section>
+
+                        <Section id="stats" icon={<Percent />} title="Activity Stats">
+                             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                                <Card>
+                                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                                        <CardTitle className="text-sm font-medium">Interviews Completed</CardTitle>
+                                        <Briefcase className="h-4 w-4 text-muted-foreground" />
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="text-2xl font-bold">{interviewsCompleted}</div>
+                                        <p className="text-xs text-muted-foreground">Practice makes perfect</p>
+                                    </CardContent>
+                                </Card>
+                                <Card>
+                                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                                        <CardTitle className="text-sm font-medium">Coding Questions Solved</CardTitle>
+                                        <Code className="h-4 w-4 text-muted-foreground" />
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="text-2xl font-bold">{questionsSolved}</div>
+                                        <p className="text-xs text-muted-foreground">Across all quizzes</p>
+                                    </CardContent>
+                                </Card>
+                                <Card>
+                                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                                        <CardTitle className="text-sm font-medium">Average Score</CardTitle>
+                                        <Percent className="h-4 w-4 text-muted-foreground" />
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="text-2xl font-bold">{averageScore}%</div>
+                                        <p className="text-xs text-muted-foreground">Based on your performance</p>
+                                    </CardContent>
+                                </Card>
+                            </div>
+                        </Section>
+                        
+                        <Section id="experience" icon={<Briefcase />} title="Work Experience">
+                            <div className="space-y-8 relative before:absolute before:inset-y-0 before:w-px before:bg-border before:left-6">
+                                {portfolio.experience.map((exp, index) => (
+                                    <div key={index} className="relative pl-12">
+                                        <div className="absolute left-6 -translate-x-1/2 top-1 w-3 h-3 rounded-full bg-primary" />
+                                        <p className="font-semibold text-lg">{exp.role}</p>
+                                        <div className="flex items-center gap-x-4 gap-y-1 flex-wrap text-sm text-muted-foreground">
+                                            <p className="inline-flex items-center gap-2"><Building className="w-3.5 h-3.5" /> {exp.company}</p>
+                                            <p className="inline-flex items-center gap-2"><Calendar className="w-3.5 h-3.5" /> {exp.duration}</p>
+                                        </div>
+                                        <p className="mt-2 text-muted-foreground">{exp.description}</p>
                                     </div>
-                                </CardContent>
-                            </Card>
-                        ))}
-                    </div>
-                </Section>
+                                ))}
+                            </div>
+                        </Section>
+                        
+                        <Section id="education" icon={<School />} title="Education">
+                            <div className="space-y-4">
+                                {portfolio.education.map((edu, index) => (
+                                    <Card key={index} className="p-4 flex items-center gap-4">
+                                        <div className="bg-muted text-muted-foreground rounded-full p-3">
+                                            <School className="w-6 h-6" />
+                                        </div>
+                                        <div>
+                                            <p className="font-semibold text-lg">{edu.degree}</p>
+                                            <p className="text-muted-foreground">{edu.institution} - {edu.year}</p>
+                                        </div>
+                                    </Card>
+                                ))}
+                            </div>
+                        </Section>
 
-                {/* Certificates Section */}
-                <Section icon={<GraduationCap />} title="Certificates">
-                    <div className="space-y-4">
-                        {portfolio.certificates.map((cert, index) => (
-                            <Card key={index} className="p-4 flex items-center gap-4">
-                                {cert.imageUrl && <Image src={cert.imageUrl} alt={cert.name} width={64} height={64} className="rounded-md object-cover" data-ai-hint="certificate logo" />}
-                                <div>
-                                    <p className="font-semibold">{cert.name}</p>
-                                    <p className="text-sm text-muted-foreground">{cert.body} - {cert.date}</p>
-                                </div>
-                            </Card>
-                        ))}
-                    </div>
-                </Section>
-                
-                {/* Achievements Section */}
-                <Section icon={<Award />} title="Achievements">
-                    <Card className="p-6">
-                        <ul className="space-y-4">
-                            {portfolio.achievements.map((ach, index) => (
-                                <li key={index} className="flex items-start gap-4">
-                                    {ach.imageUrl && <Image src={ach.imageUrl} alt="Achievement" width={40} height={40} className="rounded-md mt-1 object-cover" data-ai-hint="achievement award" />}
-                                    <div className="flex-1">
-                                        <Star className="w-4 h-4 text-primary inline-block mr-2" />
-                                        <span className="text-muted-foreground">{ach.description}</span>
-                                    </div>
-                                </li>
-                            ))}
-                        </ul>
-                    </Card>
-                </Section>
+                        <Section id="projects" icon={<Sparkles />} title="Projects">
+                             <div className="grid md:grid-cols-2 gap-8">
+                                {portfolio.projects.map((project, index) => (
+                                    <Card key={index} className="shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden flex flex-col">
+                                        {project.imageUrl && <Image src={project.imageUrl} alt={project.title} width={600} height={400} className="w-full h-48 object-cover" data-ai-hint="project screenshot" />}
+                                        <CardHeader>
+                                            <CardTitle className="flex items-center justify-between">
+                                                {project.title}
+                                                <a href={project.link} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary">
+                                                    <LinkIcon className="w-5 h-5" />
+                                                </a>
+                                            </CardTitle>
+                                        </CardHeader>
+                                        <CardContent className="flex-grow flex flex-col">
+                                            <p className="text-muted-foreground mb-4 flex-grow">{project.description}</p>
+                                            <div className="flex flex-wrap gap-2 mt-auto">
+                                                {project.tags.split(',').map(tag => tag.trim() && <Badge key={tag} variant="secondary">{tag}</Badge>)}
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                ))}
+                            </div>
+                        </Section>
 
-                {/* Testimonials Section */}
-                <Section icon={<MessageSquare />} title="Testimonials">
-                    <div className="space-y-6">
-                        {portfolio.testimonials.map((test, index) => (
-                             <blockquote key={index} className="p-6 bg-muted/50 rounded-lg border-l-4 border-primary">
-                                <p className="italic text-lg">"{test.testimonial}"</p>
-                                <footer className="mt-4 text-right font-semibold"> - {test.author}</footer>
-                            </blockquote>
-                        ))}
-                    </div>
-                </Section>
-
-                {/* FAQs Section */}
-                <Section icon={<Sparkles />} title="FAQs">
-                    <Accordion type="single" collapsible className="w-full">
-                        {portfolio.faqs.map((faq, index) => (
-                            <AccordionItem value={`item-${index}`} key={index}>
-                                <AccordionTrigger className="text-lg text-left">{faq.question}</AccordionTrigger>
-                                <AccordionContent className="text-base text-muted-foreground">
-                                    {faq.answer}
-                                </AccordionContent>
-                            </AccordionItem>
-                        ))}
-                    </Accordion>
-                </Section>
-            </main>
-
-            <footer className="text-center p-6 border-t mt-16 space-y-4">
-                <a href="https://talxify.space" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-primary font-bold hover:underline">
-                    <Bot />
-                    <span>Ace the job with Talxify</span>
-                </a>
-                <p className="text-muted-foreground">© {new Date().getFullYear()} {portfolio.personalInfo.name}. All rights reserved.</p>
-            </footer>
+                        <Section id="certificates" icon={<Award />} title="Certificates">
+                            <div className="space-y-4">
+                                {portfolio.certificates.map((cert, index) => (
+                                    <Card key={index} className="p-4 flex items-start gap-4">
+                                        {cert.imageUrl && <Image src={cert.imageUrl} alt={cert.name} width={64} height={64} className="rounded-md object-cover" data-ai-hint="certificate logo" />}
+                                        <div>
+                                            <p className="font-semibold">{cert.name}</p>
+                                            <p className="text-sm text-muted-foreground">{cert.body} - {cert.date}</p>
+                                        </div>
+                                    </Card>
+                                ))}
+                            </div>
+                        </Section>
+                        
+                        <Section id="testimonials" icon={<MessageSquare />} title="Testimonials">
+                            <div className="space-y-6">
+                                {portfolio.testimonials.map((test, index) => (
+                                    <blockquote key={index} className="p-6 bg-muted/50 rounded-lg border-l-4 border-primary">
+                                        <p className="italic text-lg">"{test.testimonial}"</p>
+                                        <footer className="mt-4 text-right font-semibold"> - {test.author}</footer>
+                                    </blockquote>
+                                ))}
+                            </div>
+                        </Section>
+                    </main>
+                </div>
+                 <footer className="text-center p-6 border-t mt-16 space-y-4">
+                    <a href="https://talxify.space" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-primary font-bold hover:underline">
+                        <Bot />
+                        <span>Powered by Talxify</span>
+                    </a>
+                    <p className="text-muted-foreground">© {new Date().getFullYear()} {portfolio.personalInfo.name}. All rights reserved.</p>
+                </footer>
+            </div>
         </div>
     );
 }
@@ -318,3 +276,5 @@ export default function PortfolioPage({ params }: { params: { slug: string } }) 
         </Suspense>
     )
 }
+
+    
