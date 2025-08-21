@@ -39,7 +39,7 @@ export default function LandingPage() {
                 <div className="aspect-video overflow-hidden rounded-2xl border border-border shadow-2xl shadow-primary/10">
                     <iframe
                         className="w-full h-full"
-                        src="https://www.youtube.com/embed/frLkQ7LlnIg?si=YOUR_SHARE_CODE"
+                        src="https://www.youtube.com/embed/3tXVSpImzXk?si=YOUR_SHARE_CODE"
                         title="YouTube video player"
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                         allowFullScreen
