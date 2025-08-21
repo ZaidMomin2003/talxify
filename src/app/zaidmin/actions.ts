@@ -1,14 +1,16 @@
 
 'use server';
 
-import { initializeApp, getApps, App } from 'firebase-admin/app';
+import { initializeApp, getApps, App, cert } from 'firebase-admin/app';
 import { getFirestore, Filter } from 'firebase-admin/firestore';
 import { adminConfig } from '@/lib/firebase-admin-config';
 import type { UserData } from '@/lib/types';
 
 // Initialize Firebase Admin SDK
 if (!getApps().length) {  
-  initializeApp(adminConfig);
+  initializeApp({
+    credential: cert(adminConfig.credential),
+  });
 }
 const db = getFirestore();
 
@@ -65,3 +67,4 @@ export async function getUserBySlug(slug: string): Promise<UserData | null> {
         return null;
     }
 }
+
