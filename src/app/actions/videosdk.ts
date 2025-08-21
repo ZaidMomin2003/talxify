@@ -17,6 +17,8 @@ export async function generateVideoSDKToken() {
   };
 
   try {
+    // Corrected the argument order for jwt.sign
+    // The secret key is the second argument, and options is the third.
     const token = jwt.sign(payload, secretKey, {
       expiresIn: '1h',
       algorithm: 'HS256',
