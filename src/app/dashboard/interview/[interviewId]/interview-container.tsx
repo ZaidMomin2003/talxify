@@ -90,7 +90,8 @@ export function InterviewContainer({ interviewId }: { interviewId: string }) {
   const endSession = () => {
     // leave();
     setIsSessionActive(false);
-    router.push('/dashboard');
+    // Navigate to the new results page
+    router.push(`/dashboard/interview/${interviewId}/results`);
   }
 
   const getStatusIndicator = () => {
