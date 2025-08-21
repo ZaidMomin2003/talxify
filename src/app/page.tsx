@@ -1,7 +1,7 @@
 
 'use client';
 
-import LandingHero from "./landing-hero";
+import AppHero from "./landing-hero";
 import LandingFeatures from "./landing-features";
 import LandingTestimonials from "./landing-testimonials";
 import LandingPricing from "./landing-pricing";
@@ -19,7 +19,7 @@ export default function LandingPage() {
     <div className="flex flex-col min-h-screen bg-background overflow-x-hidden">
        <LandingHeader />
       <main className="flex-1">
-        <LandingHero />
+        <AppHero />
         
         {/* Video Section */}
         <section id="see-in-action" className="py-16 sm:py-24 bg-background">
