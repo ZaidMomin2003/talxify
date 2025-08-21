@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken';
 
 export async function generateVideoSDKToken() {
     const apiKey = process.env.VIDEOSDK_API_KEY;
-    const secret = process.env.VIDEOSDK_SECRET;
+    const secret = process.env.VIDEOSDK_SECRET_KEY;
 
     if (!apiKey || !secret) {
         throw new Error('VideoSDK API key and secret are not configured in environment variables.');
