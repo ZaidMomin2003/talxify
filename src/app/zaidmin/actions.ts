@@ -1,3 +1,4 @@
+
 'use server';
 
 import { initializeApp, getApps, App } from 'firebase-admin/app';
@@ -49,7 +50,8 @@ export async function getUserBySlug(slug: string): Promise<UserData | null> {
         let foundUser: UserData | null = null;
         snapshot.forEach(doc => {
             const data = doc.data() as UserData;
-            if (data.portfolio?.personalInfo?.name.toLowerCase() === formattedSlug) {
+            // Case-insensitive comparison
+            if (data.portfolio?.personalInfo?.name.toLowerCase() === formattedSlug.toLowerCase()) {
                 foundUser = data;
             }
         });
