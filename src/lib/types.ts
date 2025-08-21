@@ -114,6 +114,7 @@ export interface PersonalInfo {
     bannerUrl: string;
     email: string;
     phone: string;
+    youtubeVideoUrl?: string;
 }
 
 export interface SocialLinks {
@@ -126,6 +127,7 @@ export interface SocialLinks {
 
 export interface Skill {
     skill: string;
+    expertise: number;
 }
 
 export interface WorkExperience {

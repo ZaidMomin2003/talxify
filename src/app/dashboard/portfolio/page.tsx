@@ -15,6 +15,7 @@ import { getPortfolio, updatePortfolio } from "@/lib/firebase-service";
 import type { Portfolio, Project, Certificate, Achievement, Testimonial, FAQ, Skill, WorkExperience, Education } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { initialPortfolioData } from "@/lib/initial-data";
+import { Slider } from "@/components/ui/slider";
 
 const colorOptions = [
     { name: 'Default', hsl: '221.2 83.2% 53.3%' },
@@ -64,7 +65,7 @@ export default function PortfolioPage() {
     }
   }
 
-  const handleFieldChange = (section: keyof Portfolio, index: number, field: string, value: string) => {
+  const handleFieldChange = (section: keyof Portfolio, index: number, field: string, value: string | number) => {
     if (!portfolio) return;
     const newPortfolio = { ...portfolio };
     // @ts-ignore
@@ -72,7 +73,7 @@ export default function PortfolioPage() {
     setPortfolio(newPortfolio);
   };
   
-  const handleSimpleListChange = (section: keyof Portfolio, index: number, field: string, value: string) => {
+  const handleSimpleListChange = (section: keyof Portfolio, index: number, field: string, value: string | number) => {
     if (!portfolio) return;
     const newPortfolio = { ...portfolio };
     // @ts-ignore
@@ -147,6 +148,13 @@ export default function PortfolioPage() {
                 Tip: Upload to a host like Imgur, or use a Google Drive link (ensure sharing is public). Then paste the direct link here.
               </p>
             </div>
+            <div>
+              <Label htmlFor="youtubeUrl">YouTube Video URL</Label>
+              <Input id="youtubeUrl" placeholder="e.g., https://www.youtube.com/watch?v=..." value={portfolio.personalInfo.youtubeVideoUrl} onChange={(e) => setPortfolio({...portfolio, personalInfo: {...portfolio.personalInfo, youtubeVideoUrl: e.target.value}})} />
+              <p className="text-sm text-muted-foreground mt-1">
+                Paste a link to a YouTube video for your introduction.
+              </p>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <Label htmlFor="email">Email</Label>
@@ -200,16 +208,26 @@ export default function PortfolioPage() {
         
         <Card className="shadow-lg border-primary/10">
             <CardHeader><CardTitle>Skills</CardTitle></CardHeader>
-            <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                    {portfolio.skills.map((item, index) => (
-                        <div key={index} className="flex items-center gap-2 relative">
-                            <Input value={item.skill} onChange={(e) => handleSimpleListChange('skills', index, 'skill', e.target.value)} />
-                            <Button variant="ghost" size="icon" className="shrink-0" onClick={() => handleRemoveItem('skills', index)}><Trash2 className="w-4 h-4" /></Button>
+            <CardContent className="space-y-6">
+                {portfolio.skills.map((item, index) => (
+                    <div key={index} className="flex items-center gap-4">
+                        <div className="flex-grow">
+                           <Label>Skill</Label>
+                           <Input value={item.skill} onChange={(e) => handleSimpleListChange('skills', index, 'skill', e.target.value)} />
                         </div>
-                    ))}
-                </div>
-                <Button variant="outline" className="w-full" onClick={() => handleAddItem('skills', { skill: '' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Skill</Button>
+                        <div className="w-1/2">
+                           <Label>Expertise ({item.expertise}%)</Label>
+                           <Slider
+                             defaultValue={[item.expertise]}
+                             max={100}
+                             step={1}
+                             onValueChange={(value) => handleSimpleListChange('skills', index, 'expertise', value[0])}
+                           />
+                        </div>
+                        <Button variant="ghost" size="icon" className="shrink-0 self-end" onClick={() => handleRemoveItem('skills', index)}><Trash2 className="w-4 h-4" /></Button>
+                    </div>
+                ))}
+                <Button variant="outline" className="w-full" onClick={() => handleAddItem('skills', { skill: 'New Skill', expertise: 50 })}><PlusCircle className="mr-2 h-4 w-4" /> Add Skill</Button>
             </CardContent>
         </Card>
 

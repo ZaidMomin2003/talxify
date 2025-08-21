@@ -10,6 +10,7 @@ export const initialPortfolioData: UserData = {
             bannerUrl: 'https://placehold.co/1200x300.png',
             email: 'john.doe@example.com',
             phone: '+1 234 567 890',
+            youtubeVideoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
         },
         themeColor: '221.2 83.2% 53.3%',
         socials: {
@@ -19,7 +20,13 @@ export const initialPortfolioData: UserData = {
             website: 'https://johndoe.com',
             instagram: 'https://instagram.com/johndoe',
         },
-        skills: [{ skill: 'React' }, { skill: 'Next.js' }, { skill: 'TypeScript' }, { skill: 'Node.js' }, { skill: 'GraphQL' }],
+        skills: [
+            { skill: 'React', expertise: 95 },
+            { skill: 'Next.js', expertise: 90 },
+            { skill: 'TypeScript', expertise: 85 },
+            { skill: 'Node.js', expertise: 80 },
+            { skill: 'GraphQL', expertise: 75 },
+        ],
         experience: [{ role: 'Senior Software Engineer', company: 'Tech Innovations Inc.', duration: '2021 - Present', description: 'Led the development of a new microservices-based architecture, improving system scalability by 50%.' }],
         education: [{ degree: 'B.Sc. in Computer Science', institution: 'State University', year: '2018' }],
         projects: [{ title: 'Talxify - AI Interview Coach', description: 'An AI-powered platform to help users practice for technical interviews with real-time feedback and coding assistance.', link: 'https://talxify.ai', tags: 'Next.js, AI, Tailwind', imageUrl: 'https://placehold.co/1200x630.png' }],

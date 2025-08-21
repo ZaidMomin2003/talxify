@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Github, Linkedin, Instagram, Mail, Phone, Link as LinkIcon, Award, Briefcase, MessageSquare, GraduationCap, Sparkles, Building, Calendar, Star, Code, Twitter, Globe, School, Percent, Loader2, Bot, User as UserIcon } from "lucide-react";
+import { Github, Linkedin, Instagram, Mail, Phone, Link as LinkIcon, Award, Briefcase, MessageSquare, GraduationCap, Sparkles, Building, Calendar, Star, Code, Twitter, Globe, School, Percent, Loader2, Bot, User as UserIcon, BarChart, Youtube } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
@@ -15,6 +15,7 @@ import { useAuth } from "@/context/auth-context";
 import { getUserData } from "@/lib/firebase-service";
 import type { UserData, QuizResult } from "@/lib/types";
 import { initialPortfolioData } from "@/lib/initial-data";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 const Section = ({ icon, title, children, className, id }: { icon: React.ReactNode, title: string, children: React.ReactNode, className?: string, id: string }) => (
     <section id={id} className={cn("py-12", className)}>
@@ -27,6 +28,21 @@ const Section = ({ icon, title, children, className, id }: { icon: React.ReactNo
         {children}
     </section>
 );
+
+
+function CustomTooltip({ active, payload, label }: any) {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-background/90 backdrop-blur-sm p-4 rounded-lg border border-border shadow-lg">
+        <p className="label font-bold text-foreground">{`${label}`}</p>
+        <div style={{ color: "hsl(var(--primary))" }} className="flex items-center gap-2 font-semibold">
+          Proficiency: {payload[0].value}%
+        </div>
+      </div>
+    );
+  }
+  return null;
+}
 
 function PortfolioComponent() {
     const { user } = useAuth();
@@ -74,6 +90,21 @@ function PortfolioComponent() {
             averageScore: avgScore,
         };
       }, [userData?.activity]);
+    
+    const getYouTubeEmbedUrl = (url: string | undefined) => {
+        if (!url) return null;
+        let videoId;
+        if (url.includes('youtu.be/')) {
+            videoId = url.split('youtu.be/')[1].split('?')[0];
+        } else if (url.includes('youtube.com/watch?v=')) {
+            videoId = url.split('watch?v=')[1].split('&')[0];
+        } else {
+            return null;
+        }
+        return `https://www.youtube.com/embed/${videoId}`;
+    };
+
+    const youtubeEmbedUrl = getYouTubeEmbedUrl(portfolio?.personalInfo.youtubeVideoUrl);
 
 
     if (isLoading || !portfolio) {
@@ -135,6 +166,23 @@ function PortfolioComponent() {
                                 {portfolio.personalInfo.bio}
                             </p>
                         </Section>
+                        
+                        {youtubeEmbedUrl && (
+                            <Section id="video-intro" icon={<Youtube />} title="Video Introduction">
+                                <Card className="overflow-hidden">
+                                    <div className="aspect-video">
+                                        <iframe
+                                            className="w-full h-full"
+                                            src={youtubeEmbedUrl}
+                                            title="YouTube video player"
+                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                            allowFullScreen
+                                        ></iframe>
+                                    </div>
+                                </Card>
+                            </Section>
+                        )}
+
 
                         <Section id="stats" icon={<Percent />} title="Activity Stats">
                              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -171,6 +219,31 @@ function PortfolioComponent() {
                             </div>
                         </Section>
                         
+                         <Section id="skill-proficiency" icon={<BarChart />} title="Skill Proficiency">
+                            <Card>
+                                <CardContent className="pt-6 h-[300px] w-full">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <AreaChart
+                                            data={portfolio.skills}
+                                            margin={{ top: 5, right: 20, left: -10, bottom: 5 }}
+                                        >
+                                            <defs>
+                                                <linearGradient id="colorExpertise" x1="0" y1="0" x2="0" y2="1">
+                                                    <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.4}/>
+                                                    <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                                                </linearGradient>
+                                            </defs>
+                                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                                            <XAxis dataKey="skill" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
+                                            <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value}%`} />
+                                            <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'hsl(var(--primary))', strokeWidth: 1, strokeDasharray: '3 3' }} />
+                                            <Area type="monotone" dataKey="expertise" stroke="hsl(var(--primary))" fill="url(#colorExpertise)" strokeWidth={2} activeDot={{ r: 6, style: { fill: 'hsl(var(--primary))' } }} />
+                                        </AreaChart>
+                                    </ResponsiveContainer>
+                                </CardContent>
+                            </Card>
+                        </Section>
+
                         <Section id="experience" icon={<Briefcase />} title="Work Experience">
                             <div className="space-y-8 relative before:absolute before:inset-y-0 before:w-px before:bg-border before:left-6">
                                 {portfolio.experience.map((exp, index) => (
@@ -276,5 +349,3 @@ export default function PortfolioPage({ params }: { params: { slug: string } }) 
         </Suspense>
     )
 }
-
-    
