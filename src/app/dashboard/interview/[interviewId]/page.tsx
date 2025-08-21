@@ -35,7 +35,8 @@ function InterviewPageContent() {
                 setIsLoading(false);
                 return;
             }
-            if (!process.env.VIDEOSDK_API_KEY || !process.env.VIDEOSDK_SECRET_KEY) {
+             // Use the public key for the client-side check, the server uses the secret key
+            if (!process.env.NEXT_PUBLIC_VIDEOSDK_API_KEY) {
                 setError("VideoSDK API Key or Secret is not configured. Please check your environment variables.");
                  setIsLoading(false);
                 return;
@@ -129,7 +130,7 @@ function InterviewPageContent() {
 }
 
 
-export default function InterviewPage({ params }: { params: { interviewId: string }}) {
+export default function InterviewPage() {
     return (
         <Suspense fallback={
             <div className="flex h-screen w-full items-center justify-center bg-background text-foreground">
