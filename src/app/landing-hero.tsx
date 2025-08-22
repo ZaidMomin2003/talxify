@@ -12,6 +12,7 @@ import {
   Code,
   ArrowUpRight,
 } from 'lucide-react';
+import Image from 'next/image';
 
 export default function AppHero() {
   const [stats, setStats] = useState({
@@ -216,10 +217,14 @@ export default function AppHero() {
             </motion.div>
             <motion.div variants={itemVariants} className="mx-auto flex items-center gap-3 rounded-full border border-slate-800 bg-slate-900/50 px-3 py-1 backdrop-blur-sm lg:mx-0 lg:ml-auto">
               <div className="flex -space-x-2">
-                {[1, 2, 3, 4, 5].map((i) => (
-                  <div key={i} className="h-6 w-6 overflow-hidden rounded-full border-2 border-slate-900 bg-slate-800">
-                    <div className="h-full w-full bg-gradient-to-br from-red-500 to-blue-600 opacity-80"></div>
-                  </div>
+                {[12, 32, 45, 11, 23].map((i) => (
+                    <Image key={i}
+                        src={`https://randomuser.me/api/portraits/thumb/men/${i}.jpg`}
+                        alt={`user ${i}`}
+                        width={24}
+                        height={24}
+                        className="h-6 w-6 rounded-full border-2 border-slate-900"
+                    />
                 ))}
               </div>
               <span className="text-xs text-slate-300">
