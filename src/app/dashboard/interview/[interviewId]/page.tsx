@@ -42,8 +42,8 @@ function InterviewPageContent() {
                 setIsLoading(false);
                 return;
             }
-            if (!process.env.NEXT_PUBLIC_VIDEOSDK_API_KEY || !process.env.VIDEOSDK_SECRET_KEY) {
-                setError("VideoSDK API Key or Secret is not configured. Please check your environment variables.");
+            if (!process.env.NEXT_PUBLIC_VIDEOSDK_API_KEY) {
+                setError("VideoSDK API Key is not configured. Please check your environment variables.");
                  setIsLoading(false);
                 return;
             }
