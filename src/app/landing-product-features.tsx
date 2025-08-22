@@ -2,8 +2,10 @@
 'use client';
 
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { ArrowRight, BarChart, BookOpen, BrainCircuit, CalendarDays, Code, MessageSquare, Sparkles, User, Video } from "lucide-react";
+import { ArrowRight, BarChart, BookOpen, BrainCircuit, CalendarDays, CheckCircle, Code, MessageSquare, Sparkles, User, Video } from "lucide-react";
 import Image from "next/image";
 
 const features = [
@@ -11,36 +13,118 @@ const features = [
         title: 'Your Personalized 30-Day Prep Plan',
         description: 'Start with a plan tailored to your target roles and companies. Our AI generates a comprehensive, 30-day syllabus covering everything from data structures to system design, ensuring you learn what matters most.',
         icon: CalendarDays,
-        imageUrl: 'https://placehold.co/1200x800.png',
-        dataAiHint: 'calendar planner',
+        prototype: (
+            <Card className="w-full max-w-lg mx-auto bg-card/80 backdrop-blur-sm p-6 shadow-xl">
+                <CardHeader className="p-0 mb-4">
+                    <CardTitle className="text-xl">Your 30-Day Arena</CardTitle>
+                </CardHeader>
+                <CardContent className="p-0 space-y-3">
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-green-500/50">
+                        <div className="flex items-center gap-3"><CheckCircle className="w-5 h-5 text-green-500" /> <span className="font-medium">Day 1: Arrays & Strings</span></div>
+                        <Badge variant="default">Done</Badge>
+                    </div>
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-primary/10 border border-primary/50">
+                        <div className="flex items-center gap-3"><ArrowRight className="w-5 h-5 text-primary" /> <span className="font-medium">Day 2: Linked Lists</span></div>
+                        <Button size="sm">Start</Button>
+                    </div>
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30 opacity-60">
+                        <div className="flex items-center gap-3"><CheckCircle className="w-5 h-5" /> <span className="font-medium">Day 3: Hash Tables</span></div>
+                        <Badge variant="secondary">Locked</Badge>
+                    </div>
+                </CardContent>
+            </Card>
+        )
     },
     {
         title: 'AI-Generated Study Notes',
         description: "Don't just memorize—understand. Select any topic from your syllabus, and our AI will generate a detailed, easy-to-digest study guide, complete with core concepts, key terminology, and practical code examples.",
         icon: BookOpen,
-        imageUrl: 'https://placehold.co/1200x800.png',
-        dataAiHint: 'notebook study',
+        prototype: (
+             <Card className="w-full max-w-lg mx-auto bg-card/80 backdrop-blur-sm p-6 shadow-xl overflow-hidden">
+                <CardHeader className="p-0 mb-4 flex-row items-center gap-3">
+                     <div className="p-2 bg-primary/10 rounded-lg text-primary"><BookOpen className="w-6 h-6" /></div>
+                    <CardTitle className="text-xl m-0">React Hooks</CardTitle>
+                </CardHeader>
+                <CardContent className="p-0 space-y-3">
+                    <p className="text-sm text-muted-foreground">An introduction to the core concepts of React Hooks, including useState, useEffect, and custom hooks for managing component state and side effects.</p>
+                    <div className="p-3 rounded-lg bg-muted/50">
+                        <p className="font-semibold text-sm">Core Concept: useState</p>
+                        <p className="text-xs text-muted-foreground mt-1">The `useState` hook allows you to add state to functional components...</p>
+                    </div>
+                     <div className="p-3 rounded-lg bg-muted/50">
+                        <p className="font-semibold text-sm">Core Concept: useEffect</p>
+                    </div>
+                </CardContent>
+            </Card>
+        )
     },
     {
         title: 'Interactive Coding Quizzes',
         description: 'Test your knowledge with AI-generated coding challenges. Write your solution in our editor and get instant, in-depth feedback on correctness, efficiency, and code style, along with an optimal solution.',
         icon: Code,
-        imageUrl: 'https://placehold.co/1200x800.png',
-        dataAiHint: 'code editor',
+        prototype: (
+             <Card className="w-full max-w-lg mx-auto bg-card/80 backdrop-blur-sm p-6 shadow-xl">
+                <CardHeader className="p-0 mb-4">
+                    <CardTitle className="text-lg">Question 1: Reverse a String</CardTitle>
+                </CardHeader>
+                <CardContent className="p-0 space-y-3">
+                    <div className="h-28 bg-muted rounded-md p-3 font-mono text-xs text-muted-foreground">
+                        <span className="text-primary">function</span> <span className="text-foreground">reverseString</span>(<span className="text-yellow-400">str</span>) {"{"} <br/>
+                        &nbsp;&nbsp;<span className="text-gray-500">// Your code here...</span><br/>
+                        {"}"}
+                    </div>
+                    <div className="flex justify-end gap-2">
+                        <Button variant="secondary">Get Hint</Button>
+                        <Button>Submit</Button>
+                    </div>
+                </CardContent>
+            </Card>
+        )
     },
     {
         title: 'Human-Like AI Interviews',
         description: "Experience a realistic, voice-based mock interview. Our conversational AI asks relevant technical and behavioral questions, listens to your answers, and responds dynamically, just like a real interviewer.",
         icon: MessageSquare,
-        imageUrl: 'https://placehold.co/1200x800.png',
-        dataAiHint: 'video call',
+        prototype: (
+             <Card className="w-full max-w-lg mx-auto bg-card/80 backdrop-blur-sm p-6 shadow-xl">
+                <CardContent className="p-0 space-y-4">
+                    <div className="flex gap-3">
+                        <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground shrink-0"><BrainCircuit className="w-5 h-5" /></div>
+                        <div className="bg-muted p-3 rounded-lg text-sm">
+                            Great. Let's start with a basic one. Can you describe a time when you had to debug a complex issue?
+                        </div>
+                    </div>
+                     <div className="flex gap-3 justify-end">
+                        <div className="bg-secondary p-3 rounded-lg text-sm text-right">
+                           In one of my React projects, the UI was freezing after state updates...
+                        </div>
+                         <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white shrink-0"><User className="w-5 h-5" /></div>
+                    </div>
+                </CardContent>
+            </Card>
+        )
     },
     {
         title: 'In-Depth Performance Analytics',
         description: 'Track your progress with a comprehensive dashboard. Analyze your quiz scores over time, identify your weakest concepts, and review transcripts from past interviews to pinpoint areas for improvement.',
         icon: BarChart,
-        imageUrl: 'https://placehold.co/1200x800.png',
-        dataAiHint: 'dashboard charts',
+        prototype: (
+            <Card className="w-full max-w-lg mx-auto bg-card/80 backdrop-blur-sm p-6 shadow-xl">
+                 <CardHeader className="p-0 mb-4">
+                    <CardTitle className="text-xl">Performance</CardTitle>
+                </CardHeader>
+                <CardContent className="p-0 space-y-3">
+                    <div className="h-24 w-full rounded-md bg-muted/50 flex items-end p-2">
+                        {/* Fake bar chart */}
+                        <div className="w-1/4 h-1/2 bg-primary/30 rounded-t-sm animate-pulse" style={{animationDelay: '0.1s'}}></div>
+                        <div className="w-1/4 h-3/4 bg-primary/50 rounded-t-sm ml-2 animate-pulse" style={{animationDelay: '0.2s'}}></div>
+                        <div className="w-1/4 h-2/3 bg-primary/40 rounded-t-sm ml-2 animate-pulse" style={{animationDelay: '0.3s'}}></div>
+                        <div className="w-1/4 h-full bg-primary/60 rounded-t-sm ml-2 animate-pulse" style={{animationDelay: '0.4s'}}></div>
+                    </div>
+                    <div className="text-sm text-muted-foreground">Your average score is up <span className="font-semibold text-green-500">12%</span> this week.</div>
+                </CardContent>
+            </Card>
+        )
     },
 ];
 
@@ -77,14 +161,7 @@ export default function LandingProductFeatures() {
                     </div>
                     <div className={cn("flex items-center justify-center", index % 2 === 1 && "lg:order-1")}>
                         <div className="bg-card/50 rounded-xl border p-4 shadow-lg w-full">
-                            <Image 
-                                src={feature.imageUrl}
-                                alt={feature.title}
-                                width={1200}
-                                height={800}
-                                className="rounded-lg object-cover"
-                                data-ai-hint={feature.dataAiHint}
-                            />
+                            {feature.prototype}
                         </div>
                     </div>
                 </div>
