@@ -99,9 +99,20 @@ export default function ResumeBuilderPage() {
 
     return (
         <main className="flex-1 overflow-hidden">
+             <style jsx global>{`
+                @media print {
+                    body { -webkit-print-color-adjust: exact; color-adjust: exact; }
+                    .no-print { display: none; }
+                    main { display: block !important; padding: 0 !important; }
+                    .print-container { display: block !important; }
+                    .resume-preview-container { padding: 0 !important; background-color: white !important; }
+                    .resume-preview { box-shadow: none !important; margin: 0 !important; width: 100% !important; min-height: auto !important; }
+                }
+                @page { size: A4; margin: 0; }
+            `}</style>
             <div className="grid grid-cols-1 lg:grid-cols-2 h-[calc(100vh-4rem)]">
                 {/* Editor Panel */}
-                <div className="overflow-y-auto p-6 space-y-6">
+                <div className="overflow-y-auto p-6 space-y-6 no-print">
                     <div className="flex items-center justify-between">
                          <h1 className="text-3xl font-bold font-headline flex items-center gap-3"><FileText/> Resume Builder</h1>
                          <Button onClick={handlePrint}><Download className="mr-2"/> Download PDF</Button>
@@ -196,20 +207,83 @@ export default function ResumeBuilderPage() {
                 </div>
 
                 {/* Preview Panel */}
-                <div className="bg-muted hidden lg:block overflow-y-auto p-8 print:block">
-                     <style jsx global>{`
-                        @media print {
-                            body { -webkit-print-color-adjust: exact; }
-                            .no-print { display: none; }
-                            main { display: block !important; padding: 0 !important; }
-                        }
-                        @page {
-                            size: A4;
-                            margin: 0;
-                        }
-                    `}</style>
-                    <div ref={resumePreviewRef} className="bg-white text-black shadow-lg font-sans w-full mx-auto" style={{ width: '210mm', minHeight: '297mm' }}>
+                <div className="bg-muted hidden lg:block overflow-y-auto p-8 resume-preview-container">
+                    <div ref={resumePreviewRef} className="bg-white text-black shadow-lg font-sans w-full mx-auto resume-preview" style={{ width: '210mm', minHeight: '297mm' }}>
                         <div className="flex">
+                            {/* Left Column */}
+                            <div className="bg-[#374151] text-white p-8" style={{ width: '35%' }}>
+                                <div className="text-sm space-y-8">
+                                    <div className="space-y-1">
+                                        <p>{resumeData.personalInfo.email}</p>
+                                        <p>{resumeData.personalInfo.phone}</p>
+                                        <p>{resumeData.personalInfo.address}</p>
+                                    </div>
+                                    <div>
+                                        <h3 className="font-bold text-lg mb-2">Skills</h3>
+                                        <ul className="list-disc list-inside text-sm space-y-1">
+                                            {resumeData.skills.map(skill => <li key={skill.name}>{skill.name}</li>)}
+                                        </ul>
+                                    </div>
+                                     <div>
+                                        <h3 className="font-bold text-lg mb-2">Education And Training</h3>
+                                        {resumeData.education.map((edu, i) => (
+                                            <div key={i} className="text-sm">
+                                                <p className="font-bold">{edu.year}</p>
+                                                <p>{edu.degree}:</p>
+                                                <p className="font-bold">{edu.institution}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div>
+                                        <h3 className="font-bold text-lg mb-2">Languages</h3>
+                                        {resumeData.languages.map((lang, i) => (
+                                            <div key={i} className="text-sm mb-2">
+                                                <div className="flex justify-between items-center">
+                                                    <span>{lang.name}:</span>
+                                                    <span className="text-xs font-semibold">{lang.proficiency}</span>
+                                                </div>
+                                                <div className="w-full bg-gray-600 rounded-full h-1.5 mt-1">
+                                                    <div className="bg-gray-300 h-1.5 rounded-full" style={{ width: `${lang.level}%` }}></div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div>
+                                        <h3 className="font-bold text-lg mb-2">Interests And Hobbies</h3>
+                                         <ul className="list-disc list-inside text-sm space-y-1">
+                                            {resumeData.hobbies.map(hobby => <li key={hobby.name}>{hobby.name}</li>)}
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                            {/* Right Column */}
+                             <div className="p-8" style={{ width: '65%' }}>
+                                <h1 className="text-5xl font-bold mb-2">{resumeData.personalInfo.name}</h1>
+                                <div className="border-l-4 border-gray-800 pl-4">
+                                    <h2 className="text-xl font-bold tracking-widest text-gray-700 mb-4">SUMMARY</h2>
+                                    <p className="text-sm text-gray-600 leading-relaxed">{resumeData.personalInfo.summary}</p>
+                                
+                                    <h2 className="text-xl font-bold tracking-widest text-gray-700 mt-8 mb-4">EXPERIENCE</h2>
+                                    <div className="space-y-6">
+                                    {resumeData.experience.map((exp, i) =>(
+                                        <div key={i}>
+                                            <h3 className="font-bold text-base">{exp.company} - <span className="font-normal">{exp.role}</span></h3>
+                                            <p className="text-xs text-gray-500 font-semibold mb-1">{exp.duration}</p>
+                                            <ul className="list-disc list-inside text-sm text-gray-600 leading-snug space-y-1">
+                                                {exp.description.split('\n').map((item, key) => item && <li key={key}>{item.replace(/^- /, '')}</li>)}
+                                            </ul>
+                                        </div>
+                                    ))}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                 {/* Hidden div for printing */}
+                 <div className="hidden print-container">
+                    <div ref={resumePreviewRef} className="bg-white text-black shadow-lg font-sans w-full mx-auto" style={{ width: '210mm', minHeight: '297mm' }}>
+                         <div className="flex">
                             {/* Left Column */}
                             <div className="bg-[#374151] text-white p-8" style={{ width: '35%' }}>
                                 <div className="text-sm space-y-8">
@@ -283,5 +357,6 @@ export default function ResumeBuilderPage() {
             </div>
         </main>
     );
+}
 
     
