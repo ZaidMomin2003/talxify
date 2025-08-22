@@ -12,6 +12,7 @@ import React from 'react';
 import LandingHeader from "./landing-header";
 import LandingFooter from "./landing-footer";
 import { Badge } from "@/components/ui/badge";
+import LandingProductFeatures from "./landing-product-features";
 
 
 export default function LandingPage() {
@@ -47,7 +48,8 @@ export default function LandingPage() {
                 </div>
             </div>
         </section>
-
+        
+        <LandingProductFeatures />
         <LandingFeatures />
         <LandingTestimonials />
         <LandingPricing />
