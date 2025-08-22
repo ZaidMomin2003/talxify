@@ -33,7 +33,11 @@ const interviewFlow = ai.defineFlow(
       };
     }
 
-    // Force the initial greeting flow to ensure a natural start.
+    const MAX_QUESTIONS = 6;
+    
+    // --- Hardcoded Initial Conversation Flow ---
+    
+    // 1. If history is empty, AI sends the first greeting.
     if (state.history.length === 0) {
       const initialGreeting = 'Hi, how are you doing today?';
       const newState: InterviewState = {
@@ -46,7 +50,8 @@ const interviewFlow = ai.defineFlow(
       };
     }
 
-    if (state.history.length === 2 && state.history[0].role === 'model') {
+    // 2. After user replies to greeting, AI introduces itself and asks if user is ready.
+    if (state.history.length === 1 && state.history[0].role === 'model') {
         const introText = `That's good to hear. I'm Alex, your AI interviewer for this session. We'll spend about 12 minutes discussing ${state.topic} for the ${state.level} ${state.role} role. Are you ready to begin?`;
         const newState: InterviewState = {
             ...state,
@@ -57,23 +62,35 @@ const interviewFlow = ai.defineFlow(
             newState: newState,
         };
     }
+    
+    // 3. After user confirms they are ready, AI asks the first question.
+    if (state.history.length === 2 && state.history[1].role === 'user') {
+        const firstQuestion = `Great. Let's start with a foundational question about ${state.topic}. Can you explain its core purpose and a situation where you would choose to use it?`;
+        const newState: InterviewState = {
+            ...state,
+            history: [...state.history, { role: 'model', content: [{ text: firstQuestion }] }],
+            questionsAsked: 1
+        };
+        return {
+            response: firstQuestion,
+            newState: newState
+        };
+    }
 
-    const MAX_QUESTIONS = 6;
+
     const promptContext = `
       You are an expert, friendly, and professional AI interviewer named Alex.
-      Your goal is to conduct a natural, conversational mock interview that lasts about ${MAX_QUESTIONS} questions.
+      Your goal is to conduct a natural, conversational mock interview that lasts about ${MAX_QUESTIONS} questions in total.
       The candidate is interviewing for a ${state.level} ${state.role} role.
       The main topic for this interview is: ${state.topic}.
 
-      Current state: You have asked ${state.questionsAsked} out of ${MAX_QUESTIONS} questions.
+      Current state: You have already asked ${state.questionsAsked} out of ${MAX_QUESTIONS} questions. The conversation has started. Your job is to continue it.
 
       Conversation Rules:
-      1.  **Do NOT start the conversation**. The initial greeting is handled already. Your first task is to respond to the user saying they are ready.
-      2.  **Ask Questions**: Ask ONE main question at a time. The questions should be a mix of technical and behavioral, relevant to the role and topic.
-      3.  **Be Conversational & Concise**: After the user answers, provide a very brief, encouraging acknowledgment (e.g., "Good approach," "Thanks, that makes sense," "Okay, I see.") before immediately asking the next question. Do not add extra conversational filler.
-      4.  **Manage Flow**: Your primary goal is to ask the next logical question. If the user's response is short, you can ask a brief follow-up.
-      5.  **Stay on Track**: Gently guide the conversation back to the interview if the user goes off-topic.
-      6.  **Conclude Gracefully**: ONLY after you have asked ${MAX_QUESTIONS} questions and the user has responded, you MUST provide a brief, encouraging summary of the user's performance. Mention their strengths and one or two areas for improvement based on their answers. End the interview on a positive note. Only after giving this full summary should you set interviewShouldEnd to true. DO NOT conclude early.
+      1.  **Ask the Next Question**: Your main task is to ask the next relevant question based on the topic. Ask ONE main question at a time. The questions should be a mix of technical and behavioral, relevant to the role and topic.
+      2.  **Be Conversational & Concise**: After the user answers, provide a very brief, encouraging acknowledgment (e.g., "Good approach," "Thanks, that makes sense," "Okay, I see.") before immediately asking the next question. Do not add extra conversational filler.
+      3.  **Stay on Track**: Gently guide the conversation back to the interview if the user goes off-topic.
+      4.  **Conclude Gracefully**: ONLY after you have asked ${MAX_QUESTIONS} questions and the user has responded to the final question, you MUST provide a brief, encouraging summary of the user's performance. Mention their strengths and one or two areas for improvement based on their answers. End the interview on a positive note. Only after giving this full summary should you set interviewShouldEnd to true. DO NOT conclude early.
     `;
 
     const { output } = await ai.generate({
