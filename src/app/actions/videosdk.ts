@@ -3,7 +3,7 @@
 import jwt from 'jsonwebtoken';
 
 export async function generateVideoSDKToken() {
-    const apiKey = process.env.VIDEOSDK_API_KEY;
+    const apiKey = process.env.NEXT_PUBLIC_VIDEOSDK_API_KEY;
     const secret = process.env.VIDEOSDK_SECRET_KEY;
 
     if (!apiKey || !secret) {

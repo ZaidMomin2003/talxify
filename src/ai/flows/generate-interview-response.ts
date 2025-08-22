@@ -73,8 +73,6 @@ const interviewFlow = ai.defineFlow(
     
     // Update the interview state
     const newState = { ...state };
-    // This is a temporary placeholder to simulate the user's turn for the AI's context.
-    // The actual user response is added on the client-side.
     // We add the AI's response to keep the history for the next turn.
     newState.history.push({ role: 'model', content: [{ text: output.response }] });
     

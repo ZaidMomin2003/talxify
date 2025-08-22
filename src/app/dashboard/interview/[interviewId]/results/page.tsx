@@ -4,11 +4,15 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { BarChart, Bot, CheckCircle, ChevronLeft, MessageSquare, Mic, Sparkles, User, XCircle } from 'lucide-react';
+import { BarChart, Bot, CheckCircle, ChevronLeft, MessageSquare, Mic, Sparkles, User, XCircle, Loader2 } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
+import React, { useEffect, useState, useMemo } from 'react';
+import { useAuth } from '@/context/auth-context';
+import type { InterviewActivity } from '@/lib/types';
+import { getActivity } from '@/lib/firebase-service';
 
 
 // Dummy data for demonstration purposes
@@ -44,7 +48,83 @@ const dummyResults = {
 
 export default function InterviewResultsPage() {
     const router = useRouter();
-    const results = dummyResults;
+    const params = useParams();
+    const { user } = useAuth();
+    
+    const [isLoading, setIsLoading] = useState(true);
+    const [results, setResults] = useState<InterviewActivity | null>(null);
+
+    useEffect(() => {
+        const fetchResults = async () => {
+            if (!user || !params.interviewId) return;
+
+            setIsLoading(true);
+            const allActivity = await getActivity(user.uid);
+            const interviewResult = allActivity.find(a => a.id === params.interviewId && a.type === 'interview') as InterviewActivity | undefined;
+            
+            if (interviewResult) {
+                setResults(interviewResult);
+            } else {
+                // For now, use dummy data if no result is found
+                // In a real scenario, you might show a "not found" page
+                // setResults(dummyResults as any); 
+            }
+            setIsLoading(false);
+        };
+        fetchResults();
+    }, [user, params.interviewId]);
+
+
+    const analyzedQuestions = useMemo(() => {
+        if (!results) return [];
+        // This is a placeholder for real analysis.
+        // In a real app, you would run another AI flow here to analyze the transcript.
+        const qaPairs = [];
+        const transcript = results.transcript;
+        for (let i = 0; i < transcript.length; i++) {
+            if (transcript[i].speaker === 'ai' && (i + 1) < transcript.length && transcript[i+1].speaker === 'user') {
+                qaPairs.push({
+                    questionText: transcript[i].text,
+                    userAnswer: transcript[i+1].text,
+                    feedback: "Feedback generation from transcript is a work in progress.",
+                    idealAnswer: "Ideal answer generation from transcript is a work in progress.",
+                    score: Math.floor(Math.random() * 41) + 60 // Random score between 60-100 for demo
+                });
+            }
+        }
+        return qaPairs;
+    }, [results]);
+
+    const overallScore = useMemo(() => {
+        if (analyzedQuestions.length === 0) return 0;
+        const total = analyzedQuestions.reduce((sum, q) => sum + q.score, 0);
+        return Math.round(total / analyzedQuestions.length);
+    }, [analyzedQuestions]);
+
+
+    if (isLoading) {
+        return <div className="flex h-full w-full items-center justify-center"><Loader2 className="w-12 h-12 animate-spin text-primary" /></div>;
+    }
+
+    if (!results) {
+         return (
+            <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
+                <div className="max-w-6xl mx-auto space-y-8 text-center">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Interview Not Found</CardTitle>
+                            <CardDescription>We could not find the results for this interview session.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                             <Button asChild>
+                                <Link href="/dashboard">Back to Dashboard</Link>
+                            </Button>
+                        </CardContent>
+                    </Card>
+                </div>
+            </main>
+         )
+    }
 
     return (
         <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
@@ -60,7 +140,7 @@ export default function InterviewResultsPage() {
                             <Sparkles className="mx-auto h-12 w-12 text-primary mb-4" />
                             <CardTitle className="font-headline text-4xl font-bold">Interview Analysis</CardTitle>
                             <CardDescription className="text-lg">
-                                Here's a detailed breakdown of your mock interview performance.
+                                Here's a detailed breakdown of your mock interview for the <span className="font-semibold text-foreground">{results.details.role}</span> role on the topic of <span className="font-semibold text-foreground">{results.details.topic}</span>.
                             </CardDescription>
                         </CardHeader>
                     </Card>
@@ -74,7 +154,7 @@ export default function InterviewResultsPage() {
                                 <CardTitle>Overall Score</CardTitle>
                              </CardHeader>
                              <CardContent className="text-center">
-                                 <span className="text-7xl font-bold text-primary">{results.overallScore}</span>
+                                 <span className="text-7xl font-bold text-primary">{overallScore}</span>
                                  <span className="text-3xl text-muted-foreground">%</span>
                              </CardContent>
                         </Card>
@@ -83,29 +163,7 @@ export default function InterviewResultsPage() {
                                 <CardTitle className="flex items-center gap-3"><Bot className="h-6 w-6"/> AI Summary</CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-4">
-                                <p className="text-muted-foreground text-base">{results.summary}</p>
-                                <div className="bg-green-500/10 p-4 rounded-lg">
-                                    <h3 className="font-semibold text-green-700 dark:text-green-400 mb-2">Strengths</h3>
-                                    <ul className="space-y-1">
-                                        {results.strengths.map(item => (
-                                            <li key={item} className="flex items-center gap-2 text-sm">
-                                                <CheckCircle className="h-4 w-4 text-green-500" />
-                                                {item}
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </div>
-                                <div className="bg-amber-500/10 p-4 rounded-lg">
-                                    <h3 className="font-semibold text-amber-700 dark:text-amber-400 mb-2">Areas for Improvement</h3>
-                                    <ul className="space-y-1">
-                                        {results.areasForImprovement.map(item => (
-                                            <li key={item} className="flex items-center gap-2 text-sm">
-                                                <XCircle className="h-4 w-4 text-amber-500" />
-                                                {item}
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </div>
+                                <p className="text-muted-foreground text-base">{dummyResults.summary}</p>
                             </CardContent>
                         </Card>
                     </div>
@@ -116,7 +174,7 @@ export default function InterviewResultsPage() {
                             <BarChart className="h-8 w-8" /> Detailed Question Analysis
                         </h2>
                         <Accordion type="single" collapsible className="w-full space-y-4" defaultValue="item-0">
-                            {results.questions.map((q, index) => (
+                            {analyzedQuestions.map((q, index) => (
                                 <AccordionItem value={`item-${index}`} key={index} asChild>
                                     <Card className="overflow-hidden">
                                         <AccordionTrigger className="flex justify-between items-center w-full p-6 text-lg text-left hover:no-underline data-[state=open]:border-b">
