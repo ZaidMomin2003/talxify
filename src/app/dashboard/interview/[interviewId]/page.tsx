@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { useRouter, useParams } from 'next/navigation';
 
 function InterviewPageContent() {
-    const { user } = useAuth();
+    const { user, loading: authLoading } = useAuth();
     const router = useRouter();
     const params = useParams();
     const interviewId = params.interviewId as string;
@@ -24,19 +24,25 @@ function InterviewPageContent() {
 
     useEffect(() => {
         const initializeSession = async () => {
+            if (authLoading) {
+                // Wait for auth to finish loading
+                return;
+            }
+
             if (!user) {
-                // Wait for user to be available
+                // If auth is done and there's no user, it's an error.
+                setError("You must be logged in to start an interview.");
+                setIsLoading(false);
                 return;
             }
 
             // --- Configuration Checks ---
             if (!process.env.NEXT_PUBLIC_DEEPGRAM_API_KEY) {
-                setError("Deepgram API key is not configured. Please add it to your environment variables to use the interview feature.");
+                setError("Deepgram API key is not configured. Please add NEXT_PUBLIC_DEEPGRAM_API_KEY to your environment variables to use the interview feature.");
                 setIsLoading(false);
                 return;
             }
-             // Use the public key for the client-side check, the server uses the secret key
-            if (!process.env.NEXT_PUBLIC_VIDEOSDK_API_KEY) {
+            if (!process.env.NEXT_PUBLIC_VIDEOSDK_API_KEY || !process.env.VIDEOSDK_SECRET_KEY) {
                 setError("VideoSDK API Key or Secret is not configured. Please check your environment variables.");
                  setIsLoading(false);
                 return;
@@ -51,16 +57,16 @@ function InterviewPageContent() {
                 setToken(generatedToken);
             } catch (err) {
                 console.error("Failed to get VideoSDK token", err);
-                setError("Could not initialize the interview session. Please ensure your VideoSDK credentials are correct and try again.");
+                setError(`Could not initialize the interview session. Please ensure your VideoSDK credentials are correct. Error: ${(err as Error).message}`);
             } finally {
                 setIsLoading(false);
             }
         };
 
         initializeSession();
-    }, [user]);
+    }, [user, authLoading]);
 
-    if (isLoading) {
+    if (isLoading || authLoading) {
         return (
             <div className="flex h-screen w-full items-center justify-center bg-background text-foreground">
                 <div className="flex flex-col items-center gap-4 text-center">
@@ -103,7 +109,7 @@ function InterviewPageContent() {
                         </div>
                         <CardTitle className="text-2xl font-bold">Initialization Failed</CardTitle>
                         <CardDescription>
-                            Failed to generate a valid session token for the interview.
+                            Failed to generate a valid session token for the interview. Please try again.
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
