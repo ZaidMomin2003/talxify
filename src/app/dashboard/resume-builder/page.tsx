@@ -6,8 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
+import { useReactToPrint } from 'react-to-print';
 import { FileText, PlusCircle, Trash2, Mail, Phone, Linkedin, Github, Globe, Download, Loader2 } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
@@ -62,40 +61,100 @@ const colorOptions = [
 ];
 
 
+const ResumePreview = React.forwardRef<HTMLDivElement, { resumeData: typeof initialResumeState }>(({ resumeData }, ref) => {
+    return (
+        <div ref={ref} className="bg-white text-black shadow-lg font-sans w-full p-8" style={{ fontFamily: "'Inter', sans-serif" }}>
+            <div className="flex h-full">
+                {/* Left Column */}
+                <div className="text-white p-6 flex flex-col" style={{ width: '35%', backgroundColor: resumeData.themeColor }}>
+                    <div className="text-sm space-y-6">
+                        <div>
+                            <h3 className="font-bold text-base mb-2 uppercase tracking-wider">Contact</h3>
+                            <div className="space-y-1 text-xs">
+                                {resumeData.personalInfo.email && <p className="flex items-start gap-2"><Mail className="w-3 h-3 mt-0.5 shrink-0"/> <span>{resumeData.personalInfo.email}</span></p>}
+                                {resumeData.personalInfo.phone && <p className="flex items-start gap-2"><Phone className="w-3 h-3 mt-0.5 shrink-0"/> <span>{resumeData.personalInfo.phone}</span></p>}
+                                {resumeData.personalInfo.linkedin && <p className="flex items-start gap-2"><Linkedin className="w-3 h-3 mt-0.5 shrink-0"/> <span>{resumeData.personalInfo.linkedin}</span></p>}
+                                {resumeData.personalInfo.github && <p className="flex items-start gap-2"><Github className="w-3 h-3 mt-0.5 shrink-0"/> <span>{resumeData.personalInfo.github}</span></p>}
+                            </div>
+                        </div>
+                        <div>
+                            <h3 className="font-bold text-base mb-2 uppercase tracking-wider">Skills</h3>
+                            <ul className="list-disc list-inside text-xs space-y-1 pl-1">
+                                {resumeData.skills.map(skill => <li key={skill.name}>{skill.name}</li>)}
+                            </ul>
+                        </div>
+                            <div>
+                            <h3 className="font-bold text-base mb-2 uppercase tracking-wider">Education</h3>
+                            {resumeData.education.map((edu, i) => (
+                                <div key={i} className="text-xs">
+                                    <p className="font-bold">{edu.year}</p>
+                                    <p>{edu.degree}</p>
+                                    <p className="font-semibold">{edu.institution}</p>
+                                </div>
+                            ))}
+                        </div>
+                        <div>
+                            <h3 className="font-bold text-base mb-2 uppercase tracking-wider">Languages</h3>
+                            {resumeData.languages.map((lang, i) => (
+                                <div key={i} className="text-xs mb-3">
+                                    <div className="flex justify-between items-center mb-1">
+                                        <span>{lang.name}</span>
+                                        <span className="font-semibold">{lang.proficiency}</span>
+                                    </div>
+                                    <div className="w-full bg-gray-600 rounded-full h-1.5">
+                                        <div className="bg-gray-300 h-1.5 rounded-full" style={{ width: `${lang.level}%` }}></div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                        <div>
+                            <h3 className="font-bold text-base mb-2 uppercase tracking-wider">Hobbies</h3>
+                                <ul className="list-disc list-inside text-xs space-y-1 pl-1">
+                                {resumeData.hobbies.map(hobby => <li key={hobby.name}>{hobby.name}</li>)}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                {/* Right Column */}
+                    <div className="p-6 flex flex-col" style={{ width: '65%' }}>
+                    <h1 className="text-4xl font-bold mb-1" style={{color: resumeData.themeColor}}>{resumeData.personalInfo.name}</h1>
+                    <p className="text-lg font-semibold text-gray-500 mb-6">{resumeData.personalInfo.profession}</p>
+                    <div className="border-l-2 pl-4" style={{ borderColor: resumeData.themeColor }}>
+                        <h2 className="text-base font-bold uppercase tracking-widest text-gray-700 mb-2">Summary</h2>
+                        <p className="text-xs text-gray-600 leading-relaxed mb-6">{resumeData.personalInfo.summary}</p>
+                    
+                        <h2 className="text-base font-bold uppercase tracking-widest text-gray-700 mb-2">Experience</h2>
+                        <div className="space-y-4">
+                        {resumeData.experience.map((exp, i) =>(
+                            <div key={i}>
+                                <h3 className="font-bold text-sm">{exp.company} - <span className="font-normal">{exp.role}</span></h3>
+                                <p className="text-xs text-gray-500 font-semibold mb-1">{exp.duration}</p>
+                                <ul className="list-disc list-inside text-xs text-gray-600 leading-snug space-y-1 pl-2">
+                                    {exp.description.split('\n').map((item, key) => item.trim() && <li key={key}>{item.replace(/^- /, '')}</li>)}
+                                </ul>
+                            </div>
+                        ))}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+});
+ResumePreview.displayName = 'ResumePreview';
+
+
 export default function ResumeBuilderPage() {
     const [resumeData, setResumeData] = useState(initialResumeState);
     const resumePreviewRef = useRef<HTMLDivElement>(null);
     const [isDownloading, setIsDownloading] = useState(false);
 
-
-    const handleDownload = () => {
-        const input = resumePreviewRef.current;
-        if (!input) return;
-
-        setIsDownloading(true);
-
-        html2canvas(input, {
-            scale: 2,
-            useCORS: true,
-            backgroundColor: null
-        }).then(canvas => {
-            const imgData = canvas.toDataURL('image/png');
-            const pdf = new jsPDF({
-                orientation: 'portrait',
-                unit: 'mm',
-                format: 'a4'
-            });
-            const pdfWidth = pdf.internal.pageSize.getWidth();
-            const pdfHeight = pdf.internal.pageSize.getHeight();
-            
-            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-            pdf.save(`${resumeData.personalInfo.name.replace(' ', '_')}_Resume.pdf`);
-            setIsDownloading(false);
-        }).catch(err => {
-            console.error("Could not generate PDF", err);
-            setIsDownloading(false);
-        });
-    };
+    const handlePrint = useReactToPrint({
+        content: () => resumePreviewRef.current,
+        documentTitle: `${resumeData.personalInfo.name}_Resume`,
+        onBeforeGetContent: () => setIsDownloading(true),
+        onAfterPrint: () => setIsDownloading(false),
+    });
 
     const handleInfoChange = (field: keyof typeof resumeData.personalInfo, value: string) => {
         setResumeData(prev => ({ ...prev, personalInfo: { ...prev.personalInfo, [field]: value }}));
@@ -141,7 +200,7 @@ export default function ResumeBuilderPage() {
                 <div className="overflow-y-auto p-6 space-y-6">
                     <div className="flex items-center justify-between">
                          <h1 className="text-3xl font-bold font-headline flex items-center gap-3"><FileText/> Resume Builder</h1>
-                         <Button onClick={handleDownload} disabled={isDownloading}>
+                         <Button onClick={handlePrint} disabled={isDownloading}>
                             {isDownloading ? <Loader2 className="mr-2 animate-spin"/> : <Download className="mr-2"/>} 
                             Download PDF
                          </Button>
@@ -259,86 +318,19 @@ export default function ResumeBuilderPage() {
                 </div>
 
                 {/* Preview Panel */}
-                <div className="bg-muted hidden lg:block overflow-y-auto p-8">
-                    <div ref={resumePreviewRef} className="bg-white text-black shadow-lg font-sans w-full mx-auto p-8" style={{ aspectRatio: '1 / 1.414' /* A4 ratio */ }}>
-                        <div className="flex h-full">
-                            {/* Left Column */}
-                            <div className="text-white p-6 flex flex-col" style={{ width: '35%', backgroundColor: resumeData.themeColor }}>
-                                <div className="text-sm space-y-6">
-                                    <div>
-                                        <h3 className="font-bold text-base mb-2 uppercase tracking-wider">Contact</h3>
-                                        <div className="space-y-1 text-xs">
-                                            <p className="flex items-center gap-2"><Mail className="w-3 h-3"/> {resumeData.personalInfo.email}</p>
-                                            <p className="flex items-center gap-2"><Phone className="w-3 h-3"/> {resumeData.personalInfo.phone}</p>
-                                            <p className="flex items-center gap-2"><Linkedin className="w-3 h-3"/> {resumeData.personalInfo.linkedin}</p>
-                                            <p className="flex items-center gap-2"><Github className="w-3 h-3"/> {resumeData.personalInfo.github}</p>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <h3 className="font-bold text-base mb-2 uppercase tracking-wider">Skills</h3>
-                                        <ul className="list-disc list-inside text-xs space-y-1">
-                                            {resumeData.skills.map(skill => <li key={skill.name}>{skill.name}</li>)}
-                                        </ul>
-                                    </div>
-                                     <div>
-                                        <h3 className="font-bold text-base mb-2 uppercase tracking-wider">Education</h3>
-                                        {resumeData.education.map((edu, i) => (
-                                            <div key={i} className="text-xs">
-                                                <p className="font-bold">{edu.year}</p>
-                                                <p>{edu.degree}</p>
-                                                <p className="font-semibold">{edu.institution}</p>
-                                            </div>
-                                        ))}
-                                    </div>
-                                    <div>
-                                        <h3 className="font-bold text-base mb-2 uppercase tracking-wider">Languages</h3>
-                                        {resumeData.languages.map((lang, i) => (
-                                            <div key={i} className="text-xs mb-2">
-                                                <div className="flex justify-between items-center">
-                                                    <span>{lang.name}</span>
-                                                    <span className="font-semibold">{lang.proficiency}</span>
-                                                </div>
-                                                <div className="w-full bg-gray-600 rounded-full h-1 mt-1">
-                                                    <div className="bg-gray-300 h-1 rounded-full" style={{ width: `${lang.level}%` }}></div>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                    <div>
-                                        <h3 className="font-bold text-base mb-2 uppercase tracking-wider">Hobbies</h3>
-                                         <ul className="list-disc list-inside text-xs space-y-1">
-                                            {resumeData.hobbies.map(hobby => <li key={hobby.name}>{hobby.name}</li>)}
-                                        </ul>
-                                    </div>
-                                </div>
-                            </div>
-                            {/* Right Column */}
-                             <div className="p-6 flex flex-col" style={{ width: '65%' }}>
-                                <h1 className="text-4xl font-bold mb-1">{resumeData.personalInfo.name}</h1>
-                                <p className="text-lg font-semibold text-gray-500 mb-6">{resumeData.personalInfo.profession}</p>
-                                <div className="border-l-2 pl-4" style={{ borderColor: resumeData.themeColor }}>
-                                    <h2 className="text-base font-bold uppercase tracking-widest text-gray-700 mb-2">Summary</h2>
-                                    <p className="text-xs text-gray-600 leading-relaxed mb-6">{resumeData.personalInfo.summary}</p>
-                                
-                                    <h2 className="text-base font-bold uppercase tracking-widest text-gray-700 mb-2">Experience</h2>
-                                    <div className="space-y-4">
-                                    {resumeData.experience.map((exp, i) =>(
-                                        <div key={i}>
-                                            <h3 className="font-bold text-sm">{exp.company} - <span className="font-normal">{exp.role}</span></h3>
-                                            <p className="text-xs text-gray-500 font-semibold mb-1">{exp.duration}</p>
-                                            <ul className="list-disc list-inside text-xs text-gray-600 leading-snug space-y-1">
-                                                {exp.description.split('\n').map((item, key) => item && <li key={key}>{item.replace(/^- /, '')}</li>)}
-                                            </ul>
-                                        </div>
-                                    ))}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                <div className="bg-muted hidden lg:block overflow-y-auto p-8 relative">
+                    <div className="absolute top-0 left-0 right-0 bottom-0 z-0"></div>
+                     <div className="w-full mx-auto" style={{ aspectRatio: '1 / 1.414' /* A4 ratio */ }}>
+                        <ResumePreview resumeData={resumeData} />
+                    </div>
+                </div>
+                 {/* Hidden, print-only component */}
+                <div className="hidden">
+                    <div className='print-container'>
+                        <ResumePreview ref={resumePreviewRef} resumeData={resumeData}/>
                     </div>
                 </div>
             </div>
         </main>
     );
 }
-
