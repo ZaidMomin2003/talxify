@@ -33,24 +33,47 @@ const interviewFlow = ai.defineFlow(
       };
     }
 
+    // Force the initial greeting flow to ensure a natural start.
+    if (state.history.length === 0) {
+      const initialGreeting = 'Hi, how are you doing today?';
+      const newState: InterviewState = {
+        ...state,
+        history: [{ role: 'model', content: [{ text: initialGreeting }] }],
+      };
+      return {
+        response: initialGreeting,
+        newState: newState,
+      };
+    }
+
+    if (state.history.length === 2 && state.history[0].role === 'model') {
+        const introText = `That's good to hear. I'm Alex, your AI interviewer for this session. We'll spend about 12 minutes discussing ${state.topic} for the ${state.level} ${state.role} role. Are you ready to begin?`;
+        const newState: InterviewState = {
+            ...state,
+            history: [...state.history, { role: 'model', content: [{ text: introText }] }],
+        };
+        return {
+            response: introText,
+            newState: newState,
+        };
+    }
+
     const MAX_QUESTIONS = 6;
     const promptContext = `
       You are an expert, friendly, and professional AI interviewer named Alex.
-      Your goal is to conduct a natural, conversational mock interview that lasts about 12-14 minutes.
+      Your goal is to conduct a natural, conversational mock interview that lasts about ${MAX_QUESTIONS} questions.
       The candidate is interviewing for a ${state.level} ${state.role} role.
       The main topic for this interview is: ${state.topic}.
 
       Current state: You have asked ${state.questionsAsked} out of ${MAX_QUESTIONS} questions.
 
       Conversation Rules:
-      1.  **Start Warmly & Interactively**: 
-          - If the history is empty, your first response must be a simple, short greeting like "Hi, how are you doing today?" and nothing else. Wait for the user to respond.
-          - After they respond to your initial greeting, then you can introduce yourself as Alex, explain the format (a ~12 min mock interview on ${state.topic}), and ask if they are ready to start.
-      2.  **Ask Questions**: Ask a mix of technical and behavioral questions relevant to the role and topic. Ask ONE main question at a time.
+      1.  **Do NOT start the conversation**. The initial greeting is handled already. Your first task is to respond to the user saying they are ready.
+      2.  **Ask Questions**: Ask ONE main question at a time. The questions should be a mix of technical and behavioral, relevant to the role and topic.
       3.  **Be Conversational & Concise**: After the user answers, provide a very brief, encouraging acknowledgment (e.g., "Good approach," "Thanks, that makes sense," "Okay, I see.") before immediately asking the next question. Do not add extra conversational filler.
       4.  **Manage Flow**: Your primary goal is to ask the next logical question. If the user's response is short, you can ask a brief follow-up.
       5.  **Stay on Track**: Gently guide the conversation back to the interview if the user goes off-topic.
-      6.  **Conclude Gracefully**: After asking ${MAX_QUESTIONS} questions, you must provide a brief, encouraging summary of the user's performance. Mention their strengths and one or two areas for improvement based on their answers. End the interview on a positive note. Only after giving this full summary should you set interviewShouldEnd to true.
+      6.  **Conclude Gracefully**: ONLY after you have asked ${MAX_QUESTIONS} questions and the user has responded, you MUST provide a brief, encouraging summary of the user's performance. Mention their strengths and one or two areas for improvement based on their answers. End the interview on a positive note. Only after giving this full summary should you set interviewShouldEnd to true. DO NOT conclude early.
     `;
 
     const { output } = await ai.generate({
@@ -80,7 +103,7 @@ const interviewFlow = ai.defineFlow(
     // The user's response will be added in the next call.
     newState.history.push({ role: 'model', content: [{ text: output.response }] });
     
-    if (output.questionWasAsked) {
+    if (output.questionWasAsked && newState.questionsAsked < MAX_QUESTIONS) {
       newState.questionsAsked += 1;
     }
     
