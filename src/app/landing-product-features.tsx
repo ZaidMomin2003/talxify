@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { ArrowRight, BarChart, BookOpen, BrainCircuit, CalendarDays, CheckCircle, Code, MessageSquare, Sparkles, User, Video } from "lucide-react";
+import { ArrowRight, BarChart, BookOpen, BrainCircuit, CalendarDays, CheckCircle, Code, MessageSquare, Mic, Sparkles, User, Video, VideoOff } from "lucide-react";
 import Image from "next/image";
 
 const features = [
@@ -86,21 +86,24 @@ const features = [
         description: "Experience a realistic, voice-based mock interview. Our conversational AI asks relevant technical and behavioral questions, listens to your answers, and responds dynamically, just like a real interviewer.",
         icon: MessageSquare,
         prototype: (
-             <Card className="w-full max-w-lg mx-auto bg-card/80 backdrop-blur-sm p-6 shadow-xl">
-                <CardContent className="p-0 space-y-4">
-                    <div className="flex gap-3">
-                        <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground shrink-0"><BrainCircuit className="w-5 h-5" /></div>
-                        <div className="bg-muted p-3 rounded-lg text-sm">
-                            Great. Let's start with a basic one. Can you describe a time when you had to debug a complex issue?
-                        </div>
+             <Card className="w-full max-w-lg mx-auto bg-card/80 backdrop-blur-sm p-4 shadow-xl">
+                <div className="aspect-video bg-muted rounded-lg relative flex items-center justify-center">
+                    <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                         <User className="w-24 h-24 text-white/20" />
                     </div>
-                     <div className="flex gap-3 justify-end">
-                        <div className="bg-secondary p-3 rounded-lg text-sm text-right">
-                           In one of my React projects, the UI was freezing after state updates...
-                        </div>
-                         <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white shrink-0"><User className="w-5 h-5" /></div>
+                    <div className="absolute top-2 right-2 p-2 rounded-lg bg-black/50 text-white text-xs flex items-center gap-1.5"><User className="w-3 h-3"/> You</div>
+                    
+                    <div className="absolute bottom-4 left-4 w-1/3 aspect-video bg-black/50 border border-primary/50 rounded-lg flex flex-col items-center justify-center p-2">
+                        <BrainCircuit className="w-8 h-8 text-primary animate-pulse" />
+                        <div className="text-white text-xs mt-1">AI Interviewer</div>
                     </div>
-                </CardContent>
+
+                    <div className="absolute bottom-4 right-4 flex items-center gap-2">
+                        <Button size="icon" variant="secondary" className="rounded-full h-10 w-10"><Mic className="w-5 h-5"/></Button>
+                        <Button size="icon" variant="secondary" className="rounded-full h-10 w-10"><Video className="w-5 h-5"/></Button>
+                        <Button size="icon" variant="destructive" className="rounded-full h-10 w-10"><Mic className="w-5 h-5"/></Button>
+                    </div>
+                </div>
             </Card>
         )
     },
