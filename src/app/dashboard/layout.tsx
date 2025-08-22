@@ -121,7 +121,6 @@ function DashboardLayoutContent({
     { href: "/dashboard", label: "Dashboard", icon: LayoutGrid },
     { href: "/dashboard/arena", label: "Arena", icon: Swords },
     { href: "/dashboard/portfolio", label: "Portfolio", icon: User },
-    { href: "/dashboard/performance", label: "Performance", icon: BarChart },
   ];
   
   const recentActivity = userData?.activity?.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()) || [];
@@ -239,7 +238,7 @@ function DashboardLayoutContent({
         <SidebarContent>
           <SidebarMenu>
             {menuItems.map((item) => {
-              const isEnabled = item.href === '/dashboard' || item.href === '/dashboard/portfolio' || item.href === '/dashboard/performance' || item.href === '/dashboard/arena';
+              const isEnabled = true;
               return (
                 <SidebarMenuItem key={item.label}>
                   <SidebarMenuButton
