@@ -4,7 +4,7 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import type { QuizResult, StoredActivity } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { BarChart, BookOpen, Brain, HelpCircle, Trophy } from 'lucide-react';
+import { BarChart, BookOpen, Brain, HelpCircle, Trophy, AlertTriangle } from 'lucide-react';
 import {
   AreaChart,
   Area,
@@ -28,6 +28,14 @@ import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { useAuth } from '@/context/auth-context';
 import { getActivity } from '@/lib/firebase-service';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
@@ -196,7 +204,7 @@ export default function PerformancePage() {
           </Card>
         </div>
 
-        <div className="grid gap-8 lg:grid-cols-3">
+        <div className="grid gap-8 lg:grid-cols-1">
           <Card className="lg:col-span-2">
             <CardHeader>
               <CardTitle>Performance Over Time</CardTitle>
@@ -227,36 +235,40 @@ export default function PerformancePage() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Weak Concepts</CardTitle>
-              <CardDescription>Topics where your average score is below 70%.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {weakConcepts.length > 0 ? (
-                  <ul className="space-y-3">
-                      {weakConcepts.map(concept => (
-                          <li key={concept.topic} className="flex items-center justify-between">
-                              <span className="capitalize font-medium">{concept.topic}</span>
-                              <Badge variant={concept.score < 50 ? 'destructive' : 'secondary'}>{concept.score}%</Badge>
-                          </li>
-                      ))}
-                  </ul>
-              ) : (
-                  <div className="flex flex-col items-center justify-center text-center text-muted-foreground p-4">
-                      <Brain className="w-8 h-8 mb-2"/>
-                      <p>No weak concepts found. Keep up the great work!</p>
-                  </div>
-              )}
-            </CardContent>
-          </Card>
         </div>
 
         <div className="mt-8">
           <Card>
-            <CardHeader>
-                <CardTitle>Recent Activity</CardTitle>
-                <CardDescription>A log of your most recently completed quizzes.</CardDescription>
+            <CardHeader className="flex items-center justify-between">
+                <div>
+                    <CardTitle>Recent Activity</CardTitle>
+                    <CardDescription>A log of your most recently completed quizzes.</CardDescription>
+                </div>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="outline">
+                            <AlertTriangle className="mr-2 h-4 w-4" />
+                            View Weak Concepts
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-64">
+                        <DropdownMenuLabel>Weakest Areas (Scores {"<"} 70%)</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        {weakConcepts.length > 0 ? (
+                            weakConcepts.map(concept => (
+                                <DropdownMenuItem key={concept.topic} className="flex justify-between">
+                                    <span className="capitalize font-medium">{concept.topic}</span>
+                                    <Badge variant={concept.score < 50 ? 'destructive' : 'secondary'}>{concept.score}%</Badge>
+                                </DropdownMenuItem>
+                            ))
+                        ) : (
+                             <div className="p-4 text-center text-sm text-muted-foreground">
+                                <Brain className="w-6 h-6 mb-2 mx-auto"/>
+                                No weak concepts found. Keep up the great work!
+                            </div>
+                        )}
+                    </DropdownMenuContent>
+                </DropdownMenu>
             </CardHeader>
             <CardContent>
                 <Table>
