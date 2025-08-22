@@ -95,9 +95,6 @@ export default function PromotionalPopup() {
                 Copy Code & Claim Offer
             </Button>
         </div>
-        <button onClick={() => handleDismiss()} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground">
-            <X className="w-5 h-5" />
-        </button>
       </DialogContent>
     </Dialog>
   );
