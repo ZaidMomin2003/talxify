@@ -10,6 +10,7 @@ import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import { FileText, PlusCircle, Trash2, Mail, Phone, Linkedin, Github, Globe, Download, Loader2 } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
+import { cn } from '@/lib/utils';
 
 // Simplified types for resume
 type ResumeExperience = { company: string; role: string; duration: string; description: string; };
@@ -31,6 +32,7 @@ const initialResumeState = {
         website: 'diya-agarwal.dev',
         summary: 'Customer-focused Retail Sales professional with solid understanding of retail dynamics, marketing and customer service. Offering 5 years of experience providing quality product recommendations and solutions to meet customer needs and exceed expectations. Demonstrated record of exceeding revenue targets by leveraging communication skills and sales expertise.'
     },
+    themeColor: '#374151',
     experience: [
         { company: 'ZARA', role: 'Retail Sales Associate', duration: '02/2017 - Current', description: '- Increased monthly sales 10% by effectively upselling and cross-selling products to maximize profitability.\n- Prevented store losses by leveraging awareness, attention to detail, and integrity to identify and investigate concerns.\n- Processed payments and maintained accurate drawers to meet financial targets.' },
         { company: "Dunkin' Donuts", role: 'Barista', duration: '03/2015 - 01/2017', description: '- Upsold seasonal drinks and pastries, boosting average store sales by ₹1500 weekly.\n- Managed morning rush of over 300 customers daily with efficient, levelheaded customer service.\n- Trained entire staff of 15 baristas in new smoothie program offerings and procedures.' }
@@ -51,6 +53,14 @@ const initialResumeState = {
     ]
 }
 
+const colorOptions = [
+    { name: 'Default', hex: '#374151' },
+    { name: 'Forest Green', hex: '#225740' },
+    { name: 'Midnight Blue', hex: '#1C3A5E' },
+    { name: 'Ruby Red', hex: '#6B0F1A' },
+    { name: 'Royal Purple', hex: '#4B0082' },
+];
+
 
 export default function ResumeBuilderPage() {
     const [resumeData, setResumeData] = useState(initialResumeState);
@@ -65,9 +75,9 @@ export default function ResumeBuilderPage() {
         setIsDownloading(true);
 
         html2canvas(input, {
-            scale: 2, // Higher scale for better quality
+            scale: 2,
             useCORS: true,
-            backgroundColor: null // Use element's background
+            backgroundColor: null
         }).then(canvas => {
             const imgData = canvas.toDataURL('image/png');
             const pdf = new jsPDF({
@@ -77,18 +87,8 @@ export default function ResumeBuilderPage() {
             });
             const pdfWidth = pdf.internal.pageSize.getWidth();
             const pdfHeight = pdf.internal.pageSize.getHeight();
-            const canvasWidth = canvas.width;
-            const canvasHeight = canvas.height;
-            const ratio = canvasWidth / canvasHeight;
-            const widthInPdf = pdfWidth;
-            const heightInPdf = widthInPdf / ratio;
             
-            // Check if content exceeds one page
-            if (heightInPdf > pdfHeight) {
-                console.warn("Content might be too long for a single PDF page.");
-            }
-
-            pdf.addImage(imgData, 'PNG', 0, 0, widthInPdf, heightInPdf);
+            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
             pdf.save(`${resumeData.personalInfo.name.replace(' ', '_')}_Resume.pdf`);
             setIsDownloading(false);
         }).catch(err => {
@@ -146,6 +146,27 @@ export default function ResumeBuilderPage() {
                             Download PDF
                          </Button>
                     </div>
+
+                    <Card>
+                        <CardHeader><CardTitle>Theme Customization</CardTitle></CardHeader>
+                        <CardContent>
+                            <div className="flex flex-wrap gap-4">
+                                {colorOptions.map((color) => (
+                                    <div key={color.name} className="flex items-center gap-2">
+                                    <button
+                                        onClick={() => setResumeData({...resumeData, themeColor: color.hex})}
+                                        className={cn(
+                                        "w-8 h-8 rounded-full border-2 transition-transform transform",
+                                        resumeData.themeColor === color.hex ? "border-ring scale-110" : "border-transparent"
+                                        )}
+                                        style={{ backgroundColor: color.hex }}
+                                    />
+                                    <label>{color.name}</label>
+                                    </div>
+                                ))}
+                            </div>
+                        </CardContent>
+                    </Card>
 
                     <Card>
                         <CardHeader><CardTitle>Personal Information</CardTitle></CardHeader>
@@ -239,10 +260,10 @@ export default function ResumeBuilderPage() {
 
                 {/* Preview Panel */}
                 <div className="bg-muted hidden lg:block overflow-y-auto p-8">
-                    <div ref={resumePreviewRef} className="bg-white text-black shadow-lg font-sans w-full mx-auto" style={{ width: '210mm', minHeight: '297mm', padding: '20mm' }}>
-                        <div className="flex">
+                    <div ref={resumePreviewRef} className="bg-white text-black shadow-lg font-sans w-full mx-auto p-8" style={{ aspectRatio: '1 / 1.414' /* A4 ratio */ }}>
+                        <div className="flex h-full">
                             {/* Left Column */}
-                            <div className="bg-[#374151] text-white p-6" style={{ width: '35%' }}>
+                            <div className="text-white p-6 flex flex-col" style={{ width: '35%', backgroundColor: resumeData.themeColor }}>
                                 <div className="text-sm space-y-6">
                                     <div>
                                         <h3 className="font-bold text-base mb-2 uppercase tracking-wider">Contact</h3>
@@ -292,10 +313,10 @@ export default function ResumeBuilderPage() {
                                 </div>
                             </div>
                             {/* Right Column */}
-                             <div className="p-6" style={{ width: '65%' }}>
+                             <div className="p-6 flex flex-col" style={{ width: '65%' }}>
                                 <h1 className="text-4xl font-bold mb-1">{resumeData.personalInfo.name}</h1>
                                 <p className="text-lg font-semibold text-gray-500 mb-6">{resumeData.personalInfo.profession}</p>
-                                <div className="border-l-2 border-gray-300 pl-4">
+                                <div className="border-l-2 pl-4" style={{ borderColor: resumeData.themeColor }}>
                                     <h2 className="text-base font-bold uppercase tracking-widest text-gray-700 mb-2">Summary</h2>
                                     <p className="text-xs text-gray-600 leading-relaxed mb-6">{resumeData.personalInfo.summary}</p>
                                 
@@ -320,3 +341,4 @@ export default function ResumeBuilderPage() {
         </main>
     );
 }
+
