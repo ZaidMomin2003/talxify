@@ -283,4 +283,5 @@ export default function ResumeBuilderPage() {
             </div>
         </main>
     );
-}
+
+    
