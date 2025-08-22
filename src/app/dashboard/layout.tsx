@@ -40,7 +40,7 @@ import {
   SidebarGroup,
   SidebarGroupLabel,
 } from "@/components/ui/sidebar";
-import { Bot, Code, LayoutGrid, MessageSquare, BarChart, Settings, History, Search, User, LogOut, Gem, LifeBuoy, Sun, Moon, Briefcase, CalendarDays, BrainCircuit, PlayCircle, X, CheckCircle, Circle, Swords, BookOpen } from "lucide-react";
+import { Bot, Code, LayoutGrid, MessageSquare, BarChart, Settings, History, Search, User, LogOut, Gem, LifeBuoy, Sun, Moon, Briefcase, CalendarDays, BrainCircuit, PlayCircle, X, CheckCircle, Circle, Swords, BookOpen, AlertTriangle } from "lucide-react";
 import type { StoredActivity, QuizResult, UserData, InterviewActivity, NoteGenerationActivity } from "@/lib/types";
 import { formatDistanceToNow, format } from 'date-fns';
 import { useAuth } from "@/context/auth-context";
@@ -48,6 +48,7 @@ import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import { Switch } from "@/components/ui/switch";
 import { getActivity, getUserData } from "@/lib/firebase-service";
+import { Badge } from "@/components/ui/badge";
 
 function GettingStartedList({ activity }: { activity: StoredActivity[] }) {
     const hasGeneratedNotes = useMemo(() => activity.some(a => a.type === 'note-generation'), [activity]);
@@ -171,6 +172,42 @@ function DashboardLayoutContent({
     }
   };
   
+  const weakConcepts = useMemo(() => {
+    if (!userData || !userData.activity) return [];
+    
+    const quizResults = userData.activity.filter(
+        (item): item is QuizResult => item.type === 'quiz' && item.analysis && item.analysis.length > 0
+    );
+
+    if (quizResults.length === 0) return [];
+    
+    const conceptScores: { [key: string]: { total: number, count: number } } = {};
+
+    quizResults.forEach(result => {
+        const topics = result.topics.split(',').map(t => t.trim().toLowerCase());
+        result.analysis.forEach(analysisItem => {
+            topics.forEach(topic => {
+                if (!conceptScores[topic]) {
+                    conceptScores[topic] = { total: 0, count: 0 };
+                }
+                conceptScores[topic].total += analysisItem.score;
+                conceptScores[topic].count += 1;
+            });
+        });
+    });
+
+    return Object.entries(conceptScores)
+        .map(([topic, data]) => ({
+            topic,
+            score: Math.round((data.total / data.count) * 100)
+        }))
+        .filter(item => item.score < 70)
+        .sort((a, b) => a.score - b.score)
+        .slice(0, 5);
+
+  }, [userData]);
+
+
   if (loading || !user || !userData) {
     return (
         <div className="flex h-screen items-center justify-center">
@@ -335,6 +372,36 @@ function DashboardLayoutContent({
             </div>
             
             <div className="flex flex-1 items-center justify-end gap-2">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon">
+                      <AlertTriangle className="h-5 w-5 text-yellow-500" />
+                      <span className="sr-only">View weak concepts</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-80">
+                    <DropdownMenuLabel>Weakest Areas (Scores {"<"} 70%)</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    {isActivityLoading ? (
+                        <div className="p-4 text-center text-sm text-muted-foreground">Loading...</div>
+                    ) : weakConcepts.length > 0 ? (
+                      weakConcepts.map((concept) => (
+                        <DropdownMenuItem key={concept.topic}>
+                          <div className="flex justify-between items-center w-full">
+                            <span className="capitalize font-medium">{concept.topic}</span>
+                            <Badge variant={concept.score < 50 ? 'destructive' : 'secondary'}>{concept.score}%</Badge>
+                          </div>
+                        </DropdownMenuItem>
+                      ))
+                    ) : (
+                      <div className="p-4 text-center text-sm text-muted-foreground">
+                        <BrainCircuit className="w-6 h-6 mb-2 mx-auto"/>
+                        No weak concepts found. Keep up the great work!
+                      </div>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon">

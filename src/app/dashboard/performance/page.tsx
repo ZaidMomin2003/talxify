@@ -99,46 +99,27 @@ export default function PerformancePage() {
         });
   }, [quizResults]);
 
-  const { averageScore, totalQuizzes, questionsAnswered, weakConcepts } = useMemo(() => {
+  const { averageScore, totalQuizzes, questionsAnswered } = useMemo(() => {
     if (quizResults.length === 0) {
-      return { averageScore: 0, totalQuizzes: 0, questionsAnswered: 0, weakConcepts: [] };
+      return { averageScore: 0, totalQuizzes: 0, questionsAnswered: 0 };
     }
 
     let totalScore = 0;
     let questionsCount = 0;
-    const conceptScores: { [key: string]: { total: number, count: number } } = {};
-
+    
     quizResults.forEach(result => {
-        const topics = result.topics.split(',').map(t => t.trim().toLowerCase());
         result.analysis.forEach(analysisItem => {
             totalScore += analysisItem.score;
-            topics.forEach(topic => {
-                if (!conceptScores[topic]) {
-                    conceptScores[topic] = { total: 0, count: 0 };
-                }
-                conceptScores[topic].total += analysisItem.score;
-                conceptScores[topic].count += 1;
-            });
         });
         questionsCount += result.analysis.length;
     });
 
     const avgScore = questionsCount > 0 ? Math.round((totalScore / questionsCount) * 100) : 0;
-    
-    const weak: {topic: string, score: number}[] = Object.entries(conceptScores)
-        .map(([topic, data]) => ({
-            topic,
-            score: Math.round((data.total / data.count) * 100)
-        }))
-        .filter(item => item.score < 70)
-        .sort((a, b) => a.score - b.score)
-        .slice(0, 5);
 
     return {
       averageScore: avgScore,
       totalQuizzes: quizResults.length,
       questionsAnswered: questionsCount,
-      weakConcepts: weak,
     };
   }, [quizResults]);
   
@@ -239,36 +220,9 @@ export default function PerformancePage() {
 
         <div className="mt-8">
           <Card>
-            <CardHeader className="flex items-center justify-between">
-                <div>
-                    <CardTitle>Recent Activity</CardTitle>
-                    <CardDescription>A log of your most recently completed quizzes.</CardDescription>
-                </div>
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="outline">
-                            <AlertTriangle className="mr-2 h-4 w-4" />
-                            View Weak Concepts
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent className="w-64">
-                        <DropdownMenuLabel>Weakest Areas (Scores {"<"} 70%)</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        {weakConcepts.length > 0 ? (
-                            weakConcepts.map(concept => (
-                                <DropdownMenuItem key={concept.topic} className="flex justify-between">
-                                    <span className="capitalize font-medium">{concept.topic}</span>
-                                    <Badge variant={concept.score < 50 ? 'destructive' : 'secondary'}>{concept.score}%</Badge>
-                                </DropdownMenuItem>
-                            ))
-                        ) : (
-                             <div className="p-4 text-center text-sm text-muted-foreground">
-                                <Brain className="w-6 h-6 mb-2 mx-auto"/>
-                                No weak concepts found. Keep up the great work!
-                            </div>
-                        )}
-                    </DropdownMenuContent>
-                </DropdownMenu>
+            <CardHeader>
+              <CardTitle>Recent Activity</CardTitle>
+              <CardDescription>A log of your most recently completed quizzes.</CardDescription>
             </CardHeader>
             <CardContent>
                 <Table>
