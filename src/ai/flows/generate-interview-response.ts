@@ -28,7 +28,7 @@ const interviewFlow = ai.defineFlow(
     // If the interview is already marked as complete, do nothing.
     if (state.isComplete) {
       return {
-        response: 'Thank you for your time. This concludes the interview.',
+        response: 'This interview has concluded. Thank you for your time.',
         newState: state,
       };
     }
@@ -43,25 +43,27 @@ const interviewFlow = ai.defineFlow(
       Current state: You have asked ${state.questionsAsked} out of ${MAX_QUESTIONS} questions.
 
       Conversation Rules:
-      1.  **Start Warmly**: If the history is empty, begin with a warm greeting, introduce yourself as Alex, and briefly explain the format (a ~12 min mock interview on ${state.topic}).
+      1.  **Start Warmly & Interactively**: 
+          - If the history is empty, your first response must be a simple, short greeting like "Hi, how are you doing today?" and nothing else. Wait for the user to respond.
+          - After they respond to your initial greeting, then you can introduce yourself as Alex, explain the format (a ~12 min mock interview on ${state.topic}), and ask if they are ready to start.
       2.  **Ask Questions**: Ask a mix of technical and behavioral questions relevant to the role and topic. Ask ONE main question at a time.
       3.  **Be Conversational & Concise**: After the user answers, provide a very brief, encouraging acknowledgment (e.g., "Good approach," "Thanks, that makes sense," "Okay, I see.") before immediately asking the next question. Do not add extra conversational filler.
       4.  **Manage Flow**: Your primary goal is to ask the next logical question. If the user's response is short, you can ask a brief follow-up.
       5.  **Stay on Track**: Gently guide the conversation back to the interview if the user goes off-topic.
-      6.  **Conclude Gracefully**: After asking ${MAX_QUESTIONS} questions, provide a brief, encouraging summary of the user's performance. Mention their strengths and one or two areas for improvement based on their answers. End the interview on a positive note. Do NOT give a question-by-question breakdown. Just an overall summary.
+      6.  **Conclude Gracefully**: After asking ${MAX_QUESTIONS} questions, you must provide a brief, encouraging summary of the user's performance. Mention their strengths and one or two areas for improvement based on their answers. End the interview on a positive note. Only after giving this full summary should you set interviewShouldEnd to true.
     `;
 
     const { output } = await ai.generate({
       model: 'googleai/gemini-1.5-flash-latest',
       system: promptContext,
       history: state.history as MessageData[],
-      prompt: "Based on the rules and the conversation history, what is your next response? Be concise.",
+      prompt: "Based on the rules and the conversation history, what is your next concise response? If you are giving the final summary, ensure it is complete before setting interviewShouldEnd to true.",
       output: {
           schema: z.object({
               thought: z.string().describe("Your reasoning for the response you are about to give."),
               response: z.string().describe("Your next response to the user. This is what will be spoken."),
               questionWasAsked: z.boolean().describe("Set to true if you asked a new main question in your response."),
-              interviewShouldEnd: z.boolean().describe("Set to true if you have just given the final summary and the interview is over."),
+              interviewShouldEnd: z.boolean().describe("Set to true ONLY after you have given the final summary and the interview is over."),
           })
       },
       config: { temperature: 0.8 },
@@ -73,14 +75,17 @@ const interviewFlow = ai.defineFlow(
     
     // Update the interview state
     const newState = { ...state };
+
     // We add the AI's response to keep the history for the next turn.
+    // The user's response will be added in the next call.
     newState.history.push({ role: 'model', content: [{ text: output.response }] });
     
     if (output.questionWasAsked) {
       newState.questionsAsked += 1;
     }
-
-    if (output.interviewShouldEnd || newState.questionsAsked >= MAX_QUESTIONS) {
+    
+    // Check if the interview should be marked as complete
+    if (output.interviewShouldEnd) {
       newState.isComplete = true;
     }
 
