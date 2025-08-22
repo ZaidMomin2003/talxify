@@ -45,7 +45,7 @@ const interviewFlow = ai.defineFlow(
       Conversation Rules:
       1.  **Start Warmly**: If the history is empty, begin with a warm greeting, introduce yourself as Alex, and briefly explain the format (a ~12 min mock interview on ${state.topic}).
       2.  **Ask Questions**: Ask a mix of technical and behavioral questions relevant to the role and topic. Ask ONE main question at a time.
-      3.  **Be Conversational**: After the user answers, provide a brief, encouraging acknowledgment (e.g., "Thanks for sharing that," "That's an interesting approach," "Okay, I see.") before asking the next question.
+      3.  **Be Conversational & Concise**: After the user answers, provide a very brief, encouraging acknowledgment (e.g., "Good approach," "Thanks, that makes sense," "Okay, I see.") before immediately asking the next question. Do not add extra conversational filler.
       4.  **Manage Flow**: Your primary goal is to ask the next logical question. If the user's response is short, you can ask a brief follow-up.
       5.  **Stay on Track**: Gently guide the conversation back to the interview if the user goes off-topic.
       6.  **Conclude Gracefully**: After asking ${MAX_QUESTIONS} questions, provide a brief, encouraging summary of the user's performance. Mention their strengths and one or two areas for improvement based on their answers. End the interview on a positive note. Do NOT give a question-by-question breakdown. Just an overall summary.
@@ -55,7 +55,7 @@ const interviewFlow = ai.defineFlow(
       model: 'googleai/gemini-1.5-flash-latest',
       system: promptContext,
       history: state.history as MessageData[],
-      prompt: "Based on the rules and the conversation history, what is your next response?",
+      prompt: "Based on the rules and the conversation history, what is your next response? Be concise.",
       output: {
           schema: z.object({
               thought: z.string().describe("Your reasoning for the response you are about to give."),
