@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -143,17 +143,35 @@ const ResumePreview = React.forwardRef<HTMLDivElement, { resumeData: typeof init
 });
 ResumePreview.displayName = 'ResumePreview';
 
+// A separate component for printing to avoid re-renders and conflicts.
+const ComponentToPrint = React.memo(React.forwardRef<HTMLDivElement, { resumeData: typeof initialResumeState }>(({ resumeData }, ref) => {
+    return (
+        <div ref={ref} className="print-container">
+            <ResumePreview resumeData={resumeData} />
+        </div>
+    );
+}));
+ComponentToPrint.displayName = 'ComponentToPrint';
+
 
 export default function ResumeBuilderPage() {
     const [resumeData, setResumeData] = useState(initialResumeState);
-    const resumePreviewRef = useRef<HTMLDivElement>(null);
+    const componentToPrintRef = useRef<HTMLDivElement>(null);
     const [isDownloading, setIsDownloading] = useState(false);
 
     const handlePrint = useReactToPrint({
-        content: () => resumePreviewRef.current,
+        content: () => componentToPrintRef.current,
         documentTitle: `${resumeData.personalInfo.name}_Resume`,
-        onBeforeGetContent: () => setIsDownloading(true),
-        onAfterPrint: () => setIsDownloading(false),
+        onBeforeGetContent: () => {
+            return new Promise((resolve) => {
+                setIsDownloading(true);
+                // The resolve function must be called for the print to proceed
+                resolve(undefined);
+            });
+        },
+        onAfterPrint: () => {
+            setIsDownloading(false);
+        },
     });
 
     const handleInfoChange = (field: keyof typeof resumeData.personalInfo, value: string) => {
@@ -326,9 +344,7 @@ export default function ResumeBuilderPage() {
                 </div>
                  {/* Hidden, print-only component */}
                 <div className="hidden">
-                    <div className='print-container'>
-                        <ResumePreview ref={resumePreviewRef} resumeData={resumeData}/>
-                    </div>
+                    <ComponentToPrint ref={componentToPrintRef} resumeData={resumeData} />
                 </div>
             </div>
         </main>
