@@ -20,15 +20,7 @@ export default function SurveySubmissionsPage() {
     const [isLoggingIn, setIsLoggingIn] = useState(false);
     
     const [submissions, setSubmissions] = useState<SurveySubmission[]>([]);
-    const [isLoading, setIsLoading] = useState(false);
-
-    useEffect(() => {
-        // Check session storage on component mount
-        if (sessionStorage.getItem('isAdminAuthenticated') === 'true') {
-            setIsAuthenticated(true);
-            fetchSubmissions();
-        }
-    }, []);
+    const [isLoading, setIsLoading] = useState(true);
 
     const fetchSubmissions = useCallback(async () => {
         setIsLoading(true);
@@ -42,6 +34,15 @@ export default function SurveySubmissionsPage() {
             setIsLoading(false);
         }
     }, []);
+
+    useEffect(() => {
+        if (sessionStorage.getItem('isAdminAuthenticated') === 'true') {
+            setIsAuthenticated(true);
+            fetchSubmissions();
+        } else {
+            setIsLoading(false);
+        }
+    }, [fetchSubmissions]);
 
     const handleLogin = (e: React.FormEvent) => {
         e.preventDefault();
@@ -94,6 +95,10 @@ export default function SurveySubmissionsPage() {
         document.body.removeChild(link);
     };
 
+    if (isLoading) {
+        return <div className="flex h-screen items-center justify-center"><Loader2 className="w-16 h-16 animate-spin text-primary" /></div>;
+    }
+
     if (!isAuthenticated) {
         return (
             <div className="flex items-center justify-center min-h-screen bg-muted/40">
@@ -128,10 +133,6 @@ export default function SurveySubmissionsPage() {
                 </Card>
             </div>
         );
-    }
-
-    if (isLoading) {
-        return <div className="flex h-screen items-center justify-center"><Loader2 className="w-16 h-16 animate-spin text-primary" /></div>;
     }
 
     return (
@@ -221,4 +222,3 @@ export default function SurveySubmissionsPage() {
         </main>
     )
 }
-
