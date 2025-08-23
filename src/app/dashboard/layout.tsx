@@ -40,7 +40,7 @@ import {
   SidebarGroup,
   SidebarGroupLabel,
 } from "@/components/ui/sidebar";
-import { Bot, Code, LayoutGrid, MessageSquare, BarChart, Settings, History, Search, User, LogOut, Gem, LifeBuoy, Sun, Moon, Briefcase, CalendarDays, BrainCircuit, PlayCircle, X, CheckCircle, Circle, Swords, BookOpen, AlertTriangle, FileText } from "lucide-react";
+import { Bot, Code, LayoutGrid, MessageSquare, BarChart, Settings, History, Search, User, LogOut, Gem, LifeBuoy, Sun, Moon, Briefcase, CalendarDays, BrainCircuit, PlayCircle, X, CheckCircle, Circle, Swords, BookOpen, AlertTriangle, FileText, FlaskConical } from "lucide-react";
 import type { StoredActivity, QuizResult, UserData, InterviewActivity, NoteGenerationActivity } from "@/lib/types";
 import { formatDistanceToNow, format } from 'date-fns';
 import { useAuth } from "@/context/auth-context";
@@ -49,6 +49,8 @@ import { useTheme } from "next-themes";
 import { Switch } from "@/components/ui/switch";
 import { getActivity, getUserData } from "@/lib/firebase-service";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+
 
 function GettingStartedList({ activity }: { activity: StoredActivity[] }) {
     const hasGeneratedNotes = useMemo(() => activity.some(a => a.type === 'note-generation'), [activity]);
@@ -120,7 +122,7 @@ function DashboardLayoutContent({
   const menuItems = [
     { href: "/dashboard", label: "Dashboard", icon: LayoutGrid },
     { href: "/dashboard/arena", label: "Arena", icon: Swords },
-    { href: "/dashboard/resume-builder", label: "Resume Builder", icon: FileText },
+    { href: "/dashboard/resume-builder", label: "Resume Builder", icon: FileText, isBeta: true },
     { href: "/dashboard/portfolio", label: "Portfolio", icon: User },
   ];
   
@@ -238,22 +240,29 @@ function DashboardLayoutContent({
         </SidebarHeader>
         <SidebarContent>
           <SidebarMenu>
-            {menuItems.map((item) => {
-              const isEnabled = true;
-              return (
-                <SidebarMenuItem key={item.label}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={pathname === item.href}
-                  >
-                    <Link href={isEnabled ? item.href : '#'} className={!isEnabled ? "pointer-events-none text-muted-foreground/70" : ""}>
-                      <item.icon />
-                      {item.label}
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              )
-            })}
+            {menuItems.map((item) => (
+              <SidebarMenuItem key={item.label}>
+                <SidebarMenuButton
+                  asChild
+                  isActive={pathname === item.href}
+                >
+                  <Link href={item.href}>
+                    <item.icon />
+                    <span>{item.label}</span>
+                    {item.isBeta && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <FlaskConical className="w-4 h-4 ml-auto text-yellow-500" />
+                        </TooltipTrigger>
+                        <TooltipContent side="right">
+                          <p>Still in testing, may do mistakes</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    )}
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            ))}
           </SidebarMenu>
           <SidebarSeparator />
            <SidebarGroup>
