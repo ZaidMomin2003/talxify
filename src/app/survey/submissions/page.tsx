@@ -26,7 +26,7 @@ export default function SurveySubmissionsPage() {
         setIsLoading(true);
         try {
             const data = await getSurveySubmissions();
-            setSubmissions(data);
+            setSubmissions(data as SurveySubmission[]);
         } catch (err) {
             console.error(err);
             setError('Failed to fetch submissions.');
@@ -49,7 +49,6 @@ export default function SurveySubmissionsPage() {
         setIsLoggingIn(true);
         setError('');
 
-        // Basic password check, should be more secure in a real app
         setTimeout(() => {
             if (password === 'Zaid@226194') {
                 sessionStorage.setItem('isAdminAuthenticated', 'true');
@@ -68,8 +67,7 @@ export default function SurveySubmissionsPage() {
         ];
         
         const rows = submissions.map(sub => {
-            // Ensure all fields are defined and handle potential missing timestamp
-            const timestamp = sub.timestamp ? `"${format(sub.timestamp.toDate(), 'yyyy-MM-dd HH:mm:ss')}"` : 'N/A';
+            const timestamp = sub.timestamp ? `"${format(new Date(sub.timestamp.seconds * 1000), 'yyyy-MM-dd HH:mm:ss')}"` : 'N/A';
             const name = `"${sub.name || ''}"`;
             const email = `"${sub.email || ''}"`;
             const challenge = `"${(sub.challenge || '').replace(/"/g, '""')}"`;
@@ -102,7 +100,7 @@ export default function SurveySubmissionsPage() {
         document.body.removeChild(link);
     };
 
-    if (isLoading) {
+    if (isLoading && isAuthenticated) {
         return <div className="flex h-screen items-center justify-center"><Loader2 className="w-16 h-16 animate-spin text-primary" /></div>;
     }
 
@@ -169,7 +167,7 @@ export default function SurveySubmissionsPage() {
                                             </div>
                                         </div>
                                         <p className="text-sm text-muted-foreground">
-                                           {sub.timestamp ? format(sub.timestamp.toDate(), 'PPP p') : 'N/A'}
+                                           {sub.timestamp ? format(new Date(sub.timestamp.seconds * 1000), 'PPP p') : 'N/A'}
                                         </p>
                                     </div>
                                 </AccordionTrigger>
@@ -210,7 +208,7 @@ export default function SurveySubmissionsPage() {
                                         <div className="md:col-span-2 lg:col-span-3">
                                             <h4>Desired languages</h4>
                                             <div className="flex flex-wrap gap-1">
-                                                {sub.languages?.map((lang: string) => <Badge key={lang} variant="outline">{lang}</Badge>) || 'N/A'}
+                                                {Array.isArray(sub.languages) ? sub.languages.map((lang: string) => <Badge key={lang} variant="outline">{lang}</Badge>) : 'N/A'}
                                             </div>
                                         </div>
                                          <div className="md:col-span-2 lg:col-span-3">

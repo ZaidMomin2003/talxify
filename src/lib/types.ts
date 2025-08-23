@@ -176,19 +176,25 @@ export interface FAQ {
 }
 
 // --- Survey ---
+// This represents the structure of a document in the surveySubmissions collection
 export interface SurveySubmission {
     id: string;
-    timestamp: any;
-    challenge: string;
-    aiValue: string;
-    practiceMethod: string[];
-    helpfulTools: string[];
-    pricePoint: string;
-    languages: string[];
-    feedbackImportance: string;
-    experienceLevel: string;
-    likelihood: string;
-    otherFeedback: string;
-    name: string;
-    email: string;
+    timestamp: {
+        seconds: number;
+        nanoseconds: number;
+    };
+    challenge?: string;
+    aiValue?: string;
+    practiceMethod?: string[];
+    helpfulTools?: string[];
+    pricePoint?: string;
+    languages?: string[];
+    feedbackImportance?: string;
+    experienceLevel?: string;
+    likelihood?: string;
+    otherFeedback?: string;
+    name?: string;
+    email?: string;
 }
+
+    
