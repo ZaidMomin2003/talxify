@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription as DialogDescriptionComponent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -9,35 +9,72 @@ import { Swords, Lock, PlayCircle, BookOpen, Code, Briefcase, CheckCircle, Loade
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
-import { getUserData } from '@/lib/firebase-service';
+import { getUserData, getActivity } from '@/lib/firebase-service';
 import type { SyllabusDay } from '@/ai/flows/generate-syllabus';
+import type { StoredActivity } from '@/lib/types';
 
 export default function ArenaPage() {
     const router = useRouter();
     const { user } = useAuth();
     const [syllabus, setSyllabus] = useState<SyllabusDay[]>([]);
+    const [activity, setActivity] = useState<StoredActivity[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [completedDays, setCompletedDays] = useState(0); // This would come from user progress data
 
-    const fetchSyllabus = useCallback(async () => {
+    const fetchSyllabusAndActivity = useCallback(async () => {
         if (user) {
             setIsLoading(true);
-            const data = await getUserData(user.uid);
-            if (data?.syllabus && data.syllabus.length > 0) {
-                setSyllabus(data.syllabus);
-                // setCompletedDays(data.progress.completedDays);
-            } else {
-                // If no syllabus, redirect to onboarding
-                router.push('/onboarding');
-                return;
+            try {
+                const userData = await getUserData(user.uid);
+                if (userData?.syllabus && userData.syllabus.length > 0) {
+                    setSyllabus(userData.syllabus);
+                } else {
+                    router.push('/onboarding');
+                    return;
+                }
+                const userActivity = await getActivity(user.uid);
+                setActivity(userActivity);
+            } catch (error) {
+                console.error("Failed to fetch data:", error);
+            } finally {
+                setIsLoading(false);
             }
-            setIsLoading(false);
         }
     }, [user, router]);
 
     useEffect(() => {
-        fetchSyllabus();
-    }, [fetchSyllabus]);
+        fetchSyllabusAndActivity();
+    }, [fetchSyllabusAndActivity]);
+    
+    const { completedDays, dailyTaskStatus } = useMemo(() => {
+        const topics = syllabus.map(day => day.topic.toLowerCase());
+        const status: { [day: number]: { learn: boolean; quiz: boolean; interview: boolean; } } = {};
+        
+        activity.forEach(act => {
+            const actTopic = act.details.topic.toLowerCase();
+            const dayIndex = topics.findIndex(t => t.includes(actTopic) || actTopic.includes(t));
+
+            if (dayIndex !== -1) {
+                const day = dayIndex + 1;
+                if (!status[day]) {
+                    status[day] = { learn: false, quiz: false, interview: false };
+                }
+                if (act.type === 'note-generation') status[day].learn = true;
+                if (act.type === 'quiz') status[day].quiz = true;
+                if (act.type === 'interview') status[day].interview = true;
+            }
+        });
+
+        let completedCount = 0;
+        for (let i = 1; i <= syllabus.length; i++) {
+            if (status[i] && status[i].learn && status[i].quiz && status[i].interview) {
+                completedCount = i;
+            } else {
+                break;
+            }
+        }
+        
+        return { completedDays: completedCount, dailyTaskStatus: status };
+    }, [syllabus, activity]);
 
 
     const handleStartChallenge = (day: number, type: 'learn' | 'quiz' | 'interview') => {
@@ -82,15 +119,16 @@ export default function ArenaPage() {
             {syllabus.map((day) => {
                 const isUnlocked = day.day <= completedDays + 1;
                 const isCompleted = day.day <= completedDays;
+                const dayStatus = dailyTaskStatus[day.day] || { learn: false, quiz: false, interview: false };
 
                 return (
                      <Dialog key={day.day}>
-                        <DialogTrigger asChild>
+                        <DialogTrigger asChild disabled={!isUnlocked}>
                              <Card 
                                 className={cn(
-                                    "text-center transition-all duration-300 transform hover:-translate-y-1 cursor-pointer",
+                                    "text-center transition-all duration-300 transform",
                                     !isUnlocked && "bg-muted/50 text-muted-foreground hover:shadow-none",
-                                    isUnlocked && "hover:shadow-primary/20 hover:border-primary/50",
+                                    isUnlocked && "hover:-translate-y-1 cursor-pointer hover:shadow-primary/20 hover:border-primary/50",
                                     isCompleted && "bg-green-500/10 border-green-500/50"
                                 )}
                             >
@@ -124,29 +162,29 @@ export default function ArenaPage() {
                                         </DialogDescriptionComponent>
                                     </DialogHeader>
                                     <div className="my-6 space-y-4">
-                                        <div className="flex items-start gap-4 p-3 rounded-lg bg-muted/50">
-                                            <div className="flex-shrink-0"><BookOpen className="h-5 w-5 text-yellow-500" /></div>
+                                        <div className="flex items-center gap-4 p-3 rounded-lg bg-muted/50">
+                                            {dayStatus.learn ? <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" /> : <BookOpen className="h-5 w-5 text-yellow-500 flex-shrink-0" />}
                                             <div className="flex-1">
                                                 <p className="font-semibold text-foreground">Learn: {day.topic}</p>
                                                 <p className="text-xs text-muted-foreground">Study the core concepts of today's topic.</p>
                                             </div>
-                                            <Button size="sm" onClick={() => handleStartChallenge(day.day, 'learn')}>Start</Button>
+                                            {!dayStatus.learn && <Button size="sm" onClick={() => handleStartChallenge(day.day, 'learn')}>Start</Button>}
                                         </div>
-                                        <div className="flex items-start gap-4 p-3 rounded-lg bg-muted/50">
-                                            <div className="flex-shrink-0"><Code className="h-5 w-5 text-blue-500" /></div>
+                                        <div className="flex items-center gap-4 p-3 rounded-lg bg-muted/50">
+                                             {dayStatus.quiz ? <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" /> : <Code className="h-5 w-5 text-blue-500 flex-shrink-0" />}
                                             <div className="flex-1">
                                                 <p className="font-semibold text-foreground">Complete Coding Quiz</p>
                                                 <p className="text-xs text-muted-foreground">Test your knowledge on {day.topic}.</p>
                                             </div>
-                                            <Button size="sm" onClick={() => handleStartChallenge(day.day, 'quiz')}>Start</Button>
+                                            {!dayStatus.quiz && <Button size="sm" onClick={() => handleStartChallenge(day.day, 'quiz')}>Start</Button>}
                                         </div>
-                                        <div className="flex items-start gap-4 p-3 rounded-lg bg-muted/50">
-                                            <div className="flex-shrink-0"><Briefcase className="h-5 w-5 text-green-500" /></div>
+                                        <div className="flex items-center gap-4 p-3 rounded-lg bg-muted/50">
+                                            {dayStatus.interview ? <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" /> : <Briefcase className="h-5 w-5 text-green-500 flex-shrink-0" />}
                                             <div className="flex-1">
                                                 <p className="font-semibold text-foreground">Take a Mock Interview</p>
                                                 <p className="text-xs text-muted-foreground">Practice your interview skills.</p>
                                             </div>
-                                             <Button size="sm" onClick={() => handleStartChallenge(day.day, 'interview')}>Start</Button>
+                                             {!dayStatus.interview && <Button size="sm" onClick={() => handleStartChallenge(day.day, 'interview')}>Start</Button>}
                                         </div>
                                     </div>
                                 </>
