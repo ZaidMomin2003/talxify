@@ -123,12 +123,12 @@ export default function ArenaPage() {
 
                 return (
                      <Dialog key={day.day}>
-                        <DialogTrigger asChild disabled={!isUnlocked}>
+                        <DialogTrigger asChild>
                              <Card 
                                 className={cn(
-                                    "text-center transition-all duration-300 transform",
-                                    !isUnlocked && "bg-muted/50 text-muted-foreground hover:shadow-none",
-                                    isUnlocked && "hover:-translate-y-1 cursor-pointer hover:shadow-primary/20 hover:border-primary/50",
+                                    "text-center transition-all duration-300 transform cursor-pointer",
+                                    !isUnlocked && "bg-muted/50 text-muted-foreground hover:shadow-none hover:border-border",
+                                    isUnlocked && "hover:-translate-y-1 hover:shadow-primary/20 hover:border-primary/50",
                                     isCompleted && "bg-green-500/10 border-green-500/50"
                                 )}
                             >
@@ -153,52 +153,50 @@ export default function ArenaPage() {
                             </Card>
                         </DialogTrigger>
                         <DialogContent>
-                             {isUnlocked ? (
-                                <>
-                                    <DialogHeader>
-                                        <DialogTitle className="text-2xl font-bold">Day {day.day}: {day.topic}</DialogTitle>
-                                        <DialogDescriptionComponent>
-                                            {day.description}
-                                        </DialogDescriptionComponent>
-                                    </DialogHeader>
-                                    <div className="my-6 space-y-4">
-                                        <div className="flex items-center gap-4 p-3 rounded-lg bg-muted/50">
-                                            {dayStatus.learn ? <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" /> : <BookOpen className="h-5 w-5 text-yellow-500 flex-shrink-0" />}
-                                            <div className="flex-1">
-                                                <p className="font-semibold text-foreground">Learn: {day.topic}</p>
-                                                <p className="text-xs text-muted-foreground">Study the core concepts of today's topic.</p>
-                                            </div>
-                                            {!dayStatus.learn && <Button size="sm" onClick={() => handleStartChallenge(day.day, 'learn')}>Start</Button>}
-                                        </div>
-                                        <div className="flex items-center gap-4 p-3 rounded-lg bg-muted/50">
-                                             {dayStatus.quiz ? <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" /> : <Code className="h-5 w-5 text-blue-500 flex-shrink-0" />}
-                                            <div className="flex-1">
-                                                <p className="font-semibold text-foreground">Complete Coding Quiz</p>
-                                                <p className="text-xs text-muted-foreground">Test your knowledge on {day.topic}.</p>
-                                            </div>
-                                            {!dayStatus.quiz && <Button size="sm" onClick={() => handleStartChallenge(day.day, 'quiz')}>Start</Button>}
-                                        </div>
-                                        <div className="flex items-center gap-4 p-3 rounded-lg bg-muted/50">
-                                            {dayStatus.interview ? <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" /> : <Briefcase className="h-5 w-5 text-green-500 flex-shrink-0" />}
-                                            <div className="flex-1">
-                                                <p className="font-semibold text-foreground">Take a Mock Interview</p>
-                                                <p className="text-xs text-muted-foreground">Practice your interview skills.</p>
-                                            </div>
-                                             {!dayStatus.interview && <Button size="sm" onClick={() => handleStartChallenge(day.day, 'interview')}>Start</Button>}
-                                        </div>
+                            <DialogHeader>
+                                <DialogTitle className="text-2xl font-bold">Day {day.day}: {day.topic}</DialogTitle>
+                                <DialogDescriptionComponent>
+                                    {day.description}
+                                </DialogDescriptionComponent>
+                            </DialogHeader>
+                            <div className="my-6 space-y-4">
+                                <div className="flex items-center gap-4 p-3 rounded-lg bg-muted/50">
+                                    {dayStatus.learn ? <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" /> : <BookOpen className="h-5 w-5 text-yellow-500 flex-shrink-0" />}
+                                    <div className="flex-1">
+                                        <p className="font-semibold text-foreground">Learn: {day.topic}</p>
+                                        <p className="text-xs text-muted-foreground">Study the core concepts of today's topic.</p>
                                     </div>
-                                </>
-                             ) : (
-                                 <DialogHeader className="text-center py-8">
-                                     <div className="mx-auto bg-muted text-muted-foreground rounded-full p-4 mb-4">
-                                        <Lock className="h-10 w-10" />
-                                     </div>
-                                    <DialogTitle className="text-2xl font-bold">Day {day.day} is Locked</DialogTitle>
-                                    <DialogDescriptionComponent className="max-w-xs mx-auto">
-                                        You need to complete all previous challenges before you can unlock this day. Keep going!
-                                    </DialogDescriptionComponent>
-                                </DialogHeader>
-                             )}
+                                    {!dayStatus.learn && (
+                                        <Button size="sm" onClick={() => handleStartChallenge(day.day, 'learn')} disabled={!isUnlocked}>
+                                            {isUnlocked ? 'Start' : <Lock className="h-4 w-4" />}
+                                        </Button>
+                                    )}
+                                </div>
+                                <div className="flex items-center gap-4 p-3 rounded-lg bg-muted/50">
+                                     {dayStatus.quiz ? <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" /> : <Code className="h-5 w-5 text-blue-500 flex-shrink-0" />}
+                                    <div className="flex-1">
+                                        <p className="font-semibold text-foreground">Complete Coding Quiz</p>
+                                        <p className="text-xs text-muted-foreground">Test your knowledge on {day.topic}.</p>
+                                    </div>
+                                     {!dayStatus.quiz && (
+                                        <Button size="sm" onClick={() => handleStartChallenge(day.day, 'quiz')} disabled={!isUnlocked}>
+                                            {isUnlocked ? 'Start' : <Lock className="h-4 w-4" />}
+                                        </Button>
+                                    )}
+                                </div>
+                                <div className="flex items-center gap-4 p-3 rounded-lg bg-muted/50">
+                                    {dayStatus.interview ? <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" /> : <Briefcase className="h-5 w-5 text-green-500 flex-shrink-0" />}
+                                    <div className="flex-1">
+                                        <p className="font-semibold text-foreground">Take a Mock Interview</p>
+                                        <p className="text-xs text-muted-foreground">Practice your interview skills.</p>
+                                    </div>
+                                     {!dayStatus.interview && (
+                                        <Button size="sm" onClick={() => handleStartChallenge(day.day, 'interview')} disabled={!isUnlocked}>
+                                            {isUnlocked ? 'Start' : <Lock className="h-4 w-4" />}
+                                        </Button>
+                                    )}
+                                </div>
+                            </div>
                         </DialogContent>
                     </Dialog>
                 );
