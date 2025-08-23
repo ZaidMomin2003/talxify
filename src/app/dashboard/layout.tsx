@@ -12,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   DropdownMenu,
@@ -40,7 +41,7 @@ import {
   SidebarGroup,
   SidebarGroupLabel,
 } from "@/components/ui/sidebar";
-import { Bot, Code, LayoutGrid, MessageSquare, BarChart, Settings, History, Search, User, LogOut, Gem, LifeBuoy, Sun, Moon, Briefcase, CalendarDays, BrainCircuit, PlayCircle, X, CheckCircle, Circle, Swords, BookOpen, AlertTriangle, FileText, FlaskConical } from "lucide-react";
+import { Bot, Code, LayoutGrid, MessageSquare, BarChart, Settings, History, Search, User, LogOut, Gem, LifeBuoy, Sun, Moon, Briefcase, CalendarDays, BrainCircuit, PlayCircle, X, CheckCircle, Circle, Swords, BookOpen, AlertTriangle, FileText, FlaskConical, Rocket } from "lucide-react";
 import type { StoredActivity, QuizResult, UserData, InterviewActivity, NoteGenerationActivity } from "@/lib/types";
 import { formatDistanceToNow, format } from 'date-fns';
 import { useAuth } from "@/context/auth-context";
@@ -83,6 +84,34 @@ function GettingStartedList({ activity }: { activity: StoredActivity[] }) {
         </SidebarMenu>
     );
 }
+
+const guideSteps = [
+    {
+        icon: Swords,
+        title: "1. Complete Daily Arena Challenges",
+        description: "Go to the Arena to follow your personalized 30-day plan. Complete daily learning, quizzes, and mock interviews to unlock the next day's content."
+    },
+    {
+        icon: FileText,
+        title: "2. Build Your Resume",
+        description: "Head to the Resume Builder to create a professional resume. This feature is unlocked for Pro users."
+    },
+    {
+        icon: User,
+        title: "3. Craft Your Portfolio",
+        description: "Use the Portfolio page to showcase your skills, projects, and achievements. Your activity from the Arena can be automatically included."
+    },
+    {
+        icon: History,
+        title: "4. Review Your Activity",
+        description: "Click the history icon in the top-right header to see a feed of all your recent activities, including quizzes and interviews."
+    },
+    {
+        icon: AlertTriangle,
+        title: "5. Check Weak Concepts",
+        description: "Click the alert icon in the header to see a list of your weakest concepts based on your quiz performance, helping you focus your studies."
+    },
+];
 
 function DashboardLayoutContent({
   children,
@@ -279,22 +308,30 @@ function DashboardLayoutContent({
                  <div className="group cursor-pointer rounded-lg border-2 border-dashed border-border p-4 text-center hover:border-primary hover:bg-primary/5 transition-all">
                     <div className="flex justify-center mb-2">
                         <div className="rounded-full bg-primary/10 p-3 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
-                            <PlayCircle className="h-6 w-6" />
+                            <Rocket className="h-6 w-6" />
                         </div>
                     </div>
                     <p className="font-semibold text-foreground">How to use Talxify</p>
-                    <p className="text-xs text-muted-foreground">Watch a quick video guide</p>
+                    <p className="text-xs text-muted-foreground">A quick step-by-step guide</p>
                 </div>
               </DialogTrigger>
-              <DialogContent className="max-w-2xl p-0">
-                 <div className="aspect-video">
-                    <iframe
-                        className="w-full h-full"
-                        src="https://www.youtube.com/embed/3tXVSpImzXk?autoplay=1"
-                        title="YouTube video player"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                        allowFullScreen
-                    ></iframe>
+              <DialogContent className="max-w-lg">
+                <DialogHeader>
+                    <DialogTitle className="text-2xl font-bold">Getting Started with Talxify</DialogTitle>
+                    <DialogDescription>Follow these steps to make the most of the platform.</DialogDescription>
+                </DialogHeader>
+                 <div className="my-6 space-y-4">
+                    {guideSteps.map(step => (
+                        <div key={step.title} className="flex items-start gap-4">
+                            <div className="bg-primary/10 text-primary rounded-lg p-2 mt-0.5">
+                                <step.icon className="w-5 h-5" />
+                            </div>
+                            <div>
+                                <p className="font-semibold text-foreground">{step.title}</p>
+                                <p className="text-sm text-muted-foreground">{step.description}</p>
+                            </div>
+                        </div>
+                    ))}
                 </div>
               </DialogContent>
             </Dialog>
@@ -482,5 +519,3 @@ export default function DashboardLayout({
     <DashboardLayoutContent>{children}</DashboardLayoutContent>
   )
 }
-
-    
