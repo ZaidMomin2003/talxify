@@ -258,7 +258,7 @@ export default function DashboardPage() {
         <p className="text-muted-foreground">Here's your progress overview, let's get started!</p>
       </div>
 
-      <div className="mb-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mb-6 grid grid-cols-2 gap-6 lg:grid-cols-4">
         <Card className="bg-blue-500/20 text-blue-950 dark:text-blue-200 border-blue-500/30 shadow-lg shadow-blue-500/20">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Interviews Completed</CardTitle>
