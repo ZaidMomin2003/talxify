@@ -20,10 +20,10 @@ export default function SurveySubmissionsPage() {
     const [isLoggingIn, setIsLoggingIn] = useState(false);
     
     const [submissions, setSubmissions] = useState<SurveySubmission[]>([]);
-    const [isLoading, setIsLoading] = useState(false);
+    const [isLoadingData, setIsLoadingData] = useState(false);
 
     const fetchSubmissions = useCallback(async () => {
-        setIsLoading(true);
+        setIsLoadingData(true);
         try {
             const data = await getSurveySubmissions();
             setSubmissions(data);
@@ -31,7 +31,7 @@ export default function SurveySubmissionsPage() {
             console.error(err);
             setError('Failed to fetch submissions.');
         } finally {
-            setIsLoading(false);
+            setIsLoadingData(false);
         }
     }, []);
 
@@ -42,24 +42,27 @@ export default function SurveySubmissionsPage() {
         }
     }, [fetchSubmissions]);
 
-    const handleLogin = (e: React.FormEvent) => {
+    const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoggingIn(true);
         setError('');
 
-        setTimeout(() => {
-            if (password === 'Zaid@226194') {
-                sessionStorage.setItem('isAdminAuthenticated', 'true');
-                setIsAuthenticated(true);
-                fetchSubmissions();
-            } else {
-                setError('Invalid password.');
-            }
-            setIsLoggingIn(false);
-        }, 500);
+        // Simulate a small delay for better UX
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        if (password === 'Zaid@226194') {
+            sessionStorage.setItem('isAdminAuthenticated', 'true');
+            setIsAuthenticated(true);
+            await fetchSubmissions(); // Fetch data right after successful login
+        } else {
+            setError('Invalid password.');
+        }
+        setIsLoggingIn(false);
     };
 
     const exportToCSV = () => {
+        if (submissions.length === 0) return;
+
         const headers = [
             "Timestamp", "Name", "Email", "Biggest Challenge", "AI Practice Value (1-10)", "Practice Method", "Helpful Tools", "Price Point", "Desired Languages", "Feedback Importance (1-10)", "Experience Level", "Likelihood to Use (1-10)", "Other Feedback"
         ];
@@ -134,7 +137,7 @@ export default function SurveySubmissionsPage() {
         );
     }
     
-    if (isLoading) {
+    if (isLoadingData) {
         return <div className="flex h-screen items-center justify-center"><Loader2 className="w-16 h-16 animate-spin text-primary" /></div>;
     }
 
@@ -225,3 +228,5 @@ export default function SurveySubmissionsPage() {
         </main>
     )
 }
+
+    
