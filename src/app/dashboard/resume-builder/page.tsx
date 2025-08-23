@@ -146,7 +146,19 @@ ResumePreview.displayName = 'ResumePreview';
 // A separate component for printing to avoid re-renders and conflicts.
 const ComponentToPrint = React.memo(React.forwardRef<HTMLDivElement, { resumeData: typeof initialResumeState }>(({ resumeData }, ref) => {
     return (
-        <div ref={ref} className="print-container">
+        <div ref={ref}>
+            <style type="text/css" media="print">
+                {`
+                @page {
+                    size: A4;
+                    margin: 0;
+                }
+                html, body {
+                    width: 210mm;
+                    height: 297mm;
+                }
+                `}
+            </style>
             <ResumePreview resumeData={resumeData} />
         </div>
     );
@@ -162,17 +174,16 @@ export default function ResumeBuilderPage() {
     const handlePrint = useReactToPrint({
         content: () => componentToPrintRef.current,
         documentTitle: `${resumeData.personalInfo.name}_Resume`,
-        onBeforeGetContent: () => {
-            return new Promise((resolve) => {
-                setIsDownloading(true);
-                // The resolve function must be called for the print to proceed
-                resolve(undefined);
-            });
-        },
-        onAfterPrint: () => {
-            setIsDownloading(false);
-        },
     });
+
+    const handleDownloadClick = () => {
+        setIsDownloading(true);
+        // A small delay to allow the state to update and UI to show the loader
+        setTimeout(() => {
+            handlePrint();
+            setIsDownloading(false);
+        }, 100);
+    };
 
     const handleInfoChange = (field: keyof typeof resumeData.personalInfo, value: string) => {
         setResumeData(prev => ({ ...prev, personalInfo: { ...prev.personalInfo, [field]: value }}));
@@ -218,7 +229,7 @@ export default function ResumeBuilderPage() {
                 <div className="overflow-y-auto p-6 space-y-6">
                     <div className="flex items-center justify-between">
                          <h1 className="text-3xl font-bold font-headline flex items-center gap-3"><FileText/> Resume Builder</h1>
-                         <Button onClick={handlePrint} disabled={isDownloading}>
+                         <Button onClick={handleDownloadClick} disabled={isDownloading}>
                             {isDownloading ? <Loader2 className="mr-2 animate-spin"/> : <Download className="mr-2"/>} 
                             Download PDF
                          </Button>
