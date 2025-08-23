@@ -6,12 +6,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, AlertTriangle, LogIn, Bot, BadgeHelp } from 'lucide-react';
+import { Loader2, AlertTriangle, LogIn, Bot, BadgeHelp, Download } from 'lucide-react';
 import { getSurveySubmissions } from '@/app/zaidmin/actions';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
+import type { SurveySubmission } from '@/lib/types';
 
 export default function SurveySubmissionsPage() {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -19,7 +19,7 @@ export default function SurveySubmissionsPage() {
     const [error, setError] = useState('');
     const [isLoggingIn, setIsLoggingIn] = useState(false);
     
-    const [submissions, setSubmissions] = useState<any[]>([]);
+    const [submissions, setSubmissions] = useState<SurveySubmission[]>([]);
     const [isLoading, setIsLoading] = useState(false);
 
     const fetchSubmissions = useCallback(async () => {
@@ -49,6 +49,40 @@ export default function SurveySubmissionsPage() {
             }
             setIsLoggingIn(false);
         }, 500);
+    };
+
+    const exportToCSV = () => {
+        const headers = [
+            "Timestamp", "Name", "Email", "Biggest Challenge", "AI Practice Value (1-10)", "Practice Method", "Helpful Tools", "Price Point", "Desired Languages", "Feedback Importance (1-10)", "Experience Level", "Likelihood to Use (1-10)", "Other Feedback"
+        ];
+        
+        const rows = submissions.map(sub => [
+            sub.timestamp ? `"${format(sub.timestamp.toDate(), 'yyyy-MM-dd HH:mm:ss')}"` : 'N/A',
+            `"${sub.name || ''}"`,
+            `"${sub.email || ''}"`,
+            `"${(sub.challenge || '').replace(/"/g, '""')}"`,
+            sub.aiValue || '',
+            `"${sub.practiceMethod?.join(', ') || ''}"`,
+            `"${sub.helpfulTools?.join(', ') || ''}"`,
+            `"${sub.pricePoint || ''}"`,
+            `"${sub.languages?.join(', ') || ''}"`,
+            sub.feedbackImportance || '',
+            `"${sub.experienceLevel || ''}"`,
+            sub.likelihood || '',
+            `"${(sub.otherFeedback || '').replace(/"/g, '""')}"`
+        ]);
+
+        const csvContent = "data:text/csv;charset=utf-8," 
+            + headers.join(",") + "\n" 
+            + rows.map(e => e.join(",")).join("\n");
+
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "survey_submissions.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     };
 
     if (!isAuthenticated) {
@@ -94,9 +128,15 @@ export default function SurveySubmissionsPage() {
     return (
         <main className="p-4 sm:p-6 lg:p-8">
             <Card>
-                <CardHeader>
-                    <CardTitle>Survey Submissions ({submissions.length})</CardTitle>
-                    <CardDescription>All user feedback submitted through the pre-launch survey.</CardDescription>
+                <CardHeader className="flex flex-row items-center justify-between">
+                    <div>
+                        <CardTitle>Survey Submissions ({submissions.length})</CardTitle>
+                        <CardDescription>All user feedback submitted through the pre-launch survey.</CardDescription>
+                    </div>
+                    <Button onClick={exportToCSV} disabled={submissions.length === 0}>
+                        <Download className="mr-2 h-4 w-4" />
+                        Export to CSV
+                    </Button>
                 </CardHeader>
                 <CardContent>
                     <Accordion type="single" collapsible className="w-full">

@@ -1,4 +1,5 @@
 
+
 import type { AnswerAnalysis } from "@/ai/flows/analyze-coding-answers";
 import type { QuizState } from "@/app/dashboard/coding-quiz/quiz/page";
 import type { SyllabusDay } from "@/ai/flows/generate-syllabus";
@@ -176,6 +177,8 @@ export interface FAQ {
 
 // --- Survey ---
 export interface SurveySubmission {
+    id: string;
+    timestamp: any;
     challenge: string;
     aiValue: string;
     practiceMethod: string[];
