@@ -20,13 +20,13 @@ export default function SurveySubmissionsPage() {
     const [isLoggingIn, setIsLoggingIn] = useState(false);
     
     const [submissions, setSubmissions] = useState<SurveySubmission[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const [isLoading, setIsLoading] = useState(false);
 
     const fetchSubmissions = useCallback(async () => {
         setIsLoading(true);
         try {
             const data = await getSurveySubmissions();
-            setSubmissions(data as SurveySubmission[]);
+            setSubmissions(data);
         } catch (err) {
             console.error(err);
             setError('Failed to fetch submissions.');
@@ -39,8 +39,6 @@ export default function SurveySubmissionsPage() {
         if (sessionStorage.getItem('isAdminAuthenticated') === 'true') {
             setIsAuthenticated(true);
             fetchSubmissions();
-        } else {
-            setIsLoading(false);
         }
     }, [fetchSubmissions]);
 
@@ -100,10 +98,6 @@ export default function SurveySubmissionsPage() {
         document.body.removeChild(link);
     };
 
-    if (isLoading && isAuthenticated) {
-        return <div className="flex h-screen items-center justify-center"><Loader2 className="w-16 h-16 animate-spin text-primary" /></div>;
-    }
-
     if (!isAuthenticated) {
         return (
             <div className="flex items-center justify-center min-h-screen bg-muted/40">
@@ -138,6 +132,10 @@ export default function SurveySubmissionsPage() {
                 </Card>
             </div>
         );
+    }
+    
+    if (isLoading) {
+        return <div className="flex h-screen items-center justify-center"><Loader2 className="w-16 h-16 animate-spin text-primary" /></div>;
     }
 
     return (

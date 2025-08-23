@@ -1,10 +1,9 @@
-
 'use server';
 
 import { initializeApp, getApps, App, cert } from 'firebase-admin/app';
 import { getFirestore, Filter } from 'firebase-admin/firestore';
 import { adminConfig } from '@/lib/firebase-admin-config';
-import type { UserData } from '@/lib/types';
+import type { UserData, SurveySubmission } from '@/lib/types';
 
 // Initialize Firebase Admin SDK
 if (!getApps().length) {  
@@ -68,7 +67,7 @@ export async function getUserBySlug(slug: string): Promise<UserData | null> {
     }
 }
 
-export async function getSurveySubmissions(): Promise<any[]> {
+export async function getSurveySubmissions(): Promise<SurveySubmission[]> {
     try {
         const surveyCollection = db.collection('surveySubmissions');
         const snapshot = await surveyCollection.orderBy('timestamp', 'desc').get();
@@ -76,9 +75,9 @@ export async function getSurveySubmissions(): Promise<any[]> {
             return [];
         }
 
-        const submissions: any[] = [];
+        const submissions: SurveySubmission[] = [];
         snapshot.forEach(doc => {
-            submissions.push({ id: doc.id, ...doc.data() });
+            submissions.push({ id: doc.id, ...doc.data() } as SurveySubmission);
         });
 
         return submissions;
