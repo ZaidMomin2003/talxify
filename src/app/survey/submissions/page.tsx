@@ -84,12 +84,12 @@ export default function SurveySubmissionsPage() {
             return [
                 timestamp, name, email, challenge, aiValue, practiceMethod, helpfulTools, 
                 pricePoint, languages, feedbackImportance, experienceLevel, likelihood, otherFeedback
-            ];
+            ].join(",");
         });
 
         const csvContent = "data:text/csv;charset=utf-8," 
             + headers.join(",") + "\n" 
-            + rows.map(e => e.join(",")).join("\n");
+            + rows.join("\n");
 
         const encodedUri = encodeURI(csvContent);
         const link = document.createElement("a");
@@ -227,5 +227,3 @@ export default function SurveySubmissionsPage() {
         </main>
     )
 }
-
-    
