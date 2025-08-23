@@ -28,6 +28,7 @@ export default function ArenaPage() {
                 if (userData?.syllabus && userData.syllabus.length > 0) {
                     setSyllabus(userData.syllabus);
                 } else {
+                    // If no syllabus, redirect to onboarding to generate one
                     router.push('/onboarding');
                     return;
                 }
@@ -35,6 +36,7 @@ export default function ArenaPage() {
                 setActivity(userActivity);
             } catch (error) {
                 console.error("Failed to fetch data:", error);
+                // Handle error state if needed
             } finally {
                 setIsLoading(false);
             }
@@ -42,38 +44,46 @@ export default function ArenaPage() {
     }, [user, router]);
 
     useEffect(() => {
+        if (!user) {
+            // If auth is loading, don't do anything yet
+            return;
+        }
         fetchSyllabusAndActivity();
-    }, [fetchSyllabusAndActivity]);
+    }, [user, fetchSyllabusAndActivity]);
     
     const { completedDays, dailyTaskStatus } = useMemo(() => {
-        const topics = syllabus.map(day => day.topic.toLowerCase());
         const status: { [day: number]: { learn: boolean; quiz: boolean; interview: boolean; } } = {};
-        
+
+        // Initialize status for all syllabus days
+        syllabus.forEach(day => {
+            status[day.day] = { learn: false, quiz: false, interview: false };
+        });
+
+        // Populate status based on user activity
         activity.forEach(act => {
             const actTopic = act.details.topic.toLowerCase();
-            const dayIndex = topics.findIndex(t => t.includes(actTopic) || actTopic.includes(t));
-
-            if (dayIndex !== -1) {
-                const day = dayIndex + 1;
-                if (!status[day]) {
-                    status[day] = { learn: false, quiz: false, interview: false };
-                }
-                if (act.type === 'note-generation') status[day].learn = true;
-                if (act.type === 'quiz') status[day].quiz = true;
-                if (act.type === 'interview') status[day].interview = true;
+            const day = syllabus.find(d => d.topic.toLowerCase().includes(actTopic) || actTopic.includes(d.topic.toLowerCase()));
+            
+            if (day) {
+                if (act.type === 'note-generation') status[day.day].learn = true;
+                if (act.type === 'quiz') status[day.day].quiz = true;
+                if (act.type === 'interview') status[day.day].interview = true;
             }
         });
 
-        let completedCount = 0;
+        let lastCompletedDay = 0;
         for (let i = 1; i <= syllabus.length; i++) {
-            if (status[i] && status[i].learn && status[i].quiz && status[i].interview) {
-                completedCount = i;
+            const dayStatus = status[i];
+            const interviewRequired = i % 2 !== 0; // Interview is required on odd days
+            
+            if (dayStatus && dayStatus.learn && dayStatus.quiz && (interviewRequired ? dayStatus.interview : true)) {
+                lastCompletedDay = i;
             } else {
-                break;
+                break; // Stop at the first incomplete day
             }
         }
         
-        return { completedDays: completedCount, dailyTaskStatus: status };
+        return { completedDays: lastCompletedDay, dailyTaskStatus: status };
     }, [syllabus, activity]);
 
 
@@ -127,8 +137,8 @@ export default function ArenaPage() {
                              <Card 
                                 className={cn(
                                     "text-center transition-all duration-300 transform cursor-pointer",
+                                    "hover:-translate-y-1 hover:shadow-primary/20 hover:border-primary/50",
                                     !isUnlocked && "bg-muted/50 text-muted-foreground hover:shadow-none hover:border-border",
-                                    isUnlocked && "hover:-translate-y-1 hover:shadow-primary/20 hover:border-primary/50",
                                     isCompleted && "bg-green-500/10 border-green-500/50"
                                 )}
                             >
@@ -144,10 +154,8 @@ export default function ArenaPage() {
                                         <div className="mt-2 flex items-center justify-center gap-2 text-sm font-semibold text-green-600">
                                             <CheckCircle className="h-4 w-4"/> Completed
                                         </div>
-                                    ) : isUnlocked ? (
-                                        <p className="text-sm font-semibold mt-2">Start Challenge</p>
                                     ) : (
-                                        <p className="text-sm mt-2">Locked</p>
+                                        <p className="text-sm font-semibold mt-2">{isUnlocked ? 'Start Challenge' : 'Locked'}</p>
                                     )}
                                 </CardContent>
                             </Card>
@@ -156,7 +164,7 @@ export default function ArenaPage() {
                             <DialogHeader>
                                 <DialogTitle className="text-2xl font-bold">Day {day.day}: {day.topic}</DialogTitle>
                                 <DialogDescriptionComponent>
-                                    {day.description}
+                                    {isUnlocked ? day.description : "You need to complete all previous challenges before you can unlock this day. Keep going!"}
                                 </DialogDescriptionComponent>
                             </DialogHeader>
                             <div className="my-6 space-y-4">
@@ -184,6 +192,7 @@ export default function ArenaPage() {
                                         </Button>
                                     )}
                                 </div>
+                                {day.day % 2 !== 0 && ( // Conditionally render interview task
                                 <div className="flex items-center gap-4 p-3 rounded-lg bg-muted/50">
                                     {dayStatus.interview ? <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" /> : <Briefcase className="h-5 w-5 text-green-500 flex-shrink-0" />}
                                     <div className="flex-1">
@@ -196,6 +205,7 @@ export default function ArenaPage() {
                                         </Button>
                                     )}
                                 </div>
+                                )}
                             </div>
                         </DialogContent>
                     </Dialog>
