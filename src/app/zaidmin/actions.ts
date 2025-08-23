@@ -68,3 +68,22 @@ export async function getUserBySlug(slug: string): Promise<UserData | null> {
     }
 }
 
+export async function getSurveySubmissions(): Promise<any[]> {
+    try {
+        const surveyCollection = db.collection('surveySubmissions');
+        const snapshot = await surveyCollection.orderBy('timestamp', 'desc').get();
+        if (snapshot.empty) {
+            return [];
+        }
+
+        const submissions: any[] = [];
+        snapshot.forEach(doc => {
+            submissions.push({ id: doc.id, ...doc.data() });
+        });
+
+        return submissions;
+    } catch (error) {
+        console.error("Error fetching survey submissions from Firestore with Admin SDK:", error);
+        return [];
+    }
+}

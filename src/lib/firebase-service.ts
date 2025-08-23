@@ -1,9 +1,9 @@
 
 'use client';
 
-import { doc, getDoc, setDoc, updateDoc, arrayUnion, collection, getDocs } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, arrayUnion, collection, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from './firebase';
-import type { UserData, Portfolio, StoredActivity, OnboardingData } from './types';
+import type { UserData, Portfolio, StoredActivity, OnboardingData, SurveySubmission } from './types';
 import { initialPortfolioData } from './initial-data';
 import type { SyllabusDay } from '@/ai/flows/generate-syllabus';
 
@@ -119,3 +119,17 @@ export const updateActivity = async (userId: string, updatedActivity: StoredActi
         await updateDoc(userRef, { activity: newActivityArray });
     }
 };
+
+// --- Survey ---
+export const saveSurveySubmission = async (submission: SurveySubmission): Promise<void> => {
+    try {
+        const submissionWithTimestamp = {
+            ...submission,
+            timestamp: serverTimestamp()
+        };
+        await addDoc(collection(db, 'surveySubmissions'), submissionWithTimestamp);
+    } catch (error) {
+        console.error("Error saving survey submission: ", error);
+        throw error;
+    }
+}

@@ -173,3 +173,19 @@ export interface FAQ {
     question: string;
     answer: string;
 }
+
+// --- Survey ---
+export interface SurveySubmission {
+    challenge: string;
+    aiValue: string;
+    practiceMethod: string[];
+    helpfulTools: string[];
+    pricePoint: string;
+    languages: string[];
+    feedbackImportance: string;
+    experienceLevel: string;
+    likelihood: string;
+    otherFeedback: string;
+    name: string;
+    email: string;
+}

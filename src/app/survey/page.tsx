@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Check, ChevronRight, Loader2, ArrowRight, BrainCircuit, Code, FileText, MessageSquare } from 'lucide-react';
+import { Check, ChevronRight, Loader2, ArrowRight, BrainCircuit, Code, FileText, MessageSquare, Bot } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
@@ -15,6 +15,9 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
+import { saveSurveySubmission } from '@/lib/firebase-service';
+import type { SurveySubmission } from '@/lib/types';
+
 
 const variants = {
   enter: (direction: number) => ({
@@ -32,21 +35,6 @@ const variants = {
     opacity: 0,
   }),
 };
-
-interface SurveyData {
-    challenge: string;
-    aiValue: string;
-    practiceMethod: string[];
-    helpfulTools: string[];
-    pricePoint: string;
-    languages: string[];
-    feedbackImportance: string;
-    experienceLevel: string;
-    likelihood: string;
-    otherFeedback: string;
-    name: string;
-    email: string;
-}
 
 const toolOptions = [
     { id: 'code-review', label: 'An AI that reviews your code for correctness and style.' },
@@ -75,7 +63,7 @@ export default function SurveyPage() {
   const [step, setStep] = useState(0);
   const [direction, setDirection] = useState(1);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [formData, setFormData] = useState<Partial<SurveyData>>({
+  const [formData, setFormData] = useState<Partial<SurveySubmission>>({
     practiceMethod: [],
     helpfulTools: [],
     languages: [],
@@ -91,11 +79,11 @@ export default function SurveyPage() {
     setStep((prev) => prev - 1);
   };
 
-  const handleValueChange = (field: keyof SurveyData, value: any) => {
+  const handleValueChange = (field: keyof SurveySubmission, value: any) => {
     setFormData(prev => ({...prev, [field]: value}));
   };
 
-  const handleMultiChoiceToggle = (field: keyof SurveyData, value: string) => {
+  const handleMultiChoiceToggle = (field: keyof SurveySubmission, value: string) => {
     setFormData(prev => {
         const currentValues = (prev[field] as string[] | undefined) || [];
         const newValues = currentValues.includes(value)
@@ -105,7 +93,7 @@ export default function SurveyPage() {
     });
   }
 
-  const handleCheckboxToggle = (field: keyof SurveyData, value: string) => {
+  const handleCheckboxToggle = (field: keyof SurveySubmission, value: string) => {
     setFormData(prev => {
         const currentValues = (prev[field] as string[] | undefined) || [];
         let newValues;
@@ -127,13 +115,16 @@ export default function SurveyPage() {
     setIsProcessing(true);
     setStep(prev => prev + 1); // Move to loading screen
     
-    console.log("Final Survey Data:", formData);
-    
-    // Simulate submission
-    await new Promise(resolve => setTimeout(resolve, 1500));
-
-    setIsProcessing(false);
-    setStep(prev => prev + 1); // Move to thank you screen
+    try {
+        await saveSurveySubmission(formData as SurveySubmission);
+        setStep(prev => prev + 1); // Move to thank you screen
+    } catch (error) {
+        console.error("Survey submission failed:", error);
+        toast({ title: "Submission Failed", description: "Could not save your feedback. Please try again.", variant: "destructive" });
+        setStep(prev => prev - 1); // Go back to the form
+    } finally {
+        setIsProcessing(false);
+    }
   };
 
   const steps = [
@@ -356,7 +347,10 @@ export default function SurveyPage() {
         </div>
         <div className="flex gap-4">
              <Button onClick={handleBack} variant="outline" size="lg">Back</Button>
-             <Button onClick={handleSubmit} size="lg" disabled={!formData.name || !formData.email}>Submit Feedback</Button>
+             <Button onClick={handleSubmit} size="lg" disabled={!formData.name || !formData.email || isProcessing}>
+                {isProcessing ? <Loader2 className="mr-2 animate-spin"/> : null}
+                Submit Feedback
+             </Button>
         </div>
     </motion.div>,
 
@@ -385,6 +379,10 @@ export default function SurveyPage() {
     <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
       <div className="w-full max-w-2xl">
         <div className="mb-8">
+            <div className="flex items-center justify-center mb-6 gap-2">
+                <Bot className="h-8 w-8 text-primary"/>
+                <span className="text-2xl font-bold font-headline">Talxify</span>
+            </div>
             <AnimatePresence>
             {step > 0 && step <= totalSteps + 1 && (
                  <motion.div
