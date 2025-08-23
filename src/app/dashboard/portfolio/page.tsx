@@ -7,12 +7,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { PlusCircle, Trash2, Loader2 } from "lucide-react";
+import { PlusCircle, Trash2, Loader2, Lock, Gem } from "lucide-react";
 import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/auth-context";
-import { getPortfolio, updatePortfolio } from "@/lib/firebase-service";
-import type { Portfolio, Project, Certificate, Achievement, Testimonial, FAQ, Skill, WorkExperience, Education } from "@/lib/types";
+import { getPortfolio, updatePortfolio, getUserData } from "@/lib/firebase-service";
+import type { Portfolio, Project, Certificate, Achievement, Testimonial, FAQ, Skill, WorkExperience, Education, UserData } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { initialPortfolioData } from "@/lib/initial-data";
 import { Slider } from "@/components/ui/slider";
@@ -25,18 +25,49 @@ const colorOptions = [
     { name: 'Red', hsl: '0 85% 60%' },
 ];
 
+function LockedFeature() {
+    return (
+        <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8 flex items-center justify-center">
+            <Card className="max-w-md w-full text-center shadow-lg">
+                 <CardHeader>
+                    <div className="mx-auto bg-primary/10 text-primary rounded-full p-3 w-fit mb-2">
+                        <Lock className="h-8 w-8" />
+                    </div>
+                    <CardTitle className="text-2xl font-bold">Feature Locked</CardTitle>
+                    <CardDescription>
+                        The Portfolio Editor is a Pro feature. Please upgrade your plan to customize and share your professional portfolio.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Button asChild size="lg">
+                        <Link href="/dashboard/pricing">
+                            <Gem className="mr-2 h-4 w-4" />
+                            Upgrade to Pro
+                        </Link>
+                    </Button>
+                </CardContent>
+            </Card>
+        </main>
+    )
+}
+
 export default function PortfolioPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [portfolio, setPortfolio] = useState<Portfolio | null>(null);
+  const [userData, setUserData] = useState<UserData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
   const fetchPortfolio = useCallback(async () => {
     if (!user) return;
     setIsLoading(true);
-    const data = await getPortfolio(user.uid);
-    setPortfolio(data ?? initialPortfolioData.portfolio);
+    const [portfolioData, allUserData] = await Promise.all([
+        getPortfolio(user.uid),
+        getUserData(user.uid)
+    ]);
+    setPortfolio(portfolioData ?? initialPortfolioData.portfolio);
+    setUserData(allUserData);
     setIsLoading(false);
   }, [user]);
 
@@ -121,12 +152,17 @@ export default function PortfolioPage() {
     setPortfolio({...portfolio, personalInfo: {...portfolio.personalInfo, slug: sanitizedSlug}});
   }
 
-  if (isLoading || !portfolio) {
+  if (isLoading || !portfolio || !userData) {
     return (
       <div className="flex h-full w-full items-center justify-center">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
       </div>
     );
+  }
+
+  const isFreePlan = !userData.subscription?.plan || userData.subscription.plan === 'free';
+  if (isFreePlan) {
+      return <LockedFeature />;
   }
 
   return (

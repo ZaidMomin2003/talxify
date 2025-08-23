@@ -5,30 +5,54 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription as DialogDescriptionComponent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Swords, Lock, PlayCircle, BookOpen, Code, Briefcase, CheckCircle, Loader2 } from "lucide-react";
+import { Swords, Lock, PlayCircle, BookOpen, Code, Briefcase, CheckCircle, Loader2, Gem } from "lucide-react";
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
 import { getUserData, getActivity } from '@/lib/firebase-service';
 import type { SyllabusDay } from '@/ai/flows/generate-syllabus';
-import type { StoredActivity } from '@/lib/types';
+import type { StoredActivity, UserData } from '@/lib/types';
+import Link from 'next/link';
+
+function UpgradeCard() {
+    return (
+        <Card className="col-span-full text-center bg-primary/5 border-primary/20 shadow-lg">
+            <CardHeader>
+                <div className="mx-auto bg-primary/10 text-primary rounded-full p-3 w-fit mb-2">
+                    <Gem className="h-8 w-8" />
+                </div>
+                <CardTitle className="text-2xl font-bold">You've Completed Your Free Trial!</CardTitle>
+                <CardDescription>
+                    Congratulations on finishing Day 1. Upgrade to Pro to unlock the full 30-day Arena, the Resume Builder, and more powerful features.
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Button asChild size="lg">
+                    <Link href="/dashboard/pricing">Upgrade to Pro</Link>
+                </Button>
+            </CardContent>
+        </Card>
+    )
+}
 
 export default function ArenaPage() {
     const router = useRouter();
     const { user } = useAuth();
     const [syllabus, setSyllabus] = useState<SyllabusDay[]>([]);
     const [activity, setActivity] = useState<StoredActivity[]>([]);
+    const [userData, setUserData] = useState<UserData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
     const fetchSyllabusAndActivity = useCallback(async () => {
         if (user) {
             setIsLoading(true);
             try {
-                const userData = await getUserData(user.uid);
-                if (userData?.syllabus && userData.syllabus.length > 0) {
-                    setSyllabus(userData.syllabus);
+                const data = await getUserData(user.uid);
+                setUserData(data);
+
+                if (data?.syllabus && data.syllabus.length > 0) {
+                    setSyllabus(data.syllabus);
                 } else {
-                    // If no syllabus, redirect to onboarding to generate one
                     router.push('/onboarding');
                     return;
                 }
@@ -36,7 +60,6 @@ export default function ArenaPage() {
                 setActivity(userActivity);
             } catch (error) {
                 console.error("Failed to fetch data:", error);
-                // Handle error state if needed
             } finally {
                 setIsLoading(false);
             }
@@ -45,7 +68,6 @@ export default function ArenaPage() {
 
     useEffect(() => {
         if (!user) {
-            // If auth is loading, don't do anything yet
             return;
         }
         fetchSyllabusAndActivity();
@@ -54,12 +76,10 @@ export default function ArenaPage() {
     const { completedDays, dailyTaskStatus } = useMemo(() => {
         const status: { [day: number]: { learn: boolean; quiz: boolean; interview: boolean; } } = {};
 
-        // Initialize status for all syllabus days
         syllabus.forEach(day => {
             status[day.day] = { learn: false, quiz: false, interview: false };
         });
 
-        // Populate status based on user activity
         activity.forEach(act => {
             const actTopic = act.details.topic.toLowerCase();
             const day = syllabus.find(d => d.topic.toLowerCase().includes(actTopic) || actTopic.includes(d.topic.toLowerCase()));
@@ -74,12 +94,12 @@ export default function ArenaPage() {
         let lastCompletedDay = 0;
         for (let i = 1; i <= syllabus.length; i++) {
             const dayStatus = status[i];
-            const interviewRequired = i % 2 !== 0; // Interview is required on odd days
+            const interviewRequired = i % 2 !== 0;
             
             if (dayStatus && dayStatus.learn && dayStatus.quiz && (interviewRequired ? dayStatus.interview : true)) {
                 lastCompletedDay = i;
             } else {
-                break; // Stop at the first incomplete day
+                break;
             }
         }
         
@@ -110,6 +130,9 @@ export default function ArenaPage() {
           </div>
         );
     }
+    
+    const isFreePlan = !userData?.subscription?.plan || userData.subscription.plan === 'free';
+    const trialExpired = isFreePlan && completedDays >= 1;
 
   return (
     <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
@@ -126,91 +149,95 @@ export default function ArenaPage() {
         </Card>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
-            {syllabus.map((day) => {
-                const isUnlocked = day.day <= completedDays + 1;
-                const isCompleted = day.day <= completedDays;
-                const dayStatus = dailyTaskStatus[day.day] || { learn: false, quiz: false, interview: false };
+            {trialExpired ? (
+                <UpgradeCard />
+            ) : (
+                syllabus.map((day) => {
+                    const isUnlocked = day.day <= completedDays + 1;
+                    const isCompleted = day.day <= completedDays;
+                    const dayStatus = dailyTaskStatus[day.day] || { learn: false, quiz: false, interview: false };
 
-                return (
-                     <Dialog key={day.day}>
-                        <DialogTrigger asChild>
-                             <Card 
-                                className={cn(
-                                    "text-center transition-all duration-300 transform cursor-pointer",
-                                    "hover:-translate-y-1 hover:shadow-primary/20 hover:border-primary/50",
-                                    !isUnlocked && "bg-muted/50 text-muted-foreground hover:shadow-none hover:border-border",
-                                    isCompleted && "bg-green-500/10 border-green-500/50"
-                                )}
-                            >
-                                <CardHeader>
-                                    <CardTitle className="flex flex-col items-center gap-2">
-                                        {!isUnlocked && <Lock className="h-6 w-6 mb-2" />}
-                                        Day {day.day}
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <p className="text-xs font-semibold text-primary truncate" title={day.topic}>{day.topic}</p>
-                                    {isCompleted ? (
-                                        <div className="mt-2 flex items-center justify-center gap-2 text-sm font-semibold text-green-600">
-                                            <CheckCircle className="h-4 w-4"/> Completed
+                    return (
+                        <Dialog key={day.day}>
+                            <DialogTrigger asChild>
+                                <Card 
+                                    className={cn(
+                                        "text-center transition-all duration-300 transform cursor-pointer",
+                                        "hover:-translate-y-1 hover:shadow-primary/20 hover:border-primary/50",
+                                        !isUnlocked && "bg-muted/50 text-muted-foreground hover:shadow-none hover:border-border",
+                                        isCompleted && "bg-green-500/10 border-green-500/50"
+                                    )}
+                                >
+                                    <CardHeader>
+                                        <CardTitle className="flex flex-col items-center gap-2">
+                                            {!isUnlocked && <Lock className="h-6 w-6 mb-2" />}
+                                            Day {day.day}
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <p className="text-xs font-semibold text-primary truncate" title={day.topic}>{day.topic}</p>
+                                        {isCompleted ? (
+                                            <div className="mt-2 flex items-center justify-center gap-2 text-sm font-semibold text-green-600">
+                                                <CheckCircle className="h-4 w-4"/> Completed
+                                            </div>
+                                        ) : (
+                                            <p className="text-sm font-semibold mt-2">{isUnlocked ? 'Start Challenge' : 'Locked'}</p>
+                                        )}
+                                    </CardContent>
+                                </Card>
+                            </DialogTrigger>
+                            <DialogContent>
+                                <DialogHeader>
+                                    <DialogTitle className="text-2xl font-bold">Day {day.day}: {day.topic}</DialogTitle>
+                                    <DialogDescriptionComponent>
+                                        {isUnlocked ? day.description : "You need to complete all previous challenges before you can unlock this day. Keep going!"}
+                                    </DialogDescriptionComponent>
+                                </DialogHeader>
+                                <div className="my-6 space-y-4">
+                                    <div className="flex items-center gap-4 p-3 rounded-lg bg-muted/50">
+                                        {dayStatus.learn ? <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" /> : <BookOpen className="h-5 w-5 text-yellow-500 flex-shrink-0" />}
+                                        <div className="flex-1">
+                                            <p className="font-semibold text-foreground">Learn: {day.topic}</p>
+                                            <p className="text-xs text-muted-foreground">Study the core concepts of today's topic.</p>
                                         </div>
-                                    ) : (
-                                        <p className="text-sm font-semibold mt-2">{isUnlocked ? 'Start Challenge' : 'Locked'}</p>
-                                    )}
-                                </CardContent>
-                            </Card>
-                        </DialogTrigger>
-                        <DialogContent>
-                            <DialogHeader>
-                                <DialogTitle className="text-2xl font-bold">Day {day.day}: {day.topic}</DialogTitle>
-                                <DialogDescriptionComponent>
-                                    {isUnlocked ? day.description : "You need to complete all previous challenges before you can unlock this day. Keep going!"}
-                                </DialogDescriptionComponent>
-                            </DialogHeader>
-                            <div className="my-6 space-y-4">
-                                <div className="flex items-center gap-4 p-3 rounded-lg bg-muted/50">
-                                    {dayStatus.learn ? <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" /> : <BookOpen className="h-5 w-5 text-yellow-500 flex-shrink-0" />}
-                                    <div className="flex-1">
-                                        <p className="font-semibold text-foreground">Learn: {day.topic}</p>
-                                        <p className="text-xs text-muted-foreground">Study the core concepts of today's topic.</p>
+                                        {!dayStatus.learn && (
+                                            <Button size="sm" onClick={() => handleStartChallenge(day.day, 'learn')} disabled={!isUnlocked}>
+                                                {isUnlocked ? 'Start' : <Lock className="h-4 w-4" />}
+                                            </Button>
+                                        )}
                                     </div>
-                                    {!dayStatus.learn && (
-                                        <Button size="sm" onClick={() => handleStartChallenge(day.day, 'learn')} disabled={!isUnlocked}>
-                                            {isUnlocked ? 'Start' : <Lock className="h-4 w-4" />}
-                                        </Button>
+                                    <div className="flex items-center gap-4 p-3 rounded-lg bg-muted/50">
+                                        {dayStatus.quiz ? <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" /> : <Code className="h-5 w-5 text-blue-500 flex-shrink-0" />}
+                                        <div className="flex-1">
+                                            <p className="font-semibold text-foreground">Complete Coding Quiz</p>
+                                            <p className="text-xs text-muted-foreground">Test your knowledge on {day.topic}.</p>
+                                        </div>
+                                        {!dayStatus.quiz && (
+                                            <Button size="sm" onClick={() => handleStartChallenge(day.day, 'quiz')} disabled={!isUnlocked}>
+                                                {isUnlocked ? 'Start' : <Lock className="h-4 w-4" />}
+                                            </Button>
+                                        )}
+                                    </div>
+                                    {day.day % 2 !== 0 && (
+                                    <div className="flex items-center gap-4 p-3 rounded-lg bg-muted/50">
+                                        {dayStatus.interview ? <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" /> : <Briefcase className="h-5 w-5 text-green-500 flex-shrink-0" />}
+                                        <div className="flex-1">
+                                            <p className="font-semibold text-foreground">Take a Mock Interview</p>
+                                            <p className="text-xs text-muted-foreground">Practice your interview skills.</p>
+                                        </div>
+                                        {!dayStatus.interview && (
+                                            <Button size="sm" onClick={() => handleStartChallenge(day.day, 'interview')} disabled={!isUnlocked}>
+                                                {isUnlocked ? 'Start' : <Lock className="h-4 w-4" />}
+                                            </Button>
+                                        )}
+                                    </div>
                                     )}
                                 </div>
-                                <div className="flex items-center gap-4 p-3 rounded-lg bg-muted/50">
-                                     {dayStatus.quiz ? <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" /> : <Code className="h-5 w-5 text-blue-500 flex-shrink-0" />}
-                                    <div className="flex-1">
-                                        <p className="font-semibold text-foreground">Complete Coding Quiz</p>
-                                        <p className="text-xs text-muted-foreground">Test your knowledge on {day.topic}.</p>
-                                    </div>
-                                     {!dayStatus.quiz && (
-                                        <Button size="sm" onClick={() => handleStartChallenge(day.day, 'quiz')} disabled={!isUnlocked}>
-                                            {isUnlocked ? 'Start' : <Lock className="h-4 w-4" />}
-                                        </Button>
-                                    )}
-                                </div>
-                                {day.day % 2 !== 0 && ( // Conditionally render interview task
-                                <div className="flex items-center gap-4 p-3 rounded-lg bg-muted/50">
-                                    {dayStatus.interview ? <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" /> : <Briefcase className="h-5 w-5 text-green-500 flex-shrink-0" />}
-                                    <div className="flex-1">
-                                        <p className="font-semibold text-foreground">Take a Mock Interview</p>
-                                        <p className="text-xs text-muted-foreground">Practice your interview skills.</p>
-                                    </div>
-                                     {!dayStatus.interview && (
-                                        <Button size="sm" onClick={() => handleStartChallenge(day.day, 'interview')} disabled={!isUnlocked}>
-                                            {isUnlocked ? 'Start' : <Lock className="h-4 w-4" />}
-                                        </Button>
-                                    )}
-                                </div>
-                                )}
-                            </div>
-                        </DialogContent>
-                    </Dialog>
-                );
-            })}
+                            </DialogContent>
+                        </Dialog>
+                    );
+                })
+            )}
         </div>
       </div>
     </main>

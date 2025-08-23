@@ -1,16 +1,20 @@
 
 'use client';
 
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
-import { FileText, PlusCircle, Trash2, Mail, Phone, Linkedin, Github, Globe, Download, Loader2 } from 'lucide-react';
+import { FileText, PlusCircle, Trash2, Mail, Phone, Linkedin, Github, Globe, Download, Loader2, Gem, Lock } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/context/auth-context';
+import { getUserData } from '@/lib/firebase-service';
+import type { UserData } from '@/lib/types';
+import Link from 'next/link';
 
 // Simplified types for resume
 type ResumeExperience = { company: string; role: string; duration: string; description: string; };
@@ -145,10 +149,50 @@ const ResumePreview = React.forwardRef<HTMLDivElement, { resumeData: typeof init
 ResumePreview.displayName = 'ResumePreview';
 
 
+function LockedFeature() {
+    return (
+        <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8 flex items-center justify-center">
+            <Card className="max-w-md w-full text-center shadow-lg">
+                 <CardHeader>
+                    <div className="mx-auto bg-primary/10 text-primary rounded-full p-3 w-fit mb-2">
+                        <Lock className="h-8 w-8" />
+                    </div>
+                    <CardTitle className="text-2xl font-bold">Feature Locked</CardTitle>
+                    <CardDescription>
+                        The Resume Builder is a Pro feature. Please upgrade your plan to create and download a professional resume.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Button asChild size="lg">
+                        <Link href="/dashboard/pricing">
+                            <Gem className="mr-2 h-4 w-4" />
+                            Upgrade to Pro
+                        </Link>
+                    </Button>
+                </CardContent>
+            </Card>
+        </main>
+    )
+}
+
 export default function ResumeBuilderPage() {
+    const { user } = useAuth();
+    const [userData, setUserData] = useState<UserData | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
     const [resumeData, setResumeData] = useState(initialResumeState);
     const resumePreviewRef = useRef<HTMLDivElement>(null);
     const [isDownloading, setIsDownloading] = useState(false);
+
+    useEffect(() => {
+        const fetchUserData = async () => {
+            if (user) {
+                const data = await getUserData(user.uid);
+                setUserData(data);
+            }
+            setIsLoading(false);
+        };
+        fetchUserData();
+    }, [user]);
 
     const handleDownloadClick = () => {
         const resumeElement = resumePreviewRef.current;
@@ -157,13 +201,12 @@ export default function ResumeBuilderPage() {
         setIsDownloading(true);
 
         html2canvas(resumeElement, {
-            scale: 2, // Increase scale for better resolution
+            scale: 2,
             useCORS: true,
             logging: false,
         }).then(canvas => {
             const imgData = canvas.toDataURL('image/png');
             
-            // A4 dimensions in mm: 210 x 297
             const pdf = new jsPDF({
                 orientation: 'portrait',
                 unit: 'mm',
@@ -175,19 +218,17 @@ export default function ResumeBuilderPage() {
             const canvasWidth = canvas.width;
             const canvasHeight = canvas.height;
             const ratio = canvasWidth / canvasHeight;
-            const pdfRatio = pdfWidth / pdfHeight;
 
-            let finalWidth, finalHeight;
-             if (ratio > pdfRatio) {
-                finalWidth = pdfWidth;
-                finalHeight = pdfWidth / ratio;
-            } else {
+            let finalWidth = pdfWidth;
+            let finalHeight = pdfWidth / ratio;
+
+            if (finalHeight > pdfHeight) {
                 finalHeight = pdfHeight;
                 finalWidth = pdfHeight * ratio;
             }
 
             const x = (pdfWidth - finalWidth) / 2;
-            const y = (pdfHeight - finalHeight) / 2;
+            const y = 0;
             
             pdf.addImage(imgData, 'PNG', x, y, finalWidth, finalHeight);
             pdf.save(`${resumeData.personalInfo.name}_Resume.pdf`);
@@ -234,6 +275,15 @@ export default function ResumeBuilderPage() {
             [section]: prev[section].filter((_, i) => i !== index)
         }));
     };
+
+    if (isLoading) {
+        return <div className="flex h-screen items-center justify-center"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>;
+    }
+
+    const isFreePlan = !userData?.subscription?.plan || userData.subscription.plan === 'free';
+    if (isFreePlan) {
+        return <LockedFeature />;
+    }
 
     return (
         <main className="flex-1 overflow-hidden">
