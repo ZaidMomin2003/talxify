@@ -15,6 +15,7 @@ import { useAuth } from '@/context/auth-context';
 import { getUserData } from '@/lib/firebase-service';
 import type { UserData } from '@/lib/types';
 import Link from 'next/link';
+import { differenceInHours } from 'date-fns';
 
 // Simplified types for resume
 type ResumeExperience = { company: string; role: string; duration: string; description: string; };
@@ -276,14 +277,19 @@ export default function ResumeBuilderPage() {
         }));
     };
 
-    if (isLoading) {
+    if (isLoading || !userData || !user) {
         return <div className="flex h-screen items-center justify-center"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>;
     }
+    
+    const isFreePlan = !userData.subscription?.plan || userData.subscription.plan === 'free';
+    const creationDate = user.metadata.creationTime ? new Date(user.metadata.creationTime) : new Date();
+    const hoursSinceCreation = differenceInHours(new Date(), creationDate);
+    const trialExpired = hoursSinceCreation > 24;
 
-    const isFreePlan = !userData?.subscription?.plan || userData.subscription.plan === 'free';
-    if (isFreePlan) {
+    if (isFreePlan && trialExpired) {
         return <LockedFeature />;
     }
+
 
     return (
         <main className="flex-1 overflow-hidden">

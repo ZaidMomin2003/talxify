@@ -29,7 +29,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         const userData = await getUserData(user.uid);
-        if (!userData?.onboardingCompleted) {
+        if (userData && !userData.onboardingCompleted) {
           router.push('/onboarding');
         }
       }
@@ -45,7 +45,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const user = userCredential.user;
     await updateProfile(user, { displayName: data.name });
     await createUserDocument(user.uid, user.email!, user.displayName!);
-    setUser(user); // Manually update state to reflect displayName change
+    // Refresh the user object to get the latest metadata like creationTime
+    await user.reload(); 
+    const refreshedUser = auth.currentUser;
+    setUser(refreshedUser); // Manually update state to reflect displayName and metadata
     return userCredential;
   };
 
@@ -62,6 +65,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (!existingUser) {
         await createUserDocument(user.uid, user.email!, user.displayName!);
     }
+    // Refresh the user object to get the latest metadata like creationTime
+    await user.reload();
+    const refreshedUser = auth.currentUser;
+    setUser(refreshedUser);
     return result;
   }
 

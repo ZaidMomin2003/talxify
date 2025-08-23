@@ -16,6 +16,8 @@ import type { Portfolio, Project, Certificate, Achievement, Testimonial, FAQ, Sk
 import { useToast } from "@/hooks/use-toast";
 import { initialPortfolioData } from "@/lib/initial-data";
 import { Slider } from "@/components/ui/slider";
+import { differenceInHours } from 'date-fns';
+
 
 const colorOptions = [
     { name: 'Default', hsl: '221.2 83.2% 53.3%' },
@@ -152,7 +154,7 @@ export default function PortfolioPage() {
     setPortfolio({...portfolio, personalInfo: {...portfolio.personalInfo, slug: sanitizedSlug}});
   }
 
-  if (isLoading || !portfolio || !userData) {
+  if (isLoading || !portfolio || !userData || !user) {
     return (
       <div className="flex h-full w-full items-center justify-center">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -161,7 +163,11 @@ export default function PortfolioPage() {
   }
 
   const isFreePlan = !userData.subscription?.plan || userData.subscription.plan === 'free';
-  if (isFreePlan) {
+  const creationDate = user.metadata.creationTime ? new Date(user.metadata.creationTime) : new Date();
+  const hoursSinceCreation = differenceInHours(new Date(), creationDate);
+  const trialExpired = hoursSinceCreation > 24;
+
+  if (isFreePlan && trialExpired) {
       return <LockedFeature />;
   }
 
