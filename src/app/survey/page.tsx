@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Check, ChevronRight, Loader2, ArrowRight } from 'lucide-react';
+import { Check, ChevronRight, Loader2, ArrowRight, BrainCircuit, Code, FileText, MessageSquare } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
@@ -39,7 +39,7 @@ interface SurveyData {
     practiceMethod: string[];
     helpfulTools: string[];
     pricePoint: string;
-    languages: string;
+    languages: string[];
     feedbackImportance: string;
     experienceLevel: string;
     likelihood: string;
@@ -53,7 +53,20 @@ const toolOptions = [
     { id: 'study-guides', label: 'An AI that generates personalized study guides on any topic.' },
     { id: 'resume-builder', label: 'An AI that helps you build a professional resume.' },
     { id: 'portfolio-website', label: 'An AI that creates a portfolio website for you.' },
+];
+
+const languageOptions = [
+    'JavaScript', 'Python', 'Java', 'TypeScript', 'C#', 'C++', 'PHP', 'Go', 'Swift', 'Kotlin', 'Rust', 'Ruby',
+    'Dart', 'Scala', 'Haskell', 'Lua', 'Perl', 'SQL', 'HTML/CSS', 'R', 'MATLAB'
+];
+
+const appFeatures = [
+    { icon: MessageSquare, text: "Practice interviews with a conversational AI." },
+    { icon: Code, text: "Solve coding problems with instant AI feedback." },
+    { icon: BrainCircuit, text: "Generate study guides for any technical topic." },
+    { icon: FileText, text: "Build a professional resume and portfolio." }
 ]
+
 
 export default function SurveyPage() {
   const router = useRouter();
@@ -62,7 +75,11 @@ export default function SurveyPage() {
   const [step, setStep] = useState(0);
   const [direction, setDirection] = useState(1);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [formData, setFormData] = useState<Partial<SurveyData>>({});
+  const [formData, setFormData] = useState<Partial<SurveyData>>({
+    practiceMethod: [],
+    helpfulTools: [],
+    languages: [],
+  });
 
   const handleNext = () => {
     setDirection(1);
@@ -123,7 +140,15 @@ export default function SurveyPage() {
     // Step 0: Welcome
     <motion.div key={0} custom={direction} variants={variants} initial="enter" animate="center" exit="exit" transition={{ type: 'tween' }} className="w-full">
         <h1 className="text-4xl font-bold font-headline mb-4">Your Feedback Matters</h1>
-        <p className="text-lg text-muted-foreground mb-8">Help us shape the future of interview prep. This will only take a couple of minutes.</p>
+        <p className="text-lg text-muted-foreground mb-8">Help us shape the future of interview prep. Here's what we're building:</p>
+        <div className="space-y-4 mb-8 text-left">
+            {appFeatures.map(feature => (
+                 <div key={feature.text} className="flex items-center gap-3">
+                    <div className="flex-shrink-0 bg-primary/10 text-primary p-2 rounded-lg"><feature.icon className="w-5 h-5"/></div>
+                    <p className="text-base text-foreground">{feature.text}</p>
+                 </div>
+            ))}
+        </div>
         <Button onClick={handleNext} size="lg">Start Survey <ArrowRight className="ml-2"/></Button>
     </motion.div>,
 
@@ -206,7 +231,7 @@ export default function SurveyPage() {
     <motion.div key={5} custom={direction} variants={variants} initial="enter" animate="center" exit="exit" transition={{ type: 'tween' }} className="w-full space-y-6">
         <h2 className="text-3xl font-bold font-headline">How much would you pay for a comprehensive AI prep platform per month?</h2>
         <RadioGroup value={formData.pricePoint} onValueChange={(v) => handleValueChange('pricePoint', v)} className="space-y-3 pt-2">
-            {['Free', '₹100 - ₹500', '₹500 - ₹1500', 'More than ₹1500'].map(price => (
+            {['$5 / month', '$10 / month', '$20 / month', '$30 / month'].map(price => (
                 <Card key={price} className={cn("cursor-pointer transition-all", formData.pricePoint === price && "border-primary ring-2 ring-primary")}>
                     <Label htmlFor={price} className="p-4 flex items-center gap-4 cursor-pointer">
                         <RadioGroupItem value={price} id={price}/>
@@ -224,15 +249,22 @@ export default function SurveyPage() {
     // Question 6
      <motion.div key={6} custom={direction} variants={variants} initial="enter" animate="center" exit="exit" transition={{ type: 'tween' }} className="w-full space-y-6">
         <h2 className="text-3xl font-bold font-headline">What programming languages would you most want to see supported?</h2>
-        <Input 
-            placeholder="e.g., Python, Java, C++..." 
-            className="h-12 text-lg"
-            value={formData.languages || ''}
-            onChange={(e) => handleValueChange('languages', e.target.value)}
-        />
+        <p className="text-muted-foreground">Select all that apply.</p>
+        <div className="flex flex-wrap gap-2 pt-2">
+             {languageOptions.map(lang => (
+                 <Badge 
+                    key={lang}
+                    onClick={() => handleMultiChoiceToggle('languages', lang)}
+                    className={cn(
+                        "text-base px-3 py-1.5 cursor-pointer transition-all", 
+                        formData.languages?.includes(lang) ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+                    )}
+                >{lang}</Badge>
+            ))}
+        </div>
         <div className="flex gap-4">
              <Button onClick={handleBack} variant="outline" size="lg">Back</Button>
-             <Button onClick={handleNext} size="lg" disabled={!formData.languages}>Next</Button>
+             <Button onClick={handleNext} size="lg" disabled={!formData.languages || formData.languages.length === 0}>Next</Button>
         </div>
     </motion.div>,
 
