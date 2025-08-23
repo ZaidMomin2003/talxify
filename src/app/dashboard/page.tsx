@@ -131,38 +131,73 @@ export default function DashboardPage() {
   }, [allActivity]);
   
    const { dailyTasks, currentDay } = useMemo(() => {
-    const completedDays = 0; // This would be calculated based on activity in a real scenario
-    const today = userData?.syllabus?.find(d => d.day === completedDays + 1);
-    
-    if (!today) {
-        return { dailyTasks: [], currentDay: null };
+    if (!userData || !userData.syllabus) {
+      return { dailyTasks: [], currentDay: null };
+    }
+  
+    const completedTopics = new Set(
+      userData.activity
+        .filter(act => act.type === 'note-generation' || act.type === 'quiz' || act.type === 'interview')
+        .map(act => act.details.topic.toLowerCase())
+    );
+
+    let lastCompletedDay = 0;
+    for (const day of userData.syllabus) {
+      const topicLower = day.topic.toLowerCase();
+      const hasLearned = userData.activity.some(a => a.type === 'note-generation' && a.details.topic.toLowerCase() === topicLower);
+      const hasQuizzed = userData.activity.some(a => a.type === 'quiz' && a.details.topic.toLowerCase() === topicLower);
+      // Interview is on odd days only.
+      const interviewRequired = day.day % 2 !== 0;
+      const hasInterviewed = userData.activity.some(a => a.type === 'interview' && a.details.topic.toLowerCase() === topicLower);
+
+      if (hasLearned && hasQuizzed && (interviewRequired ? hasInterviewed : true)) {
+        lastCompletedDay = day.day;
+      } else {
+        break;
+      }
     }
 
+    const today = userData.syllabus.find(d => d.day === lastCompletedDay + 1);
+
+    if (!today) {
+      return { dailyTasks: [], currentDay: null };
+    }
+    
+    const topicLower = today.topic.toLowerCase();
+    const isLearned = userData.activity.some(a => a.type === 'note-generation' && a.details.topic.toLowerCase() === topicLower);
+    const isQuizzed = userData.activity.some(a => a.type === 'quiz' && a.details.topic.toLowerCase() === topicLower);
+    const isInterviewed = userData.activity.some(a => a.type === 'interview' && a.details.topic.toLowerCase() === topicLower);
+
     const tasks = [
-        {
-            icon: <BookOpen className="h-6 w-6 text-yellow-500" />,
-            title: `Learn: ${today.topic}`,
-            description: "Study today's core concepts.",
-            isCompleted: false, // Add logic later
-            action: () => router.push(`/dashboard/arena/notes?topic=${encodeURIComponent(today.topic)}`)
-        },
-        {
-            icon: <Code className="h-6 w-6 text-blue-500" />,
-            title: "Take a Quiz",
-            description: "Test your new knowledge.",
-            isCompleted: false, // Add logic later
-            action: () => router.push(`/dashboard/coding-quiz/instructions?topics=${encodeURIComponent(today.topic)}&difficulty=easy&numQuestions=3`)
-        },
-        {
+      {
+        icon: <BookOpen className="h-6 w-6 text-yellow-500" />,
+        title: `Learn: ${today.topic}`,
+        description: "Study today's core concepts.",
+        isCompleted: isLearned,
+        action: () => router.push(`/dashboard/arena/notes?topic=${encodeURIComponent(today.topic)}`)
+      },
+      {
+        icon: <Code className="h-6 w-6 text-blue-500" />,
+        title: "Take a Quiz",
+        description: "Test your new knowledge.",
+        isCompleted: isQuizzed,
+        action: () => router.push(`/dashboard/coding-quiz/instructions?topics=${encodeURIComponent(today.topic)}&difficulty=easy&numQuestions=3`)
+      }
+    ];
+
+    // Add interview task only on odd days
+    if (today.day % 2 !== 0) {
+        tasks.push({
             icon: <Briefcase className="h-6 w-6 text-green-500" />,
             title: "Mock Interview",
             description: "Practice your interview skills.",
-            isCompleted: false, // Add logic later
+            isCompleted: isInterviewed,
             action: () => router.push(`/dashboard/interview/setup?topic=${encodeURIComponent(today.topic)}`)
-        }
-    ];
+        });
+    }
+
     return { dailyTasks: tasks, currentDay: today };
-  }, [userData?.syllabus, router]);
+  }, [userData, router]);
 
 
   const planLimits = useMemo(() => {
@@ -490,4 +525,3 @@ export default function DashboardPage() {
     </main>
   );
 }
-
