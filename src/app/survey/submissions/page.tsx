@@ -22,6 +22,14 @@ export default function SurveySubmissionsPage() {
     const [submissions, setSubmissions] = useState<SurveySubmission[]>([]);
     const [isLoading, setIsLoading] = useState(false);
 
+    useEffect(() => {
+        // Check session storage on component mount
+        if (sessionStorage.getItem('isAdminAuthenticated') === 'true') {
+            setIsAuthenticated(true);
+            fetchSubmissions();
+        }
+    }, []);
+
     const fetchSubmissions = useCallback(async () => {
         setIsLoading(true);
         try {
@@ -42,6 +50,7 @@ export default function SurveySubmissionsPage() {
 
         setTimeout(() => {
             if (password === 'Zaid@226194') {
+                sessionStorage.setItem('isAdminAuthenticated', 'true');
                 setIsAuthenticated(true);
                 fetchSubmissions();
             } else {
@@ -128,7 +137,7 @@ export default function SurveySubmissionsPage() {
     return (
         <main className="p-4 sm:p-6 lg:p-8">
             <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
+                <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div>
                         <CardTitle>Survey Submissions ({submissions.length})</CardTitle>
                         <CardDescription>All user feedback submitted through the pre-launch survey.</CardDescription>
@@ -140,10 +149,10 @@ export default function SurveySubmissionsPage() {
                 </CardHeader>
                 <CardContent>
                     <Accordion type="single" collapsible className="w-full">
-                        {submissions.map((sub, index) => (
+                        {submissions.length > 0 ? submissions.map((sub, index) => (
                             <AccordionItem value={`item-${index}`} key={sub.id}>
                                 <AccordionTrigger>
-                                    <div className="flex justify-between w-full pr-4 items-center">
+                                    <div className="flex justify-between w-full pr-4 items-center flex-wrap gap-x-4 gap-y-2">
                                         <div className="flex items-center gap-3">
                                             <BadgeHelp className="h-5 w-5 text-primary"/>
                                             <div className="text-left">
@@ -157,45 +166,59 @@ export default function SurveySubmissionsPage() {
                                     </div>
                                 </AccordionTrigger>
                                 <AccordionContent className="p-4 bg-muted/50 rounded-b-lg">
-                                    <div className="prose prose-sm dark:prose-invert max-w-none">
-                                        <h4>Biggest Challenge</h4>
-                                        <p>{sub.challenge}</p>
-
-                                        <h4>How valuable is a conversational AI for practice? (1-10)</h4>
-                                        <p><Badge variant="secondary">{sub.aiValue}</Badge></p>
-
-                                        <h4>Preferred practice methods</h4>
-                                        <p>{sub.practiceMethod?.join(', ')}</p>
-
-                                        <h4>Most helpful AI tools (Top 2)</h4>
-                                        <p>{sub.helpfulTools?.join(', ')}</p>
-
-                                        <h4>Willing to pay per month</h4>
-                                        <p><Badge>{sub.pricePoint}</Badge></p>
-
-                                        <h4>Desired languages</h4>
-                                        <div className="flex flex-wrap gap-1">
-                                            {sub.languages?.map((lang: string) => <Badge key={lang} variant="outline">{lang}</Badge>)}
+                                    <div className="prose prose-sm dark:prose-invert max-w-none grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-4">
+                                        <div>
+                                            <h4>Biggest Challenge</h4>
+                                            <p>{sub.challenge || 'N/A'}</p>
                                         </div>
-
-                                        <h4>Importance of feedback (1-10)</h4>
-                                        <p><Badge variant="secondary">{sub.feedbackImportance}</Badge></p>
-                                        
-                                        <h4>Experience Level</h4>
-                                        <p>{sub.experienceLevel}</p>
-                                        
-                                        <h4>Likelihood to use (1-10)</h4>
-                                        <p><Badge variant="secondary">{sub.likelihood}</Badge></p>
-
-                                        <h4>Other feedback</h4>
-                                        <p>{sub.otherFeedback || 'None'}</p>
+                                        <div>
+                                            <h4>AI Practice Value (1-10)</h4>
+                                            <p><Badge variant="secondary">{sub.aiValue || 'N/A'}</Badge></p>
+                                        </div>
+                                        <div>
+                                            <h4>Preferred practice methods</h4>
+                                            <p>{sub.practiceMethod?.join(', ') || 'N/A'}</p>
+                                        </div>
+                                        <div>
+                                            <h4>Most helpful AI tools</h4>
+                                            <p>{sub.helpfulTools?.join(', ') || 'N/A'}</p>
+                                        </div>
+                                        <div>
+                                            <h4>Willing to pay per month</h4>
+                                            <p><Badge>{sub.pricePoint || 'N/A'}</Badge></p>
+                                        </div>
+                                        <div>
+                                            <h4>Feedback Importance (1-10)</h4>
+                                            <p><Badge variant="secondary">{sub.feedbackImportance || 'N/A'}</Badge></p>
+                                        </div>
+                                        <div>
+                                            <h4>Experience Level</h4>
+                                            <p>{sub.experienceLevel || 'N/A'}</p>
+                                        </div>
+                                        <div>
+                                            <h4>Likelihood to use (1-10)</h4>
+                                            <p><Badge variant="secondary">{sub.likelihood || 'N/A'}</Badge></p>
+                                        </div>
+                                        <div className="md:col-span-2 lg:col-span-3">
+                                            <h4>Desired languages</h4>
+                                            <div className="flex flex-wrap gap-1">
+                                                {sub.languages?.map((lang: string) => <Badge key={lang} variant="outline">{lang}</Badge>) || 'N/A'}
+                                            </div>
+                                        </div>
+                                         <div className="md:col-span-2 lg:col-span-3">
+                                            <h4>Other feedback</h4>
+                                            <p>{sub.otherFeedback || 'None'}</p>
+                                        </div>
                                     </div>
                                 </AccordionContent>
                             </AccordionItem>
-                        ))}
+                        )) : (
+                            <p className="text-center text-muted-foreground py-8">No submissions yet.</p>
+                        )}
                     </Accordion>
                 </CardContent>
             </Card>
         </main>
     )
 }
+
