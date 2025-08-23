@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useReactToPrint } from 'react-to-print';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 import { FileText, PlusCircle, Trash2, Mail, Phone, Linkedin, Github, Globe, Download, Loader2 } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
@@ -63,7 +64,7 @@ const colorOptions = [
 
 const ResumePreview = React.forwardRef<HTMLDivElement, { resumeData: typeof initialResumeState }>(({ resumeData }, ref) => {
     return (
-        <div ref={ref} className="bg-white text-black shadow-lg font-sans w-full p-8" style={{ fontFamily: "'Inter', sans-serif" }}>
+        <div ref={ref} id="resume-preview" className="bg-white text-black shadow-lg font-sans w-full p-8" style={{ fontFamily: "'Inter', sans-serif" }}>
             <div className="flex h-full">
                 {/* Left Column */}
                 <div className="text-white p-6 flex flex-col" style={{ width: '35%', backgroundColor: resumeData.themeColor }}>
@@ -143,46 +144,58 @@ const ResumePreview = React.forwardRef<HTMLDivElement, { resumeData: typeof init
 });
 ResumePreview.displayName = 'ResumePreview';
 
-// A separate component for printing to avoid re-renders and conflicts.
-const ComponentToPrint = React.memo(React.forwardRef<HTMLDivElement, { resumeData: typeof initialResumeState }>(({ resumeData }, ref) => {
-    return (
-        <div ref={ref}>
-            <style type="text/css" media="print">
-                {`
-                @page {
-                    size: A4;
-                    margin: 0;
-                }
-                html, body {
-                    width: 210mm;
-                    height: 297mm;
-                }
-                `}
-            </style>
-            <ResumePreview resumeData={resumeData} />
-        </div>
-    );
-}));
-ComponentToPrint.displayName = 'ComponentToPrint';
-
 
 export default function ResumeBuilderPage() {
     const [resumeData, setResumeData] = useState(initialResumeState);
-    const componentToPrintRef = useRef<HTMLDivElement>(null);
+    const resumePreviewRef = useRef<HTMLDivElement>(null);
     const [isDownloading, setIsDownloading] = useState(false);
 
-    const handlePrint = useReactToPrint({
-        content: () => componentToPrintRef.current,
-        documentTitle: `${resumeData.personalInfo.name}_Resume`,
-    });
-
     const handleDownloadClick = () => {
+        const resumeElement = resumePreviewRef.current;
+        if (!resumeElement) return;
+
         setIsDownloading(true);
-        // A small delay to allow the state to update and UI to show the loader
-        setTimeout(() => {
-            handlePrint();
+
+        html2canvas(resumeElement, {
+            scale: 2, // Increase scale for better resolution
+            useCORS: true,
+            logging: false,
+        }).then(canvas => {
+            const imgData = canvas.toDataURL('image/png');
+            
+            // A4 dimensions in mm: 210 x 297
+            const pdf = new jsPDF({
+                orientation: 'portrait',
+                unit: 'mm',
+                format: 'a4'
+            });
+
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = pdf.internal.pageSize.getHeight();
+            const canvasWidth = canvas.width;
+            const canvasHeight = canvas.height;
+            const ratio = canvasWidth / canvasHeight;
+            const pdfRatio = pdfWidth / pdfHeight;
+
+            let finalWidth, finalHeight;
+             if (ratio > pdfRatio) {
+                finalWidth = pdfWidth;
+                finalHeight = pdfWidth / ratio;
+            } else {
+                finalHeight = pdfHeight;
+                finalWidth = pdfHeight * ratio;
+            }
+
+            const x = (pdfWidth - finalWidth) / 2;
+            const y = (pdfHeight - finalHeight) / 2;
+            
+            pdf.addImage(imgData, 'PNG', x, y, finalWidth, finalHeight);
+            pdf.save(`${resumeData.personalInfo.name}_Resume.pdf`);
             setIsDownloading(false);
-        }, 100);
+        }).catch(err => {
+            console.error("Error generating PDF:", err);
+            setIsDownloading(false);
+        });
     };
 
     const handleInfoChange = (field: keyof typeof resumeData.personalInfo, value: string) => {
@@ -347,15 +360,10 @@ export default function ResumeBuilderPage() {
                 </div>
 
                 {/* Preview Panel */}
-                <div className="bg-muted hidden lg:block overflow-y-auto p-8 relative">
-                    <div className="absolute top-0 left-0 right-0 bottom-0 z-0"></div>
-                     <div className="w-full mx-auto" style={{ aspectRatio: '1 / 1.414' /* A4 ratio */ }}>
-                        <ResumePreview resumeData={resumeData} />
+                <div className="bg-muted hidden lg:flex items-center justify-center overflow-y-auto p-8 relative">
+                    <div className="w-full max-w-[210mm] mx-auto shadow-2xl" style={{ aspectRatio: '1 / 1.414' /* A4 ratio */ }}>
+                        <ResumePreview resumeData={resumeData} ref={resumePreviewRef} />
                     </div>
-                </div>
-                 {/* Hidden, print-only component */}
-                <div className="hidden">
-                    <ComponentToPrint ref={componentToPrintRef} resumeData={resumeData} />
                 </div>
             </div>
         </main>
