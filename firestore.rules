@@ -1,0 +1,17 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+  
+    // Allow public write access to the surveySubmissions collection only
+    match /surveySubmissions/{submissionId} {
+      allow create: if true;
+      allow read, update, delete: if request.auth != null; // Only authenticated users can manage
+    }
+    
+    // All other collections require authentication
+    match /{document=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}
