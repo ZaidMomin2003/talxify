@@ -49,6 +49,7 @@ export default function SurveySubmissionsPage() {
         setIsLoggingIn(true);
         setError('');
 
+        // Basic password check, should be more secure in a real app
         setTimeout(() => {
             if (password === 'Zaid@226194') {
                 sessionStorage.setItem('isAdminAuthenticated', 'true');
@@ -66,21 +67,27 @@ export default function SurveySubmissionsPage() {
             "Timestamp", "Name", "Email", "Biggest Challenge", "AI Practice Value (1-10)", "Practice Method", "Helpful Tools", "Price Point", "Desired Languages", "Feedback Importance (1-10)", "Experience Level", "Likelihood to Use (1-10)", "Other Feedback"
         ];
         
-        const rows = submissions.map(sub => [
-            sub.timestamp ? `"${format(sub.timestamp.toDate(), 'yyyy-MM-dd HH:mm:ss')}"` : 'N/A',
-            `"${sub.name || ''}"`,
-            `"${sub.email || ''}"`,
-            `"${(sub.challenge || '').replace(/"/g, '""')}"`,
-            sub.aiValue || '',
-            `"${sub.practiceMethod?.join(', ') || ''}"`,
-            `"${sub.helpfulTools?.join(', ') || ''}"`,
-            `"${sub.pricePoint || ''}"`,
-            `"${sub.languages?.join(', ') || ''}"`,
-            sub.feedbackImportance || '',
-            `"${sub.experienceLevel || ''}"`,
-            sub.likelihood || '',
-            `"${(sub.otherFeedback || '').replace(/"/g, '""')}"`
-        ]);
+        const rows = submissions.map(sub => {
+            // Ensure all fields are defined and handle potential missing timestamp
+            const timestamp = sub.timestamp ? `"${format(sub.timestamp.toDate(), 'yyyy-MM-dd HH:mm:ss')}"` : 'N/A';
+            const name = `"${sub.name || ''}"`;
+            const email = `"${sub.email || ''}"`;
+            const challenge = `"${(sub.challenge || '').replace(/"/g, '""')}"`;
+            const aiValue = sub.aiValue || '';
+            const practiceMethod = `"${sub.practiceMethod?.join(', ') || ''}"`;
+            const helpfulTools = `"${sub.helpfulTools?.join(', ') || ''}"`;
+            const pricePoint = `"${sub.pricePoint || ''}"`;
+            const languages = `"${sub.languages?.join(', ') || ''}"`;
+            const feedbackImportance = sub.feedbackImportance || '';
+            const experienceLevel = `"${sub.experienceLevel || ''}"`;
+            const likelihood = sub.likelihood || '';
+            const otherFeedback = `"${(sub.otherFeedback || '').replace(/"/g, '""')}"`;
+
+            return [
+                timestamp, name, email, challenge, aiValue, practiceMethod, helpfulTools, 
+                pricePoint, languages, feedbackImportance, experienceLevel, likelihood, otherFeedback
+            ];
+        });
 
         const csvContent = "data:text/csv;charset=utf-8," 
             + headers.join(",") + "\n" 
@@ -222,3 +229,5 @@ export default function SurveySubmissionsPage() {
         </main>
     )
 }
+
+    
