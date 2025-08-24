@@ -1,4 +1,5 @@
 
+
 import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
@@ -46,12 +47,10 @@ const nextConfig: NextConfig = {
   // Only public keys (prefixed with NEXT_PUBLIC_) should be here.
   // Secret keys should be in .env and accessed directly via process.env on the server.
   env: {
-    NEXT_PUBLIC_DEEPGRAM_API_KEY: process.env.DEEPGRAM_API_KEY,
     NEXT_PUBLIC_RAZORPAY_KEY_ID: process.env.RAZORPAY_KEY_ID,
-    GEMINI_API_KEY: process.env.GEMINI_API_KEY,
     NEXT_PUBLIC_VIDEOSDK_API_KEY: process.env.VIDEOSDK_API_KEY,
-    VIDEOSDK_SECRET_KEY: process.env.VIDEOSDK_SECRET_KEY,
   }
 };
 
 export default nextConfig;
+
