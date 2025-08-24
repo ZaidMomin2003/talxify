@@ -211,7 +211,7 @@ export default function PortfolioComponent({ userData }: { userData: UserData | 
                          <Image src={portfolio.personalInfo.bannerUrl || 'https://placehold.co/1200x300.png'} alt="Portfolio Banner" width={1200} height={300} className="w-full h-48 md:h-64 object-cover rounded-xl shadow-lg" data-ai-hint="abstract banner" />
 
                         <Section id="about" icon={<UserIcon />} title="About Me">
-                            <p className="text-lg text-muted-foreground leading-relaxed" dangerouslySetInnerHTML={{ __html: sanitize(portfolio.personalInfo.bio) }} />
+                            <p className="text-lg text-muted-foreground leading-relaxed">{sanitize(portfolio.personalInfo.bio)}</p>
                         </Section>
                         
                         {youtubeEmbedUrl && (
@@ -301,7 +301,7 @@ export default function PortfolioComponent({ userData }: { userData: UserData | 
                                             <p className="inline-flex items-center gap-2"><Building className="w-3.5 h-3.5" /> {exp.company}</p>
                                             <p className="inline-flex items-center gap-2"><Calendar className="w-3.5 h-3.5" /> {exp.duration}</p>
                                         </div>
-                                        <p className="mt-2 text-muted-foreground" dangerouslySetInnerHTML={{ __html: sanitize(exp.description) }}></p>
+                                        <p className="mt-2 text-muted-foreground" dangerouslySetInnerHTML={{ __html: sanitize(exp.description).replace(/\n/g, '<br />') }}></p>
                                     </div>
                                 ))}
                             </div>
@@ -337,7 +337,7 @@ export default function PortfolioComponent({ userData }: { userData: UserData | 
                                             </CardTitle>
                                         </CardHeader>
                                         <CardContent className="flex-grow flex flex-col">
-                                            <p className="text-muted-foreground mb-4 flex-grow" dangerouslySetInnerHTML={{ __html: sanitize(project.description) }}></p>
+                                            <p className="text-muted-foreground mb-4 flex-grow" dangerouslySetInnerHTML={{ __html: sanitize(project.description).replace(/\n/g, '<br />') }}></p>
                                             <div className="flex flex-wrap gap-2 mt-auto">
                                                 {project.tags.split(',').map(tag => tag.trim() && <Badge key={tag} variant="secondary">{tag}</Badge>)}
                                             </div>
@@ -394,7 +394,7 @@ export default function PortfolioComponent({ userData }: { userData: UserData | 
                                     <AccordionItem value={`item-${index}`} key={index}>
                                         <AccordionTrigger className="text-lg text-left">{faq.question}</AccordionTrigger>
                                         <AccordionContent className="text-base text-muted-foreground">
-                                            <div dangerouslySetInnerHTML={{ __html: sanitize(faq.answer) }} />
+                                            <div dangerouslySetInnerHTML={{ __html: sanitize(faq.answer).replace(/\n/g, '<br />') }} />
                                         </AccordionContent>
                                     </AccordionItem>
                                 ))}
