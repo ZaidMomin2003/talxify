@@ -47,14 +47,14 @@ const colorOptions = [
 const ImagePicker = ({ value, onChange, dataAiHint }: { value: string, onChange: (value: string) => void, dataAiHint: string }) => {
     const { gapi, gis, isGapiLoaded, isGisLoaded } = useGapiScript();
     const { toast } = useToast();
-    const [isLoading, setIsLoading] = useState(false);
+    const [isPickerLoading, setIsPickerLoading] = useState(false);
     const [apiKeys, setApiKeys] = useState<{ apiKey: string; clientId: string } | null>(null);
 
     const handleGoogleDrivePick = async () => {
-        setIsLoading(true);
+        setIsPickerLoading(true);
         if (!isGapiLoaded || !isGisLoaded || !gapi || !gis) {
             toast({ title: "Please Wait", description: "Google Drive is still initializing. Please try again in a moment.", variant: 'destructive' });
-            setIsLoading(false);
+            setIsPickerLoading(false);
             return;
         }
 
@@ -63,9 +63,7 @@ const ImagePicker = ({ value, onChange, dataAiHint }: { value: string, onChange:
             if (!keys.apiKey || !keys.clientId) {
                 throw new Error("API keys are not available.");
             }
-            if (!apiKeys) {
-                setApiKeys(keys);
-            }
+            if (!apiKeys) setApiKeys(keys);
             
             const tokenClient = gis.oauth2.initTokenClient({
                 client_id: keys.clientId,
@@ -88,7 +86,7 @@ const ImagePicker = ({ value, onChange, dataAiHint }: { value: string, onChange:
                                 const webContentLink = `https://drive.google.com/uc?id=${fileId}`;
                                 onChange(webContentLink);
                             }
-                            setIsLoading(false);
+                            setIsPickerLoading(false);
                         })
                         .build();
                     picker.setVisible(true);
@@ -100,9 +98,11 @@ const ImagePicker = ({ value, onChange, dataAiHint }: { value: string, onChange:
         } catch (error) {
             console.error("Google Drive Picker Error:", error);
             toast({ title: "Error", description: "Could not connect to Google Drive. Please ensure popup blockers are disabled and try again.", variant: "destructive" });
-            setIsLoading(false);
+            setIsPickerLoading(false);
         }
     };
+
+    const isLoading = !isGapiLoaded || !isGisLoaded;
 
     return (
         <div className="space-y-3">
@@ -117,9 +117,9 @@ const ImagePicker = ({ value, onChange, dataAiHint }: { value: string, onChange:
                 )}
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                <Button variant="outline" className="sm:col-span-1" onClick={handleGoogleDrivePick} disabled={isLoading || !isGapiLoaded || !isGisLoaded}>
-                     {(!isGapiLoaded || !isGisLoaded) ? <Loader2 className="animate-spin" /> : <GoogleDriveIcon />}
-                    <span>{(!isGapiLoaded || !isGisLoaded) ? 'Loading Drive...' : 'Drive'}</span>
+                <Button variant="outline" className="sm:col-span-1" onClick={handleGoogleDrivePick} disabled={isLoading || isPickerLoading}>
+                     {isLoading ? <Loader2 className="animate-spin" /> : <GoogleDriveIcon />}
+                    <span>{isLoading ? 'Loading Drive...' : 'Drive'}</span>
                 </Button>
 
                 <Dialog>

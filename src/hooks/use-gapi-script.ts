@@ -14,7 +14,8 @@ declare global {
 // Helper function to load a script
 const loadScript = (src: string, id: string): Promise<void> => {
   return new Promise((resolve, reject) => {
-    if (document.getElementById(id)) {
+    const existingScript = document.getElementById(id);
+    if (existingScript) {
       resolve();
       return;
     }
@@ -24,7 +25,7 @@ const loadScript = (src: string, id: string): Promise<void> => {
     script.async = true;
     script.defer = true;
     script.onload = () => resolve();
-    script.onerror = (error) => reject(error);
+    script.onerror = (error) => reject(new Error(`Failed to load script: ${src}. Error: ${error}`));
     document.body.appendChild(script);
   });
 };
@@ -41,13 +42,13 @@ export function useGapiScript() {
     const loadApis = async () => {
       try {
         await loadScript('https://apis.google.com/js/api.js', 'gapi-script');
-        await loadScript('https://accounts.google.com/gsi/client', 'gis-script');
-
+        // gapi.load is the correct way to load additional gapi libraries
         window.gapi.load('client:picker', () => {
-            setGapi(window.gapi);
-            setIsGapiLoaded(true);
+             setGapi(window.gapi);
+             setIsGapiLoaded(true);
         });
 
+        await loadScript('https://accounts.google.com/gsi/client', 'gis-script');
         setGis(window.google);
         setIsGisLoaded(true);
         
