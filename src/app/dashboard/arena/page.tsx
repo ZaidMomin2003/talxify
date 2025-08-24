@@ -5,13 +5,13 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription as DialogDescriptionComponent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Swords, Lock, PlayCircle, BookOpen, Code, Briefcase, CheckCircle, Loader2, Gem } from "lucide-react";
+import { Swords, Lock, PlayCircle, BookOpen, Code, Briefcase, CheckCircle, Loader2, Gem, Eye, RefreshCw } from "lucide-react";
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
 import { getUserData, getActivity } from '@/lib/firebase-service';
 import type { SyllabusDay } from '@/ai/flows/generate-syllabus';
-import type { StoredActivity, UserData } from '@/lib/types';
+import type { StoredActivity, UserData, InterviewActivity, QuizResult, NoteGenerationActivity } from '@/lib/types';
 import Link from 'next/link';
 
 function UpgradeCard() {
@@ -74,7 +74,7 @@ export default function ArenaPage() {
     }, [user, fetchSyllabusAndActivity]);
     
     const { completedDays, dailyTaskStatus } = useMemo(() => {
-        const status: { [day: number]: { learn: boolean; quiz: boolean; interview: boolean; } } = {};
+        const status: { [day: number]: { learn: boolean; quiz: boolean; interview: boolean; interviewId?: string } } = {};
 
         syllabus.forEach(day => {
             status[day.day] = { learn: false, quiz: false, interview: false };
@@ -87,7 +87,10 @@ export default function ArenaPage() {
             if (day) {
                 if (act.type === 'note-generation') status[day.day].learn = true;
                 if (act.type === 'quiz') status[day.day].quiz = true;
-                if (act.type === 'interview') status[day.day].interview = true;
+                if (act.type === 'interview') {
+                    status[day.day].interview = true;
+                    status[day.day].interviewId = act.id;
+                }
             }
         });
 
@@ -107,7 +110,7 @@ export default function ArenaPage() {
     }, [syllabus, activity]);
 
 
-    const handleStartChallenge = (day: number, type: 'learn' | 'quiz' | 'interview') => {
+    const handleStartChallenge = (day: number, type: 'learn' | 'quiz' | 'interview', interviewId?: string) => {
         const topic = syllabus.find(d => d.day === day)?.topic || 'JavaScript';
         
         if (type === 'learn') {
@@ -115,7 +118,11 @@ export default function ArenaPage() {
         } else if (type === 'quiz') {
             router.push(`/dashboard/coding-quiz/instructions?topics=${encodeURIComponent(topic)}&difficulty=easy&numQuestions=3`);
         } else if (type === 'interview') {
-            router.push(`/dashboard/interview/setup?topic=${encodeURIComponent(topic)}`);
+            if (interviewId) {
+                router.push(`/dashboard/interview/${interviewId}/results`);
+            } else {
+                router.push(`/dashboard/interview/setup?topic=${encodeURIComponent(topic)}`);
+            }
         }
     }
 
@@ -200,11 +207,9 @@ export default function ArenaPage() {
                                             <p className="font-semibold text-foreground">Learn: {day.topic}</p>
                                             <p className="text-xs text-muted-foreground">Study the core concepts of today's topic.</p>
                                         </div>
-                                        {!dayStatus.learn && (
-                                            <Button size="sm" onClick={() => handleStartChallenge(day.day, 'learn')} disabled={!isUnlocked}>
-                                                {isUnlocked ? 'Start' : <Lock className="h-4 w-4" />}
-                                            </Button>
-                                        )}
+                                        <Button size="sm" onClick={() => handleStartChallenge(day.day, 'learn')} disabled={!isUnlocked}>
+                                            {dayStatus.learn ? <><Eye className="mr-2 h-4 w-4"/>View</> : isUnlocked ? 'Start' : <Lock className="h-4 w-4" />}
+                                        </Button>
                                     </div>
                                     <div className="flex items-center gap-4 p-3 rounded-lg bg-muted/50">
                                         {dayStatus.quiz ? <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" /> : <Code className="h-5 w-5 text-blue-500 flex-shrink-0" />}
@@ -212,11 +217,9 @@ export default function ArenaPage() {
                                             <p className="font-semibold text-foreground">Complete Coding Quiz</p>
                                             <p className="text-xs text-muted-foreground">Test your knowledge on {day.topic}.</p>
                                         </div>
-                                        {!dayStatus.quiz && (
-                                            <Button size="sm" onClick={() => handleStartChallenge(day.day, 'quiz')} disabled={!isUnlocked}>
-                                                {isUnlocked ? 'Start' : <Lock className="h-4 w-4" />}
-                                            </Button>
-                                        )}
+                                        <Button size="sm" onClick={() => handleStartChallenge(day.day, 'quiz')} disabled={!isUnlocked}>
+                                            {dayStatus.quiz ? <><RefreshCw className="mr-2 h-4 w-4"/>Retake</> : isUnlocked ? 'Start' : <Lock className="h-4 w-4" />}
+                                        </Button>
                                     </div>
                                     {day.day % 2 !== 0 && (
                                     <div className="flex items-center gap-4 p-3 rounded-lg bg-muted/50">
@@ -225,11 +228,9 @@ export default function ArenaPage() {
                                             <p className="font-semibold text-foreground">Take a Mock Interview</p>
                                             <p className="text-xs text-muted-foreground">Practice your interview skills.</p>
                                         </div>
-                                        {!dayStatus.interview && (
-                                            <Button size="sm" onClick={() => handleStartChallenge(day.day, 'interview')} disabled={!isUnlocked}>
-                                                {isUnlocked ? 'Start' : <Lock className="h-4 w-4" />}
-                                            </Button>
-                                        )}
+                                         <Button size="sm" onClick={() => handleStartChallenge(day.day, 'interview', dayStatus.interviewId)} disabled={!isUnlocked}>
+                                            {dayStatus.interview ? <><Eye className="mr-2 h-4 w-4"/>Results</> : isUnlocked ? 'Start' : <Lock className="h-4 w-4" />}
+                                        </Button>
                                     </div>
                                     )}
                                 </div>
