@@ -272,7 +272,7 @@ export default function PortfolioComponent({ userData }: { userData: UserData | 
                                             <XAxis dataKey="skill" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
                                             <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value}%`} />
                                             <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'hsl(var(--primary))', strokeWidth: 1, strokeDasharray: '3 3' }} />
-                                            <Area type="monotone" dataKey="expertise" stroke="hsl(var(--primary))" fill="url(#colorExpertise)" strokeWidth={2} activeDot={{ r: 6, style: { fill: 'hsl(var(--primary))' } }} />
+                                            <Area type="monotone" dataKey="expertise" name="Proficiency" stroke="hsl(var(--primary))" fill="url(#colorExpertise)" strokeWidth={2} activeDot={{ r: 6, style: { fill: 'hsl(var(--primary))' } }} />
                                         </AreaChart>
                                     </ResponsiveContainer>
                                 </CardContent>
@@ -400,5 +400,7 @@ export default function PortfolioComponent({ userData }: { userData: UserData | 
             </div>
         </div>
     );
+
+    
 
     
