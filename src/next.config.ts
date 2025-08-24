@@ -35,6 +35,10 @@ const nextConfig: NextConfig = {
         hostname: 'drive.google.com',
         port: '',
         pathname: '/**',
+      },
+      {
+        protocol: "https",
+        hostname: "lh3.googleusercontent.com",
       }
     ],
   },
