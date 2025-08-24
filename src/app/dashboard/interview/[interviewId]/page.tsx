@@ -37,11 +37,6 @@ function InterviewPageContent() {
             }
 
             // --- Configuration Checks ---
-            if (!process.env.NEXT_PUBLIC_DEEPGRAM_API_KEY) {
-                setError("Deepgram API key is not configured. Please add NEXT_PUBLIC_DEEPGRAM_API_KEY to your environment variables to use the interview feature.");
-                setIsLoading(false);
-                return;
-            }
             if (!process.env.NEXT_PUBLIC_VIDEOSDK_API_KEY) {
                 setError("VideoSDK API Key is not configured. Please check your environment variables.");
                  setIsLoading(false);
