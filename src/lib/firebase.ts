@@ -1,10 +1,11 @@
+
 // src/lib/firebase.ts
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, GithubAuthProvider } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyD655B1QEZiJGUGTAOblJrLF1vS1BO62Gw",
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: "talxify-ijwhm.firebaseapp.com",
   projectId: "talxify-ijwhm",
   storageBucket: "talxify-ijwhm.firebasestorage.app",
