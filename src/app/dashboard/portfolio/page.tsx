@@ -201,7 +201,7 @@ export default function PortfolioPage() {
                     <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-muted-foreground">
                        talxify.space/portfolio/
                     </span>
-                    <Input id="slug" className="pl-32" value={portfolio.personalInfo.slug} onChange={handleSlugChange} />
+                    <Input id="slug" className="pl-40" value={portfolio.personalInfo.slug} onChange={handleSlugChange} />
                 </div>
                 <p className="text-sm text-muted-foreground mt-1">This will be your unique portfolio URL. Use only letters, numbers, and hyphens.</p>
             </div>
