@@ -45,14 +45,14 @@ const colorOptions = [
 ];
 
 const ImagePicker = ({ value, onChange, dataAiHint }: { value: string, onChange: (value: string) => void, dataAiHint: string }) => {
-    const { isGapiLoaded, isGisLoaded } = useGapiScript();
+    const { gapi, gis, isGapiLoaded, isGisLoaded } = useGapiScript();
     const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(false);
     const [apiKeys, setApiKeys] = useState<{ apiKey: string; clientId: string } | null>(null);
 
     const handleGoogleDrivePick = async () => {
         setIsLoading(true);
-        if (!isGapiLoaded || !isGisLoaded) {
+        if (!isGapiLoaded || !isGisLoaded || !gapi || !gis) {
             toast({ title: "Please Wait", description: "Google Drive is still initializing. Please try again in a moment.", variant: 'destructive' });
             setIsLoading(false);
             return;
@@ -67,7 +67,7 @@ const ImagePicker = ({ value, onChange, dataAiHint }: { value: string, onChange:
                 setApiKeys(keys);
             }
             
-            const tokenClient = window.google.accounts.oauth2.initTokenClient({
+            const tokenClient = gis.oauth2.initTokenClient({
                 client_id: keys.clientId,
                 scope: 'https://www.googleapis.com/auth/drive.readonly',
                 callback: async (tokenResponse: any) => {
@@ -75,15 +75,15 @@ const ImagePicker = ({ value, onChange, dataAiHint }: { value: string, onChange:
                         throw new Error(`Google Auth Error: ${tokenResponse.error}`);
                     }
 
-                    const view = new window.google.picker.View(window.google.picker.ViewId.DOCS);
+                    const view = new gapi.picker.View(gapi.picker.ViewId.DOCS);
                     view.setMimeTypes("image/png,image/jpeg,image/jpg,image/gif");
                     
-                    const picker = new window.google.picker.PickerBuilder()
+                    const picker = new gapi.picker.PickerBuilder()
                         .setDeveloperKey(keys.apiKey)
                         .setOAuthToken(tokenResponse.access_token)
                         .addView(view)
                         .setCallback((data: any) => {
-                            if (data.action === window.google.picker.Action.PICKED) {
+                            if (data.action === gapi.picker.Action.PICKED) {
                                 const fileId = data.docs[0].id;
                                 const webContentLink = `https://drive.google.com/uc?id=${fileId}`;
                                 onChange(webContentLink);
@@ -117,7 +117,7 @@ const ImagePicker = ({ value, onChange, dataAiHint }: { value: string, onChange:
                 )}
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                <Button variant="outline" className="sm:col-span-1" onClick={handleGoogleDrivePick} disabled={isLoading}>
+                <Button variant="outline" className="sm:col-span-1" onClick={handleGoogleDrivePick} disabled={isLoading || !isGapiLoaded || !isGisLoaded}>
                      {isLoading ? <Loader2 className="animate-spin" /> : <GoogleDriveIcon />}
                     <span>Drive</span>
                 </Button>

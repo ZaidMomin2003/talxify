@@ -3,6 +3,14 @@
 
 import { useState, useEffect } from 'react';
 
+// Define the shape of the window object to include GAPI and GIS
+declare global {
+  interface Window {
+    gapi: any;
+    google: any;
+  }
+}
+
 // Helper function to load a script
 const loadScript = (src: string, id: string): Promise<void> => {
   return new Promise((resolve, reject) => {
@@ -25,33 +33,31 @@ const loadScript = (src: string, id: string): Promise<void> => {
 export function useGapiScript() {
   const [isGapiLoaded, setIsGapiLoaded] = useState(false);
   const [isGisLoaded, setIsGisLoaded] = useState(false);
+  const [gapi, setGapi] = useState<any>(null);
+  const [gis, setGis] = useState<any>(null);
+
 
   useEffect(() => {
-    const loadGapi = async () => {
+    const loadApis = async () => {
       try {
         await loadScript('https://apis.google.com/js/api.js', 'gapi-script');
-        
+        await loadScript('https://accounts.google.com/gsi/client', 'gis-script');
+
         window.gapi.load('client:picker', () => {
+            setGapi(window.gapi);
             setIsGapiLoaded(true);
         });
 
+        setGis(window.google);
+        setIsGisLoaded(true);
+        
       } catch (error) {
-        console.error('Failed to load GAPI script:', error);
+        console.error('Failed to load Google API scripts:', error);
       }
     };
-    
-    const loadGis = async () => {
-        try {
-            await loadScript('https://accounts.google.com/gsi/client', 'gis-script');
-            setIsGisLoaded(true);
-        } catch (error) {
-            console.error('Failed to load GIS script:', error);
-        }
-    };
 
-    loadGapi();
-    loadGis();
+    loadApis();
   }, []);
 
-  return { isGapiLoaded, isGisLoaded };
+  return { gapi, gis, isGapiLoaded, isGisLoaded };
 }
