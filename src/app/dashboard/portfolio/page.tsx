@@ -29,12 +29,20 @@ const GoogleDriveIcon = () => (
         <path d="M10.2396 16.8239L15.2931 7.8974L23.136 7.8974L15.3375 21.9904L7.49463 21.9904L0.69751 9.77124L5.70659 9.77124L10.2396 16.8239Z" fill="#34A853"/>
         <path d="M23.1348 7.89743L15.6562 21.3283L17.7618 21.9891L24.0012 11.666L23.1348 7.89743Z" fill="#188038"/>
         <path d="M7.49463 21.9904L10.7483 16.8239L5.70659 9.77124L3.84277 12.9868L7.49463 21.9904Z" fill="#188038"/>
-        <path d="M7.49463 21.9904L10.2396 16.8239H18.9839L15.2931 7.8974H23.136L15.3375 21.9904H7.49463Z" fillOpacity="0.2"/>
         <path d="M8.56445 2.00977L15.3375 2.00977L23.136 7.8975L15.6562 7.8975L8.56445 2.00977Z" fill="#FFC107"/>
         <path d="M0.69751 9.77121L8.56453 2.00977L15.6563 7.89748L7.49471 21.9904L0.69751 9.77121Z" fill="#4285F4"/>
         <path d="M8.56445 2.00977L7.49463 3.86348L8.14081 9.77124H0.69751L8.56445 2.00977Z" fill="#1967D2"/>
+        <path d="M7.49463 21.9904L10.2396 16.8239H18.9839L15.2931 7.8974H23.136L15.3375 21.9904H7.49463Z" fillOpacity="0.2"/>
     </svg>
 )
+
+const colorOptions = [
+    { name: 'Default Blue', hsl: '221.2 83.2% 53.3%' },
+    { name: 'Forest Green', hsl: '142.1 76.2% 36.3%' },
+    { name: 'Ruby Red', hsl: '346.8 77.2% 49.8%' },
+    { name: 'Royal Purple', hsl: '271.2 76.3% 53.5%' },
+    { name: 'Goldenrod', hsl: '43.3 95.5% 56.7%' },
+];
 
 const ImagePicker = ({ value, onChange, dataAiHint }: { value: string, onChange: (value: string) => void, dataAiHint: string }) => {
     const { isGapiLoaded, isGisLoaded } = useGapiScript();
