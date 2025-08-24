@@ -1,11 +1,12 @@
 
 'use client';
 
-import { doc, getDoc, setDoc, updateDoc, arrayUnion, collection, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, arrayUnion, collection, getDocs, addDoc, serverTimestamp, runTransaction } from 'firebase/firestore';
 import { db } from './firebase';
 import type { UserData, Portfolio, StoredActivity, OnboardingData, SurveySubmission } from './types';
 import { initialPortfolioData } from './initial-data';
 import type { SyllabusDay } from '@/ai/flows/generate-syllabus';
+import { format } from 'date-fns';
 
 // --- User Data ---
 
@@ -54,7 +55,7 @@ export const updateUserOnboardingData = async (userId: string, onboardingData: O
     await setDoc(userRef, updateData, { merge: true });
 }
 
-// --- Subscription ---
+// --- Subscription & Usage ---
 
 export const updateSubscription = async (userId: string, plan: 'monthly' | 'yearly'): Promise<void> => {
   const userRef = doc(db, 'users', userId);
@@ -76,6 +77,58 @@ export const updateSubscription = async (userId: string, plan: 'monthly' | 'year
 
   await setDoc(userRef, { subscription: subscriptionData }, { merge: true });
 };
+
+export const checkAndIncrementUsage = async (userId: string): Promise<{ success: boolean; message: string; }> => {
+    const userRef = doc(db, 'users', userId);
+
+    try {
+        let usageAllowed = false;
+        let message = '';
+        await runTransaction(db, async (transaction) => {
+            const userDoc = await transaction.get(userRef);
+            if (!userDoc.exists()) {
+                throw new Error("User document does not exist!");
+            }
+
+            const userData = userDoc.data() as UserData;
+            const { plan, usage } = userData.subscription;
+            const today = format(new Date(), 'yyyy-MM-dd');
+            
+            const dailyLimit = 20; // Daily limit for Pro users
+
+            if (plan === 'free') {
+                // Simplified logic for free plan: check total activities instead of daily.
+                const totalAiActivities = userData.activity.filter(a => a.type === 'quiz' || a.type === 'interview' || a.type === 'note-generation').length;
+                if (totalAiActivities < 2) { // e.g. 1 quiz and 1 interview total for free
+                    usageAllowed = true;
+                } else {
+                    usageAllowed = false;
+                    message = "You have reached the usage limit for the free plan. Please upgrade to Pro.";
+                }
+            } else { // Pro plans ('monthly', 'yearly')
+                if (usage && usage.date === today) {
+                    if (usage.count < dailyLimit) {
+                        transaction.update(userRef, { 'subscription.usage.count': usage.count + 1 });
+                        usageAllowed = true;
+                    } else {
+                        usageAllowed = false;
+                        message = "You have reached your daily limit for AI actions. Please try again tomorrow.";
+                    }
+                } else {
+                    // First action of the day
+                    transaction.update(userRef, { 'subscription.usage': { date: today, count: 1 } });
+                    usageAllowed = true;
+                }
+            }
+        });
+        
+        return { success: usageAllowed, message };
+
+    } catch (e) {
+        console.error("Transaction failed: ", e);
+        return { success: false, message: "An error occurred while checking your usage. Please try again." };
+    }
+}
 
 
 // --- Portfolio ---

@@ -1,18 +1,25 @@
-
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Allow public write access to the surveySubmissions collection only
+  
+    // Allow anyone to submit a survey
     match /surveySubmissions/{submissionId} {
       allow create: if true;
-      allow read, update, delete: if request.auth != null;
+      allow read, update, delete: if request.auth != null && request.auth.uid == 'YOUR_ADMIN_UID_HERE'; // Replace with your actual admin UID
     }
 
-    // Secure all other collections
-    match /users/{userId}/{document=**} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+    // Secure user data
+    // Users can only read/write their own data.
+    match /users/{userId} {
+      allow read, update, delete: if request.auth != null && request.auth.uid == userId;
+      // Allow users to create their own document upon signup
+      allow create: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Default deny all other collections
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }

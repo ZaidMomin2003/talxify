@@ -1,5 +1,6 @@
 
 
+
 import type { AnswerAnalysis } from "@/ai/flows/analyze-coding-answers";
 import type { QuizState } from "@/app/dashboard/coding-quiz/quiz/page";
 import type { SyllabusDay } from "@/ai/flows/generate-syllabus";
@@ -90,6 +91,10 @@ export interface Subscription {
     status: 'active' | 'inactive' | 'cancelled';
     startDate?: string;
     endDate: string | null;
+    usage?: {
+        date: string; // YYYY-MM-DD
+        count: number;
+    }
 }
 
 

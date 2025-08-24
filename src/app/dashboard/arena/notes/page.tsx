@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useEffect, useState, useCallback, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { generateStudyNotes, GenerateStudyNotesOutput } from '@/ai/flows/generate-study-notes';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -10,8 +10,9 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { AlertTriangle, BookOpen, BrainCircuit, Code, HelpCircle, Key, Loader2, Star, Lightbulb } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
-import { addActivity } from '@/lib/firebase-service';
+import { addActivity, checkAndIncrementUsage } from '@/lib/firebase-service';
 import type { NoteGenerationActivity } from '@/lib/types';
+import { useToast } from '@/hooks/use-toast';
 
 function StudyNotesLoader() {
     return (
@@ -43,8 +44,10 @@ function StudyNotesError() {
 
 function NotesComponent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const topic = searchParams.get('topic');
   const { user } = useAuth();
+  const { toast } = useToast();
   
   const [notes, setNotes] = useState<GenerateStudyNotesOutput | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -56,24 +59,34 @@ function NotesComponent() {
         setIsLoading(false);
         return;
     };
+
+    if (!user) {
+        router.push('/login');
+        return;
+    }
     
     setIsLoading(true);
     setError(null);
     try {
+        const usageCheck = await checkAndIncrementUsage(user.uid);
+        if (!usageCheck.success) {
+            toast({ title: "Usage Limit Reached", description: usageCheck.message, variant: "destructive" });
+            router.push('/dashboard/pricing');
+            return;
+        }
+
         const result = await generateStudyNotes({ topic });
         setNotes(result);
         
-        if (user) {
-            const activity: NoteGenerationActivity = {
-                id: `notes_${Date.now()}`,
-                type: 'note-generation',
-                timestamp: new Date().toISOString(),
-                details: {
-                    topic: topic,
-                }
-            };
-            await addActivity(user.uid, activity);
-        }
+        const activity: NoteGenerationActivity = {
+            id: `notes_${Date.now()}`,
+            type: 'note-generation',
+            timestamp: new Date().toISOString(),
+            details: {
+                topic: topic,
+            }
+        };
+        await addActivity(user.uid, activity);
 
     } catch (err) {
         console.error("Failed to generate study notes:", err);
@@ -81,7 +94,7 @@ function NotesComponent() {
     } finally {
         setIsLoading(false);
     }
-  }, [topic, user]);
+  }, [topic, user, router, toast]);
 
   useEffect(() => {
     fetchNotes();

@@ -11,7 +11,7 @@ import { Progress } from '@/components/ui/progress';
 import { Loader2, AlertTriangle, Lightbulb } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
-import { addActivity } from '@/lib/firebase-service';
+import { addActivity, checkAndIncrementUsage } from '@/lib/firebase-service';
 import type { QuizResult } from '@/lib/types';
 
 
@@ -37,7 +37,19 @@ export default function CodingQuizPage() {
 
   useEffect(() => {
     async function fetchQuestions() {
+      if (!user) {
+         router.push('/login');
+         return;
+      }
       setIsLoading(true);
+
+      const usageCheck = await checkAndIncrementUsage(user.uid);
+      if (!usageCheck.success) {
+          toast({ title: "Usage Limit Reached", description: usageCheck.message, variant: "destructive" });
+          router.push('/dashboard/pricing');
+          return;
+      }
+      
       if (!topics) {
         toast({
           title: 'Error',
@@ -82,7 +94,7 @@ export default function CodingQuizPage() {
     }
 
     fetchQuestions();
-  }, [topics, difficulty, numQuestions, router, toast]);
+  }, [topics, difficulty, numQuestions, router, toast, user]);
 
   const handleAnswerChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newAnswers = [...userAnswers];

@@ -98,6 +98,14 @@ function PortfolioHeader({ name, email }: { name: string, email: string }) {
     );
 }
 
+// Simple sanitizer to prevent XSS. In a real app, use a robust library like DOMPurify.
+const sanitize = (text: string) => {
+    const temp = document.createElement('div');
+    temp.textContent = text;
+    return temp.innerHTML;
+};
+
+
 export default function PortfolioComponent({ userData }: { userData: UserData | null }) {
     const portfolio = userData?.portfolio;
 

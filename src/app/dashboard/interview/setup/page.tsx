@@ -10,11 +10,14 @@ import { useAuth } from '@/context/auth-context';
 import { Briefcase, Loader2, PlayCircle } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect, Suspense } from 'react';
+import { useToast } from '@/hooks/use-toast';
+import { checkAndIncrementUsage } from '@/lib/firebase-service';
 
 function InterviewSetup() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useAuth();
+  const { toast } = useToast();
   
   const [topic, setTopic] = useState('');
   const [level, setLevel] = useState('entry-level');
@@ -30,6 +33,10 @@ function InterviewSetup() {
   }, [searchParams]);
 
   const handleStartInterview = async () => {
+    if (!user) {
+        router.push('/login');
+        return;
+    }
     if (!topic || !level || !role) {
       setError('Please fill in all fields.');
       return;
@@ -38,7 +45,15 @@ function InterviewSetup() {
     setError('');
 
     try {
-        const meetingId = user?.uid + "_" + Date.now();
+        const usageCheck = await checkAndIncrementUsage(user.uid);
+        if (!usageCheck.success) {
+            toast({ title: "Usage Limit Reached", description: usageCheck.message, variant: "destructive" });
+            router.push('/dashboard/pricing');
+            setLoading(false);
+            return;
+        }
+
+        const meetingId = user.uid + "_" + Date.now();
         const params = new URLSearchParams({ topic, level, role });
         router.push(`/dashboard/interview/${meetingId}?${params.toString()}`);
     } catch (e) {
