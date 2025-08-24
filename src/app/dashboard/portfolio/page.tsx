@@ -50,55 +50,58 @@ const ImagePicker = ({ value, onChange, dataAiHint }: { value: string, onChange:
     const [isLoading, setIsLoading] = useState(false);
     const [apiKeys, setApiKeys] = useState<{ apiKey: string; clientId: string } | null>(null);
 
-    useEffect(() => {
-        const fetchKeys = async () => {
-            try {
-                const keys = await getGoogleApiKeys();
-                setApiKeys(keys);
-            } catch (error) {
-                console.error(error);
-                // The disabled state of the button will indicate the issue.
-            }
-        };
-        fetchKeys();
-    }, []);
-    
-    const handleGoogleDrivePick = () => {
-        if (!isGapiLoaded || !isGisLoaded || !apiKeys) {
-            toast({ title: "Please Wait", description: "Google Drive is still initializing or not configured correctly. Please try again in a moment.", variant: 'destructive' });
+    const handleGoogleDrivePick = async () => {
+        setIsLoading(true);
+        if (!isGapiLoaded || !isGisLoaded) {
+            toast({ title: "Please Wait", description: "Google Drive is still initializing. Please try again in a moment.", variant: 'destructive' });
+            setIsLoading(false);
             return;
         }
 
-        const tokenClient = window.google.accounts.oauth2.initTokenClient({
-            client_id: apiKeys.clientId,
-            scope: 'https://www.googleapis.com/auth/drive.readonly',
-            callback: async (tokenResponse: any) => {
-                if (tokenResponse.error) {
-                    console.error('Google Auth Error:', tokenResponse.error);
-                    toast({ title: "Authentication Failed", description: `Failed to connect to Google Drive. Error: ${tokenResponse.error}`, variant: "destructive" });
-                    return;
-                }
+        try {
+            const keys = apiKeys ?? await getGoogleApiKeys();
+            if (!keys) {
+                throw new Error("API keys are not available.");
+            }
+            if (!apiKeys) {
+                setApiKeys(keys);
+            }
+            
+            const tokenClient = window.google.accounts.oauth2.initTokenClient({
+                client_id: keys.clientId,
+                scope: 'https://www.googleapis.com/auth/drive.readonly',
+                callback: async (tokenResponse: any) => {
+                    if (tokenResponse.error) {
+                        throw new Error(`Google Auth Error: ${tokenResponse.error}`);
+                    }
 
-                const view = new window.google.picker.View(window.google.picker.ViewId.DOCS);
-                view.setMimeTypes("image/png,image/jpeg,image/jpg,image/gif");
-                
-                const picker = new window.google.picker.PickerBuilder()
-                    .setDeveloperKey(apiKeys.apiKey)
-                    .setOAuthToken(tokenResponse.access_token)
-                    .addView(view)
-                    .setCallback((data: any) => {
-                        if (data.action === window.google.picker.Action.PICKED) {
-                            const fileId = data.docs[0].id;
-                            const webContentLink = `https://drive.google.com/uc?id=${fileId}`;
-                            onChange(webContentLink);
-                        }
-                    })
-                    .build();
-                picker.setVisible(true);
-            },
-        });
-        
-        tokenClient.requestAccessToken();
+                    const view = new window.google.picker.View(window.google.picker.ViewId.DOCS);
+                    view.setMimeTypes("image/png,image/jpeg,image/jpg,image/gif");
+                    
+                    const picker = new window.google.picker.PickerBuilder()
+                        .setDeveloperKey(keys.apiKey)
+                        .setOAuthToken(tokenResponse.access_token)
+                        .addView(view)
+                        .setCallback((data: any) => {
+                            if (data.action === window.google.picker.Action.PICKED) {
+                                const fileId = data.docs[0].id;
+                                const webContentLink = `https://drive.google.com/uc?id=${fileId}`;
+                                onChange(webContentLink);
+                            }
+                            setIsLoading(false);
+                        })
+                        .build();
+                    picker.setVisible(true);
+                },
+            });
+            
+            tokenClient.requestAccessToken();
+
+        } catch (error) {
+            console.error("Google Drive Picker Error:", error);
+            toast({ title: "Error", description: "Could not connect to Google Drive. Please ensure popup blockers are disabled and try again.", variant: "destructive" });
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -114,7 +117,7 @@ const ImagePicker = ({ value, onChange, dataAiHint }: { value: string, onChange:
                 )}
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                <Button variant="outline" className="sm:col-span-1" onClick={handleGoogleDrivePick} disabled={!apiKeys || isLoading}>
+                <Button variant="outline" className="sm:col-span-1" onClick={handleGoogleDrivePick} disabled={isLoading}>
                      {isLoading ? <Loader2 className="animate-spin" /> : <GoogleDriveIcon />}
                     <span>Drive</span>
                 </Button>
