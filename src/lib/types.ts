@@ -1,7 +1,6 @@
 
-
-
 import type { AnswerAnalysis } from "@/ai/flows/analyze-coding-answers";
+import type { GenerateInterviewFeedbackOutput } from "@/ai/flows/generate-interview-feedback";
 import type { QuizState } from "@/app/dashboard/coding-quiz/quiz/page";
 import type { SyllabusDay } from "@/ai/flows/generate-syllabus";
 
@@ -17,6 +16,7 @@ export interface BaseActivity {
         topic: string;
         [key: string]: any;
     };
+    analysis?: any; // To allow for analysis property on all activities
 }
 
 // A specific type for completed quiz results
@@ -38,6 +38,7 @@ export interface InterviewActivity extends BaseActivity {
     type: 'interview';
     transcript: { speaker: string; text: string }[];
     feedback: string;
+    analysis?: GenerateInterviewFeedbackOutput;
     details: {
         topic: string;
         role?: string;
@@ -201,5 +202,3 @@ export interface SurveySubmission {
     name?: string;
     email?: string;
 }
-
-    

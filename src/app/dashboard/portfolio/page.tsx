@@ -60,7 +60,7 @@ const ImagePicker = ({ value, onChange, dataAiHint }: { value: string, onChange:
 
         try {
             const keys = apiKeys ?? await getGoogleApiKeys();
-            if (!keys) {
+            if (!keys.apiKey || !keys.clientId) {
                 throw new Error("API keys are not available.");
             }
             if (!apiKeys) {
