@@ -140,11 +140,11 @@ export default function AboutUsPage() {
                                 <Image src="/about.jpg" alt="Zaid (Arshad)" width={400} height={400} className="w-full h-full object-cover" data-ai-hint="person portrait" />
                             </div>
                             <div className="md:col-span-2 p-8 space-y-4">
-                                <h2 className="text-3xl font-bold font-headline">Meet the Founder</h2>
-                                <h3 className="text-2xl font-semibold text-primary">Zaid (Arshad)</h3>
-                                <p className="text-muted-foreground">
-                                    Zaid is a passionate developer from Karnataka, India, who completed his B.Tech from GITAM, Bangalore. He is driven by a desire to solve the employment problem he observed firsthand, where many talented students lack the specific skills needed to qualify for top jobs. Talxify was born from this vision to equip students with the practical experience and confidence required to succeed in technical interviews.
-                                </p>
+                                <h3 className="text-lg font-semibold text-primary">A Note from the Founder</h3>
+                                <h2 className="text-3xl font-bold font-headline">Zaid (Arshad)</h2>
+                                <blockquote className="border-l-4 border-primary pl-4 italic text-muted-foreground">
+                                    "I saw too many brilliant students struggle to land the jobs they deserved, not because they lacked talent, but because they lacked the right kind of practice. I built Talxify to be the bridge between academic knowledge and real-world interview success. My goal is to empower every developer to walk into their interviews with the confidence and skills to shine."
+                                </blockquote>
                                 <div className="flex items-center gap-4 pt-2">
                                     <Button variant="ghost" size="icon" asChild>
                                         <a href="https://www.linkedin.com/in/arshad-momin-a3139b21b/" target="_blank" rel="noopener noreferrer"><Linkedin /></a>

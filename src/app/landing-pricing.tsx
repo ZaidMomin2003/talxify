@@ -10,6 +10,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
 
 const freePlan = {
     name: 'Free',
@@ -107,8 +108,9 @@ export default function LandingPricing() {
               </CardFooter>
           </Card>
 
-          <Card className="flex flex-col shadow-lg transition-transform duration-300 w-full border-primary border-2 shadow-primary/20 md:-translate-y-4">
-              <CardHeader className="text-center">
+          <Card className="flex flex-col shadow-lg transition-transform duration-300 w-full border-primary border-2 shadow-primary/20 md:-translate-y-4 relative overflow-hidden">
+                <Badge className="absolute top-0 right-0 m-4">Most Popular</Badge>
+                <CardHeader className="text-center">
                   <Sparkles className="h-10 w-10 mx-auto text-primary mb-2" />
                   <CardTitle className="text-3xl font-bold font-headline">Pro</CardTitle>
                   <div className="flex items-baseline justify-center gap-1">
@@ -128,6 +130,9 @@ export default function LandingPricing() {
                           </li>
                       ))}
                   </ul>
+                   <div className="mt-6 pt-4 border-t text-center text-sm text-muted-foreground">
+                        7-Day Money-Back Guarantee
+                   </div>
               </CardContent>
               <CardFooter>
                 <Button asChild className="w-full" size="lg">

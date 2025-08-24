@@ -13,6 +13,7 @@ import LandingHeader from "./landing-header";
 import LandingFooter from "./landing-footer";
 import { Badge } from "@/components/ui/badge";
 import LandingProductFeatures from "./landing-product-features";
+import LandingHowItWorks from "./landing-how-it-works";
 
 
 export default function LandingPage() {
@@ -21,6 +22,8 @@ export default function LandingPage() {
        <LandingHeader />
       <main className="flex-1">
         <AppHero />
+        
+        <LandingHowItWorks />
         
         {/* Video Section */}
         <section id="see-in-action" className="py-16 sm:py-24 bg-background">

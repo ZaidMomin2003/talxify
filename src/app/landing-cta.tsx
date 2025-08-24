@@ -2,7 +2,7 @@
 'use client';
 
 import { Button } from "@/components/ui/button";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Video } from "lucide-react";
 import Link from "next/link";
 
 
@@ -22,7 +22,7 @@ export default function LandingCta() {
 
       <div className="relative z-10">
         <h1 className="mb-3 text-3xl font-bold text-primary-foreground sm:text-4xl md:mb-4 md:text-5xl">
-          Ready to Land Your Dream Job?
+          Ready to Ace Your Next Interview?
         </h1>
         <p className="mb-6 max-w-md text-base text-primary-foreground/90 sm:text-lg md:mb-8">
           Start preparing today with AI-powered mock interviews and coding assistance. Your next career move is just a click away.
@@ -43,8 +43,9 @@ export default function LandingCta() {
                 className="rounded-full border-primary-foreground/30 bg-transparent text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"
                 size="lg"
               >
-                <Link href="#features">
-                  Explore Features
+                <Link href="#see-in-action">
+                    <Video className="mr-2" />
+                  See It In Action
                 </Link>
             </Button>
         </div>
