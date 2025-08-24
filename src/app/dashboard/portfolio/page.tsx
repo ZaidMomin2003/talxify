@@ -20,14 +20,9 @@ import { Slider } from "@/components/ui/slider";
 import { differenceInHours } from 'date-fns';
 import Image from "next/image";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger, DialogClose } from "@/components/ui/dialog";
+import { useGapiScript } from "@/hooks/use-gapi-script";
+import { getGoogleApiKeys } from "@/app/actions/google-drive";
 
-const colorOptions = [
-    { name: 'Default', hsl: '221.2 83.2% 53.3%' },
-    { name: 'Green', hsl: '150 80% 50%' },
-    { name: 'Orange', hsl: '30 90% 55%' },
-    { name: 'Purple', hsl: '260 85% 65%' },
-    { name: 'Red', hsl: '0 85% 60%' },
-];
 
 const GoogleDriveIcon = () => (
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -42,6 +37,62 @@ const GoogleDriveIcon = () => (
 )
 
 const ImagePicker = ({ value, onChange, dataAiHint }: { value: string, onChange: (value: string) => void, dataAiHint: string }) => {
+    const { isGapiLoaded, isGisLoaded } = useGapiScript();
+    const { toast } = useToast();
+    const [isLoading, setIsLoading] = useState(false);
+    const [apiKeys, setApiKeys] = useState<{ apiKey: string; clientId: string } | null>(null);
+
+    useEffect(() => {
+        const fetchKeys = async () => {
+            try {
+                const keys = await getGoogleApiKeys();
+                setApiKeys(keys);
+            } catch (error) {
+                console.error(error);
+                toast({ title: "Configuration Error", description: "Google Drive integration is not configured correctly.", variant: "destructive" });
+            }
+        };
+        fetchKeys();
+    }, [toast]);
+    
+    const handleGoogleDrivePick = () => {
+        if (!isGapiLoaded || !isGisLoaded || !apiKeys) {
+            toast({ title: "Please Wait", description: "Google Drive is still initializing. Please try again in a moment." });
+            return;
+        }
+
+        const tokenClient = window.google.accounts.oauth2.initTokenClient({
+            client_id: apiKeys.clientId,
+            scope: 'https://www.googleapis.com/auth/drive.readonly',
+            callback: async (tokenResponse) => {
+                if (tokenResponse.error) {
+                    console.error('Google Auth Error:', tokenResponse.error);
+                    toast({ title: "Authentication Failed", description: `Failed to connect to Google Drive. Error: ${tokenResponse.error}`, variant: "destructive" });
+                    return;
+                }
+
+                const view = new window.google.picker.View(window.google.picker.ViewId.DOCS);
+                view.setMimeTypes("image/png,image/jpeg,image/jpg,image/gif");
+                
+                const picker = new window.google.picker.PickerBuilder()
+                    .setAppId(apiKeys.apiKey.split("-")[0]) // A trick to derive the App ID
+                    .setOAuthToken(tokenResponse.access_token)
+                    .addView(view)
+                    .setCallback((data: any) => {
+                        if (data.action === window.google.picker.Action.PICKED) {
+                            const fileId = data.docs[0].id;
+                            const webContentLink = `https://drive.google.com/uc?id=${fileId}`;
+                            onChange(webContentLink);
+                        }
+                    })
+                    .build();
+                picker.setVisible(true);
+            },
+        });
+        
+        tokenClient.requestAccessToken();
+    };
+
     return (
         <div className="space-y-3">
             <div className="aspect-video w-full rounded-lg bg-muted border-2 border-dashed flex items-center justify-center overflow-hidden">
@@ -55,8 +106,8 @@ const ImagePicker = ({ value, onChange, dataAiHint }: { value: string, onChange:
                 )}
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                <Button variant="outline" className="sm:col-span-1" onClick={() => alert("Coming Soon!")}>
-                    <GoogleDriveIcon />
+                <Button variant="outline" className="sm:col-span-1" onClick={handleGoogleDrivePick} disabled={!apiKeys || isLoading}>
+                     {isLoading ? <Loader2 className="animate-spin" /> : <GoogleDriveIcon />}
                     <span>Drive</span>
                 </Button>
 
