@@ -118,8 +118,8 @@ const ImagePicker = ({ value, onChange, dataAiHint }: { value: string, onChange:
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 <Button variant="outline" className="sm:col-span-1" onClick={handleGoogleDrivePick} disabled={isLoading || !isGapiLoaded || !isGisLoaded}>
-                     {isLoading ? <Loader2 className="animate-spin" /> : <GoogleDriveIcon />}
-                    <span>Drive</span>
+                     {(!isGapiLoaded || !isGisLoaded) ? <Loader2 className="animate-spin" /> : <GoogleDriveIcon />}
+                    <span>{(!isGapiLoaded || !isGisLoaded) ? 'Loading Drive...' : 'Drive'}</span>
                 </Button>
 
                 <Dialog>
