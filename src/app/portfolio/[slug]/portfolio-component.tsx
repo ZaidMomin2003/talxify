@@ -1,5 +1,4 @@
 
-
 'use client'
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -98,17 +97,6 @@ function PortfolioHeader({ name, email }: { name: string, email: string }) {
         </header>
     );
 }
-
-// Simple sanitizer to prevent XSS. In a real app, use a robust library like DOMPurify.
-const sanitize = (text: string) => {
-    if (typeof window === 'undefined') {
-        return text;
-    }
-    const temp = document.createElement('div');
-    temp.textContent = text;
-    return temp.innerHTML;
-};
-
 
 export default function PortfolioComponent({ userData }: { userData: UserData | null }) {
     const portfolio = userData?.portfolio;
@@ -211,7 +199,7 @@ export default function PortfolioComponent({ userData }: { userData: UserData | 
                          <Image src={portfolio.personalInfo.bannerUrl || 'https://placehold.co/1200x300.png'} alt="Portfolio Banner" width={1200} height={300} className="w-full h-48 md:h-64 object-cover rounded-xl shadow-lg" data-ai-hint="abstract banner" />
 
                         <Section id="about" icon={<UserIcon />} title="About Me">
-                            <p className="text-lg text-muted-foreground leading-relaxed">{sanitize(portfolio.personalInfo.bio)}</p>
+                            <p className="text-lg text-muted-foreground leading-relaxed">{portfolio.personalInfo.bio}</p>
                         </Section>
                         
                         {youtubeEmbedUrl && (
@@ -301,7 +289,7 @@ export default function PortfolioComponent({ userData }: { userData: UserData | 
                                             <p className="inline-flex items-center gap-2"><Building className="w-3.5 h-3.5" /> {exp.company}</p>
                                             <p className="inline-flex items-center gap-2"><Calendar className="w-3.5 h-3.5" /> {exp.duration}</p>
                                         </div>
-                                        <p className="mt-2 text-muted-foreground" dangerouslySetInnerHTML={{ __html: sanitize(exp.description).replace(/\n/g, '<br />') }}></p>
+                                        <p className="mt-2 text-muted-foreground" dangerouslySetInnerHTML={{ __html: exp.description.replace(/\n/g, '<br />') }}></p>
                                     </div>
                                 ))}
                             </div>
@@ -337,7 +325,7 @@ export default function PortfolioComponent({ userData }: { userData: UserData | 
                                             </CardTitle>
                                         </CardHeader>
                                         <CardContent className="flex-grow flex flex-col">
-                                            <p className="text-muted-foreground mb-4 flex-grow" dangerouslySetInnerHTML={{ __html: sanitize(project.description).replace(/\n/g, '<br />') }}></p>
+                                            <p className="text-muted-foreground mb-4 flex-grow" dangerouslySetInnerHTML={{ __html: project.description.replace(/\n/g, '<br />') }}></p>
                                             <div className="flex flex-wrap gap-2 mt-auto">
                                                 {project.tags.split(',').map(tag => tag.trim() && <Badge key={tag} variant="secondary">{tag}</Badge>)}
                                             </div>
@@ -369,7 +357,7 @@ export default function PortfolioComponent({ userData }: { userData: UserData | 
                                             {ach.imageUrl && <Image src={ach.imageUrl} alt="Achievement" width={40} height={40} className="rounded-md mt-1 object-cover" data-ai-hint="achievement award" />}
                                             <div className="flex-1">
                                                 <Star className="w-4 h-4 text-primary inline-block mr-2" />
-                                                <span className="text-muted-foreground" dangerouslySetInnerHTML={{ __html: sanitize(ach.description) }}></span>
+                                                <span className="text-muted-foreground">{ach.description}</span>
                                             </div>
                                         </li>
                                     ))}
@@ -381,8 +369,8 @@ export default function PortfolioComponent({ userData }: { userData: UserData | 
                             <div className="space-y-6">
                                 {portfolio.testimonials.map((test, index) => (
                                     <blockquote key={index} className="p-6 bg-muted/50 rounded-lg border-l-4 border-primary">
-                                        <p className="italic text-lg" dangerouslySetInnerHTML={{ __html: `"${sanitize(test.testimonial)}"` }}></p>
-                                        <footer className="mt-4 text-right font-semibold" dangerouslySetInnerHTML={{ __html: `- ${sanitize(test.author)}` }}></footer>
+                                        <p className="italic text-lg">"{test.testimonial}"</p>
+                                        <footer className="mt-4 text-right font-semibold">- {test.author}</footer>
                                     </blockquote>
                                 ))}
                             </div>
@@ -394,7 +382,7 @@ export default function PortfolioComponent({ userData }: { userData: UserData | 
                                     <AccordionItem value={`item-${index}`} key={index}>
                                         <AccordionTrigger className="text-lg text-left">{faq.question}</AccordionTrigger>
                                         <AccordionContent className="text-base text-muted-foreground">
-                                            <div dangerouslySetInnerHTML={{ __html: sanitize(faq.answer).replace(/\n/g, '<br />') }} />
+                                            <div dangerouslySetInnerHTML={{ __html: faq.answer.replace(/\n/g, '<br />') }} />
                                         </AccordionContent>
                                     </AccordionItem>
                                 ))}
@@ -412,4 +400,5 @@ export default function PortfolioComponent({ userData }: { userData: UserData | 
             </div>
         </div>
     );
-}
+
+    
