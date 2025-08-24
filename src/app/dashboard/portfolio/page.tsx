@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { PlusCircle, Trash2, Loader2, Lock, Gem } from "lucide-react";
+import { PlusCircle, Trash2, Loader2, Lock, Gem, ExternalLink, Link as LinkIcon, UploadCloud, Image as ImageIcon } from "lucide-react";
 import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/auth-context";
@@ -18,7 +18,8 @@ import { useToast } from "@/hooks/use-toast";
 import { initialPortfolioData } from "@/lib/initial-data";
 import { Slider } from "@/components/ui/slider";
 import { differenceInHours } from 'date-fns';
-
+import Image from "next/image";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger, DialogClose } from "@/components/ui/dialog";
 
 const colorOptions = [
     { name: 'Default', hsl: '221.2 83.2% 53.3%' },
@@ -27,6 +28,68 @@ const colorOptions = [
     { name: 'Purple', hsl: '260 85% 65%' },
     { name: 'Red', hsl: '0 85% 60%' },
 ];
+
+const GoogleDriveIcon = () => (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M10.2396 16.8239L15.2931 7.8974L23.136 7.8974L15.3375 21.9904L7.49463 21.9904L0.69751 9.77124L5.70659 9.77124L10.2396 16.8239Z" fill="#34A853"/>
+        <path d="M23.1348 7.89743L15.6562 21.3283L17.7618 21.9891L24.0012 11.666L23.1348 7.89743Z" fill="#188038"/>
+        <path d="M7.49463 21.9904L10.7483 16.8239L5.70659 9.77124L3.84277 12.9868L7.49463 21.9904Z" fill="#188038"/>
+        <path d="M7.49463 21.9904L10.2396 16.8239H18.9839L15.2931 7.8974H23.136L15.3375 21.9904H7.49463Z" fill-opacity="0.2"/>
+        <path d="M8.56445 2.00977L15.3375 2.00977L23.136 7.8975L15.6562 7.8975L8.56445 2.00977Z" fill="#FFC107"/>
+        <path d="M0.69751 9.77121L8.56453 2.00977L15.6563 7.89748L7.49471 21.9904L0.69751 9.77121Z" fill="#4285F4"/>
+        <path d="M8.56445 2.00977L7.49463 3.86348L8.14081 9.77124H0.69751L8.56445 2.00977Z" fill="#1967D2"/>
+    </g>
+</svg>
+)
+
+const ImagePicker = ({ value, onChange, dataAiHint }: { value: string, onChange: (value: string) => void, dataAiHint: string }) => {
+    return (
+        <div className="space-y-3">
+            <div className="aspect-video w-full rounded-lg bg-muted border-2 border-dashed flex items-center justify-center overflow-hidden">
+                {value ? (
+                    <Image src={value} alt="Image preview" width={400} height={210} className="w-full h-full object-cover" data-ai-hint={dataAiHint} />
+                ) : (
+                    <div className="text-center text-muted-foreground p-4">
+                        <ImageIcon className="mx-auto h-10 w-10 mb-2" />
+                        <p>No image selected</p>
+                    </div>
+                )}
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <Button variant="outline" className="sm:col-span-1" onClick={() => alert("Coming Soon!")}>
+                    <GoogleDriveIcon />
+                    <span>Drive</span>
+                </Button>
+
+                <Dialog>
+                    <DialogTrigger asChild>
+                        <Button variant="outline" className="sm:col-span-1">
+                            <LinkIcon className="h-4 w-4" />
+                            <span>URL</span>
+                        </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                         <DialogHeader>
+                            <DialogTitle>Enter Image URL</DialogTitle>
+                            <DialogDescription>Paste the direct link to your image below.</DialogDescription>
+                         </DialogHeader>
+                         <Input value={value} onChange={(e) => onChange(e.target.value)} placeholder="https://example.com/image.png" />
+                         <DialogFooter>
+                            <DialogClose asChild>
+                                <Button>Done</Button>
+                            </DialogClose>
+                         </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+                
+                <Button variant="destructive" className="sm:col-span-1" onClick={() => onChange("")}>
+                    <Trash2 className="h-4 w-4"/>
+                    <span>Remove</span>
+                </Button>
+            </div>
+        </div>
+    )
+}
 
 function LockedFeature() {
     return (
@@ -210,11 +273,12 @@ export default function PortfolioPage() {
               <Textarea id="bio" value={portfolio.personalInfo.bio} onChange={(e) => setPortfolio({...portfolio, personalInfo: {...portfolio.personalInfo, bio: e.target.value}})} />
             </div>
              <div>
-              <Label htmlFor="bannerUrl">Portfolio Banner URL</Label>
-              <Input id="bannerUrl" placeholder="e.g., https://imgur.com/your-banner.png" value={portfolio.personalInfo.bannerUrl} onChange={(e) => setPortfolio({...portfolio, personalInfo: {...portfolio.personalInfo, bannerUrl: e.target.value}})} />
-              <p className="text-sm text-muted-foreground mt-1">
-                Tip: Upload to a host like Imgur, or use a Google Drive link (ensure sharing is public). Then paste the direct link here.
-              </p>
+              <Label htmlFor="bannerUrl">Portfolio Banner</Label>
+              <ImagePicker 
+                value={portfolio.personalInfo.bannerUrl}
+                onChange={(value) => setPortfolio({...portfolio, personalInfo: {...portfolio.personalInfo, bannerUrl: value}})}
+                dataAiHint="abstract banner"
+              />
             </div>
             <div>
               <Label htmlFor="youtubeUrl">YouTube Video URL</Label>
@@ -344,16 +408,17 @@ export default function PortfolioPage() {
                     <div><Label>Tags (comma separated)</Label><Input value={item.tags} onChange={(e) => handleFieldChange('projects', index, 'tags', e.target.value)} /></div>
                     <div><Label>Project Link</Label><Input value={item.link} onChange={(e) => handleFieldChange('projects', index, 'link', e.target.value)} /></div>
                     <div>
-                        <Label>Image URL</Label>
-                        <Input value={item.imageUrl} onChange={(e) => handleFieldChange('projects', index, 'imageUrl', e.target.value)} />
-                        <p className="text-sm text-muted-foreground mt-1">
-                          Tip: Upload to a host like Imgur, or use a Google Drive link (ensure sharing is public). Then paste the direct link here.
-                        </p>
+                        <Label>Image</Label>
+                         <ImagePicker 
+                            value={item.imageUrl}
+                            onChange={(value) => handleFieldChange('projects', index, 'imageUrl', value)}
+                            dataAiHint="project screenshot"
+                        />
                     </div>
                     <div><Label>Description</Label><Textarea value={item.description} onChange={(e) => handleFieldChange('projects', index, 'description', e.target.value)} /></div>
                 </div>
             ))}
-            <Button variant="outline" className="w-full" onClick={() => handleAddItem('projects', { title: '', description: '', link: '', tags: '', imageUrl: 'https://placehold.co/1200x630.png' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Project</Button>
+            <Button variant="outline" className="w-full" onClick={() => handleAddItem('projects', { title: '', description: '', link: '', tags: '', imageUrl: '' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Project</Button>
           </CardContent>
         </Card>
 
@@ -367,15 +432,16 @@ export default function PortfolioPage() {
                     <div><Label>Issuing Body</Label><Input value={item.body} onChange={(e) => handleFieldChange('certificates', index, 'body', e.target.value)} /></div>
                     <div><Label>Date Obtained</Label><Input type="month" value={item.date} onChange={(e) => handleFieldChange('certificates', index, 'date', e.target.value)} /></div>
                     <div>
-                        <Label>Image URL</Label>
-                        <Input value={item.imageUrl} onChange={(e) => handleFieldChange('certificates', index, 'imageUrl', e.target.value)} />
-                         <p className="text-sm text-muted-foreground mt-1">
-                           Tip: Upload to a host like Imgur, or use a Google Drive link (ensure sharing is public). Then paste the direct link here.
-                        </p>
+                        <Label>Image</Label>
+                         <ImagePicker 
+                            value={item.imageUrl}
+                            onChange={(value) => handleFieldChange('certificates', index, 'imageUrl', value)}
+                            dataAiHint="certificate logo"
+                        />
                     </div>
                 </div>
             ))}
-            <Button variant="outline" className="w-full" onClick={() => handleAddItem('certificates', { name: '', body: '', date: '', imageUrl: 'https://placehold.co/100x100.png' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Certificate</Button>
+            <Button variant="outline" className="w-full" onClick={() => handleAddItem('certificates', { name: '', body: '', date: '', imageUrl: '' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Certificate</Button>
           </CardContent>
         </Card>
 
@@ -387,15 +453,16 @@ export default function PortfolioPage() {
                         <Button variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => handleRemoveItem('achievements', index)}><Trash2 className="w-4 h-4" /></Button>
                         <div><Label>Description</Label><Input value={item.description} onChange={(e) => handleSimpleListChange('achievements', index, 'description', e.target.value)} /></div>
                         <div>
-                            <Label>Image URL</Label>
-                            <Input value={item.imageUrl} onChange={(e) => handleSimpleListChange('achievements', index, 'imageUrl', e.target.value)} />
-                             <p className="text-sm text-muted-foreground mt-1">
-                               Tip: Upload to a host like Imgur, or use a Google Drive link (ensure sharing is public). Then paste the direct link here.
-                            </p>
+                            <Label>Image</Label>
+                            <ImagePicker 
+                                value={item.imageUrl}
+                                onChange={(value) => handleSimpleListChange('achievements', index, 'imageUrl', value)}
+                                dataAiHint="achievement award"
+                            />
                         </div>
                     </div>
                 ))}
-                <Button variant="outline" className="w-full" onClick={() => handleAddItem('achievements', { description: '', imageUrl: 'https://placehold.co/100x100.png' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Achievement</Button>
+                <Button variant="outline" className="w-full" onClick={() => handleAddItem('achievements', { description: '', imageUrl: '' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Achievement</Button>
             </CardContent>
         </Card>
 
@@ -429,7 +496,9 @@ export default function PortfolioPage() {
 
         <div className="flex justify-end gap-2 pt-4">
             <Button asChild variant="outline" size="lg">
-              <Link href={`/portfolio/${portfolio.personalInfo.slug}`}>Preview</Link>
+              <a href={`/portfolio/${portfolio.personalInfo.slug}`} target="_blank" rel="noopener noreferrer">
+                <ExternalLink className="mr-2 h-4 w-4" /> Preview
+              </a>
             </Button>
             <Button size="lg" onClick={handleSave} disabled={isSaving}>
                 {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
