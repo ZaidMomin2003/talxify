@@ -57,7 +57,6 @@ const ImagePicker = ({ value, onChange, dataAiHint }: { value: string, onChange:
                 setApiKeys(keys);
             } catch (error) {
                 console.error(error);
-                // Do not show a toast here by default, as the action itself might not be triggered by the user
                 // The disabled state of the button will indicate the issue.
             }
         };
