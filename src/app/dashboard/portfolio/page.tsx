@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import { Button } from "@/components/ui/button";
@@ -198,9 +199,9 @@ export default function PortfolioPage() {
                 <Label htmlFor="slug">Portfolio Slug</Label>
                 <div className="relative">
                     <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-muted-foreground">
-                       talxify.space/
+                       talxify.space/portfolio/
                     </span>
-                    <Input id="slug" className="pl-24" value={portfolio.personalInfo.slug} onChange={handleSlugChange} />
+                    <Input id="slug" className="pl-32" value={portfolio.personalInfo.slug} onChange={handleSlugChange} />
                 </div>
                 <p className="text-sm text-muted-foreground mt-1">This will be your unique portfolio URL. Use only letters, numbers, and hyphens.</p>
             </div>
@@ -428,7 +429,7 @@ export default function PortfolioPage() {
 
         <div className="flex justify-end gap-2 pt-4">
             <Button asChild variant="outline" size="lg">
-              <Link href={`/${portfolio.personalInfo.slug}`}>Preview</Link>
+              <Link href={`/portfolio/${portfolio.personalInfo.slug}`}>Preview</Link>
             </Button>
             <Button size="lg" onClick={handleSave} disabled={isSaving}>
                 {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

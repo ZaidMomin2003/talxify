@@ -1,6 +1,6 @@
 
 import React from "react";
-import { getUserBySlug } from "../zaidmin/actions";
+import { getUserBySlug } from "../../zaidmin/actions";
 import { initialPortfolioData } from "@/lib/initial-data";
 import PortfolioComponent from "./portfolio-component";
 import type { Metadata } from 'next';
