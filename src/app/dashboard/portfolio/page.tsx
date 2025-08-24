@@ -57,22 +57,23 @@ const ImagePicker = ({ value, onChange, dataAiHint }: { value: string, onChange:
                 setApiKeys(keys);
             } catch (error) {
                 console.error(error);
-                toast({ title: "Configuration Error", description: "Google Drive integration is not configured correctly.", variant: "destructive" });
+                // Do not show a toast here by default, as the action itself might not be triggered by the user
+                // The disabled state of the button will indicate the issue.
             }
         };
         fetchKeys();
-    }, [toast]);
+    }, []);
     
     const handleGoogleDrivePick = () => {
         if (!isGapiLoaded || !isGisLoaded || !apiKeys) {
-            toast({ title: "Please Wait", description: "Google Drive is still initializing. Please try again in a moment." });
+            toast({ title: "Please Wait", description: "Google Drive is still initializing or not configured correctly. Please try again in a moment.", variant: 'destructive' });
             return;
         }
 
         const tokenClient = window.google.accounts.oauth2.initTokenClient({
             client_id: apiKeys.clientId,
             scope: 'https://www.googleapis.com/auth/drive.readonly',
-            callback: async (tokenResponse) => {
+            callback: async (tokenResponse: any) => {
                 if (tokenResponse.error) {
                     console.error('Google Auth Error:', tokenResponse.error);
                     toast({ title: "Authentication Failed", description: `Failed to connect to Google Drive. Error: ${tokenResponse.error}`, variant: "destructive" });
@@ -83,7 +84,7 @@ const ImagePicker = ({ value, onChange, dataAiHint }: { value: string, onChange:
                 view.setMimeTypes("image/png,image/jpeg,image/jpg,image/gif");
                 
                 const picker = new window.google.picker.PickerBuilder()
-                    .setAppId(apiKeys.apiKey.split("-")[0]) // A trick to derive the App ID
+                    .setDeveloperKey(apiKeys.apiKey)
                     .setOAuthToken(tokenResponse.access_token)
                     .addView(view)
                     .setCallback((data: any) => {
