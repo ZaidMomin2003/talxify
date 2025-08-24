@@ -1,4 +1,5 @@
 
+
 'use client'
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -392,7 +393,9 @@ export default function PortfolioComponent({ userData }: { userData: UserData | 
                                 {portfolio.faqs.map((faq, index) => (
                                     <AccordionItem value={`item-${index}`} key={index}>
                                         <AccordionTrigger className="text-lg text-left">{faq.question}</AccordionTrigger>
-                                        <AccordionContent className="text-base text-muted-foreground" dangerouslySetInnerHTML={{ __html: sanitize(faq.answer) }}></AccordionContent>
+                                        <AccordionContent className="text-base text-muted-foreground">
+                                            <div dangerouslySetInnerHTML={{ __html: sanitize(faq.answer) }} />
+                                        </AccordionContent>
                                     </AccordionItem>
                                 ))}
                             </Accordion>
