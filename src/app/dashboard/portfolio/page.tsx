@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { PlusCircle, Trash2, Loader2, Lock, Gem, ExternalLink, Link as LinkIcon, UploadCloud, Image as ImageIcon } from "lucide-react";
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/auth-context";
 import { getPortfolio, updatePortfolio, getUserData } from "@/lib/firebase-service";
@@ -131,6 +131,15 @@ function LockedFeature() {
         </main>
     )
 }
+
+const colorOptions = [
+    { name: 'Default', hsl: '221.2 83.2% 53.3%' },
+    { name: 'Forest Green', hsl: '142.1 76.2% 36.3%' },
+    { name: 'Midnight Blue', hsl: '210 40% 30%' },
+    { name: 'Ruby Red', hsl: '351 83% 40%' },
+    { name: 'Royal Purple', hsl: '262 52% 47%' },
+];
+
 
 export default function PortfolioPage() {
   const { user } = useAuth();
