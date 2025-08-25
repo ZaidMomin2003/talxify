@@ -20,106 +20,68 @@ import { Slider } from "@/components/ui/slider";
 import { differenceInHours } from 'date-fns';
 import Image from "next/image";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger, DialogClose } from "@/components/ui/dialog";
-import { useGapiScript } from "@/hooks/use-gapi-script";
-import { getGoogleApiKeys } from "@/app/actions/google-drive";
+import Script from "next/script";
 
 
-const GoogleDriveIcon = () => (
+const CloudinaryIcon = () => (
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M10.2396 16.8239L15.2931 7.8974L23.136 7.8974L15.3375 21.9904L7.49463 21.9904L0.69751 9.77124L5.70659 9.77124L10.2396 16.8239Z" fill="#34A853"/>
-        <path d="M23.1348 7.89743L15.6562 21.3283L17.7618 21.9891L24.0012 11.666L23.1348 7.89743Z" fill="#188038"/>
-        <path d="M7.49463 21.9904L10.7483 16.8239L5.70659 9.77124L3.84277 12.9868L7.49463 21.9904Z" fill="#188038"/>
-        <path d="M8.56445 2.00977L15.3375 2.00977L23.136 7.8975L15.6562 7.8975L8.56445 2.00977Z" fill="#FFC107"/>
-        <path d="M0.69751 9.77121L8.56453 2.00977L15.6563 7.89748L7.49471 21.9904L0.69751 9.77121Z" fill="#4285F4"/>
-        <path d="M8.56445 2.00977L7.49463 3.86348L8.14081 9.77124H0.69751L8.56445 2.00977Z" fill="#1967D2"/>
-        <path d="M7.49463 21.9904L10.2396 16.8239H18.9839L15.2931 7.8974H23.136L15.3375 21.9904H7.49463Z" fillOpacity="0.2"/>
+        <path d="M15.129 23.333c-6.108 0-11.23-4.7-11.23-10.82 0-5.943 4.908-10.82 11.23-10.82 1.637 0 3.342.38 4.887 1.14C21.411 2.373 19.866 2 18.257 2c-6.108 0-11.23 4.7-11.23 10.82 0 5.943 4.908 10.82 11.23 10.82.99 0 1.98-.152 2.871-.456-1.14.76-2.585 1.14-4.028 1.14z" fill="#F4B03E"></path>
+        <path d="M22.846 12.333c0-1.825-.608-3.422-1.748-4.752-1.516-1.748-3.8-2.813-6.157-2.813-1.637 0-3.342.38-4.887 1.14C8.66 7.428 7.029 9.775 7.029 12.507c0 5.943 4.908 10.82 11.23 10.82.99 0 1.98-.152 2.871-.456.99-.304 1.825-.76 2.585-1.368 1.14-1.064 1.9-2.508 1.9-4.18z" fill="url(#a)" opacity="0.6"></path>
+        <path d="M22.846 12.333c0-1.825-.608-3.422-1.748-4.752-1.516-1.748-3.8-2.813-6.157-2.813-1.637 0-3.342.38-4.887 1.14C8.66 7.428 7.029 9.775 7.029 12.507c0 5.943 4.908 10.82 11.23 10.82.99 0 1.98-.152 2.871-.456.99-.304 1.825-.76 2.585-1.368 1.14-1.064 1.9-2.508 1.9-4.18z" fill="#2E70A9"></path>
+        <path d="M23.987 11.725c0-1.749-.684-3.347-1.825-4.599-1.516-1.596-3.725-2.66-6.157-2.66-1.637 0-3.342.38-4.887 1.14 1.292-1.444 3.193-2.356 5.174-2.356 4.908 0 8.688 3.498 8.688 7.6.086 2.053-.77 3.877-2.053 5.174-1.368 1.292-3.194 2.129-5.175 2.129-1.825 0-3.498-.77-4.724-1.976a7.35 7.35 0 0 1-1.292-1.672c.456.076.912.076 1.368.076 4.908 0 8.688-3.422 8.688-7.524z" fill="#58A663"></path>
+        <defs>
+            <linearGradient id="a" x1="14.398" y1="13.111" x2="22.541" y2="20.322" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#fff" stopOpacity="0.4"></stop>
+            <stop offset="1" stopColor="#fff" stopOpacity="0"></stop>
+            </linearGradient>
+        </defs>
     </svg>
-)
+);
 
-const colorOptions = [
-    { name: 'Default Blue', hsl: '221.2 83.2% 53.3%' },
-    { name: 'Forest Green', hsl: '142.1 76.2% 36.3%' },
-    { name: 'Ruby Red', hsl: '346.8 77.2% 49.8%' },
-    { name: 'Royal Purple', hsl: '271.2 76.3% 53.5%' },
-    { name: 'Goldenrod', hsl: '43.3 95.5% 56.7%' },
-];
 
 const ImagePicker = ({ value, onChange, dataAiHint }: { value: string, onChange: (value: string) => void, dataAiHint: string }) => {
-    const { gapi, gis, isGapiLoaded, isGisLoaded } = useGapiScript();
     const { toast } = useToast();
-    const [isPickerLoading, setIsPickerLoading] = useState(false);
-    const [apiKeys, setApiKeys] = useState<{ apiKey: string; clientId: string } | null>(null);
+    const [isCloudinaryLoaded, setIsCloudinaryLoaded] = useState(false);
+    const cloudinaryRef = useRef<any>();
+    const widgetRef = useRef<any>();
 
     useEffect(() => {
-        // Pre-fetch the API keys when the component mounts
-        const fetchKeys = async () => {
-            try {
-                const keys = await getGoogleApiKeys();
-                setApiKeys(keys);
-            } catch (error) {
-                 toast({ title: "Configuration Error", description: "Could not load Google Drive credentials. Please contact support.", variant: 'destructive' });
-            }
-        };
-        fetchKeys();
-    }, [toast]);
-
-
-    const handleGoogleDrivePick = async () => {
-        setIsPickerLoading(true);
-        if (!isGapiLoaded || !isGisLoaded || !gapi || !gis) {
-            toast({ title: "Please Wait", description: "Google Drive is still initializing. Please try again in a moment.", variant: 'destructive' });
-            setIsPickerLoading(false);
-            return;
-        }
-
-        if (!apiKeys?.apiKey || !apiKeys?.clientId) {
-            toast({ title: "Configuration Missing", description: "Google API keys are not available.", variant: 'destructive' });
-            setIsPickerLoading(false);
-            return;
-        }
-
-        try {
-            const tokenClient = gis.oauth2.initTokenClient({
-                client_id: apiKeys.clientId,
-                scope: 'https://www.googleapis.com/auth/drive.readonly',
-                callback: async (tokenResponse: any) => {
-                    if (tokenResponse.error) {
-                        throw new Error(`Google Auth Error: ${tokenResponse.error}`);
-                    }
-
-                    const view = new gapi.picker.View(gapi.picker.ViewId.DOCS);
-                    view.setMimeTypes("image/png,image/jpeg,image/jpg,image/gif");
-                    
-                    const picker = new gapi.picker.PickerBuilder()
-                        .setDeveloperKey(apiKeys.apiKey)
-                        .setOAuthToken(tokenResponse.access_token)
-                        .addView(view)
-                        .setCallback((data: any) => {
-                            if (data.action === gapi.picker.Action.PICKED) {
-                                const fileId = data.docs[0].id;
-                                const webContentLink = `https://drive.google.com/uc?id=${fileId}`;
-                                onChange(webContentLink);
-                            }
-                            setIsPickerLoading(false);
-                        })
-                        .build();
-                    picker.setVisible(true);
-                },
+        // When the script is loaded, create the widget instance
+        if (isCloudinaryLoaded) {
+            cloudinaryRef.current = (window as any).cloudinary;
+            widgetRef.current = cloudinaryRef.current.createUploadWidget({
+                cloudName: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
+                uploadPreset: process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET,
+                sources: ['local', 'url', 'camera', 'instagram', 'facebook'],
+                multiple: false,
+                cropping: true,
+                croppingAspectRatio: 1.91, // Standard banner/card aspect ratio
+                showAdvancedOptions: false,
+                folder: 'talxify-portfolios'
+            }, (error: any, result: any) => {
+                if (!error && result && result.event === "success") {
+                    onChange(result.info.secure_url);
+                }
+                if (error) {
+                    console.error("Cloudinary Error:", error);
+                    toast({ title: 'Upload Error', description: 'Failed to upload image. Please try again.', variant: 'destructive'});
+                }
             });
-            
-            tokenClient.requestAccessToken();
-
-        } catch (error) {
-            console.error("Google Drive Picker Error:", error);
-            toast({ title: "Error", description: "Could not connect to Google Drive. Please ensure popup blockers are disabled and try again.", variant: "destructive" });
-            setIsPickerLoading(false);
         }
-    };
+    }, [isCloudinaryLoaded, onChange, toast]);
 
-    const isLoading = !isGapiLoaded || !isGisLoaded || !apiKeys;
+    const openWidget = () => {
+        if (widgetRef.current) {
+            widgetRef.current.open();
+        }
+    }
 
     return (
         <div className="space-y-3">
+            <Script 
+                src="https://upload-widget.cloudinary.com/global/all.js"
+                onLoad={() => setIsCloudinaryLoaded(true)}
+            />
             <div className="aspect-video w-full rounded-lg bg-muted border-2 border-dashed flex items-center justify-center overflow-hidden">
                 {value ? (
                     <Image src={value} alt="Image preview" width={400} height={210} className="w-full h-full object-cover" data-ai-hint={dataAiHint} />
@@ -130,34 +92,12 @@ const ImagePicker = ({ value, onChange, dataAiHint }: { value: string, onChange:
                     </div>
                 )}
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                <Button variant="outline" className="sm:col-span-1" onClick={handleGoogleDrivePick} disabled={isLoading || isPickerLoading}>
-                     {isLoading ? <Loader2 className="animate-spin" /> : <GoogleDriveIcon />}
-                    <span>{isLoading ? 'Loading Drive...' : 'Drive'}</span>
+            <div className="grid grid-cols-2 gap-2">
+                <Button variant="outline" className="w-full" onClick={openWidget} disabled={!isCloudinaryLoaded}>
+                    <UploadCloud className="h-4 w-4" />
+                     <span>{isCloudinaryLoaded ? 'Upload Image' : 'Loading...'}</span>
                 </Button>
-
-                <Dialog>
-                    <DialogTrigger asChild>
-                        <Button variant="outline" className="sm:col-span-1">
-                            <LinkIcon className="h-4 w-4" />
-                            <span>URL</span>
-                        </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                         <DialogHeader>
-                            <DialogTitle>Enter Image URL</DialogTitle>
-                            <DialogDescription>Paste the direct link to your image below.</DialogDescription>
-                         </DialogHeader>
-                         <Input value={value} onChange={(e) => onChange(e.target.value)} placeholder="https://example.com/image.png" />
-                         <DialogFooter>
-                            <DialogClose asChild>
-                                <Button>Done</Button>
-                            </DialogClose>
-                         </DialogFooter>
-                    </DialogContent>
-                </Dialog>
-                
-                <Button variant="destructive" className="sm:col-span-1" onClick={() => onChange("")}>
+                <Button variant="destructive" className="w-full" onClick={() => onChange("")}>
                     <Trash2 className="h-4 w-4"/>
                     <span>Remove</span>
                 </Button>
@@ -584,5 +524,3 @@ export default function PortfolioPage() {
     </main>
   );
 }
-
-    
