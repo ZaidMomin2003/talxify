@@ -16,10 +16,11 @@ const freePlan = {
     name: 'Free',
     price: '₹0',
     features: [
-        '1 AI Mock Interview (one-time)',
-        '1 Coding Question (one-time)',
-        'Portfolio Builder',
-        'Limited Analytics',
+        'First Day of 30-Day Arena',
+        'AI-Powered Mock Interview',
+        'AI-Analyzed Coding Quiz',
+        'AI-Generated Study Notes',
+        'Limited Portfolio Access (24h)',
     ],
 };
 
@@ -28,22 +29,23 @@ const proPlans = {
         name: 'Monthly',
         price: '₹1699',
         period: '/month',
-        interviews: '20 AI Mock Interviews',
     },
     yearly: {
         name: 'Yearly',
         price: '₹16990',
         period: '/year',
-        interviews: '300 AI Mock Interviews',
     }
 };
 
 const proFeatures = [
+    'Full 30-Day Arena Access',
+    'AI-Powered Mock Interviews',
     'Unlimited Coding Questions',
-    'Weekly feedback',
-    'Portfolio Builder',
-    'Detailed Analytics',
-    '24/7 Customer Support',
+    'Unlimited Study Notes',
+    'Professional Resume Builder',
+    'Full Portfolio Customization',
+    'Detailed Performance Analytics',
+    'Priority Support',
 ];
 
 
@@ -121,7 +123,7 @@ export default function LandingPricing() {
               </CardHeader>
               <CardContent className="flex-grow">
                   <ul className="space-y-4">
-                      {[activeProPlan.interviews, ...proFeatures].map((feature, index) => (
+                      {proFeatures.map((feature, index) => (
                           <li key={index} className="flex items-center gap-3">
                               <div className="bg-primary/10 text-primary rounded-full p-1">
                                   <Check className="w-4 h-4" />
