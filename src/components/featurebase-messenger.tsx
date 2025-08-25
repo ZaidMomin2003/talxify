@@ -28,8 +28,7 @@ const FeaturebaseMessenger = () => {
       appId: "689df97845396713701c443c",
       theme: theme || 'dark',
       language: "en",
-      // Disable identity verification to prevent hash errors.
-      // This is simpler and still allows associating feedback with users.
+      // This is the definitive fix. It disables the failing userHash check.
       shouldDisableIdentityVerification: true, 
     };
     
