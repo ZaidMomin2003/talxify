@@ -57,7 +57,6 @@ const ImagePicker = ({ value, onChange, dataAiHint }: { value: string, onChange:
                 cropping: true,
                 croppingAspectRatio: 1.91, // Standard banner/card aspect ratio
                 showAdvancedOptions: false,
-                folder: 'talxify-portfolios'
             }, (error: any, result: any) => {
                 if (!error && result && result.event === "success") {
                     onChange(result.info.secure_url);
