@@ -50,6 +50,20 @@ const ImagePicker = ({ value, onChange, dataAiHint }: { value: string, onChange:
     const [isPickerLoading, setIsPickerLoading] = useState(false);
     const [apiKeys, setApiKeys] = useState<{ apiKey: string; clientId: string } | null>(null);
 
+    useEffect(() => {
+        // Pre-fetch the API keys when the component mounts
+        const fetchKeys = async () => {
+            try {
+                const keys = await getGoogleApiKeys();
+                setApiKeys(keys);
+            } catch (error) {
+                 toast({ title: "Configuration Error", description: "Could not load Google Drive credentials. Please contact support.", variant: 'destructive' });
+            }
+        };
+        fetchKeys();
+    }, [toast]);
+
+
     const handleGoogleDrivePick = async () => {
         setIsPickerLoading(true);
         if (!isGapiLoaded || !isGisLoaded || !gapi || !gis) {
@@ -58,15 +72,15 @@ const ImagePicker = ({ value, onChange, dataAiHint }: { value: string, onChange:
             return;
         }
 
+        if (!apiKeys?.apiKey || !apiKeys?.clientId) {
+            toast({ title: "Configuration Missing", description: "Google API keys are not available.", variant: 'destructive' });
+            setIsPickerLoading(false);
+            return;
+        }
+
         try {
-            const keys = apiKeys ?? await getGoogleApiKeys();
-            if (!keys.apiKey || !keys.clientId) {
-                throw new Error("API keys are not available.");
-            }
-            if (!apiKeys) setApiKeys(keys);
-            
             const tokenClient = gis.oauth2.initTokenClient({
-                client_id: keys.clientId,
+                client_id: apiKeys.clientId,
                 scope: 'https://www.googleapis.com/auth/drive.readonly',
                 callback: async (tokenResponse: any) => {
                     if (tokenResponse.error) {
@@ -77,7 +91,7 @@ const ImagePicker = ({ value, onChange, dataAiHint }: { value: string, onChange:
                     view.setMimeTypes("image/png,image/jpeg,image/jpg,image/gif");
                     
                     const picker = new gapi.picker.PickerBuilder()
-                        .setDeveloperKey(keys.apiKey)
+                        .setDeveloperKey(apiKeys.apiKey)
                         .setOAuthToken(tokenResponse.access_token)
                         .addView(view)
                         .setCallback((data: any) => {
@@ -102,7 +116,7 @@ const ImagePicker = ({ value, onChange, dataAiHint }: { value: string, onChange:
         }
     };
 
-    const isLoading = !isGapiLoaded || !isGisLoaded;
+    const isLoading = !isGapiLoaded || !isGisLoaded || !apiKeys;
 
     return (
         <div className="space-y-3">
@@ -570,3 +584,5 @@ export default function PortfolioPage() {
     </main>
   );
 }
+
+    
