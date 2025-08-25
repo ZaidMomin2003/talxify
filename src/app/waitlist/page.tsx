@@ -5,7 +5,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowRight, Bot, BrainCircuit, Code, FileText, Loader2, Mail, MessageSquare, CheckCircle, User, Edit } from 'lucide-react';
+import { ArrowRight, Bot, BrainCircuit, Code, FileText, Loader2, Mail, MessageSquare, CheckCircle, User, Edit, CalendarDays, Rocket } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { saveWaitlistSubmission } from '@/lib/firebase-service';
@@ -32,6 +32,27 @@ const features = [
     title: 'Automated Portfolio & Resume',
     description: 'Showcase your skills with a professional resume and a portfolio that automatically updates with your interview and quiz results.',
   },
+];
+
+const howItWorksSteps = [
+    {
+        icon: CalendarDays,
+        step: 1,
+        title: "Get Your Personalized Plan",
+        description: "Answer a few questions about your career goals, and our AI will generate a custom 30-day prep syllabus tailored just for you."
+    },
+    {
+        icon: Code,
+        step: 2,
+        title: "Practice with Purpose",
+        description: "Follow your daily tasks, including AI-powered mock interviews, targeted coding quizzes, and in-depth study notes to master key concepts."
+    },
+    {
+        icon: Rocket,
+        step: 3,
+        title: "Showcase & Succeed",
+        description: "As you complete challenges, your portfolio is automatically updated. Build a professional resume and share your progress with recruiters."
+    }
 ];
 
 const WaitlistForm = () => {
@@ -125,6 +146,10 @@ export default function WaitlistPage() {
 
         <section className="py-20 bg-muted/30">
             <div className="container mx-auto px-4">
+                 <div className="mb-12 flex flex-col items-center text-center">
+                    <h2 className="text-3xl md:text-4xl font-bold tracking-tight">The Ultimate AI Toolkit for Job Seekers</h2>
+                    <p className="text-muted-foreground mt-3 max-w-2xl">From first draft to final interview, Talxify provides the tools you need to stand out and succeed.</p>
+                </div>
                 <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
                     {features.map((feature, index) => (
                         <motion.div 
@@ -133,13 +158,44 @@ export default function WaitlistPage() {
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true }}
                             transition={{ duration: 0.5, delay: index * 0.1 }}
-                            className="text-center p-6"
+                            className="text-center p-6 bg-card rounded-lg border shadow-sm"
                         >
                             <div className="flex justify-center items-center h-16 w-16 rounded-full bg-primary/10 text-primary mx-auto mb-6">
                                 {feature.icon}
                             </div>
                             <h3 className="text-xl font-bold mb-2">{feature.title}</h3>
                             <p className="text-muted-foreground">{feature.description}</p>
+                        </motion.div>
+                    ))}
+                </div>
+            </div>
+        </section>
+
+        <section className="bg-background py-16 sm:py-24">
+            <div className="container mx-auto max-w-6xl px-4 md:px-6">
+                <div className="mb-12 flex flex-col items-center text-center">
+                    <h2 className="text-3xl md:text-4xl font-bold tracking-tight">Your Path to Success in 3 Simple Steps</h2>
+                    <p className="text-muted-foreground mt-3 max-w-2xl">We provide a clear, structured journey to get you from preparing to hired.</p>
+                </div>
+                
+                <div className="relative grid grid-cols-1 md:grid-cols-3 gap-8">
+                     <div className="absolute top-1/2 left-0 w-full h-px bg-border -translate-y-1/2 hidden md:block"></div>
+                     <div className="absolute top-0 left-1/2 w-px h-full bg-border -translate-x-1/2 md:hidden"></div>
+
+                    {howItWorksSteps.map((step, index) => (
+                        <motion.div 
+                            key={index} 
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ duration: 0.5, delay: index * 0.2 }}
+                            className="relative flex flex-col items-center text-center"
+                        >
+                            <div className="relative z-10 flex items-center justify-center h-16 w-16 rounded-full bg-background border-2 border-primary shadow-lg">
+                                <step.icon className="w-8 h-8 text-primary" />
+                            </div>
+                            <h3 className="text-2xl font-bold mt-6 mb-2">{step.title}</h3>
+                            <p className="text-muted-foreground">{step.description}</p>
                         </motion.div>
                     ))}
                 </div>
