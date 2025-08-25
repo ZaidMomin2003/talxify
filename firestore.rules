@@ -3,26 +3,30 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Allow public write access for waitlist submissions
-    match /waitlist/{docId} {
-      allow create: if true;
-    }
     
-    // Allow public write access for survey submissions
-    match /surveySubmissions/{docId} {
-      allow create: if true;
+    // Default security: Deny all reads and writes to all documents.
+    match /{document=**} {
+      allow read, write: if false;
     }
 
-    // Secure user data to only be accessible by the authenticated user
+    // Allow authenticated users to read and write their own data.
+    // This protects user-specific information like activity, portfolio, etc.
     match /users/{userId} {
       allow read, update, delete: if request.auth != null && request.auth.uid == userId;
       allow create: if request.auth != null;
     }
-    
-    // Allow anyone to read a user's portfolio if they have the slug
-    match /users/{userId} {
-        allow get: if true;
+
+    // Allow ANYONE to create (submit) documents to the waitlist collection.
+    // This is necessary for the public-facing waitlist page to function.
+    match /waitlist/{docId} {
+      allow create: if true;
+    }
+
+    // Allow ANYONE to create (submit) documents to the surveySubmissions collection.
+    // This is necessary for the public-facing survey page to function.
+    match /surveySubmissions/{docId} {
+      allow create: if true;
+      allow read, list: if request.auth != null; // Admins can read if needed
     }
   }
 }
