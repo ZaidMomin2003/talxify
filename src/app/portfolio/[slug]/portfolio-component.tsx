@@ -50,14 +50,14 @@ const navLinks = [
     { href: "#faqs", label: "FAQs" },
 ];
 
-function PortfolioHeader({ name, email }: { name: string, email: string }) {
+function PortfolioHeader({ name, email, imageUrl }: { name: string, email: string, imageUrl?: string }) {
     return (
         <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-sm border-b">
             <div className="container mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
                 <div className="flex items-center justify-between h-16">
                     <div className="flex items-center gap-4">
                          <Avatar className="w-10 h-10 border-2 border-primary">
-                            <AvatarImage src="https://placehold.co/40x40.png" alt={name} data-ai-hint="person avatar" />
+                            <AvatarImage src={imageUrl} alt={name} data-ai-hint="person avatar" />
                             <AvatarFallback>{name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
                         </Avatar>
                         <span className="font-bold text-lg">{name}</span>
@@ -156,14 +156,14 @@ export default function PortfolioComponent({ userData }: { userData: UserData | 
             className="bg-background min-h-screen"
             style={{ '--primary': portfolio.themeColor } as React.CSSProperties}
         >
-            <PortfolioHeader name={portfolio.personalInfo.name} email={portfolio.personalInfo.email} />
+            <PortfolioHeader name={portfolio.personalInfo.name} email={portfolio.personalInfo.email} imageUrl={portfolio.personalInfo.bannerUrl} />
             <div className="container mx-auto max-w-6xl p-4 sm:p-6 lg:p-8">
                 <div className="lg:grid lg:grid-cols-12 lg:gap-12">
                     {/* Sticky Sidebar */}
                     <aside className="lg:col-span-4 lg:sticky lg:top-24 self-start mb-8 lg:mb-0">
                         <Card className="p-6 text-center shadow-lg">
                             <Avatar className="w-32 h-32 mx-auto mb-4 border-4 border-primary shadow-lg">
-                                <AvatarImage src="https://placehold.co/128x128.png" alt={portfolio.personalInfo.name} data-ai-hint="person avatar" />
+                                <AvatarImage src={portfolio.personalInfo.bannerUrl} alt={portfolio.personalInfo.name} data-ai-hint="person avatar" />
                                 <AvatarFallback>{portfolio.personalInfo.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
                             </Avatar>
                             <h1 className="text-3xl font-headline font-bold mb-1">{portfolio.personalInfo.name}</h1>
