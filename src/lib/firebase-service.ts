@@ -1,7 +1,7 @@
 
 'use client';
 
-import { doc, getDoc, setDoc, updateDoc, arrayUnion, collection, getDocs, addDoc, serverTimestamp, runTransaction } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, arrayUnion, collection, getDocs, addDoc, serverTimestamp, runTransaction, deleteDoc } from 'firebase/firestore';
 import { db } from './firebase';
 import type { UserData, Portfolio, StoredActivity, OnboardingData, SurveySubmission } from './types';
 import { initialPortfolioData } from './initial-data';
@@ -54,6 +54,12 @@ export const updateUserOnboardingData = async (userId: string, onboardingData: O
     };
     await setDoc(userRef, updateData, { merge: true });
 }
+
+export const deleteUserDocument = async (userId: string): Promise<void> => {
+    const userRef = doc(db, 'users', userId);
+    await deleteDoc(userRef);
+};
+
 
 // --- Subscription & Usage ---
 
@@ -186,4 +192,3 @@ export const saveSurveySubmission = async (submission: SurveySubmission): Promis
         throw error;
     }
 }
-

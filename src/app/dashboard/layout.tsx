@@ -384,6 +384,12 @@ function DashboardLayoutContent({
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
+                  <Link href="/dashboard/profile">
+                    <User className="mr-2 h-4 w-4" />
+                    <span>Profile</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
                   <Link href="/dashboard/support">
                     <LifeBuoy className="mr-2 h-4 w-4" />
                     <span>Support</span>
