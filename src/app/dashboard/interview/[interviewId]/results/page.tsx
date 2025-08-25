@@ -4,7 +4,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { BarChart, Bot, CheckCircle, ChevronLeft, MessageSquare, Mic, Sparkles, User, XCircle, Loader2 } from 'lucide-react';
+import { BarChart, Bot, CheckCircle, ChevronLeft, MessageSquare, Mic, Sparkles, User, XCircle, Loader2, Building } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
@@ -51,6 +51,7 @@ export default function InterviewResultsPage() {
                         transcript: currentInterview.transcript,
                         topic: currentInterview.details.topic,
                         role: currentInterview.details.role || 'Software Engineer',
+                        company: currentInterview.details.company,
                     });
                     setAnalysis(feedback);
                     
@@ -109,6 +110,11 @@ export default function InterviewResultsPage() {
                             <CardTitle className="font-headline text-4xl font-bold">Interview Analysis</CardTitle>
                             <CardDescription className="text-lg">
                                 Here's a detailed breakdown of your mock interview for the <span className="font-semibold text-foreground">{interviewData.details.role}</span> role on the topic of <span className="font-semibold text-foreground">{interviewData.details.topic}</span>.
+                                {interviewData.details.company && (
+                                    <>
+                                        <br />Tailored for <span className="font-semibold text-foreground">{interviewData.details.company}</span>.
+                                    </>
+                                )}
                             </CardDescription>
                         </CardHeader>
                     </Card>

@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/context/auth-context';
-import { Briefcase, Loader2, PlayCircle } from 'lucide-react';
+import { Briefcase, Loader2, PlayCircle, Building } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect, Suspense } from 'react';
 import { useToast } from '@/hooks/use-toast';
@@ -22,6 +22,7 @@ function InterviewSetup() {
   const [topic, setTopic] = useState('');
   const [level, setLevel] = useState('entry-level');
   const [role, setRole] = useState('Software Engineer');
+  const [company, setCompany] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -38,7 +39,7 @@ function InterviewSetup() {
         return;
     }
     if (!topic || !level || !role) {
-      setError('Please fill in all fields.');
+      setError('Please fill in all required fields.');
       return;
     }
     setLoading(true);
@@ -55,6 +56,9 @@ function InterviewSetup() {
 
         const meetingId = user.uid + "_" + Date.now();
         const params = new URLSearchParams({ topic, level, role });
+        if (company) {
+            params.append('company', company);
+        }
         router.push(`/dashboard/interview/${meetingId}?${params.toString()}`);
     } catch (e) {
         console.error("Failed to start interview session:", e);
@@ -76,17 +80,32 @@ function InterviewSetup() {
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="topic">Interview Topic</Label>
+              <Label htmlFor="topic">Interview Topic*</Label>
               <Input
                 id="topic"
                 placeholder="e.g., JavaScript, System Design"
                 value={topic}
                 onChange={(e) => setTopic(e.target.value)}
+                required
               />
+            </div>
+             <div className="space-y-2">
+              <Label htmlFor="company">Target Company (Optional)</Label>
+               <div className="relative">
+                 <Building className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="company"
+                  placeholder="e.g., Google, Amazon, Netflix"
+                  value={company}
+                  onChange={(e) => setCompany(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">Specifying a company helps the AI tailor its questions and interview style.</p>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                <Label htmlFor="level">Experience Level</Label>
+                <Label htmlFor="level">Experience Level*</Label>
                 <Select value={level} onValueChange={setLevel}>
                     <SelectTrigger id="level">
                     <SelectValue placeholder="Select level" />
@@ -99,12 +118,13 @@ function InterviewSetup() {
                 </Select>
                 </div>
                 <div className="space-y-2">
-                <Label htmlFor="role">Job Role</Label>
+                <Label htmlFor="role">Job Role*</Label>
                 <Input
                     id="role"
                     placeholder="e.g., Frontend Developer"
                     value={role}
                     onChange={(e) => setRole(e.target.value)}
+                    required
                 />
                 </div>
             </div>
@@ -129,3 +149,4 @@ export default function InterviewSetupPage() {
         </Suspense>
     )
 }
+

@@ -20,7 +20,8 @@ const TranscriptEntrySchema = z.object({
 const GenerateInterviewFeedbackInputSchema = z.object({
   transcript: z.array(TranscriptEntrySchema).describe("The full transcript of the interview, alternating between the AI interviewer and the user."),
   topic: z.string().describe("The main topic of the interview (e.g., 'React Hooks')."),
-  role: z.string().describe("The role the user was interviewing for (e.g., 'Frontend Developer').")
+  role: z.string().describe("The role the user was interviewing for (e.g., 'Frontend Developer')."),
+  company: z.string().optional().describe("The target company for the interview, if specified (e.g., 'Google').")
 });
 export type GenerateInterviewFeedbackInput = z.infer<typeof GenerateInterviewFeedbackInputSchema>;
 
@@ -32,7 +33,7 @@ const GenerateInterviewFeedbackOutputSchema = z.object({
     questionFeedback: z.array(z.object({
         question: z.string().describe("The question asked by the AI interviewer."),
         userAnswer: z.string().describe("The user's answer to the question."),
-        feedback: z.string().describe("Specific, constructive feedback on the user's answer. Comment on technical accuracy, clarity, and structure (e.g., STAR method for behavioral questions)."),
+        feedback: z.string().describe("Specific, constructive feedback on the user's answer. Comment on technical accuracy, clarity, and structure. If a company was specified, evaluate the answer in that context (e.g., STAR method for behavioral questions at Amazon)."),
         idealAnswer: z.string().describe("An example of a concise, ideal answer to the question."),
         score: z.number().min(0).max(100).describe("A score for this specific answer from 0 to 100."),
     })).describe("A detailed analysis of each question and answer pair.")
@@ -54,6 +55,9 @@ const prompt = ai.definePrompt({
   Your task is to analyze the provided interview transcript and provide comprehensive, constructive feedback.
 
   The user was interviewing for a {{role}} role on the topic of {{topic}}.
+  {{#if company}}
+  The interview was specifically tailored for **{{company}}**. Your feedback should reflect this. For example, if it was for Amazon, you should evaluate behavioral answers against the STAR method and Leadership Principles.
+  {{/if}}
 
   Please analyze the entire transcript and provide the following:
   1.  **Overall Score**: An integer score from 0 to 100 representing the user's overall performance.
@@ -63,7 +67,7 @@ const prompt = ai.definePrompt({
   5.  **Question-by-Question Feedback**: For each question the AI asked, provide:
       - The question text.
       - The user's answer.
-      - Specific, actionable feedback on the answer. For technical questions, comment on correctness and depth. For behavioral questions, evaluate the structure (like the STAR method).
+      - Specific, actionable feedback on the answer. For technical questions, comment on correctness and depth. For behavioral questions, evaluate the structure (e.g., STAR method). Consider the target company's known preferences.
       - A well-structured, ideal answer.
       - A score for that specific answer (0-100).
 

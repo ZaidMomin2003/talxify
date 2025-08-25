@@ -42,6 +42,7 @@ export function InterviewContainer({ interviewId }: { interviewId: string }) {
     topic: searchParams.get('topic') || 'general',
     level: searchParams.get('level') || 'entry-level',
     role: searchParams.get('role') || 'Software Engineer',
+    company: searchParams.get('company') || undefined,
     history: [],
     questionsAsked: 0,
     isComplete: false,
@@ -240,6 +241,7 @@ export function InterviewContainer({ interviewId }: { interviewId: string }) {
                 topic: interviewState.topic,
                 role: interviewState.role,
                 level: interviewState.level,
+                company: interviewState.company
             }
         };
         await addActivity(user.uid, finalActivity);

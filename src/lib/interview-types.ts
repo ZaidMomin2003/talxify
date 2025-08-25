@@ -7,6 +7,7 @@ export const InterviewStateSchema = z.object({
   topic: z.string().describe('The primary technical topic for the interview (e.g., "React Hooks").'),
   level: z.string().describe("The candidate's experience level (e.g., \"entry-level\", \"senior\")."),
   role: z.string().describe('The job role the candidate is interviewing for (e.g., "Frontend Developer").'),
+  company: z.string().optional().describe('The target company for the interview (e.g., "Google", "Amazon").'),
   history: z.array(MessageSchema).describe('The history of the conversation so far.'),
   questionsAsked: z.number().int().describe('The number of main questions the AI has already asked.'),
   isComplete: z.boolean().describe('A flag indicating if the interview has concluded.'),

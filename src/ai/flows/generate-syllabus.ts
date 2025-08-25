@@ -39,19 +39,21 @@ const prompt = ai.definePrompt({
   name: 'generateSyllabusPrompt',
   input: {schema: GenerateSyllabusInputSchema},
   output: {schema: GenerateSyllabusOutputSchema},
-  prompt: `You are an expert career coach and technical interviewer. Your task is to generate a personalized 30-day interview preparation syllabus for a candidate.
+  prompt: `You are an expert career coach and technical interviewer who has worked at FAANG companies. Your task is to generate a personalized 30-day interview preparation syllabus for a candidate.
 
 The candidate is targeting the following roles: {{roles}}
-And is interested in these companies: {{companies}}
+And is interested in these specific companies: {{companies}}
 
-Create a structured, 30-day plan that covers essential topics. Start with fundamentals and gradually move to more advanced concepts. Include a mix of data structures, algorithms, system design, and role-specific topics.
+Create a structured, 30-day plan that covers essential topics. The plan MUST be tailored to the types of questions and priorities of the specified companies. For example, if they list Google, focus more on algorithms and data structures. If they list Netflix, include system design and cultural fit questions.
+
+Start with fundamentals and gradually move to more advanced concepts. Include a mix of data structures, algorithms, system design, and role-specific topics relevant to the target companies.
 
 Generate a plan for exactly 30 days. For each day, provide:
 - day: The day number.
 - topic: The specific topic to focus on.
 - description: A short, encouraging sentence about the day's goal.
 
-The plan should be comprehensive and logically sequenced to maximize the candidate's chances of success.
+The plan should be comprehensive and logically sequenced to maximize the candidate's chances of success at their target companies.
 `,
 });
 
@@ -66,3 +68,4 @@ const generateSyllabusFlow = ai.defineFlow(
     return output!;
   }
 );
+

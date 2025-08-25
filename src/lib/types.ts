@@ -43,6 +43,7 @@ export interface InterviewActivity extends BaseActivity {
         topic: string;
         role?: string;
         level?: string;
+        company?: string;
         score?: number; // e.g., 0-100
     }
 }

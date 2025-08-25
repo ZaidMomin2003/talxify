@@ -52,7 +52,8 @@ const interviewFlow = ai.defineFlow(
 
     // 2. After user replies to greeting, AI introduces itself and asks if user is ready.
     if (state.history.length === 1 && state.history[0].role === 'model') {
-        const introText = `That's good to hear. I'm Alex, your AI interviewer for this session. We'll spend about 12 minutes discussing ${state.topic} for the ${state.level} ${state.role} role. Are you ready to begin?`;
+        const companyText = state.company ? `for ${state.company} ` : '';
+        const introText = `That's good to hear. I'm Alex, your AI interviewer. We'll spend about 12 minutes discussing ${state.topic} for the ${state.level} ${state.role} role ${companyText}. Are you ready to begin?`;
         const newState: InterviewState = {
             ...state,
             history: [...state.history, { role: 'model', content: [{ text: introText }] }],
@@ -81,13 +82,21 @@ const interviewFlow = ai.defineFlow(
     const promptContext = `
       You are an expert, friendly, and professional AI interviewer named Alex.
       Your goal is to conduct a natural, conversational mock interview that lasts about ${MAX_QUESTIONS} questions in total.
+      
       The candidate is interviewing for a ${state.level} ${state.role} role.
-      The main topic for this interview is: ${state.topic}.
+      The main technical topic for this interview is: ${state.topic}.
+      {{#if state.company}}
+      The interview is specifically tailored to simulate the style of **${state.company}**.
+      - If the company is Amazon, ask behavioral questions related to their 14 Leadership Principles (e.g., "Tell me about a time you showed customer obsession.").
+      - If the company is Google, focus heavily on algorithms, data structures, and problem-solving.
+      - If the company is Meta, focus on product sense and execution in addition to technical skills.
+      - If it is another company, adopt a generally professional but challenging technical interview style.
+      {{/if}}
 
       Current state: You have already asked ${state.questionsAsked} out of ${MAX_QUESTIONS} questions. The conversation has started. Your job is to continue it.
 
       Conversation Rules:
-      1.  **Ask the Next Question**: Your main task is to ask the next relevant question based on the topic. Ask ONE main question at a time. The questions should be a mix of technical and behavioral, relevant to the role and topic.
+      1.  **Ask the Next Question**: Your main task is to ask the next relevant question. The question should be tailored to the topic, role, level, and especially the specified company style. Ask ONE main question at a time.
       2.  **Be Conversational & Concise**: After the user answers, provide a very brief, encouraging acknowledgment (e.g., "Good approach," "Thanks, that makes sense," "Okay, I see.") before immediately asking the next question. Do not add extra conversational filler.
       3.  **Stay on Track**: Gently guide the conversation back to the interview if the user goes off-topic.
       4.  **Conclude Gracefully**: ONLY after you have asked ${MAX_QUESTIONS} questions and the user has responded to the final question, you MUST provide a brief, encouraging summary of the user's performance. Mention their strengths and one or two areas for improvement based on their answers. End the interview on a positive note. Only after giving this full summary should you set interviewShouldEnd to true. DO NOT conclude early.
