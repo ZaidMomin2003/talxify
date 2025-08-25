@@ -156,14 +156,14 @@ export default function PortfolioComponent({ userData }: { userData: UserData | 
             className="bg-background min-h-screen"
             style={{ '--primary': portfolio.themeColor } as React.CSSProperties}
         >
-            <PortfolioHeader name={portfolio.personalInfo.name} email={portfolio.personalInfo.email} imageUrl={portfolio.personalInfo.bannerUrl} />
+            <PortfolioHeader name={portfolio.personalInfo.name} email={portfolio.personalInfo.email} imageUrl={portfolio.personalInfo.avatarUrl} />
             <div className="container mx-auto max-w-6xl p-4 sm:p-6 lg:p-8">
                 <div className="lg:grid lg:grid-cols-12 lg:gap-12">
                     {/* Sticky Sidebar */}
                     <aside className="lg:col-span-4 lg:sticky lg:top-24 self-start mb-8 lg:mb-0">
                         <Card className="p-6 text-center shadow-lg">
                             <Avatar className="w-32 h-32 mx-auto mb-4 border-4 border-primary shadow-lg">
-                                <AvatarImage src={portfolio.personalInfo.bannerUrl} alt={portfolio.personalInfo.name} data-ai-hint="person avatar" />
+                                <AvatarImage src={portfolio.personalInfo.avatarUrl} alt={portfolio.personalInfo.name} data-ai-hint="person avatar" />
                                 <AvatarFallback>{portfolio.personalInfo.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
                             </Avatar>
                             <h1 className="text-3xl font-headline font-bold mb-1">{portfolio.personalInfo.name}</h1>

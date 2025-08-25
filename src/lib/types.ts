@@ -120,6 +120,7 @@ export interface PersonalInfo {
     slug: string;
     profession: string;
     bio: string;
+    avatarUrl: string;
     bannerUrl: string;
     email: string;
     phone: string;

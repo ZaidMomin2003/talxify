@@ -8,6 +8,7 @@ export const initialPortfolioData: UserData = {
             slug: 'john-doe',
             profession: 'Senior Software Engineer',
             bio: 'A passionate software engineer with a love for building scalable and user-friendly web applications.',
+            avatarUrl: 'https://placehold.co/150x150.png',
             bannerUrl: 'https://placehold.co/1200x300.png',
             email: 'john.doe@example.com',
             phone: '+1 234 567 890',

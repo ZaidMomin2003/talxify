@@ -39,7 +39,7 @@ const CloudinaryIcon = () => (
 );
 
 
-const ImagePicker = ({ value, onChange, dataAiHint }: { value: string, onChange: (value: string) => void, dataAiHint: string }) => {
+const ImagePicker = ({ value, onChange, dataAiHint, isAvatar }: { value: string, onChange: (value: string) => void, dataAiHint: string, isAvatar?: boolean }) => {
     const { toast } = useToast();
     const [isCloudinaryLoaded, setIsCloudinaryLoaded] = useState(false);
     const cloudinaryRef = useRef<any>();
@@ -55,7 +55,7 @@ const ImagePicker = ({ value, onChange, dataAiHint }: { value: string, onChange:
                 sources: ['local', 'url', 'camera', 'google_drive', 'unsplash', 'instagram', 'facebook'],
                 multiple: false,
                 cropping: true,
-                croppingAspectRatio: 1.91, // Standard banner/card aspect ratio
+                croppingAspectRatio: isAvatar ? 1 : 1.91, 
                 showAdvancedOptions: false,
             }, (error: any, result: any) => {
                 if (!error && result && result.event === "success") {
@@ -67,7 +67,7 @@ const ImagePicker = ({ value, onChange, dataAiHint }: { value: string, onChange:
                 }
             });
         }
-    }, [isCloudinaryLoaded, onChange, toast]);
+    }, [isCloudinaryLoaded, onChange, toast, isAvatar]);
 
     const openWidget = () => {
         if (widgetRef.current) {
@@ -75,15 +75,19 @@ const ImagePicker = ({ value, onChange, dataAiHint }: { value: string, onChange:
         }
     }
 
+    const containerClasses = isAvatar 
+        ? "w-32 h-32 rounded-full bg-muted border-2 border-dashed flex items-center justify-center overflow-hidden mx-auto"
+        : "aspect-video w-full rounded-lg bg-muted border-2 border-dashed flex items-center justify-center overflow-hidden";
+
     return (
         <div className="space-y-3">
             <Script 
                 src="https://upload-widget.cloudinary.com/global/all.js"
                 onLoad={() => setIsCloudinaryLoaded(true)}
             />
-            <div className="aspect-video w-full rounded-lg bg-muted border-2 border-dashed flex items-center justify-center overflow-hidden">
+            <div className={containerClasses}>
                 {value ? (
-                    <Image src={value} alt="Image preview" width={400} height={210} className="w-full h-full object-cover" data-ai-hint={dataAiHint} />
+                    <Image src={value} alt="Image preview" width={isAvatar ? 128 : 400} height={isAvatar ? 128 : 210} className="w-full h-full object-cover" data-ai-hint={dataAiHint} />
                 ) : (
                     <div className="text-center text-muted-foreground p-4">
                         <ImageIcon className="mx-auto h-10 w-10 mb-2" />
@@ -295,13 +299,24 @@ export default function PortfolioPage() {
               <Label htmlFor="bio">Bio</Label>
               <Textarea id="bio" value={portfolio.personalInfo.bio} onChange={(e) => setPortfolio({...portfolio, personalInfo: {...portfolio.personalInfo, bio: e.target.value}})} />
             </div>
-             <div>
-              <Label htmlFor="bannerUrl">Portfolio Banner</Label>
-              <ImagePicker 
-                value={portfolio.personalInfo.bannerUrl}
-                onChange={(value) => setPortfolio({...portfolio, personalInfo: {...portfolio.personalInfo, bannerUrl: value}})}
-                dataAiHint="abstract banner"
-              />
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                 <div>
+                    <Label htmlFor="avatarUrl">Profile Picture</Label>
+                    <ImagePicker 
+                        value={portfolio.personalInfo.avatarUrl}
+                        onChange={(value) => setPortfolio({...portfolio, personalInfo: {...portfolio.personalInfo, avatarUrl: value}})}
+                        dataAiHint="person avatar"
+                        isAvatar
+                    />
+                 </div>
+                 <div>
+                    <Label htmlFor="bannerUrl">Portfolio Banner</Label>
+                    <ImagePicker 
+                        value={portfolio.personalInfo.bannerUrl}
+                        onChange={(value) => setPortfolio({...portfolio, personalInfo: {...portfolio.personalInfo, bannerUrl: value}})}
+                        dataAiHint="abstract banner"
+                    />
+                 </div>
             </div>
             <div>
               <Label htmlFor="youtubeUrl">YouTube Video URL</Label>
