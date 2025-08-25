@@ -13,8 +13,10 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
-import { BarChart, BrainCircuit, Code, Copy, Sparkles, X, BookOpen, Swords } from 'lucide-react';
+import { BarChart, BrainCircuit, Code, Copy, Sparkles, X, BookOpen, Swords, ChevronDown } from 'lucide-react';
 import Image from 'next/image';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+
 
 const features = [
     { icon: BrainCircuit, title: 'AI Mock Interviews', description: 'Practice with a realistic AI that asks relevant questions.' },
@@ -62,27 +64,37 @@ export default function PromotionalPopup() {
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="max-w-[90vw] sm:max-w-lg rounded-xl p-6 sm:p-8">
+      <DialogContent className="max-w-md w-[90vw] rounded-xl p-6 sm:p-8">
         <DialogHeader className="text-center">
-        <DialogTitle className="text-3xl font-bold font-headline mb-2">Welcome to Talxify!</DialogTitle>
+        <DialogTitle className="text-2xl font-bold font-headline mb-2">Welcome to Talxify!</DialogTitle>
         <DialogDescription>
             Get a head start on your career with our exclusive launch offer.
         </DialogDescription>
         </DialogHeader>
         
-        <div className="my-6 space-y-4">
-            {features.map(feature => (
-                <div key={feature.title} className="flex items-start gap-4">
-                    <div className="bg-primary/10 text-primary rounded-lg p-2 mt-0.5">
-                        <feature.icon className="w-5 h-5" />
+        <div className="my-4">
+           <Accordion type="single" collapsible className="w-full">
+              <AccordionItem value="item-1">
+                <AccordionTrigger className="text-sm hover:no-underline">View Features</AccordionTrigger>
+                <AccordionContent>
+                   <div className="space-y-4 pt-2">
+                        {features.map(feature => (
+                            <div key={feature.title} className="flex items-start gap-4">
+                                <div className="bg-primary/10 text-primary rounded-lg p-2 mt-0.5">
+                                    <feature.icon className="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <p className="font-semibold text-foreground text-sm">{feature.title}</p>
+                                    <p className="text-xs text-muted-foreground">{feature.description}</p>
+                                </div>
+                            </div>
+                        ))}
                     </div>
-                    <div>
-                        <p className="font-semibold text-foreground">{feature.title}</p>
-                        <p className="text-sm text-muted-foreground">{feature.description}</p>
-                    </div>
-                </div>
-            ))}
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
         </div>
+
 
         <div className="bg-muted border-dashed border-2 border-primary/50 rounded-lg p-4 text-center space-y-2">
             <p className="text-sm text-muted-foreground">Use coupon code to get a discount!</p>
