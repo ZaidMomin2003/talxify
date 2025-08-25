@@ -11,32 +11,7 @@ const nextConfig: NextConfig = {
     ignoreDuringBuilds: true,
   },
   images: {
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'placehold.co',
-        port: '',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'blocks.mvp-subha.me',
-        port: '',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'randomuser.me',
-        port: '',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'drive.google.com',
-        port: '',
-        pathname: '/**',
-      }
-    ],
+    domains: ["res.cloudinary.com", "placehold.co", "blocks.mvp-subha.me", "randomuser.me", "drive.google.com", "lh3.googleusercontent.com"],
   },
   experimental: {
   },
@@ -56,3 +31,6 @@ const nextConfig: NextConfig = {
 export default nextConfig;
 
 
+
+
+    
