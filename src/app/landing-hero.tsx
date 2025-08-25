@@ -206,7 +206,7 @@ export default function AppHero() {
             </motion.p>
             <motion.div variants={itemVariants} className="mb-8 flex flex-col flex-wrap gap-4 sm:flex-row lg:justify-end">
               <Button asChild className="group rounded-full" size="lg">
-                <Link href="/signup">
+                <Link href="/waitlist">
                   Get Started
                   <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
                 </Link>

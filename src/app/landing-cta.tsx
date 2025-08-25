@@ -33,8 +33,8 @@ export default function LandingCta() {
                 className="group rounded-full bg-primary-foreground px-6 py-6 text-primary shadow-lg transition-all hover:bg-primary-foreground/90"
                 size="lg"
               >
-                <Link href="/signup">
-                  Get Started Now
+                <Link href="/waitlist">
+                  Join the Waitlist
                   <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
                 </Link>
             </Button>

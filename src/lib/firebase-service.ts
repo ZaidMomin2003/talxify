@@ -180,7 +180,7 @@ export const updateActivity = async (userId: string, updatedActivity: StoredActi
 };
 
 // --- Survey ---
-export const saveSurveySubmission = async (submission: SurveySubmission): Promise<void> => {
+export const saveSurveySubmission = async (submission: Partial<SurveySubmission>): Promise<void> => {
     try {
         const submissionWithTimestamp = {
             ...submission,
@@ -189,6 +189,20 @@ export const saveSurveySubmission = async (submission: SurveySubmission): Promis
         await addDoc(collection(db, 'surveySubmissions'), submissionWithTimestamp);
     } catch (error) {
         console.error("Error saving survey submission: ", error);
+        throw error;
+    }
+};
+
+// --- Waitlist ---
+export const saveWaitlistSubmission = async (submission: {name: string, email: string}): Promise<void> => {
+    try {
+        const submissionWithTimestamp = {
+            ...submission,
+            timestamp: serverTimestamp()
+        };
+        await addDoc(collection(db, 'waitlist'), submissionWithTimestamp);
+    } catch (error) {
+        console.error("Error saving waitlist submission: ", error);
         throw error;
     }
 }

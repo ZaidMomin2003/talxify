@@ -186,8 +186,8 @@ export default function LandingHeader() {
                     whileTap={{ scale: 0.98 }}
                   >
                     <Button asChild>
-                      <Link href="/dashboard">
-                        <span>Dashboard</span>
+                      <Link href="/waitlist">
+                        <span>Get Started</span>
                         <ArrowRight className="h-4 w-4" />
                       </Link>
                     </Button>
@@ -266,7 +266,7 @@ export default function LandingHeader() {
                         Sign In
                       </Link>
                       <Link
-                        href="/signup"
+                        href="/waitlist"
                         className="bg-primary text-primary-foreground block w-full rounded-lg py-3 text-center font-medium transition-all duration-200 hover:bg-primary/90"
                         onClick={() => setIsMobileMenuOpen(false)}
                       >

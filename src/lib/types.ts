@@ -185,8 +185,8 @@ export interface FAQ {
 // --- Survey ---
 // This represents the structure of a document in the surveySubmissions collection
 export interface SurveySubmission {
-    id: string;
-    timestamp: {
+    id?: string;
+    timestamp?: {
         seconds: number;
         nanoseconds: number;
     };
@@ -202,4 +202,11 @@ export interface SurveySubmission {
     otherFeedback?: string;
     name?: string;
     email?: string;
+}
+
+// --- Waitlist ---
+export interface WaitlistSubmission {
+    name: string;
+    email: string;
+    timestamp: any;
 }
