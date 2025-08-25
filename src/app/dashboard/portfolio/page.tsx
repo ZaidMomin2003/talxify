@@ -52,7 +52,7 @@ const ImagePicker = ({ value, onChange, dataAiHint }: { value: string, onChange:
             widgetRef.current = cloudinaryRef.current.createUploadWidget({
                 cloudName: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
                 uploadPreset: process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET,
-                sources: ['local', 'url', 'camera', 'instagram', 'facebook'],
+                sources: ['local', 'url', 'camera', 'google_drive', 'unsplash', 'instagram', 'facebook'],
                 multiple: false,
                 cropping: true,
                 croppingAspectRatio: 1.91, // Standard banner/card aspect ratio
