@@ -400,7 +400,4 @@ export default function PortfolioComponent({ userData }: { userData: UserData | 
             </div>
         </div>
     );
-
-    
-
-    
+}
