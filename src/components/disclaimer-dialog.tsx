@@ -62,7 +62,7 @@ export default function PromotionalPopup() {
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="w-[90vw] max-w-md rounded-xl sm:max-w-lg p-6 sm:p-8">
+      <DialogContent className="max-w-[90vw] sm:max-w-lg rounded-xl p-6 sm:p-8">
         <DialogHeader className="text-center">
         <DialogTitle className="text-3xl font-bold font-headline mb-2">Welcome to Talxify!</DialogTitle>
         <DialogDescription>
