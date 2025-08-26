@@ -403,7 +403,7 @@ export default function ResumeBuilderPage() {
                 </div>
 
                 {/* Preview Panel */}
-                <div className="bg-muted hidden lg:flex items-center justify-center overflow-y-auto p-8 relative lg:col-span-2">
+                <div className="bg-muted hidden lg:flex items-start justify-center overflow-y-auto p-8 relative lg:col-span-2">
                     <div className="w-full max-w-[210mm] mx-auto shadow-2xl" style={{ aspectRatio: '1 / 1.414' /* A4 ratio */ }}>
                         <ResumePreview resumeData={resumeData} ref={resumePreviewRef} />
                     </div>
