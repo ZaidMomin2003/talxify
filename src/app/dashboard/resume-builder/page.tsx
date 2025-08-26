@@ -9,14 +9,16 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
-import { FileText, PlusCircle, Trash2, Mail, Phone, Linkedin, Github, Globe, Download, Loader2, Gem, CheckCircle } from 'lucide-react';
+import { FileText, PlusCircle, Trash2, Mail, Phone, Linkedin, Github, Globe, Download, Loader2, Gem, CheckCircle, Sparkles, Wand2 } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/auth-context';
 import { getUserData, checkAndIncrementResumeExports } from '@/lib/firebase-service';
-import type { UserData } from '@/lib/types';
+import type { UserData, ResumeData } from '@/lib/types';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
+import { enhanceResume } from '@/ai/flows/enhance-resume';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
 
 // Simplified types for resume
 type ResumeExperience = { company: string; role: string; duration: string; description: string; };
@@ -157,6 +159,8 @@ export default function ResumeBuilderPage() {
     const [resumeData, setResumeData] = useState(initialResumeState);
     const resumePreviewRef = useRef<HTMLDivElement>(null);
     const [isDownloading, setIsDownloading] = useState(false);
+    const [isEnhancing, setIsEnhancing] = useState(false);
+    const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
     const { toast } = useToast();
 
     useEffect(() => {
@@ -170,63 +174,96 @@ export default function ResumeBuilderPage() {
         fetchUserData();
     }, [user]);
 
-    const handleDownloadClick = async () => {
-        if (!user) {
-            toast({ title: "Please log in", description: "You need to be logged in to download a resume.", variant: "destructive" });
-            return;
-        }
-
-        const usageCheck = await checkAndIncrementResumeExports(user.uid);
-        if (!usageCheck.success) {
-            toast({ title: "Limit Reached", description: usageCheck.message, variant: "destructive" });
-            return;
-        }
-        
+    const startDownload = async (dataToDownload: typeof initialResumeState) => {
         const resumeElement = resumePreviewRef.current;
         if (!resumeElement) return;
 
         setIsDownloading(true);
 
-        html2canvas(resumeElement, {
-            scale: 2,
-            useCORS: true,
-            logging: false,
-        }).then(canvas => {
-            const imgData = canvas.toDataURL('image/png');
-            
-            const pdf = new jsPDF({
-                orientation: 'portrait',
-                unit: 'mm',
-                format: 'a4'
+        // Temporarily render the data to be downloaded, then render back
+        const originalData = { ...resumeData };
+        setResumeData(dataToDownload);
+        
+        await new Promise(resolve => setTimeout(resolve, 100)); // Allow DOM to update
+
+        html2canvas(resumeElement, { scale: 2, useCORS: true, logging: false })
+            .then(canvas => {
+                const imgData = canvas.toDataURL('image/png');
+                const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const pdfHeight = pdf.internal.pageSize.getHeight();
+                const ratio = canvas.width / canvas.height;
+                let finalWidth = pdfWidth;
+                let finalHeight = pdfWidth / ratio;
+                if (finalHeight > pdfHeight) {
+                    finalHeight = pdfHeight;
+                    finalWidth = pdfHeight * ratio;
+                }
+                const x = (pdfWidth - finalWidth) / 2;
+                pdf.addImage(imgData, 'PNG', x, 0, finalWidth, finalHeight);
+                pdf.save(`${dataToDownload.personalInfo.name}_Resume.pdf`);
+                toast({ title: "Download Started", description: "Your resume PDF is being prepared." });
+            })
+            .catch(err => {
+                console.error("Error generating PDF:", err);
+                toast({ title: "Download Failed", description: "An error occurred while generating the PDF.", variant: "destructive" });
+            })
+            .finally(() => {
+                setIsDownloading(false);
+                setResumeData(originalData); // Restore original data to the editor
+                setIsDownloadModalOpen(false);
             });
-
-            const pdfWidth = pdf.internal.pageSize.getWidth();
-            const pdfHeight = pdf.internal.pageSize.getHeight();
-            const canvasWidth = canvas.width;
-            const canvasHeight = canvas.height;
-            const ratio = canvasWidth / canvasHeight;
-
-            let finalWidth = pdfWidth;
-            let finalHeight = pdfWidth / ratio;
-
-            if (finalHeight > pdfHeight) {
-                finalHeight = pdfHeight;
-                finalWidth = pdfHeight * ratio;
-            }
-
-            const x = (pdfWidth - finalWidth) / 2;
-            const y = 0;
-            
-            pdf.addImage(imgData, 'PNG', x, y, finalWidth, finalHeight);
-            pdf.save(`${resumeData.personalInfo.name}_Resume.pdf`);
-            setIsDownloading(false);
-            toast({ title: "Download Started", description: "Your resume PDF is being prepared." });
-        }).catch(err => {
-            console.error("Error generating PDF:", err);
-            setIsDownloading(false);
-            toast({ title: "Download Failed", description: "An error occurred while generating the PDF.", variant: "destructive" });
-        });
     };
+    
+    const handleDownloadClick = async () => {
+        if (!user) {
+            toast({ title: "Please log in", description: "You need to be logged in to download a resume.", variant: "destructive" });
+            return;
+        }
+        const usageCheck = await checkAndIncrementResumeExports(user.uid);
+        if (!usageCheck.success) {
+            toast({ title: "Limit Reached", description: usageCheck.message, variant: "destructive" });
+            return;
+        }
+        setIsDownloadModalOpen(true);
+    };
+
+    const handleEnhanceAndDownload = async () => {
+        setIsEnhancing(true);
+        try {
+            // Map the current state to the format expected by the AI flow
+            const inputForAI: ResumeData = {
+                personalInfo: resumeData.personalInfo,
+                experience: resumeData.experience,
+                education: resumeData.education,
+                skills: resumeData.skills,
+                languages: resumeData.languages,
+                hobbies: resumeData.hobbies,
+            };
+
+            const enhancedResult = await enhanceResume(inputForAI);
+            
+            // Create a new resume data object with the enhanced content
+            const enhancedData = JSON.parse(JSON.stringify(resumeData)); // Deep copy
+            enhancedData.personalInfo.summary = enhancedResult.enhancedSummary;
+            enhancedResult.enhancedExperience.forEach(enhancedExp => {
+                const originalExp = enhancedData.experience.find((exp: ResumeExperience) => exp.role === enhancedExp.originalRole);
+                if (originalExp) {
+                    originalExp.description = enhancedExp.enhancedDescription;
+                }
+            });
+            
+            toast({ title: "Resume Enhanced!", description: "AI has rewritten your content. Preparing PDF..." });
+            await startDownload(enhancedData);
+
+        } catch (error) {
+            console.error("Failed to enhance resume:", error);
+            toast({ title: "Enhancement Failed", description: "Could not enhance resume content. Please try again.", variant: "destructive" });
+        } finally {
+            setIsEnhancing(false);
+        }
+    };
+
 
     const handleInfoChange = (field: keyof typeof resumeData.personalInfo, value: string) => {
         setResumeData(prev => ({ ...prev, personalInfo: { ...prev.personalInfo, [field]: value }}));
@@ -270,6 +307,7 @@ export default function ResumeBuilderPage() {
     }
 
     return (
+        <>
         <main className="flex-1 overflow-hidden">
             <div className="grid grid-cols-1 lg:grid-cols-3 h-[calc(100vh-4rem)]">
                 {/* Editor Panel */}
@@ -410,5 +448,49 @@ export default function ResumeBuilderPage() {
                 </div>
             </div>
         </main>
+
+        <Dialog open={isDownloadModalOpen} onOpenChange={setIsDownloadModalOpen}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle className="flex items-center gap-3 text-2xl"><Sparkles className="w-6 h-6 text-primary"/>Enhance Your Resume?</DialogTitle>
+                    <DialogDescription>
+                        Would you like our AI to review and improve your resume's content before you download it?
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="my-6 space-y-4">
+                   <Button 
+                        variant="outline" 
+                        size="lg" 
+                        className="w-full justify-start h-auto py-3"
+                        onClick={() => startDownload(resumeData)}
+                        disabled={isDownloading || isEnhancing}
+                    >
+                         <Download className="mr-4 w-5 h-5"/>
+                         <div>
+                            <p className="font-semibold text-base">Download As Is</p>
+                            <p className="text-sm text-muted-foreground text-left">Download the PDF with your current content.</p>
+                         </div>
+                   </Button>
+                   <Button 
+                        size="lg" 
+                        className="w-full justify-start h-auto py-3 bg-gradient-to-r from-purple-500 to-blue-500 text-white hover:opacity-90"
+                        onClick={handleEnhanceAndDownload}
+                        disabled={isDownloading || isEnhancing}
+                    >
+                        {isEnhancing ? <Loader2 className="mr-4 w-5 h-5 animate-spin"/> : <Wand2 className="mr-4 w-5 h-5"/>}
+                        <div>
+                             <p className="font-semibold text-base">Enhance with AI & Download</p>
+                            <p className="text-sm text-white/80 text-left">Let our AI rewrite your resume for maximum impact.</p>
+                        </div>
+                   </Button>
+                </div>
+                <DialogFooter>
+                    <DialogClose asChild>
+                        <Button type="button" variant="secondary">Cancel</Button>
+                    </DialogClose>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+        </>
     );
 }

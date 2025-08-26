@@ -1,5 +1,6 @@
 
 
+
 import type { AnswerAnalysis } from "@/ai/flows/analyze-coding-answers";
 import type { GenerateInterviewFeedbackOutput } from "@/ai/flows/generate-interview-feedback";
 import type { QuizState } from "@/app/dashboard/coding-quiz/quiz/page";
@@ -187,6 +188,27 @@ export interface FAQ {
     question: string;
     answer: string;
 }
+
+// --- Resume Builder ---
+export type ResumeData = {
+    personalInfo: {
+        name: string;
+        profession: string;
+        email: string;
+        phone: string;
+        address: string;
+        linkedin: string;
+        github: string;
+        website: string;
+        summary: string;
+    };
+    experience: { company: string; role: string; duration: string; description: string; }[];
+    education: { institution: string; degree: string; year: string; }[];
+    skills: { name: string; }[];
+    languages: { name: string; proficiency: string; level: number; }[];
+    hobbies: { name: string; }[];
+};
+
 
 // --- Survey ---
 // This represents the structure of a document in the surveySubmissions collection
