@@ -271,9 +271,9 @@ export default function ResumeBuilderPage() {
 
     return (
         <main className="flex-1 overflow-hidden">
-            <div className="grid grid-cols-1 lg:grid-cols-2 h-[calc(100vh-4rem)]">
+            <div className="grid grid-cols-1 lg:grid-cols-3 h-[calc(100vh-4rem)]">
                 {/* Editor Panel */}
-                <div className="overflow-y-auto p-6 space-y-6">
+                <div className="lg:col-span-1 overflow-y-auto p-6 space-y-6">
                     <div className="flex items-center justify-between">
                          <div className="flex items-center gap-3">
                             <FileText className="w-8 h-8"/>
@@ -403,7 +403,7 @@ export default function ResumeBuilderPage() {
                 </div>
 
                 {/* Preview Panel */}
-                <div className="bg-muted hidden lg:flex items-center justify-center overflow-y-auto p-8 relative">
+                <div className="bg-muted hidden lg:flex items-center justify-center overflow-y-auto p-8 relative lg:col-span-2">
                     <div className="w-full max-w-[210mm] mx-auto shadow-2xl" style={{ aspectRatio: '1 / 1.414' /* A4 ratio */ }}>
                         <ResumePreview resumeData={resumeData} ref={resumePreviewRef} />
                     </div>
