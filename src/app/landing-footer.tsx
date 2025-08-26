@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -11,7 +10,7 @@ export default function LandingFooter() {
     <footer className="bg-card/30 border-t border-border/50">
       <div className="container mx-auto max-w-7xl px-4 py-12 md:px-6">
         <div className="grid grid-cols-1 gap-12 lg:grid-cols-4">
-          {/* Branding and Newsletter */}
+          {/* Branding */}
           <div className="lg:col-span-1">
             <div className="flex items-center gap-3 mb-4">
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
@@ -24,10 +23,6 @@ export default function LandingFooter() {
             <p className="text-muted-foreground mb-6">
               Ace your next tech interview with AI-powered assistance.
             </p>
-            <form className="flex w-full max-w-sm items-center space-x-2">
-              <Input type="email" placeholder="Email for newsletter" />
-              <Button type="submit">Subscribe</Button>
-            </form>
           </div>
 
           {/* Links Grid */}
