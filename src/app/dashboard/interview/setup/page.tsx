@@ -45,6 +45,12 @@ function InterviewSetup() {
     setLoading(true);
     setError('');
 
+    if (!process.env.NEXT_PUBLIC_WEBSOCKET_URL) {
+        setError("Interview service is not configured. Please contact support.");
+        setLoading(false);
+        return;
+    }
+
     try {
         const usageCheck = await checkAndIncrementUsage(user.uid);
         if (!usageCheck.success) {
@@ -149,4 +155,3 @@ export default function InterviewSetupPage() {
         </Suspense>
     )
 }
-

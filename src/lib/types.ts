@@ -1,5 +1,4 @@
 
-
 import type { AnswerAnalysis } from "@/ai/flows/analyze-coding-answers";
 import type { GenerateInterviewFeedbackOutput } from "@/ai/flows/generate-interview-feedback";
 import type { QuizState } from "@/app/dashboard/coding-quiz/quiz/page";
@@ -38,7 +37,7 @@ export interface QuizResult extends BaseActivity {
 // A specific type for completed mock interviews
 export interface InterviewActivity extends BaseActivity {
     type: 'interview';
-    transcript: { speaker: string; text: string }[];
+    transcript: { speaker: 'user' | 'ai'; text: string }[];
     feedback: string;
     analysis?: GenerateInterviewFeedbackOutput;
     details: {

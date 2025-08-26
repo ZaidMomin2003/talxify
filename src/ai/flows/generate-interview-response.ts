@@ -2,145 +2,142 @@
 'use server';
 
 /**
- * @fileOverview A flow to generate conversational responses for a mock interview.
- *
- * - generateInterviewResponse - The main function to get the AI's next response.
+ * @fileOverview A flow to generate conversational responses for a mock interview using Groq and Deepgram.
+ * This flow is designed for a streaming, low-latency setup.
  */
+import { Groq } from 'groq-sdk';
+import { createClient } from '@deepgram/sdk';
+import type { LiveClient } from '@deepgram/sdk';
 
-import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
-import { MessageData } from 'genkit/model';
-import type { InterviewResponse, InterviewState } from '@/lib/interview-types';
-import { InterviewResponseSchema, InterviewStateSchema } from '@/lib/interview-types';
-
-
-export async function generateInterviewResponse(input: InterviewState): Promise<InterviewResponse> {
-  return interviewFlow(input);
+if (!process.env.GROQ_API_KEY) {
+  throw new Error('GROQ_API_KEY is not set in environment variables.');
+}
+if (!process.env.DEEPGRAM_API_KEY) {
+  throw new Error('DEEPGRAM_API_KEY is not set in environment variables.');
 }
 
-const interviewFlow = ai.defineFlow(
-  {
-    name: 'interviewFlow',
-    inputSchema: InterviewStateSchema,
-    outputSchema: InterviewResponseSchema,
-  },
-  async (state) => {
-    // If the interview is already marked as complete, do nothing.
-    if (state.isComplete) {
-      return {
-        response: 'This interview has concluded. Thank you for your time.',
-        newState: state,
-      };
-    }
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+const deepgram = createClient(process.env.DEEPGRAM_API_KEY);
 
-    const MAX_QUESTIONS = 6;
-    
-    // --- Hardcoded Initial Conversation Flow ---
-    
-    // 1. If history is empty, AI sends the first greeting.
-    if (state.history.length === 0) {
-      const initialGreeting = 'Hi, how are you doing today?';
-      const newState: InterviewState = {
-        ...state,
-        history: [{ role: 'model', content: [{ text: initialGreeting }] }],
-      };
-      return {
-        response: initialGreeting,
-        newState: newState,
-      };
-    }
+interface InterviewState {
+  interviewId: string;
+  topic: string;
+  level: string;
+  role: string;
+  company?: string;
+  history: { role: 'user' | 'assistant'; content: string }[];
+  questionsAsked: number;
+  isComplete: boolean;
+}
 
-    // 2. After user replies to greeting, AI introduces itself and asks if user is ready.
-    if (state.history.length === 1 && state.history[0].role === 'model') {
-        const companyText = state.company ? `for ${state.company} ` : '';
-        const introText = `That's good to hear. I'm Alex, your AI interviewer. We'll spend about 12 minutes discussing ${state.topic} for the ${state.level} ${state.role} role ${companyText}. Are you ready to begin?`;
-        const newState: InterviewState = {
-            ...state,
-            history: [...state.history, { role: 'model', content: [{ text: introText }] }],
-        };
-        return {
-            response: introText,
-            newState: newState,
-        };
-    }
-    
-    // 3. After user confirms they are ready, AI asks the first question.
-    if (state.history.length === 2 && state.history[1].role === 'user') {
-        const firstQuestion = `Great. Let's start with a foundational question about ${state.topic}. Can you explain its core purpose and a situation where you would choose to use it?`;
-        const newState: InterviewState = {
-            ...state,
-            history: [...state.history, { role: 'model', content: [{ text: firstQuestion }] }],
-            questionsAsked: 1
-        };
-        return {
-            response: firstQuestion,
-            newState: newState
-        };
-    }
+const MAX_QUESTIONS = 7; // Approx 6-8 questions total
 
+export async function handleInterviewStream(ws: any) {
+  let interviewState: InterviewState | null = null;
+  let ttsConnection: LiveClient | null = null;
 
-    const promptContext = `
-      You are an expert, friendly, and professional AI interviewer named Alex.
-      Your goal is to conduct a natural, conversational mock interview that lasts about ${MAX_QUESTIONS} questions in total.
-      
-      The candidate is interviewing for a ${state.level} ${state.role} role.
-      The main technical topic for this interview is: ${state.topic}.
-      {{#if state.company}}
-      The interview is specifically tailored to simulate the style of **${state.company}**.
-      - If the company is Amazon, ask behavioral questions related to their 14 Leadership Principles (e.g., "Tell me about a time you showed customer obsession.").
-      - If the company is Google, focus heavily on algorithms, data structures, and problem-solving.
-      - If the company is Meta, focus on product sense and execution in addition to technical skills.
-      - If it is another company, adopt a generally professional but challenging technical interview style.
-      {{/if}}
+  const getSystemPrompt = (state: InterviewState) => `
+    You are Alex, an expert, friendly, and professional AI interviewer. Your goal is to conduct a natural, conversational mock interview that lasts about ${MAX_QUESTIONS} questions.
+    The candidate is interviewing for a ${state.level} ${state.role} role. The main technical topic is: ${state.topic}.
+    ${state.company ? `The interview is tailored for ${state.company}. Adapt your style accordingly (e.g., STAR method for Amazon, open-ended problem-solving for Google).` : ''}
 
-      Current state: You have already asked ${state.questionsAsked} out of ${MAX_QUESTIONS} questions. The conversation has started. Your job is to continue it.
-
-      Conversation Rules:
-      1.  **Ask the Next Question**: Your main task is to ask the next relevant question. The question should be tailored to the topic, role, level, and especially the specified company style. Ask ONE main question at a time.
-      2.  **Be Conversational & Concise**: After the user answers, provide a very brief, encouraging acknowledgment (e.g., "Good approach," "Thanks, that makes sense," "Okay, I see.") before immediately asking the next question. Do not add extra conversational filler.
-      3.  **Stay on Track**: Gently guide the conversation back to the interview if the user goes off-topic.
-      4.  **Conclude Gracefully**: ONLY after you have asked ${MAX_QUESTIONS} questions and the user has responded to the final question, you MUST provide a brief, encouraging summary of the user's performance. Mention their strengths and one or two areas for improvement based on their answers. End the interview on a positive note. Only after giving this full summary should you set interviewShouldEnd to true. DO NOT conclude early.
-    `;
-
-    const { output } = await ai.generate({
-      model: 'googleai/gemini-1.5-flash-latest',
-      system: promptContext,
-      history: state.history as MessageData[],
-      prompt: "Based on the rules and the conversation history, what is your next concise response? If you are giving the final summary, ensure it is complete before setting interviewShouldEnd to true.",
-      output: {
-          schema: z.object({
-              thought: z.string().describe("Your reasoning for the response you are about to give."),
-              response: z.string().describe("Your next response to the user. This is what will be spoken."),
-              questionWasAsked: z.boolean().describe("Set to true if you asked a new main question in your response."),
-              interviewShouldEnd: z.boolean().describe("Set to true ONLY after you have given the final summary and the interview is over."),
-          })
-      },
-      config: { temperature: 0.8 },
+    Conversation Rules:
+    1.  Start with a brief, friendly greeting.
+    2.  Ask ONE main question at a time. The questions must be relevant to the topic, role, and level.
+    3.  After the user answers, provide a very brief, encouraging acknowledgment (e.g., "Good approach," "Thanks, that makes sense.") before immediately asking the next question.
+    4.  Keep your responses concise and conversational.
+    5.  After you have asked ${MAX_QUESTIONS} questions and the user has responded, you MUST conclude the interview.
+    6.  The final message must be a harsh but fair and realistic review of the user's performance based on the entire conversation. Start with "Okay, that's all the questions I have. Here's my feedback...". Provide specific examples of their strengths and weaknesses. Be direct and constructive.
+    7.  Do not say "goodbye" or other pleasantries in the final review. Just give the feedback and end.
+  `;
+  
+  const connectToDeepgramTTS = () => {
+    ttsConnection = deepgram.speak.live({
+        model: 'aura-asteria-en',
+        encoding: 'mp3',
+        sample_rate: 24000,
+        container: 'wave',
     });
 
-    if (!output) {
-      throw new Error("The model did not return a valid response.");
-    }
-    
-    // Update the interview state
-    const newState = { ...state };
+    ttsConnection.on('open', () => console.log('Deepgram TTS connection opened.'));
+    ttsConnection.on('error', (e) => console.error('Deepgram TTS error:', e));
+    ttsConnection.on('close', () => console.log('Deepgram TTS connection closed.'));
+    ttsConnection.on('message', (message) => {
+        const audioData = message.data;
+        if (audioData) {
+            ws.send(JSON.stringify({ type: 'ai_audio', audio: Array.from(audioData) }));
+        }
+    });
+  };
 
-    // We add the AI's response to keep the history for the next turn.
-    // The user's response will be added in the next call.
-    newState.history.push({ role: 'model', content: [{ text: output.response }] });
-    
-    if (output.questionWasAsked && newState.questionsAsked < MAX_QUESTIONS) {
-      newState.questionsAsked += 1;
+  const processAndRespond = async () => {
+    if (!interviewState || !ttsConnection) return;
+
+    try {
+        const stream = await groq.chat.completions.create({
+            model: 'llama3-70b-8192',
+            messages: [
+                { role: 'system', content: getSystemPrompt(interviewState) },
+                ...interviewState.history
+            ],
+            stream: true,
+        });
+        
+        let fullResponse = "";
+        for await (const chunk of stream) {
+            const content = chunk.choices[0]?.delta?.content || '';
+            if (content) {
+                fullResponse += content;
+                ttsConnection.send(content);
+            }
+        }
+
+        interviewState.history.push({ role: 'assistant', content: fullResponse });
+        
+        // Send the full text for transcript purposes
+        ws.send(JSON.stringify({ type: 'ai_text', text: fullResponse }));
+
+        if (interviewState.questionsAsked < MAX_QUESTIONS) {
+             interviewState.questionsAsked++;
+        } else {
+             interviewState.isComplete = true;
+             ws.send(JSON.stringify({ type: 'interview_complete' }));
+             if (ttsConnection) ttsConnection.finish();
+        }
+
+    } catch (error) {
+        console.error("Error with Groq or Deepgram:", error);
     }
+  };
+  
+  // WebSocket message handler
+  ws.on('message', async (message: string) => {
+    const data = JSON.parse(message);
     
-    // Check if the interview should be marked as complete
-    if (output.interviewShouldEnd) {
-      newState.isComplete = true;
+    if (data.type === 'start_interview') {
+        interviewState = {
+            ...data.config,
+            history: [],
+            questionsAsked: 0,
+            isComplete: false,
+        };
+        connectToDeepgramTTS();
+        // Wait for TTS connection to open before sending first message
+        setTimeout(processAndRespond, 1000); 
     }
 
-    return {
-      response: output.response,
-      newState: newState,
-    };
-  }
-);
+    if (data.type === 'user_speech') {
+        if (interviewState && !interviewState.isComplete) {
+            interviewState.history.push({ role: 'user', content: data.text });
+            await processAndRespond();
+        }
+    }
+  });
+
+  ws.on('close', () => {
+    console.log('Client disconnected from interview stream.');
+    if (ttsConnection) {
+        ttsConnection.finish();
+    }
+  });
+}
