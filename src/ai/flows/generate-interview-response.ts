@@ -7,7 +7,6 @@
  */
 
 import { z } from 'genkit';
-import { ai } from '@/ai/genkit';
 import { Groq } from 'groq-sdk';
 import { InterviewStateSchema, InterviewResponseSchema, type InterviewState, type InterviewResponse } from '@/lib/interview-types';
 
@@ -34,43 +33,32 @@ const getSystemPrompt = (state: InterviewState) => `
 `;
 
 export async function generateInterviewResponse(state: InterviewState): Promise<InterviewResponse> {
-  return generateInterviewResponseFlow(state);
-}
+  const systemPrompt = getSystemPrompt(state);
+  
+  const response = await groq.chat.completions.create({
+    model: 'llama3-70b-8192',
+    messages: [
+      { role: 'system', content: systemPrompt },
+      ...state.history,
+    ],
+    temperature: 0.7,
+    max_tokens: 300,
+  });
 
-const generateInterviewResponseFlow = ai.defineFlow(
-  {
-    name: 'generateInterviewResponseFlow',
-    inputSchema: InterviewStateSchema,
-    outputSchema: InterviewResponseSchema,
-  },
-  async (state) => {
-    const systemPrompt = getSystemPrompt(state);
-    
-    const response = await groq.chat.completions.create({
-      model: 'llama3-70b-8192',
-      messages: [
-        { role: 'system', content: systemPrompt },
-        ...state.history,
-      ],
-      temperature: 0.7,
-      max_tokens: 300,
-    });
+  const aiResponseText = response.choices[0]?.message?.content || "I'm sorry, I seem to be having trouble responding.";
 
-    const aiResponseText = response.choices[0]?.message?.content || "I'm sorry, I seem to be having trouble responding.";
+  const newState: InterviewState = { ...state };
+  newState.history.push({ role: 'assistant', content: aiResponseText });
 
-    const newState: InterviewState = { ...state };
-    newState.history.push({ role: 'assistant', content: aiResponseText });
-
-    // The number of questions asked is half the length of the history, minus the initial greeting.
-    const questionsAsked = Math.floor(newState.history.length / 2);
-    
-    if (questionsAsked >= MAX_QUESTIONS) {
-        newState.isComplete = true;
-    }
-
-    return {
-      response: aiResponseText,
-      newState: newState,
-    };
+  // The number of questions asked is half the length of the history, minus the initial greeting.
+  const questionsAsked = Math.ceil(newState.history.length / 2);
+  
+  if (questionsAsked >= MAX_QUESTIONS) {
+      newState.isComplete = true;
   }
-);
+
+  return {
+    response: aiResponseText,
+    newState: newState,
+  };
+}
