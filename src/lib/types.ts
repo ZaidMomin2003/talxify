@@ -5,6 +5,7 @@ import type { AnswerAnalysis } from "@/ai/flows/analyze-coding-answers";
 import type { GenerateInterviewFeedbackOutput } from "@/ai/flows/generate-interview-feedback";
 import type { QuizState } from "@/app/dashboard/coding-quiz/quiz/page";
 import type { SyllabusDay } from "@/ai/flows/generate-syllabus";
+import { z } from 'genkit';
 
 // A generic type for any activity stored in the user's document
 export type StoredActivity = QuizResult | InterviewActivity | NoteGenerationActivity;
@@ -190,6 +191,54 @@ export interface FAQ {
 }
 
 // --- Resume Builder ---
+// This is the data structure for the resume enhancement AI flow.
+const ExperienceSchema = z.object({
+  company: z.string(),
+  role: z.string(),
+  duration: z.string(),
+  description: z.string(),
+});
+
+const EducationSchema = z.object({
+  institution: z.string(),
+  degree: z.string(),
+  year: z.string(),
+});
+
+const SkillSchema = z.object({ name: z.string() });
+const LanguageSchema = z.object({ name: z.string(), proficiency: z.string(), level: z.number() });
+const HobbySchema = z.object({ name: z.string() });
+
+export const ResumeDataInputSchema = z.object({
+  personalInfo: z.object({
+    name: z.string(),
+    profession: z.string(),
+    email: z.string(),
+    phone: z.string(),
+    address: z.string(),
+    linkedin: z.string(),
+    github: z.string(),
+    website: z.string(),
+    summary: z.string(),
+  }),
+  experience: z.array(ExperienceSchema),
+  education: z.array(EducationSchema),
+  skills: z.array(SkillSchema),
+  languages: z.array(LanguageSchema),
+  hobbies: z.array(HobbySchema),
+});
+export type ResumeDataInput = z.infer<typeof ResumeDataInputSchema>;
+
+export const EnhanceResumeOutputSchema = z.object({
+  enhancedSummary: z.string().describe("The rewritten, enhanced professional summary."),
+  enhancedExperience: z.array(z.object({
+    originalRole: z.string(),
+    enhancedDescription: z.string().describe("The rewritten, enhanced description for the work experience. Use action verbs and focus on achievements."),
+  })),
+});
+export type EnhanceResumeOutput = z.infer<typeof EnhanceResumeOutputSchema>;
+
+
 export type ResumeData = {
     personalInfo: {
         name: string;

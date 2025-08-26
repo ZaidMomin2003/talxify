@@ -1,62 +1,13 @@
+
 'use server';
 /**
  * @fileOverview An AI flow to enhance the content of a user's resume.
  *
  * - enhanceResume - A function that takes resume data and returns an enhanced version.
- * - ResumeDataSchema - The Zod schema for the resume data structure.
- * - EnhanceResumeOutput - The return type for the enhanceResume function.
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
-import type { ResumeData } from '@/lib/types';
-
-// Define a Zod schema that matches the ResumeData type
-const ExperienceSchema = z.object({
-  company: z.string(),
-  role: z.string(),
-  duration: z.string(),
-  description: z.string(),
-});
-
-const EducationSchema = z.object({
-  institution: z.string(),
-  degree: z.string(),
-  year: z.string(),
-});
-
-const SkillSchema = z.object({ name: z.string() });
-const LanguageSchema = z.object({ name: z.string(), proficiency: z.string(), level: z.number() });
-const HobbySchema = z.object({ name: z.string() });
-
-export const ResumeDataSchema = z.object({
-  personalInfo: z.object({
-    name: z.string(),
-    profession: z.string(),
-    email: z.string(),
-    phone: z.string(),
-    address: z.string(),
-    linkedin: z.string(),
-    github: z.string(),
-    website: z.string(),
-    summary: z.string(),
-  }),
-  experience: z.array(ExperienceSchema),
-  education: z.array(EducationSchema),
-  skills: z.array(SkillSchema),
-  languages: z.array(LanguageSchema),
-  hobbies: z.array(HobbySchema),
-});
-export type ResumeDataInput = z.infer<typeof ResumeDataSchema>;
-
-const EnhanceResumeOutputSchema = z.object({
-  enhancedSummary: z.string().describe("The rewritten, enhanced professional summary."),
-  enhancedExperience: z.array(z.object({
-    originalRole: z.string(),
-    enhancedDescription: z.string().describe("The rewritten, enhanced description for the work experience. Use action verbs and focus on achievements."),
-  })),
-});
-export type EnhanceResumeOutput = z.infer<typeof EnhanceResumeOutputSchema>;
+import { ResumeDataInputSchema, EnhanceResumeOutputSchema, type ResumeDataInput, type EnhanceResumeOutput } from '@/lib/types';
 
 
 export async function enhanceResume(
@@ -68,7 +19,7 @@ export async function enhanceResume(
 
 const prompt = ai.definePrompt({
   name: 'enhanceResumePrompt',
-  input: { schema: ResumeDataSchema },
+  input: { schema: ResumeDataInputSchema },
   output: { schema: EnhanceResumeOutputSchema },
   prompt: `You are an expert resume writer and career coach. Your task is to enhance the provided resume content to make it more professional, impactful, and clear.
 
@@ -95,7 +46,7 @@ Provide the enhanced summary and the enhanced description for each experience en
 const enhanceResumeFlow = ai.defineFlow(
   {
     name: 'enhanceResumeFlow',
-    inputSchema: ResumeDataSchema,
+    inputSchema: ResumeDataInputSchema,
     outputSchema: EnhanceResumeOutputSchema,
   },
   async (input) => {
