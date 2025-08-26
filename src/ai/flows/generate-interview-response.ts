@@ -8,7 +8,7 @@
 
 import { z } from 'genkit';
 import { Groq } from 'groq-sdk';
-import { InterviewStateSchema, InterviewResponseSchema, type InterviewState, type InterviewResponse } from '@/lib/interview-types';
+import { InterviewStateSchema, type InterviewState, type InterviewResponse } from '@/lib/interview-types';
 
 if (!process.env.GROQ_API_KEY) {
   throw new Error('GROQ_API_KEY is not set in environment variables.');
@@ -23,13 +23,14 @@ const getSystemPrompt = (state: InterviewState) => `
     ${state.company ? `The interview is tailored for ${state.company}. Adapt your style accordingly (e.g., STAR method for Amazon, open-ended problem-solving for Google).` : ''}
 
     Conversation Rules:
-    1. Start with a brief, friendly greeting if the history is empty.
-    2. Ask ONE main question at a time. The questions must be relevant to the topic, role, and level.
-    3. After the user answers, provide a very brief, encouraging acknowledgment (e.g., "Good approach," "Thanks, that makes sense.") before immediately asking the next question.
-    4. Keep your responses concise and conversational.
-    5. After you have asked ${MAX_QUESTIONS} questions and the user has responded, you MUST conclude the interview.
-    6. The final message MUST be a harsh but fair and realistic review of the user's performance based on the entire conversation. Start with "Okay, that's all the questions I have. Here's my feedback...". Provide specific examples of their strengths and weaknesses. Be direct and constructive.
-    7. Do not say "goodbye" or other pleasantries in the final review. Just give the feedback and end.
+    1.  Start with a brief, friendly greeting if the history is empty.
+    2.  Ask ONE main question at a time. The questions must be relevant to the topic, role, and level.
+    3.  After the user answers, provide a VERY brief, encouraging acknowledgment (like "Good approach," "Thanks, that makes sense," "Okay, I see.") before immediately asking the next logical follow-up question.
+    4.  Your follow-up question should extend the previous topic or ask for more detail. For example, if they answered about React Hooks, ask them to elaborate on a specific hook or a use case.
+    5.  Keep your responses concise and conversational. DO NOT speak in long paragraphs.
+    6.  After you have asked ${MAX_QUESTIONS} questions and the user has responded, you MUST conclude the interview.
+    7.  Your final message MUST be a harsh but fair and realistic review of the user's performance based on the entire conversation. Start with "Okay, that's all the questions I have. Here's my feedback...". Provide specific examples of their strengths and weaknesses. Be direct and constructive.
+    8.  Do not say "goodbye" or other pleasantries in the final review. Just give the feedback and end.
 `;
 
 export async function generateInterviewResponse(state: InterviewState): Promise<InterviewResponse> {
@@ -50,8 +51,8 @@ export async function generateInterviewResponse(state: InterviewState): Promise<
   const newState: InterviewState = { ...state };
   newState.history.push({ role: 'assistant', content: aiResponseText });
 
-  // The number of questions asked is half the length of the history, minus the initial greeting.
-  const questionsAsked = Math.ceil(newState.history.length / 2);
+  // The number of questions asked is half the length of the history (user + ai responses).
+  const questionsAsked = Math.floor(newState.history.length / 2);
   
   if (questionsAsked >= MAX_QUESTIONS) {
       newState.isComplete = true;
@@ -62,3 +63,5 @@ export async function generateInterviewResponse(state: InterviewState): Promise<
     newState: newState,
   };
 }
+
+    

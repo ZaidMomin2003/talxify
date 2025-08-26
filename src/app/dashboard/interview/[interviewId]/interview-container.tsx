@@ -7,7 +7,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { addActivity } from '@/lib/firebase-service';
-import type { InterviewActivity, StoredActivity } from '@/lib/types';
+import type { InterviewActivity } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Mic, MicOff, Video, VideoOff, Phone, Loader2, MessageSquare, Bot, Power, User, AlertTriangle } from 'lucide-react';
@@ -38,6 +38,10 @@ export function InterviewContainer({ interviewId }: { interviewId: string }) {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   
+  // New refs for endpointing
+  const silenceTimer = useRef<NodeJS.Timeout | null>(null);
+  const isRecording = useRef(false);
+
   const { join, leave, toggleWebcam, localWebcamOn, localMicOn, toggleMic } = useMeeting();
 
   const processAndRespond = useCallback(async (state: InterviewState) => {
@@ -60,7 +64,6 @@ export function InterviewContainer({ interviewId }: { interviewId: string }) {
       setInterviewState(newState);
 
       if (newState.isComplete) {
-         // Wait for audio to finish playing before ending session
          const audio = audioPlayerRef.current;
          const onAudioEnd = () => {
             endSession(true);
@@ -68,7 +71,13 @@ export function InterviewContainer({ interviewId }: { interviewId: string }) {
          };
          audio?.addEventListener('ended', onAudioEnd);
       } else {
-        setStatus('listening');
+        // Automatically start listening for user's response after AI finishes
+        const audio = audioPlayerRef.current;
+        const onAudioEnd = () => {
+            startRecording();
+            audio?.removeEventListener('ended', onAudioEnd);
+        };
+        audio?.addEventListener('ended', onAudioEnd);
       }
 
     } catch (error) {
@@ -78,34 +87,19 @@ export function InterviewContainer({ interviewId }: { interviewId: string }) {
     }
   }, []);
 
-  const handleStopRecording = async () => {
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
-      mediaRecorderRef.current.stop();
-    }
-  };
-
-  const startRecording = async () => {
-    if (mediaRecorderRef.current) {
-      audioChunksRef.current = [];
-      mediaRecorderRef.current.start();
-      setStatus('listening');
-    }
-  };
-
-  useEffect(() => {
-    const initializeRecorder = async () => {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        const recorder = new MediaRecorder(stream);
-        mediaRecorderRef.current = recorder;
-
-        recorder.ondataavailable = (event) => {
-          audioChunksRef.current.push(event.data);
-        };
-
-        recorder.onstop = async () => {
+  const handleStopRecordingAndProcess = useCallback(async () => {
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+          mediaRecorderRef.current.stop();
+          isRecording.current = false;
+          if (silenceTimer.current) clearTimeout(silenceTimer.current);
+          
           setStatus('processing');
           const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+          if(audioBlob.size < 2000) { // Ignore small audio chunks/noise
+              setStatus('listening');
+              startRecording();
+              return;
+          }
           const reader = new FileReader();
           reader.readAsDataURL(audioBlob);
           reader.onloadend = async () => {
@@ -120,21 +114,53 @@ export function InterviewContainer({ interviewId }: { interviewId: string }) {
                 processAndRespond(newState);
               } else {
                 setStatus('listening'); // If no transcript, just go back to listening
+                startRecording();
               }
             } catch (err) {
               console.error("Transcription error:", err);
               toast({ title: "Transcription Error", description: "Could not understand audio. Please try again.", variant: "destructive"});
               setStatus('listening');
+              startRecording();
             }
           };
+      }
+  }, [interviewState, processAndRespond, toast]);
+
+
+  const startRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'recording') {
+      audioChunksRef.current = [];
+      mediaRecorderRef.current.start(1000); // Record in 1s chunks
+      isRecording.current = true;
+      setStatus('listening');
+    }
+  };
+
+  useEffect(() => {
+    const initializeRecorder = async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const recorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+        mediaRecorderRef.current = recorder;
+
+        recorder.ondataavailable = (event) => {
+          if (event.data.size > 0) {
+            audioChunksRef.current.push(event.data);
+          }
+          // Endpointing logic: if new data comes in, reset the silence timer
+          if (isRecording.current) {
+             if (silenceTimer.current) clearTimeout(silenceTimer.current);
+             silenceTimer.current = setTimeout(handleStopRecordingAndProcess, 1500); // 1.5s of silence
+          }
         };
+
       } catch (error) {
         console.error("Failed to get media devices:", error);
         toast({ title: "Microphone Error", description: "Could not access your microphone.", variant: "destructive"});
       }
     };
     initializeRecorder();
-  }, []);
+  }, [handleStopRecordingAndProcess, toast]);
 
 
   const startSession = async () => {
@@ -150,7 +176,6 @@ export function InterviewContainer({ interviewId }: { interviewId: string }) {
         role: searchParams.get('role') || 'Software Engineer',
         company: searchParams.get('company') || undefined,
         history: [],
-        questionsAsked: 0,
         isComplete: false,
     };
     
@@ -160,6 +185,13 @@ export function InterviewContainer({ interviewId }: { interviewId: string }) {
   
   const endSession = useCallback(async (isFinished: boolean = false) => {
     setStatus('ending');
+    // Stop any active recording
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+        mediaRecorderRef.current.stop();
+        isRecording.current = false;
+    }
+    if (silenceTimer.current) clearTimeout(silenceTimer.current);
+
     leave();
     setIsSessionActive(false);
     
@@ -185,7 +217,7 @@ export function InterviewContainer({ interviewId }: { interviewId: string }) {
   const getStatusIndicator = () => {
     switch (status) {
         case 'listening':
-            return <div className="flex items-center justify-center gap-2 text-green-400"><Mic className="h-5 w-5 animate-pulse" /><span>Listening...</span></div>;
+            return <div className="flex items-center justify-center gap-2 text-green-400"><Mic className="h-5 w-5 animate-pulse" /><span>Listening... (Speak now)</span></div>;
         case 'speaking':
             return <div className="flex items-center justify-center gap-2 text-blue-400"><Bot className="h-5 w-5" /><span>AI Speaking...</span></div>;
         case 'processing':
@@ -205,7 +237,7 @@ export function InterviewContainer({ interviewId }: { interviewId: string }) {
           <Card className="max-w-lg text-center">
             <CardHeader>
               <CardTitle>Ready for your mock interview?</CardTitle>
-               <CardDescription>Click the button below to start your session. Make sure your microphone is enabled.</CardDescription>
+               <CardDescription>Click the button below to start your session. The conversation will be hands-free. The AI will detect when you've finished speaking.</CardDescription>
             </CardHeader>
             <CardContent>
               <Button onClick={startSession} size="lg" disabled={status === 'connecting'}>
@@ -273,18 +305,16 @@ export function InterviewContainer({ interviewId }: { interviewId: string }) {
                 <Phone />
             </Button>
              <Button
-                onMouseDown={startRecording}
-                onMouseUp={handleStopRecording}
-                onTouchStart={startRecording}
-                onTouchEnd={handleStopRecording}
-                variant={status === 'listening' ? "default" : "secondary"}
+                onClick={toggleMic}
+                variant={localMicOn ? "default" : "destructive"}
                 size="icon"
                 className="rounded-full h-12 w-12"
-                disabled={status !== 'listening'}
             >
-                {status === 'listening' ? <Mic /> : <MicOff />}
+                {localMicOn ? <Mic /> : <MicOff />}
             </Button>
         </div>
     </div>
   );
 }
+
+    
