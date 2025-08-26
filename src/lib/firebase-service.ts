@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { doc, getDoc, setDoc, updateDoc, arrayUnion, collection, getDocs, addDoc, serverTimestamp, runTransaction, deleteDoc } from 'firebase/firestore';
@@ -133,6 +134,47 @@ export const checkAndIncrementUsage = async (userId: string): Promise<{ success:
     } catch (e) {
         console.error("Transaction failed: ", e);
         return { success: false, message: "An error occurred while checking your usage. Please try again." };
+    }
+}
+
+export const checkAndIncrementResumeExports = async (userId: string): Promise<{ success: boolean; message: string; }> => {
+    const userRef = doc(db, 'users', userId);
+
+    try {
+        let usageAllowed = false;
+        let message = '';
+        await runTransaction(db, async (transaction) => {
+            const userDoc = await transaction.get(userRef);
+            if (!userDoc.exists()) {
+                throw new Error("User document does not exist!");
+            }
+
+            const userData = userDoc.data() as UserData;
+            const { resumeExports } = userData.subscription;
+            const today = format(new Date(), 'yyyy-MM-dd');
+            
+            const dailyLimit = 5;
+
+            if (resumeExports && resumeExports.date === today) {
+                if (resumeExports.count < dailyLimit) {
+                    transaction.update(userRef, { 'subscription.resumeExports.count': resumeExports.count + 1 });
+                    usageAllowed = true;
+                } else {
+                    usageAllowed = false;
+                    message = `You have reached your daily limit of ${dailyLimit} resume exports. Please try again tomorrow.`;
+                }
+            } else {
+                // First export of the day
+                transaction.set(userRef, { subscription: { resumeExports: { date: today, count: 1 } } }, { merge: true });
+                usageAllowed = true;
+            }
+        });
+        
+        return { success: usageAllowed, message };
+
+    } catch (e) {
+        console.error("Resume export transaction failed: ", e);
+        return { success: false, message: "An error occurred while checking your export limit. Please try again." };
     }
 }
 

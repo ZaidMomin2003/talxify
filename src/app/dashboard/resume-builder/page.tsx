@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { useState, useRef, useCallback, useEffect } from 'react';
@@ -8,14 +9,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
-import { FileText, PlusCircle, Trash2, Mail, Phone, Linkedin, Github, Globe, Download, Loader2, Gem, Lock } from 'lucide-react';
+import { FileText, PlusCircle, Trash2, Mail, Phone, Linkedin, Github, Globe, Download, Loader2, Gem, CheckCircle } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/auth-context';
-import { getUserData } from '@/lib/firebase-service';
+import { getUserData, checkAndIncrementResumeExports } from '@/lib/firebase-service';
 import type { UserData } from '@/lib/types';
 import Link from 'next/link';
-import { differenceInHours } from 'date-fns';
+import { useToast } from '@/hooks/use-toast';
 
 // Simplified types for resume
 type ResumeExperience = { company: string; role: string; duration: string; description: string; };
@@ -149,33 +150,6 @@ const ResumePreview = React.forwardRef<HTMLDivElement, { resumeData: typeof init
 });
 ResumePreview.displayName = 'ResumePreview';
 
-
-function LockedFeature() {
-    return (
-        <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8 flex items-center justify-center">
-            <Card className="max-w-md w-full text-center shadow-lg">
-                 <CardHeader>
-                    <div className="mx-auto bg-primary/10 text-primary rounded-full p-3 w-fit mb-2">
-                        <Lock className="h-8 w-8" />
-                    </div>
-                    <CardTitle className="text-2xl font-bold">Feature Locked</CardTitle>
-                    <CardDescription>
-                        The Resume Builder is a Pro feature. Please upgrade your plan to create and download a professional resume.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <Button asChild size="lg">
-                        <Link href="/dashboard/pricing">
-                            <Gem className="mr-2 h-4 w-4" />
-                            Upgrade to Pro
-                        </Link>
-                    </Button>
-                </CardContent>
-            </Card>
-        </main>
-    )
-}
-
 export default function ResumeBuilderPage() {
     const { user } = useAuth();
     const [userData, setUserData] = useState<UserData | null>(null);
@@ -183,6 +157,7 @@ export default function ResumeBuilderPage() {
     const [resumeData, setResumeData] = useState(initialResumeState);
     const resumePreviewRef = useRef<HTMLDivElement>(null);
     const [isDownloading, setIsDownloading] = useState(false);
+    const { toast } = useToast();
 
     useEffect(() => {
         const fetchUserData = async () => {
@@ -195,7 +170,18 @@ export default function ResumeBuilderPage() {
         fetchUserData();
     }, [user]);
 
-    const handleDownloadClick = () => {
+    const handleDownloadClick = async () => {
+        if (!user) {
+            toast({ title: "Please log in", description: "You need to be logged in to download a resume.", variant: "destructive" });
+            return;
+        }
+
+        const usageCheck = await checkAndIncrementResumeExports(user.uid);
+        if (!usageCheck.success) {
+            toast({ title: "Limit Reached", description: usageCheck.message, variant: "destructive" });
+            return;
+        }
+        
         const resumeElement = resumePreviewRef.current;
         if (!resumeElement) return;
 
@@ -234,9 +220,11 @@ export default function ResumeBuilderPage() {
             pdf.addImage(imgData, 'PNG', x, y, finalWidth, finalHeight);
             pdf.save(`${resumeData.personalInfo.name}_Resume.pdf`);
             setIsDownloading(false);
+            toast({ title: "Download Started", description: "Your resume PDF is being prepared." });
         }).catch(err => {
             console.error("Error generating PDF:", err);
             setIsDownloading(false);
+            toast({ title: "Download Failed", description: "An error occurred while generating the PDF.", variant: "destructive" });
         });
     };
 
@@ -277,19 +265,9 @@ export default function ResumeBuilderPage() {
         }));
     };
 
-    if (isLoading || !userData || !user) {
+    if (isLoading) {
         return <div className="flex h-screen items-center justify-center"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>;
     }
-    
-    const isFreePlan = !userData.subscription?.plan || userData.subscription.plan === 'free';
-    const creationDate = user.metadata.creationTime ? new Date(user.metadata.creationTime) : new Date();
-    const hoursSinceCreation = differenceInHours(new Date(), creationDate);
-    const trialExpired = hoursSinceCreation > 24;
-
-    if (isFreePlan && trialExpired) {
-        return <LockedFeature />;
-    }
-
 
     return (
         <main className="flex-1 overflow-hidden">
@@ -297,7 +275,16 @@ export default function ResumeBuilderPage() {
                 {/* Editor Panel */}
                 <div className="overflow-y-auto p-6 space-y-6">
                     <div className="flex items-center justify-between">
-                         <h1 className="text-3xl font-bold font-headline flex items-center gap-3"><FileText/> Resume Builder</h1>
+                         <div className="flex items-center gap-3">
+                            <FileText className="w-8 h-8"/>
+                            <div>
+                                <h1 className="text-3xl font-bold font-headline">Resume Builder</h1>
+                                <div className="flex items-center gap-2 text-sm text-green-600 font-semibold">
+                                    <Gem className="w-4 h-4" />
+                                    <span>Forever Free</span>
+                                </div>
+                            </div>
+                         </div>
                          <Button onClick={handleDownloadClick} disabled={isDownloading}>
                             {isDownloading ? <Loader2 className="mr-2 animate-spin"/> : <Download className="mr-2"/>} 
                             Download PDF

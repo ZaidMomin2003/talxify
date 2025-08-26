@@ -1,4 +1,5 @@
 
+
 import type { AnswerAnalysis } from "@/ai/flows/analyze-coding-answers";
 import type { GenerateInterviewFeedbackOutput } from "@/ai/flows/generate-interview-feedback";
 import type { QuizState } from "@/app/dashboard/coding-quiz/quiz/page";
@@ -94,6 +95,10 @@ export interface Subscription {
     startDate?: string;
     endDate: string | null;
     usage?: {
+        date: string; // YYYY-MM-DD
+        count: number;
+    };
+    resumeExports?: {
         date: string; // YYYY-MM-DD
         count: number;
     }
