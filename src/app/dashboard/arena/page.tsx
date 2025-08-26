@@ -5,7 +5,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription as DialogDescriptionComponent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Swords, Lock, PlayCircle, BookOpen, Code, Briefcase, CheckCircle, Loader2, Gem, Eye, RefreshCw } from "lucide-react";
+import { Swords, Lock, PlayCircle, BookOpen, Code, Briefcase, CheckCircle, Loader2, Gem, Eye, RefreshCw, Trophy } from "lucide-react";
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
@@ -97,9 +97,13 @@ export default function ArenaPage() {
         let lastCompletedDay = 0;
         for (let i = 1; i <= syllabus.length; i++) {
             const dayStatus = status[i];
-            const interviewRequired = i % 2 !== 0;
+            const isDay30 = i === 30;
+            const interviewRequired = isDay30 || (i % 2 !== 0);
+            const learnRequired = !isDay30;
             
-            if (dayStatus && dayStatus.learn && dayStatus.quiz && (interviewRequired ? dayStatus.interview : true)) {
+            const isDayComplete = dayStatus && dayStatus.quiz && (learnRequired ? dayStatus.learn : true) && (interviewRequired ? dayStatus.interview : true);
+
+            if (isDayComplete) {
                 lastCompletedDay = i;
             } else {
                 break;
@@ -112,13 +116,17 @@ export default function ArenaPage() {
 
     const handleStartChallenge = (day: number, type: 'learn' | 'quiz' | 'interview') => {
         const topic = syllabus.find(d => d.day === day)?.topic || 'JavaScript';
-        
+        const isDay30 = day === 30;
+
         if (type === 'learn') {
             router.push(`/dashboard/arena/notes?topic=${encodeURIComponent(topic)}`);
         } else if (type === 'quiz') {
-            router.push(`/dashboard/coding-quiz/instructions?topics=${encodeURIComponent(topic)}&difficulty=easy&numQuestions=3`);
+            const allTopics = isDay30 ? syllabus.slice(0, 29).map(d => d.topic).join(', ') : topic;
+            const numQuestions = isDay30 ? 15 : 3;
+            router.push(`/dashboard/coding-quiz/instructions?topics=${encodeURIComponent(allTopics)}&difficulty=${isDay30 ? 'moderate' : 'easy'}&numQuestions=${numQuestions}`);
         } else if (type === 'interview') {
-            router.push(`/dashboard/interview/setup?topic=${encodeURIComponent(topic)}`);
+            const interviewTopic = isDay30 ? 'Final Comprehensive Review' : topic;
+            router.push(`/dashboard/interview/setup?topic=${encodeURIComponent(interviewTopic)}`);
         }
     }
 
@@ -159,6 +167,7 @@ export default function ArenaPage() {
                     const isUnlocked = day.day <= completedDays + 1;
                     const isCompleted = day.day <= completedDays;
                     const dayStatus = dailyTaskStatus[day.day] || { learn: false, quiz: false, interview: false };
+                    const isFinalDay = day.day === 30;
 
                     return (
                         <Dialog key={day.day}>
@@ -173,7 +182,7 @@ export default function ArenaPage() {
                                 >
                                     <CardHeader>
                                         <CardTitle className="flex flex-col items-center gap-2">
-                                            {!isUnlocked && <Lock className="h-6 w-6 mb-2" />}
+                                            {isFinalDay ? <Trophy className="h-6 w-6 mb-2 text-yellow-500" /> : !isUnlocked && <Lock className="h-6 w-6 mb-2" />}
                                             Day {day.day}
                                         </CardTitle>
                                     </CardHeader>
@@ -184,45 +193,50 @@ export default function ArenaPage() {
                                                 <CheckCircle className="h-4 w-4"/> Completed
                                             </div>
                                         ) : (
-                                            <p className="text-sm font-semibold mt-2">{isUnlocked ? 'Start Challenge' : 'Locked'}</p>
+                                            <p className="text-sm font-semibold mt-2">{isUnlocked ? (isFinalDay ? 'Final Challenge' : 'Start Challenge') : 'Locked'}</p>
                                         )}
                                     </CardContent>
                                 </Card>
                             </DialogTrigger>
                             <DialogContent>
                                 <DialogHeader>
-                                    <DialogTitle className="text-2xl font-bold">Day {day.day}: {day.topic}</DialogTitle>
+                                     <DialogTitle className="text-2xl font-bold flex items-center gap-3">
+                                        {isFinalDay && <Trophy className="h-6 w-6 text-yellow-500" />}
+                                        Day {day.day}: {day.topic}
+                                     </DialogTitle>
                                     <DialogDescriptionComponent>
                                         {isUnlocked ? day.description : "You need to complete all previous challenges before you can unlock this day. Keep going!"}
                                     </DialogDescriptionComponent>
                                 </DialogHeader>
                                 <div className="my-6 space-y-4">
-                                    <div className="flex items-center gap-4 p-3 rounded-lg bg-muted/50">
-                                        {dayStatus.learn ? <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" /> : <BookOpen className="h-5 w-5 text-yellow-500 flex-shrink-0" />}
-                                        <div className="flex-1">
-                                            <p className="font-semibold text-foreground">Learn: {day.topic}</p>
-                                            <p className="text-xs text-muted-foreground">Study the core concepts of today's topic.</p>
+                                    {!isFinalDay && (
+                                        <div className="flex items-center gap-4 p-3 rounded-lg bg-muted/50">
+                                            {dayStatus.learn ? <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" /> : <BookOpen className="h-5 w-5 text-yellow-500 flex-shrink-0" />}
+                                            <div className="flex-1">
+                                                <p className="font-semibold text-foreground">Learn: {day.topic}</p>
+                                                <p className="text-xs text-muted-foreground">Study the core concepts of today's topic.</p>
+                                            </div>
+                                            <Button size="sm" onClick={() => handleStartChallenge(day.day, 'learn')} disabled={!isUnlocked}>
+                                                {dayStatus.learn ? <><Eye className="mr-2 h-4 w-4"/>View</> : isUnlocked ? 'Start' : <Lock className="h-4 w-4" />}
+                                            </Button>
                                         </div>
-                                        <Button size="sm" onClick={() => handleStartChallenge(day.day, 'learn')} disabled={!isUnlocked}>
-                                            {dayStatus.learn ? <><Eye className="mr-2 h-4 w-4"/>View</> : isUnlocked ? 'Start' : <Lock className="h-4 w-4" />}
-                                        </Button>
-                                    </div>
+                                    )}
                                     <div className="flex items-center gap-4 p-3 rounded-lg bg-muted/50">
                                         {dayStatus.quiz ? <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" /> : <Code className="h-5 w-5 text-blue-500 flex-shrink-0" />}
                                         <div className="flex-1">
-                                            <p className="font-semibold text-foreground">Complete Coding Quiz</p>
-                                            <p className="text-xs text-muted-foreground">Test your knowledge on {day.topic}.</p>
+                                            <p className="font-semibold text-foreground">{isFinalDay ? "Final Coding Exam" : "Complete Coding Quiz"}</p>
+                                            <p className="text-xs text-muted-foreground">{isFinalDay ? "15 questions covering all topics." : `Test your knowledge on ${day.topic}.`}</p>
                                         </div>
                                         <Button size="sm" onClick={() => handleStartChallenge(day.day, 'quiz')} disabled={!isUnlocked}>
                                             {dayStatus.quiz ? <><RefreshCw className="mr-2 h-4 w-4"/>Retake</> : isUnlocked ? 'Start' : <Lock className="h-4 w-4" />}
                                         </Button>
                                     </div>
-                                    {day.day % 2 !== 0 && (
+                                    {(day.day % 2 !== 0 || isFinalDay) && (
                                     <div className="flex items-center gap-4 p-3 rounded-lg bg-muted/50">
                                         {dayStatus.interview ? <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" /> : <Briefcase className="h-5 w-5 text-green-500 flex-shrink-0" />}
                                         <div className="flex-1">
-                                            <p className="font-semibold text-foreground">Take a Mock Interview</p>
-                                            <p className="text-xs text-muted-foreground">Practice your interview skills.</p>
+                                            <p className="font-semibold text-foreground">{isFinalDay ? "Final Comprehensive Interview" : "Take a Mock Interview"}</p>
+                                            <p className="text-xs text-muted-foreground">{isFinalDay ? "A 20-minute interview on all learned concepts." : "Practice your interview skills."}</p>
                                         </div>
                                          <Button size="sm" onClick={() => handleStartChallenge(day.day, 'interview')} disabled={!isUnlocked}>
                                             {dayStatus.interview ? <><RefreshCw className="mr-2 h-4 w-4"/>Retake</> : isUnlocked ? 'Start' : <Lock className="h-4 w-4" />}
