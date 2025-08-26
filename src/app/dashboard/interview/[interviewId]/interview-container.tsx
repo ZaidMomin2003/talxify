@@ -30,6 +30,7 @@ export function InterviewContainer({ interviewId }: { interviewId: string }) {
   const router = useRouter();
 
   const [transcript, setTranscript] = useState<TranscriptEntry[]>([]);
+  const [interimTranscript, setInterimTranscript] = useState("");
   const [isSessionActive, setIsSessionActive] = useState(false);
   const [status, setStatus] = useState<SessionStatus>('idle');
   const [interviewState, setInterviewState] = useState<InterviewState | null>(null);
@@ -38,15 +39,71 @@ export function InterviewContainer({ interviewId }: { interviewId: string }) {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   
-  // New refs for endpointing
   const silenceTimer = useRef<NodeJS.Timeout | null>(null);
   const isRecording = useRef(false);
 
   const { join, leave, toggleWebcam, localWebcamOn, localMicOn, toggleMic } = useMeeting();
 
+  const handleStopRecordingAndProcess = useCallback(async () => {
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+          mediaRecorderRef.current.stop();
+          isRecording.current = false;
+          if (silenceTimer.current) clearTimeout(silenceTimer.current);
+          setInterimTranscript(""); // Clear interim transcript
+          
+          setStatus('processing');
+          const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+
+          // Ignore very short audio clips which are likely noise
+          if(audioBlob.size < 2000) { 
+              setStatus('listening');
+              startRecording();
+              return;
+          }
+
+          const reader = new FileReader();
+          reader.readAsDataURL(audioBlob);
+          reader.onloadend = async () => {
+            const base64Audio = reader.result as string;
+            try {
+              const { transcript: userTranscript } = await speechToText({ audioDataUri: base64Audio });
+              if (userTranscript && interviewState) {
+                setTranscript(prev => [...prev, { speaker: 'user', text: userTranscript }]);
+                const newHistory = [...interviewState.history, { role: 'user', content: userTranscript }];
+                const newState = { ...interviewState, history: newHistory };
+                setInterviewState(newState);
+                processAndRespond(newState);
+              } else {
+                setStatus('listening');
+                startRecording();
+              }
+            } catch (err) {
+              console.error("Transcription error:", err);
+              toast({ title: "Transcription Error", description: "Could not understand audio. Please try again.", variant: "destructive"});
+              setStatus('listening');
+              startRecording();
+            }
+          };
+      }
+  }, [interviewState, toast]);
+
+  const startRecording = useCallback(() => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'recording') {
+      audioChunksRef.current = [];
+      mediaRecorderRef.current.start(1000); // Record in 1s chunks
+      isRecording.current = true;
+      setStatus('listening');
+      // Reset silence timer whenever we start recording
+      if (silenceTimer.current) clearTimeout(silenceTimer.current);
+      silenceTimer.current = setTimeout(handleStopRecordingAndProcess, 2500); // 2.5s silence
+    }
+  }, [handleStopRecordingAndProcess]);
+
   const processAndRespond = useCallback(async (state: InterviewState) => {
-    if (!state || state.isComplete) {
-      if (state?.isComplete) endSession(true);
+    if (!state) return;
+    if (state.isComplete) {
+      // Delay ending the session slightly to allow the final AI message to play
+      setTimeout(() => endSession(true), 500);
       return;
     }
     
@@ -63,78 +120,24 @@ export function InterviewContainer({ interviewId }: { interviewId: string }) {
       }
       setInterviewState(newState);
 
-      if (newState.isComplete) {
-         const audio = audioPlayerRef.current;
-         const onAudioEnd = () => {
-            endSession(true);
-            audio?.removeEventListener('ended', onAudioEnd);
-         };
-         audio?.addEventListener('ended', onAudioEnd);
-      } else {
-        // Automatically start listening for user's response after AI finishes
-        const audio = audioPlayerRef.current;
-        const onAudioEnd = () => {
-            startRecording();
-            audio?.removeEventListener('ended', onAudioEnd);
-        };
-        audio?.addEventListener('ended', onAudioEnd);
-      }
+      // Add event listener to the audio player
+      const audio = audioPlayerRef.current;
+      const onAudioEnd = () => {
+        if(newState.isComplete) {
+          endSession(true);
+        } else {
+          startRecording();
+        }
+        audio?.removeEventListener('ended', onAudioEnd);
+      };
+      audio?.addEventListener('ended', onAudioEnd);
 
     } catch (error) {
       console.error("Error processing AI response:", error);
       toast({ title: "AI Error", description: "Could not get a response from the AI. Please try again.", variant: "destructive"});
       setStatus('listening');
     }
-  }, []);
-
-  const handleStopRecordingAndProcess = useCallback(async () => {
-      if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
-          mediaRecorderRef.current.stop();
-          isRecording.current = false;
-          if (silenceTimer.current) clearTimeout(silenceTimer.current);
-          
-          setStatus('processing');
-          const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-          if(audioBlob.size < 2000) { // Ignore small audio chunks/noise
-              setStatus('listening');
-              startRecording();
-              return;
-          }
-          const reader = new FileReader();
-          reader.readAsDataURL(audioBlob);
-          reader.onloadend = async () => {
-            const base64Audio = reader.result as string;
-            try {
-              const { transcript: userTranscript } = await speechToText({ audioDataUri: base64Audio });
-              if (userTranscript && interviewState) {
-                setTranscript(prev => [...prev, { speaker: 'user', text: userTranscript }]);
-                const newHistory = [...interviewState.history, { role: 'user', content: userTranscript }];
-                const newState = { ...interviewState, history: newHistory };
-                setInterviewState(newState);
-                processAndRespond(newState);
-              } else {
-                setStatus('listening'); // If no transcript, just go back to listening
-                startRecording();
-              }
-            } catch (err) {
-              console.error("Transcription error:", err);
-              toast({ title: "Transcription Error", description: "Could not understand audio. Please try again.", variant: "destructive"});
-              setStatus('listening');
-              startRecording();
-            }
-          };
-      }
-  }, [interviewState, processAndRespond, toast]);
-
-
-  const startRecording = () => {
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'recording') {
-      audioChunksRef.current = [];
-      mediaRecorderRef.current.start(1000); // Record in 1s chunks
-      isRecording.current = true;
-      setStatus('listening');
-    }
-  };
+  }, [startRecording, toast]);
 
   useEffect(() => {
     const initializeRecorder = async () => {
@@ -147,10 +150,9 @@ export function InterviewContainer({ interviewId }: { interviewId: string }) {
           if (event.data.size > 0) {
             audioChunksRef.current.push(event.data);
           }
-          // Endpointing logic: if new data comes in, reset the silence timer
           if (isRecording.current) {
              if (silenceTimer.current) clearTimeout(silenceTimer.current);
-             silenceTimer.current = setTimeout(handleStopRecordingAndProcess, 1500); // 1.5s of silence
+             silenceTimer.current = setTimeout(handleStopRecordingAndProcess, 1500); 
           }
         };
 
@@ -185,7 +187,6 @@ export function InterviewContainer({ interviewId }: { interviewId: string }) {
   
   const endSession = useCallback(async (isFinished: boolean = false) => {
     setStatus('ending');
-    // Stop any active recording
     if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
         mediaRecorderRef.current.stop();
         isRecording.current = false;
@@ -286,6 +287,14 @@ export function InterviewContainer({ interviewId }: { interviewId: string }) {
                                     {entry.speaker === 'user' && <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white"><User className="w-5 h-5"/></div>}
                                 </div>
                             ))}
+                            {interimTranscript && (
+                                <div className="flex items-start gap-3 justify-end opacity-60">
+                                    <div className="rounded-lg px-4 py-2 max-w-[80%] bg-secondary">
+                                        <p className="text-sm italic">{interimTranscript}</p>
+                                    </div>
+                                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white"><User className="w-5 h-5"/></div>
+                                </div>
+                            )}
                         </div>
                     </CardContent>
                 </Card>
@@ -316,5 +325,3 @@ export function InterviewContainer({ interviewId }: { interviewId: string }) {
     </div>
   );
 }
-
-    
