@@ -62,7 +62,7 @@ const generateInterviewResponseFlow = ai.defineFlow(
     newState.history.push({ role: 'assistant', content: aiResponseText });
 
     if (newState.history.length > 1) { // Don't count the initial greeting as a question
-      newState.questionsAsked = Math.floor(newState.history.filter(m => m.role === 'assistant').length);
+      newState.questionsAsked = newState.history.filter(m => m.role === 'assistant').length;
     }
     
     if (newState.questionsAsked >= MAX_QUESTIONS) {
