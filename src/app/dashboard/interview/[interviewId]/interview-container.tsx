@@ -2,91 +2,26 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useMeeting, MeetingProvider } from '@videosdk.live/react-sdk';
+import { useMeeting } from '@videosdk.live/react-sdk';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { addActivity } from '@/lib/firebase-service';
 import type { InterviewActivity, StoredActivity } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Mic, MicOff, Video, VideoOff, Phone, Loader2, MessageSquare, Bot, Power, User } from 'lucide-react';
-import { createClient, LiveClient, LiveTranscriptionEvents } from '@deepgram/sdk';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Mic, MicOff, Video, VideoOff, Phone, Loader2, MessageSquare, Bot, Power, User, AlertTriangle } from 'lucide-react';
+import { generateInterviewResponse } from '@/ai/flows/generate-interview-response';
+import { speechToText } from '@/ai/flows/speech-to-text';
+import { textToSpeech } from '@/ai/flows/text-to-speech';
+import type { InterviewState } from '@/lib/interview-types';
 
 type TranscriptEntry = {
   speaker: 'user' | 'ai';
   text: string;
 };
 
-type SessionStatus = 'idle' | 'connecting' | 'listening' | 'speaking' | 'ending';
-
-// Custom Hook to manage Deepgram connection
-function useDeepgram(onMessage: (data: any) => void) {
-  const [connection, setConnection] = useState<LiveClient | null>(null);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const isReady = !!connection;
-
-  const connectToDeepgram = useCallback(async () => {
-    if (!process.env.NEXT_PUBLIC_DEEPGRAM_API_KEY) {
-      console.error("Deepgram API Key is not set.");
-      return;
-    }
-    const deepgram = createClient(process.env.NEXT_PUBLIC_DEEPGRAM_API_KEY);
-    const conn = deepgram.listen.live({
-      model: 'nova-2-general',
-      interim_results: false,
-      smart_format: true,
-      endpointing: 200, // shorter endpointing for quicker turn-taking
-      no_delay: true,
-      diarize: false,
-    });
-
-    conn.on(LiveTranscriptionEvents.Open, () => {
-        console.log('Deepgram connection opened.');
-    });
-
-    conn.on(LiveTranscriptionEvents.Close, () => {
-        console.log('Deepgram connection closed.');
-    });
-
-    conn.on(LiveTranscriptionEvents.Transcript, onMessage);
-
-    conn.on(LiveTranscriptionEvents.Error, (error) => {
-        console.error('Deepgram Error:', error);
-    });
-
-    setConnection(conn);
-  }, [onMessage]);
-
-  const startStreaming = useCallback(async () => {
-    if (!connection) return;
-
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    mediaRecorderRef.current = new MediaRecorder(stream, { mimeType: 'audio/webm' });
-
-    mediaRecorderRef.current.ondataavailable = (event) => {
-      if (event.data.size > 0 && connection.getReadyState() === 1) {
-        connection.send(event.data);
-      }
-    };
-    
-    mediaRecorderRef.current.start(250); // Start recording and send data every 250ms
-  }, [connection]);
-
-  const stopStreaming = useCallback(() => {
-    if (mediaRecorderRef.current) {
-        mediaRecorderRef.current.stop();
-        mediaRecorderRef.current = null;
-    }
-    if (connection) {
-        connection.finish();
-        setConnection(null);
-    }
-  }, [connection]);
-
-  return { connectToDeepgram, startStreaming, stopStreaming, isReady };
-}
-
+type SessionStatus = 'idle' | 'connecting' | 'listening' | 'speaking' | 'ending' | 'processing';
 
 export function InterviewContainer({ interviewId }: { interviewId: string }) {
   const searchParams = useSearchParams();
@@ -94,106 +29,141 @@ export function InterviewContainer({ interviewId }: { interviewId: string }) {
   const { user } = useAuth();
   const router = useRouter();
 
-  const [session, setSession] = useState<{ interviewState: any; ws: WebSocket | null }>({
-    interviewState: null,
-    ws: null,
-  });
-  
   const [transcript, setTranscript] = useState<TranscriptEntry[]>([]);
   const [isSessionActive, setIsSessionActive] = useState(false);
   const [status, setStatus] = useState<SessionStatus>('idle');
-  const audioPlayerRef = useRef<HTMLAudioElement>(null);
+  const [interviewState, setInterviewState] = useState<InterviewState | null>(null);
   
-  const { join, leave, toggleWebcam, localWebcamOn } = useMeeting();
+  const audioPlayerRef = useRef<HTMLAudioElement>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  
+  const { join, leave, toggleWebcam, localWebcamOn, localMicOn, toggleMic } = useMeeting();
 
-  const handleDeepgramMessage = useCallback((data: any) => {
-    const userTranscript = data.channel.alternatives[0].transcript;
-    if (userTranscript && session.ws) {
-        setTranscript(prev => [...prev, { speaker: 'user', text: userTranscript }]);
-        session.ws.send(JSON.stringify({ type: 'user_speech', text: userTranscript }));
-        setStatus('speaking'); // AI will start speaking soon
+  const processAndRespond = useCallback(async (state: InterviewState) => {
+    if (!state || state.isComplete) {
+      if (state?.isComplete) endSession(true);
+      return;
     }
-  }, [session.ws]);
-
-  const { connectToDeepgram, startStreaming, stopStreaming, isReady: isDeepgramReady } = useDeepgram(handleDeepgramMessage);
-
-
-  const handleServerMessage = useCallback(async (event: MessageEvent) => {
-      const message = JSON.parse(event.data);
-
-      if (message.type === 'ai_audio') {
-          // Play the incoming audio chunk
-          const audioBlob = new Blob([new Uint8Array(message.audio)], { type: 'audio/mp3' });
-          const audioUrl = URL.createObjectURL(audioBlob);
-          if(audioPlayerRef.current) {
-             audioPlayerRef.current.src = audioUrl;
-             audioPlayerRef.current.play();
-          }
-      } else if (message.type === 'ai_text') {
-          // Update transcript with AI's response
-          setTranscript(prev => [...prev, { speaker: 'ai', text: message.text }]);
-      } else if (message.type === 'interview_complete') {
-          endSession(true);
+    
+    setStatus('speaking');
+    try {
+      const { response: aiText, newState } = await generateInterviewResponse(state);
+      setTranscript(prev => [...prev, { speaker: 'ai', text: aiText }]);
+      
+      const { audioDataUri } = await textToSpeech({ text: aiText });
+      
+      if (audioPlayerRef.current) {
+        audioPlayerRef.current.src = audioDataUri;
+        audioPlayerRef.current.play().catch(e => console.error("Audio playback failed:", e));
       }
+      setInterviewState(newState);
+
+      if (newState.isComplete) {
+         // Wait for audio to finish playing before ending session
+         const audio = audioPlayerRef.current;
+         const onAudioEnd = () => {
+            endSession(true);
+            audio?.removeEventListener('ended', onAudioEnd);
+         };
+         audio?.addEventListener('ended', onAudioEnd);
+      } else {
+        setStatus('listening');
+      }
+
+    } catch (error) {
+      console.error("Error processing AI response:", error);
+      toast({ title: "AI Error", description: "Could not get a response from the AI. Please try again.", variant: "destructive"});
+      setStatus('listening');
+    }
   }, []);
+
+  const handleStopRecording = async () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+      mediaRecorderRef.current.stop();
+    }
+  };
+
+  const startRecording = async () => {
+    if (mediaRecorderRef.current) {
+      audioChunksRef.current = [];
+      mediaRecorderRef.current.start();
+      setStatus('listening');
+    }
+  };
 
   useEffect(() => {
-    const audioPlayer = audioPlayerRef.current;
-    const handleAudioEnd = () => {
-        setStatus('listening'); // Once AI is done speaking, go back to listening
+    const initializeRecorder = async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const recorder = new MediaRecorder(stream);
+        mediaRecorderRef.current = recorder;
+
+        recorder.ondataavailable = (event) => {
+          audioChunksRef.current.push(event.data);
+        };
+
+        recorder.onstop = async () => {
+          setStatus('processing');
+          const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+          const reader = new FileReader();
+          reader.readAsDataURL(audioBlob);
+          reader.onloadend = async () => {
+            const base64Audio = reader.result as string;
+            try {
+              const { transcript: userTranscript } = await speechToText({ audioDataUri: base64Audio });
+              if (userTranscript && interviewState) {
+                setTranscript(prev => [...prev, { speaker: 'user', text: userTranscript }]);
+                const newHistory = [...interviewState.history, { role: 'user', content: userTranscript }];
+                const newState = { ...interviewState, history: newHistory };
+                setInterviewState(newState);
+                processAndRespond(newState);
+              } else {
+                setStatus('listening'); // If no transcript, just go back to listening
+              }
+            } catch (err) {
+              console.error("Transcription error:", err);
+              toast({ title: "Transcription Error", description: "Could not understand audio. Please try again.", variant: "destructive"});
+              setStatus('listening');
+            }
+          };
+        };
+      } catch (error) {
+        console.error("Failed to get media devices:", error);
+        toast({ title: "Microphone Error", description: "Could not access your microphone.", variant: "destructive"});
+      }
     };
-    if (audioPlayer) {
-        audioPlayer.addEventListener('ended', handleAudioEnd);
-        return () => audioPlayer.removeEventListener('ended', handleAudioEnd);
-    }
+    initializeRecorder();
   }, []);
+
 
   const startSession = async () => {
     setStatus('connecting');
     join();
+    if (!localMicOn) toggleMic();
     setIsSessionActive(true);
 
-    const ws = new WebSocket(process.env.NEXT_PUBLIC_WEBSOCKET_URL || 'ws://localhost:3001');
-
-    ws.onopen = () => {
-        const interviewConfig = {
-            interviewId: interviewId,
-            topic: searchParams.get('topic') || 'general',
-            level: searchParams.get('level') || 'entry-level',
-            role: searchParams.get('role') || 'Software Engineer',
-            company: searchParams.get('company') || undefined,
-        };
-        ws.send(JSON.stringify({ type: 'start_interview', config: interviewConfig }));
-        connectToDeepgram(); // Connect to Deepgram once WebSocket is ready
+    const initialState: InterviewState = {
+        interviewId,
+        topic: searchParams.get('topic') || 'general',
+        level: searchParams.get('level') || 'entry-level',
+        role: searchParams.get('role') || 'Software Engineer',
+        company: searchParams.get('company') || undefined,
+        history: [],
+        questionsAsked: 0,
+        isComplete: false,
     };
-
-    ws.onmessage = handleServerMessage;
-    ws.onclose = () => console.log('Server WebSocket closed.');
-    ws.onerror = (err) => console.error('Server WebSocket error:', err);
     
-    setSession({ interviewState: {}, ws });
+    setInterviewState(initialState);
+    await processAndRespond(initialState);
   };
   
-  useEffect(() => {
-    // Once deepgram is ready, start streaming microphone audio to it
-    if(isDeepgramReady) {
-        startStreaming();
-        setStatus('listening');
-    }
-  }, [isDeepgramReady, startStreaming]);
-
-
   const endSession = useCallback(async (isFinished: boolean = false) => {
     setStatus('ending');
-    stopStreaming(); // Stops Deepgram connection and media recorder
-    if (session.ws) {
-        session.ws.close();
-    }
     leave();
     setIsSessionActive(false);
     
     if (user && isFinished && transcript.length > 0) {
-        // Prepare final data for storage
         const finalActivity: InterviewActivity = {
             id: interviewId,
             type: 'interview',
@@ -207,13 +177,10 @@ export function InterviewContainer({ interviewId }: { interviewId: string }) {
                 company: searchParams.get('company') || undefined,
             }
         };
-        // Add to firebase, but don't wait for it to finish to navigate
         addActivity(user.uid, finalActivity).catch(console.error);
     }
-
     router.push(`/dashboard/interview/${interviewId}/results`);
-  }, [stopStreaming, session.ws, leave, user, transcript, interviewId, router, searchParams]);
-
+  }, [leave, user, transcript, interviewId, router, searchParams]);
 
   const getStatusIndicator = () => {
     switch (status) {
@@ -221,6 +188,8 @@ export function InterviewContainer({ interviewId }: { interviewId: string }) {
             return <div className="flex items-center justify-center gap-2 text-green-400"><Mic className="h-5 w-5 animate-pulse" /><span>Listening...</span></div>;
         case 'speaking':
             return <div className="flex items-center justify-center gap-2 text-blue-400"><Bot className="h-5 w-5" /><span>AI Speaking...</span></div>;
+        case 'processing':
+            return <div className="flex items-center justify-center gap-2 text-yellow-400"><Loader2 className="h-5 w-5 animate-spin" /><span>Processing...</span></div>;
         case 'connecting':
             return <div className="flex items-center justify-center gap-2 text-yellow-400"><Loader2 className="h-5 w-5 animate-spin" /><span>Connecting...</span></div>;
         case 'ending':
@@ -230,18 +199,15 @@ export function InterviewContainer({ interviewId }: { interviewId: string }) {
     }
   };
 
-
   if (!isSessionActive) {
       return (
         <div className="flex h-full w-full items-center justify-center bg-background p-4">
           <Card className="max-w-lg text-center">
             <CardHeader>
               <CardTitle>Ready for your mock interview?</CardTitle>
+               <CardDescription>Click the button below to start your session. Make sure your microphone is enabled.</CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-muted-foreground mb-6">
-                Click the button below to start your session. Make sure your microphone is enabled.
-              </p>
               <Button onClick={startSession} size="lg" disabled={status === 'connecting'}>
                 {status === 'connecting' ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
                 Start Session
@@ -259,7 +225,7 @@ export function InterviewContainer({ interviewId }: { interviewId: string }) {
         <div className="flex-grow grid grid-cols-1 md:grid-cols-3 gap-4 min-h-0">
             <div className="md:col-span-2 bg-muted rounded-lg overflow-hidden relative flex items-center justify-center">
                  {localWebcamOn ? (
-                    <video ref={(ref) => ref && (ref.srcObject = new MediaStream([useMeeting().localWebcamStream]))} autoPlay muted className="w-full h-full object-cover" />
+                    <video ref={(ref) => ref && ref.srcObject && (ref.srcObject = new MediaStream([useMeeting().localWebcamStream]))} autoPlay muted className="w-full h-full object-cover" />
                  ) : (
                     <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/50">
                         <User className="w-24 h-24 text-muted-foreground/50"/>
@@ -306,7 +272,16 @@ export function InterviewContainer({ interviewId }: { interviewId: string }) {
             <Button onClick={() => endSession()} variant="destructive" size="icon" className="rounded-full h-14 w-14">
                 <Phone />
             </Button>
-             <Button variant={status === 'listening' ? "default" : "secondary"} size="icon" className="rounded-full h-12 w-12" disabled>
+             <Button
+                onMouseDown={startRecording}
+                onMouseUp={handleStopRecording}
+                onTouchStart={startRecording}
+                onTouchEnd={handleStopRecording}
+                variant={status === 'listening' ? "default" : "secondary"}
+                size="icon"
+                className="rounded-full h-12 w-12"
+                disabled={status !== 'listening'}
+            >
                 {status === 'listening' ? <Mic /> : <MicOff />}
             </Button>
         </div>
