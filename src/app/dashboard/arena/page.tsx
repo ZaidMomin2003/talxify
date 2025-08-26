@@ -110,7 +110,7 @@ export default function ArenaPage() {
     }, [syllabus, activity]);
 
 
-    const handleStartChallenge = (day: number, type: 'learn' | 'quiz' | 'interview', interviewId?: string) => {
+    const handleStartChallenge = (day: number, type: 'learn' | 'quiz' | 'interview') => {
         const topic = syllabus.find(d => d.day === day)?.topic || 'JavaScript';
         
         if (type === 'learn') {
@@ -118,11 +118,7 @@ export default function ArenaPage() {
         } else if (type === 'quiz') {
             router.push(`/dashboard/coding-quiz/instructions?topics=${encodeURIComponent(topic)}&difficulty=easy&numQuestions=3`);
         } else if (type === 'interview') {
-            if (interviewId) {
-                router.push(`/dashboard/interview/${interviewId}/results`);
-            } else {
-                router.push(`/dashboard/interview/setup?topic=${encodeURIComponent(topic)}`);
-            }
+            router.push(`/dashboard/interview/setup?topic=${encodeURIComponent(topic)}`);
         }
     }
 
@@ -228,8 +224,8 @@ export default function ArenaPage() {
                                             <p className="font-semibold text-foreground">Take a Mock Interview</p>
                                             <p className="text-xs text-muted-foreground">Practice your interview skills.</p>
                                         </div>
-                                         <Button size="sm" onClick={() => handleStartChallenge(day.day, 'interview', dayStatus.interviewId)} disabled={!isUnlocked}>
-                                            {dayStatus.interview ? <><Eye className="mr-2 h-4 w-4"/>Results</> : isUnlocked ? 'Start' : <Lock className="h-4 w-4" />}
+                                         <Button size="sm" onClick={() => handleStartChallenge(day.day, 'interview')} disabled={!isUnlocked}>
+                                            {dayStatus.interview ? <><RefreshCw className="mr-2 h-4 w-4"/>Retake</> : isUnlocked ? 'Start' : <Lock className="h-4 w-4" />}
                                         </Button>
                                     </div>
                                     )}
