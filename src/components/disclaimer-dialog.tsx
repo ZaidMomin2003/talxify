@@ -19,7 +19,7 @@ import { BrainCircuit, Code, Copy, Swords, BookOpen } from 'lucide-react';
 const features = [
     { icon: BrainCircuit, title: 'AI Mock Interviews', description: 'Practice with a realistic AI that asks relevant questions.' },
     { icon: Swords, title: '30-Day Prep Arena', description: 'Follow a personalized syllabus to master key concepts.' },
-    { icon: BookOpen, title: 'AI-Generated Study Notes', description: 'Get detailed notes on any technical topic instantly.' },
+    { icon: BookOpen, title: 'AI Study Notes', description: 'Get detailed notes on any technical topic instantly.' },
     { icon: Code, title: 'Live Coding Gym', description: 'Solve unlimited problems with instant analysis and feedback.' },
 ];
 
@@ -71,9 +71,10 @@ export default function PromotionalPopup() {
                 </DialogDescription>
             </DialogHeader>
             
-            <div className="space-y-4 mb-6">
+            {/* Grid for mobile, list for desktop */}
+            <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-1 sm:space-y-4">
                 {features.map(feature => (
-                    <div key={feature.title} className="flex items-start gap-4">
+                    <div key={feature.title} className="flex items-start gap-3 sm:gap-4 p-2 sm:p-0 rounded-lg sm:rounded-none bg-muted/50 sm:bg-transparent">
                         <div className="bg-primary/10 text-primary rounded-lg p-2 mt-0.5">
                             <feature.icon className="w-5 h-5" />
                         </div>
