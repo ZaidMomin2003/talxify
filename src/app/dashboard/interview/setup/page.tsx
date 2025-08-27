@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/context/auth-context';
-import { Briefcase, Loader2, PlayCircle, Building, Wifi, AlertTriangle } from 'lucide-react';
+import { Briefcase, Loader2, PlayCircle, Building, Wifi, AlertTriangle, Keyboard } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect, Suspense } from 'react';
 import { useToast } from '@/hooks/use-toast';
@@ -88,10 +88,10 @@ function InterviewSetup() {
           </CardHeader>
           <CardContent className="space-y-6">
             <Alert>
-                <Wifi className="h-4 w-4" />
-                <AlertTitle>Stable Connection Required</AlertTitle>
+                <Keyboard className="h-4 w-4" />
+                <AlertTitle>Push-to-Talk Enabled</AlertTitle>
                 <AlertDescription>
-                    For the best experience, please ensure you are on a stable internet connection before starting the interview.
+                    To speak, press and hold the <kbd className="px-2 py-1 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-200 rounded-lg">Spacebar</kbd>. Release when you're done.
                 </AlertDescription>
             </Alert>
             {isFreePlan && (

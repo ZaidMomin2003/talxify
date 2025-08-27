@@ -10,18 +10,19 @@ import { addActivity } from '@/lib/firebase-service';
 import type { InterviewActivity } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Mic, MicOff, Video, VideoOff, Phone, Loader2, MessageSquare, Bot, Power, User, AlertTriangle, Wifi } from 'lucide-react';
+import { Mic, MicOff, Video, VideoOff, Phone, Loader2, MessageSquare, Bot, Power, User, AlertTriangle, Wifi, Keyboard } from 'lucide-react';
 import { generateInterviewResponse } from '@/ai/flows/generate-interview-response';
 import { speechToText } from '@/ai/flows/speech-to-text';
 import { textToSpeech } from '@/ai/flows/text-to-speech';
 import type { InterviewState } from '@/lib/interview-types';
+import { cn } from '@/lib/utils';
 
 type TranscriptEntry = {
   speaker: 'user' | 'ai';
   text: string;
 };
 
-type SessionStatus = 'idle' | 'connecting' | 'listening' | 'speaking' | 'ending' | 'processing';
+type SessionStatus = 'idle' | 'connecting' | 'speaking' | 'ready' | 'listening' | 'processing' | 'ending';
 
 export function InterviewContainer({ interviewId }: { interviewId: string }) {
   const searchParams = useSearchParams();
@@ -39,64 +40,7 @@ export function InterviewContainer({ interviewId }: { interviewId: string }) {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   
-  const silenceTimer = useRef<NodeJS.Timeout | null>(null);
-  const isRecording = useRef(false);
-
   const { join, leave, toggleWebcam, localWebcamOn, localMicOn, toggleMic } = useMeeting();
-
-  const handleStopRecordingAndProcess = useCallback(async () => {
-      if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
-          mediaRecorderRef.current.stop();
-          isRecording.current = false;
-          if (silenceTimer.current) clearTimeout(silenceTimer.current);
-          setInterimTranscript(""); 
-          
-          setStatus('processing');
-          const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-
-          if(audioBlob.size < 2000) { 
-              setStatus('listening');
-              startRecording();
-              return;
-          }
-
-          const reader = new FileReader();
-          reader.readAsDataURL(audioBlob);
-          reader.onloadend = async () => {
-            const base64Audio = reader.result as string;
-            try {
-              const { transcript: userTranscript } = await speechToText({ audioDataUri: base64Audio });
-              if (userTranscript && interviewState) {
-                setTranscript(prev => [...prev, { speaker: 'user', text: userTranscript }]);
-                const newHistory = [...interviewState.history, { role: 'user', content: userTranscript }];
-                const newState = { ...interviewState, history: newHistory };
-                setInterviewState(newState);
-                processAndRespond(newState);
-              } else {
-                toast({ title: "Couldn't hear you", description: "The AI didn't catch that. Please try speaking again.", variant: "destructive"});
-                setStatus('listening');
-                startRecording();
-              }
-            } catch (err) {
-              console.error("Transcription error:", err);
-              toast({ title: "Transcription Error", description: "Could not understand audio. Please try again.", variant: "destructive"});
-              setStatus('listening');
-              startRecording();
-            }
-          };
-      }
-  }, [interviewState, toast]);
-
-  const startRecording = useCallback(() => {
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'recording') {
-      audioChunksRef.current = [];
-      mediaRecorderRef.current.start(1000); 
-      isRecording.current = true;
-      setStatus('listening');
-      if (silenceTimer.current) clearTimeout(silenceTimer.current);
-      silenceTimer.current = setTimeout(handleStopRecordingAndProcess, 2500);
-    }
-  }, [handleStopRecordingAndProcess]);
 
   const processAndRespond = useCallback(async (state: InterviewState) => {
     if (!state) return;
@@ -105,6 +49,7 @@ export function InterviewContainer({ interviewId }: { interviewId: string }) {
     try {
       const { response: aiText, newState } = await generateInterviewResponse(state);
       setTranscript(prev => [...prev, { speaker: 'ai', text: aiText }]);
+      setInterviewState(newState);
       
       const { audioDataUri } = await textToSpeech({ text: aiText });
       
@@ -112,14 +57,13 @@ export function InterviewContainer({ interviewId }: { interviewId: string }) {
         audioPlayerRef.current.src = audioDataUri;
         audioPlayerRef.current.play().catch(e => console.error("Audio playback failed:", e));
       }
-      setInterviewState(newState);
 
       const audio = audioPlayerRef.current;
       const onAudioEnd = () => {
         if(newState.isComplete) {
           endSession(true);
         } else {
-          startRecording();
+          setStatus('ready');
         }
         audio?.removeEventListener('ended', onAudioEnd);
       };
@@ -128,64 +72,15 @@ export function InterviewContainer({ interviewId }: { interviewId: string }) {
     } catch (error) {
       console.error("Error processing AI response:", error);
       toast({ title: "AI Error", description: "Could not get a response from the AI. Please try again.", variant: "destructive"});
-      setStatus('listening');
-      startRecording();
+      setStatus('ready');
     }
-  }, [startRecording, toast]);
-
-  useEffect(() => {
-    const initializeRecorder = async () => {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        const recorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
-        mediaRecorderRef.current = recorder;
-
-        recorder.ondataavailable = (event) => {
-          if (event.data.size > 0) {
-            audioChunksRef.current.push(event.data);
-          }
-          if (isRecording.current) {
-             if (silenceTimer.current) clearTimeout(silenceTimer.current);
-             silenceTimer.current = setTimeout(handleStopRecordingAndProcess, 1500); 
-          }
-        };
-
-      } catch (error) {
-        console.error("Failed to get media devices:", error);
-        toast({ title: "Microphone Error", description: "Could not access your microphone.", variant: "destructive"});
-      }
-    };
-    initializeRecorder();
-  }, [handleStopRecordingAndProcess, toast]);
-
-
-  const startSession = async () => {
-    setStatus('connecting');
-    join();
-    if (!localMicOn) toggleMic();
-    setIsSessionActive(true);
-
-    const initialState: InterviewState = {
-        interviewId,
-        topic: searchParams.get('topic') || 'general',
-        level: searchParams.get('level') || 'entry-level',
-        role: searchParams.get('role') || 'Software Engineer',
-        company: searchParams.get('company') || undefined,
-        history: [],
-        isComplete: false,
-    };
-    
-    setInterviewState(initialState);
-    await processAndRespond(initialState);
-  };
+  }, [toast]);
   
   const endSession = useCallback(async (isFinished: boolean = false) => {
     setStatus('ending');
     if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
         mediaRecorderRef.current.stop();
-        isRecording.current = false;
     }
-    if (silenceTimer.current) clearTimeout(silenceTimer.current);
 
     leave();
     setIsSessionActive(false);
@@ -209,10 +104,110 @@ export function InterviewContainer({ interviewId }: { interviewId: string }) {
     router.push(`/dashboard/interview/${interviewId}/results`);
   }, [leave, user, transcript, interviewId, router, searchParams]);
 
+  // Push-to-talk handlers
+  const handleKeyDown = useCallback((event: KeyboardEvent) => {
+    if (event.code === 'Space' && !event.repeat && status === 'ready') {
+      setStatus('listening');
+      audioChunksRef.current = [];
+      mediaRecorderRef.current?.start();
+    }
+  }, [status]);
+
+  const handleKeyUp = useCallback((event: KeyboardEvent) => {
+    if (event.code === 'Space' && status === 'listening') {
+        setStatus('processing');
+        mediaRecorderRef.current?.stop();
+    }
+  }, [status]);
+
+  useEffect(() => {
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    return () => {
+        window.removeEventListener('keydown', handleKeyDown);
+        window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, [handleKeyDown, handleKeyUp]);
+
+  useEffect(() => {
+    const initializeRecorder = async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const recorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+        mediaRecorderRef.current = recorder;
+
+        recorder.ondataavailable = (event) => {
+          if (event.data.size > 0) {
+            audioChunksRef.current.push(event.data);
+          }
+        };
+        
+        recorder.onstop = async () => {
+            const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+            if (audioBlob.size < 1000) { // Ignore very short recordings
+                setStatus('ready');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.readAsDataURL(audioBlob);
+            reader.onloadend = async () => {
+                const base64Audio = reader.result as string;
+                try {
+                    const { transcript: userTranscript } = await speechToText({ audioDataUri: base64Audio });
+                    if (userTranscript && interviewState) {
+                        setTranscript(prev => [...prev, { speaker: 'user', text: userTranscript }]);
+                        const newHistory = [...interviewState.history, { role: 'user', content: userTranscript }];
+                        const newState = { ...interviewState, history: newHistory };
+                        setInterviewState(newState);
+                        processAndRespond(newState);
+                    } else {
+                        toast({ title: "Couldn't hear you", description: "The AI didn't catch that. Please try speaking again.", variant: "destructive"});
+                        setStatus('ready');
+                    }
+                } catch (err) {
+                    console.error("Transcription error:", err);
+                    toast({ title: "Transcription Error", description: "Could not understand audio. Please try again.", variant: "destructive"});
+                    setStatus('ready');
+                }
+            };
+        };
+
+      } catch (error) {
+        console.error("Failed to get media devices:", error);
+        toast({ title: "Microphone Error", description: "Could not access your microphone.", variant: "destructive"});
+      }
+    };
+    initializeRecorder();
+  }, [interviewState, toast, processAndRespond]);
+
+
+  const startSession = async () => {
+    setStatus('connecting');
+    join();
+    if (!localMicOn) toggleMic();
+    setIsSessionActive(true);
+
+    const initialState: InterviewState = {
+        interviewId,
+        topic: searchParams.get('topic') || 'general',
+        level: searchParams.get('level') || 'entry-level',
+        role: searchParams.get('role') || 'Software Engineer',
+        company: searchParams.get('company') || undefined,
+        history: [],
+        isComplete: false,
+    };
+    
+    setInterviewState(initialState);
+    await processAndRespond(initialState);
+  };
+  
   const getStatusIndicator = () => {
     switch (status) {
+        case 'ready':
+            return <div className="flex items-center justify-center gap-2 text-green-400"><Keyboard className="h-5 w-5" /><span>Hold <kbd className="px-2 py-1 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-200 rounded-lg">Space</kbd> to speak</span></div>;
         case 'listening':
-            return <div className="flex items-center justify-center gap-2 text-green-400"><Mic className="h-5 w-5 animate-pulse" /><span>Listening... (Speak now)</span></div>;
+            return <div className="flex items-center justify-center gap-2 text-green-400 animate-pulse"><Mic className="h-5 w-5" /><span>Listening...</span></div>;
         case 'speaking':
             return <div className="flex items-center justify-center gap-2 text-blue-400"><Bot className="h-5 w-5" /><span>AI Speaking...</span></div>;
         case 'processing':
@@ -233,10 +228,7 @@ export function InterviewContainer({ interviewId }: { interviewId: string }) {
             <CardHeader>
               <CardTitle>Ready for your mock interview?</CardTitle>
                <CardDescription>
-                  The conversation will be hands-free. The AI will detect when you've finished speaking.
-                  <div className="mt-4 flex items-center justify-center gap-2 text-sm text-amber-600 dark:text-amber-500 bg-amber-500/10 p-2 rounded-md">
-                      <Wifi className="h-4 w-4"/> A stable internet connection is recommended.
-                  </div>
+                  When it's your turn to speak, press and hold the <kbd className="px-2 py-1 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-200 rounded-lg">Spacebar</kbd>. Release to submit your answer.
                </CardDescription>
             </CardHeader>
             <CardContent>
@@ -278,9 +270,9 @@ export function InterviewContainer({ interviewId }: { interviewId: string }) {
                     <CardContent className="flex-grow overflow-y-auto pr-2">
                         <div className="space-y-4">
                             {transcript.map((entry, index) => (
-                                <div key={index} className={`flex items-start gap-3 ${entry.speaker === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                <div key={index} className={cn('flex items-start gap-3', entry.speaker === 'user' ? 'justify-end' : 'justify-start')}>
                                     {entry.speaker === 'ai' && <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground"><Bot className="w-5 h-5"/></div>}
-                                    <div className={`rounded-lg px-4 py-2 max-w-[80%] ${entry.speaker === 'user' ? 'bg-secondary' : 'bg-muted'}`}>
+                                    <div className={cn('rounded-lg px-4 py-2 max-w-[80%]', entry.speaker === 'user' ? 'bg-secondary' : 'bg-muted')}>
                                         <p className="text-sm">{entry.text}</p>
                                     </div>
                                     {entry.speaker === 'user' && <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white"><User className="w-5 h-5"/></div>}
@@ -314,7 +306,7 @@ export function InterviewContainer({ interviewId }: { interviewId: string }) {
             </Button>
              <Button
                 onClick={toggleMic}
-                variant={localMicOn ? "default" : "destructive"}
+                variant={localMicOn ? "secondary" : "destructive"}
                 size="icon"
                 className="rounded-full h-12 w-12"
             >
