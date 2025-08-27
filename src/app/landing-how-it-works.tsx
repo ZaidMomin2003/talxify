@@ -27,7 +27,7 @@ const steps = [
 
 export default function LandingHowItWorks() {
     return (
-        <section className="bg-muted/30 py-16 sm:py-24">
+        <section className="bg-transparent py-16 sm:py-24">
             <div className="container mx-auto max-w-6xl px-4 md:px-6">
                 <div className="mb-12 flex flex-col items-center">
                     <Badge

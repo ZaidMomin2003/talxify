@@ -10,7 +10,7 @@ import { motion } from 'framer-motion';
 
 export default function LandingContact() {
   return (
-    <section className="bg-background py-16 sm:py-24">
+    <section className="bg-transparent py-16 sm:py-24">
       <div className="container mx-auto max-w-6xl px-4 md:px-6">
         <div className="mb-12 flex flex-col items-center">
           <Badge

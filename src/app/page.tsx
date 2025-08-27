@@ -19,15 +19,48 @@ import Image from "next/image";
 
 export default function LandingPage() {
   return (
-    <div className="flex flex-col min-h-screen bg-background overflow-x-hidden">
-       <LandingHeader />
-      <main className="flex-1">
+    <div className="flex flex-col min-h-screen bg-black overflow-x-hidden relative text-white">
+       <div className="absolute inset-0 z-0 h-full w-full rotate-180 items-center px-5 py-24 opacity-80 [background:radial-gradient(125%_125%_at_50%_10%,#000_40%,#e63946_100%)]"></div>
+       <svg
+        id="noice"
+        className="absolute inset-0 z-10 h-full w-full opacity-30"
+      >
+        <filter id="noise-filter">
+          <feTurbulence
+            type="fractalNoise"
+            baseFrequency="1.34"
+            numOctaves="4"
+            stitchTiles="stitch"
+          ></feTurbulence>
+          <feColorMatrix type="saturate" values="0"></feColorMatrix>
+          <feComponentTransfer>
+            <feFuncR type="linear" slope="0.46"></feFuncR>
+            <feFuncG type="linear" slope="0.46"></feFuncG>
+            <feFuncB type="linear" slope="0.47"></feFuncB>
+            <feFuncA type="linear" slope="0.37"></feFuncA>
+          </feComponentTransfer>
+          <feComponentTransfer>
+            <feFuncR type="linear" slope="1.47" intercept="-0.23" />
+            <feFuncG type="linear" slope="1.47" intercept="-0.23" />
+            <feFuncB type="linear" slope="1.47" intercept="-0.23" />
+          </feComponentTransfer>
+        </filter>
+        <rect width="100%" height="100%" filter="url(#noise-filter)"></rect>
+      </svg>
+      <div className="absolute inset-0 z-0">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-indigo-900/30 via-black/70 to-gray-950 blur-3xl"></div>
+        <div className="absolute inset-0 opacity-10">
+          <div className="h-full w-full bg-[linear-gradient(to_right,rgba(255,255,255,0.22)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.2)_1px,transparent_1px)] bg-[size:4rem_4rem]"></div>
+        </div>
+      </div>
+      <LandingHeader />
+      <main className="flex-1 relative z-20">
         <AppHero />
         
         <LandingHowItWorks />
         
         {/* Video Section */}
-        <section id="see-in-action" className="py-16 sm:py-24 bg-background">
+        <section id="see-in-action" className="py-16 sm:py-24 bg-transparent">
             <div className="container mx-auto max-w-7xl px-4 md:px-6 text-center">
                  <Badge
                     variant="outline"

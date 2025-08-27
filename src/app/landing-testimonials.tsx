@@ -157,7 +157,7 @@ const secondRow = testimonials.slice(Math.ceil(testimonials.length / 2));
 
 export default function LandingTestimonials() {
   return (
-    <section className="relative container py-10 bg-background" id="testimonials">
+    <section className="relative container py-10 bg-transparent" id="testimonials">
       {/* Decorative elements */}
       <div className="absolute top-20 -left-20 z-10 h-64 w-64 rounded-full bg-primary/5 blur-3xl" />
       <div className="absolute -right-20 bottom-20 z-10 h-64 w-64 rounded-full bg-primary/5 blur-3xl" />
@@ -191,8 +191,8 @@ export default function LandingTestimonials() {
             <TestimonialCard key={testimonial.name} {...testimonial} />
           ))}
         </Marquee>
-        <div className="from-background pointer-events-none absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r"></div>
-        <div className="from-background pointer-events-none absolute inset-y-0 right-0 w-1/3 bg-gradient-to-l"></div>
+        <div className="from-transparent pointer-events-none absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r"></div>
+        <div className="from-transparent pointer-events-none absolute inset-y-0 right-0 w-1/3 bg-gradient-to-l"></div>
       </div>
     </section>
   );

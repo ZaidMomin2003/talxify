@@ -54,7 +54,7 @@ export default function LandingPricing() {
   const activeProPlan = isYearly ? proPlans.yearly : proPlans.monthly;
 
   return (
-    <section className="bg-background text-foreground py-20 pb-8" id="pricing">
+    <section className="bg-transparent text-foreground py-20 pb-8" id="pricing">
       <div className="container mx-auto max-w-5xl px-6 relative">
          <div className="absolute top-0 left-0 z-0 h-64 w-64 rounded-full bg-primary/5 blur-3xl" />
         <div className="absolute bottom-0 right-0 z-0 h-64 w-64 rounded-full bg-accent/5 blur-3xl" />
