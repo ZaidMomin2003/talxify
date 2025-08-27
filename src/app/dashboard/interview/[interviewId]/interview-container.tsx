@@ -328,5 +328,3 @@ export function InterviewContainer({ interviewId }: { interviewId: string }) {
     </div>
   );
 }
-
-    
