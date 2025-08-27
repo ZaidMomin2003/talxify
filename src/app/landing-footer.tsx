@@ -7,7 +7,7 @@ import Link from 'next/link';
 
 export default function LandingFooter() {
   return (
-    <footer className="bg-card/30 border-t border-border/50">
+    <footer className="bg-card/30 border-t border-border/50 relative z-20">
       <div className="container mx-auto max-w-7xl px-4 py-12 md:px-6">
         <div className="grid grid-cols-1 gap-12 lg:grid-cols-4">
           {/* Branding */}
