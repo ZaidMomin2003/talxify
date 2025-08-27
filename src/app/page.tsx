@@ -47,7 +47,7 @@ export default function LandingPage() {
                       alt="Talxify in action"
                       width={1280}
                       height={720}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-contain"
                       data-ai-hint="product screenshot"
                     />
                 </div>
