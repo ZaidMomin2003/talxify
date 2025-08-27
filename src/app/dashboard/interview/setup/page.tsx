@@ -7,13 +7,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/context/auth-context';
-import { Briefcase, Loader2, PlayCircle, Building, Wifi, AlertTriangle, Keyboard } from 'lucide-react';
+import { Briefcase, Loader2, PlayCircle, Building, Wifi, AlertTriangle, Keyboard, RefreshCw } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { checkAndIncrementUsage, getUserData } from '@/lib/firebase-service';
+import { checkAndIncrementUsage, getUserData, getRetakeCount, incrementRetakeCount } from '@/lib/firebase-service';
 import type { UserData } from '@/lib/types';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+
+const MAX_RETAKES = 8;
 
 function InterviewSetup() {
   const router = useRouter();
@@ -28,6 +30,7 @@ function InterviewSetup() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [userData, setUserData] = useState<UserData | null>(null);
+  const [retakeCount, setRetakeCount] = useState(0);
 
   useEffect(() => {
     if (user) {
@@ -38,6 +41,17 @@ function InterviewSetup() {
       setTopic(topicFromParams);
     }
   }, [searchParams, user]);
+  
+  const fetchRetakeCount = useCallback(async () => {
+    if (user && topic) {
+        const count = await getRetakeCount(user.uid, topic);
+        setRetakeCount(count);
+    }
+  }, [user, topic]);
+
+  useEffect(() => {
+    fetchRetakeCount();
+  }, [fetchRetakeCount]);
 
   const handleStartInterview = async () => {
     if (!user) {
@@ -48,6 +62,12 @@ function InterviewSetup() {
       setError('Please fill in all required fields.');
       return;
     }
+
+    if(retakeCount >= MAX_RETAKES) {
+        toast({ title: "Retake Limit Reached", description: `You have used all ${MAX_RETAKES} retakes for this topic.`, variant: "destructive" });
+        return;
+    }
+
     setLoading(true);
     setError('');
 
@@ -59,6 +79,8 @@ function InterviewSetup() {
             setLoading(false);
             return;
         }
+
+        await incrementRetakeCount(user.uid, topic);
 
         const meetingId = user.uid + "_" + Date.now();
         const params = new URLSearchParams({ topic, level, role });
@@ -74,6 +96,7 @@ function InterviewSetup() {
   };
 
   const isFreePlan = !userData?.subscription?.plan || userData.subscription.plan === 'free';
+  const chancesLeft = MAX_RETAKES - retakeCount;
 
   return (
     <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
@@ -121,6 +144,12 @@ function InterviewSetup() {
                 onChange={(e) => setTopic(e.target.value)}
                 required
               />
+               {topic && (
+                 <p className="text-xs text-muted-foreground flex items-center gap-1.5 pt-1">
+                    <RefreshCw className="w-3 h-3" /> 
+                    You have {chancesLeft > 0 ? chancesLeft : 0} of {MAX_RETAKES} retakes left for this topic.
+                </p>
+               )}
             </div>
              <div className="space-y-2">
               <Label htmlFor="company">Target Company (Optional)</Label>
@@ -163,7 +192,7 @@ function InterviewSetup() {
             </div>
             {error && <p className="text-sm text-destructive">{error}</p>}
             <div className="text-center pt-4">
-              <Button onClick={handleStartInterview} size="lg" disabled={loading}>
+              <Button onClick={handleStartInterview} size="lg" disabled={loading || (chancesLeft <= 0 && !!topic)}>
                 {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlayCircle className="mr-2 h-4 w-4" />}
                 Start Interview
               </Button>

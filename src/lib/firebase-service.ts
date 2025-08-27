@@ -2,7 +2,7 @@
 
 'use client';
 
-import { doc, getDoc, setDoc, updateDoc, arrayUnion, collection, getDocs, addDoc, serverTimestamp, runTransaction, deleteDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, arrayUnion, collection, getDocs, addDoc, serverTimestamp, runTransaction, deleteDoc, increment } from 'firebase/firestore';
 import { db } from './firebase';
 import type { UserData, Portfolio, StoredActivity, OnboardingData, SurveySubmission } from './types';
 import { initialPortfolioData } from './initial-data';
@@ -25,6 +25,7 @@ export const createUserDocument = async (userId: string, email: string, name: st
       },
       onboardingCompleted: false,
       syllabus: [],
+      retakeCounts: {},
     };
     initialData.portfolio.personalInfo.email = email;
     initialData.portfolio.personalInfo.name = name;
@@ -191,7 +192,7 @@ export const updatePortfolio = async (userId: string, portfolio: Portfolio): Pro
   await setDoc(userRef, { portfolio }, { merge: true });
 };
 
-// --- Activity ---
+// --- Activity & Retakes ---
 
 export const getActivity = async (userId:string): Promise<StoredActivity[]> => {
   const userData = await getUserData(userId);
@@ -220,6 +221,21 @@ export const updateActivity = async (userId: string, updatedActivity: StoredActi
         await updateDoc(userRef, { activity: newActivityArray });
     }
 };
+
+export const incrementRetakeCount = async (userId: string, topic: string) => {
+    const userRef = doc(db, 'users', userId);
+    // Use dot notation to increment a specific field in a map
+    const fieldPath = `retakeCounts.${topic}`;
+    await updateDoc(userRef, {
+        [fieldPath]: increment(1)
+    });
+};
+
+export const getRetakeCount = async (userId: string, topic: string): Promise<number> => {
+    const userData = await getUserData(userId);
+    return userData?.retakeCounts?.[topic] || 0;
+};
+
 
 // --- Survey ---
 export const saveSurveySubmission = async (submission: Partial<SurveySubmission>): Promise<void> => {

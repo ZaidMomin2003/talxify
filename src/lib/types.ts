@@ -75,6 +75,7 @@ export interface UserData {
     subscription: Subscription;
     onboardingCompleted: boolean;
     syllabus: SyllabusDay[];
+    retakeCounts?: { [topic: string]: number };
 }
 
 // --- Auth ---
@@ -205,7 +206,7 @@ const EducationSchema = z.object({
 });
 
 const SkillSchema = z.object({ name: z.string() });
-const LanguageSchema = z.object({ name: z.string(), proficiency: z.string(), level: z.number() });
+const LanguageSchema = z.object({ name: z.string(), proficiency: z.string(), level: number() });
 const HobbySchema = z.object({ name: z.string() });
 
 export const ResumeDataInputSchema = z.object({

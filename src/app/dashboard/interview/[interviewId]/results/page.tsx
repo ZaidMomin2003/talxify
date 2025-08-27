@@ -4,16 +4,18 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { BarChart, Bot, CheckCircle, ChevronLeft, MessageSquare, Mic, Sparkles, User, XCircle, Loader2, Building } from 'lucide-react';
+import { BarChart, Bot, CheckCircle, ChevronLeft, MessageSquare, Mic, Sparkles, User, XCircle, Loader2, Building, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { useAuth } from '@/context/auth-context';
 import type { InterviewActivity, StoredActivity } from '@/lib/types';
-import { getActivity, updateActivity } from '@/lib/firebase-service';
+import { getActivity, updateActivity, getRetakeCount } from '@/lib/firebase-service';
 import { generateInterviewFeedback, GenerateInterviewFeedbackOutput } from '@/ai/flows/generate-interview-feedback';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
+const MAX_RETAKES = 8;
 
 export default function InterviewResultsPage() {
     const router = useRouter();
@@ -24,52 +26,68 @@ export default function InterviewResultsPage() {
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [interviewData, setInterviewData] = useState<InterviewActivity | null>(null);
     const [analysis, setAnalysis] = useState<GenerateInterviewFeedbackOutput | null>(null);
+    const [retakeCount, setRetakeCount] = useState(0);
 
-    useEffect(() => {
-        const fetchAndAnalyze = async () => {
-            if (!user || !params.interviewId) return;
+    const fetchAndAnalyze = useCallback(async () => {
+        if (!user || !params.interviewId) return;
 
-            setIsLoading(true);
-            const allActivity = await getActivity(user.uid);
-            const currentInterview = allActivity.find(a => a.id === params.interviewId && a.type === 'interview') as InterviewActivity | undefined;
-            
-            if (!currentInterview) {
-                 setIsLoading(false);
-                 return;
-            }
-            
-            setInterviewData(currentInterview);
-            
-            // Check if analysis is already stored
-            const storedAnalysis = (currentInterview as any).analysis;
-            if (storedAnalysis && Object.keys(storedAnalysis).length > 0) {
-                setAnalysis(storedAnalysis);
-            } else {
-                 setIsAnalyzing(true);
-                 try {
-                    const feedback = await generateInterviewFeedback({
-                        transcript: currentInterview.transcript,
-                        topic: currentInterview.details.topic,
-                        role: currentInterview.details.role || 'Software Engineer',
-                        company: currentInterview.details.company,
-                    });
-                    setAnalysis(feedback);
-                    
-                    // Store the analysis back to Firebase
-                    const updatedInterview: StoredActivity = { ...currentInterview, analysis: feedback };
-                    await updateActivity(user.uid, updatedInterview);
+        setIsLoading(true);
+        const allActivity = await getActivity(user.uid);
+        const currentInterview = allActivity.find(a => a.id === params.interviewId && a.type === 'interview') as InterviewActivity | undefined;
+        
+        if (!currentInterview) {
+             setIsLoading(false);
+             return;
+        }
+        
+        setInterviewData(currentInterview);
+        
+        const retakes = await getRetakeCount(user.uid, currentInterview.details.topic);
+        setRetakeCount(retakes);
+        
+        // Check if analysis is already stored
+        const storedAnalysis = (currentInterview as any).analysis;
+        if (storedAnalysis && Object.keys(storedAnalysis).length > 0) {
+            setAnalysis(storedAnalysis);
+        } else {
+             setIsAnalyzing(true);
+             try {
+                const feedback = await generateInterviewFeedback({
+                    transcript: currentInterview.transcript,
+                    topic: currentInterview.details.topic,
+                    role: currentInterview.details.role || 'Software Engineer',
+                    company: currentInterview.details.company,
+                });
+                setAnalysis(feedback);
+                
+                // Store the analysis back to Firebase
+                const updatedInterview: StoredActivity = { ...currentInterview, analysis: feedback };
+                await updateActivity(user.uid, updatedInterview);
 
-                 } catch(error) {
-                    console.error("Failed to generate interview feedback:", error);
-                 } finally {
-                    setIsAnalyzing(false);
-                 }
-            }
-            setIsLoading(false);
-        };
-        fetchAndAnalyze();
+             } catch(error) {
+                console.error("Failed to generate interview feedback:", error);
+             } finally {
+                setIsAnalyzing(false);
+             }
+        }
+        setIsLoading(false);
     }, [user, params.interviewId]);
 
+
+    useEffect(() => {
+        fetchAndAnalyze();
+    }, [fetchAndAnalyze]);
+
+
+    const handleRetake = () => {
+        if (!interviewData) return;
+        const { topic, role, level, company } = interviewData.details;
+        const params = new URLSearchParams({ topic, role: role || '', level: level || '' });
+        if (company) {
+            params.append('company', company);
+        }
+        router.push(`/dashboard/interview/setup?${params.toString()}`);
+    }
 
     if (isLoading) {
         return <div className="flex h-full w-full items-center justify-center"><Loader2 className="w-12 h-12 animate-spin text-primary" /></div>;
@@ -94,6 +112,8 @@ export default function InterviewResultsPage() {
             </main>
          )
     }
+    
+    const chancesLeft = MAX_RETAKES - retakeCount;
 
     return (
         <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
@@ -210,9 +230,20 @@ export default function InterviewResultsPage() {
                 )}
 
                 <div className="text-center pt-8">
-                    <Button onClick={() => router.push('/dashboard/interview/setup')} size="lg">
-                       <Mic className="mr-2 h-4 w-4"/> Try Another Interview
-                    </Button>
+                     <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button onClick={handleRetake} size="lg" disabled={chancesLeft <= 0}>
+                                    <RefreshCw className="mr-2 h-4 w-4"/> 
+                                    Retake Interview
+                                    <Badge variant="secondary" className="ml-2">{chancesLeft} left</Badge>
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>You have {chancesLeft} of {MAX_RETAKES} retakes left for this topic.</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
                 </div>
             </div>
         </main>
