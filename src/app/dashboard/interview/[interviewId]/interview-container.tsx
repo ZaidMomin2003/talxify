@@ -16,6 +16,7 @@ import { speechToText } from '@/ai/flows/speech-to-text';
 import { textToSpeech } from '@/ai/flows/text-to-speech';
 import type { InterviewState } from '@/lib/interview-types';
 import { cn } from '@/lib/utils';
+import { Alert } from '@/components/ui/alert';
 
 type TranscriptEntry = {
   speaker: 'user' | 'ai';
@@ -39,8 +40,14 @@ export function InterviewContainer({ interviewId }: { interviewId: string }) {
   const audioPlayerRef = useRef<HTMLAudioElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+  const transcriptEndRef = useRef<HTMLDivElement>(null);
   
   const { join, leave, toggleWebcam, localWebcamOn, localMicOn, toggleMic } = useMeeting();
+
+  useEffect(() => {
+    transcriptEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [transcript, interimTranscript]);
+
 
   const processAndRespond = useCallback(async (state: InterviewState) => {
     if (!state) return;
@@ -107,7 +114,9 @@ export function InterviewContainer({ interviewId }: { interviewId: string }) {
   // Push-to-talk handlers
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
     if (event.code === 'Space' && !event.repeat && status === 'ready') {
+      event.preventDefault();
       setStatus('listening');
+      setInterimTranscript("Listening...");
       audioChunksRef.current = [];
       mediaRecorderRef.current?.start();
     }
@@ -115,6 +124,7 @@ export function InterviewContainer({ interviewId }: { interviewId: string }) {
 
   const handleKeyUp = useCallback((event: KeyboardEvent) => {
     if (event.code === 'Space' && status === 'listening') {
+        event.preventDefault();
         setStatus('processing');
         mediaRecorderRef.current?.stop();
     }
@@ -143,6 +153,7 @@ export function InterviewContainer({ interviewId }: { interviewId: string }) {
         };
         
         recorder.onstop = async () => {
+            setInterimTranscript("");
             const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
             if (audioBlob.size < 1000) { // Ignore very short recordings
                 setStatus('ready');
@@ -263,7 +274,7 @@ export function InterviewContainer({ interviewId }: { interviewId: string }) {
             </div>
 
             <div className="flex flex-col gap-4 min-h-0">
-                <Card className="flex-grow flex flex-col">
+                <Card className="flex-grow flex flex-col min-h-0">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2"><MessageSquare/> Transcript</CardTitle>
                     </CardHeader>
@@ -287,6 +298,7 @@ export function InterviewContainer({ interviewId }: { interviewId: string }) {
                                 </div>
                             )}
                         </div>
+                        <div ref={transcriptEndRef} />
                     </CardContent>
                 </Card>
                 <Card>
@@ -316,3 +328,5 @@ export function InterviewContainer({ interviewId }: { interviewId: string }) {
     </div>
   );
 }
+
+    
