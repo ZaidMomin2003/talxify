@@ -71,24 +71,23 @@ export default function PromotionalPopup() {
                 </DialogDescription>
             </DialogHeader>
             
-            {/* Grid for mobile, list for desktop */}
-            <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-1 sm:space-y-4">
+            <div className="mb-6 space-y-4">
                 {features.map(feature => (
-                    <div key={feature.title} className="flex items-start gap-3 sm:gap-4 p-2 sm:p-0 rounded-lg sm:rounded-none bg-muted/50 sm:bg-transparent">
+                    <div key={feature.title} className="flex items-start gap-4">
                         <div className="bg-primary/10 text-primary rounded-lg p-2 mt-0.5">
                             <feature.icon className="w-5 h-5" />
                         </div>
                         <div>
-                            <p className="font-semibold text-foreground text-sm">{feature.title}</p>
+                            <p className="font-semibold text-foreground">{feature.title}</p>
                             <p className="text-xs text-muted-foreground hidden sm:block">{feature.description}</p>
                         </div>
                     </div>
                 ))}
             </div>
             
-            <div className="bg-muted border-dashed border-2 border-primary/50 rounded-lg p-4 text-center space-y-2 mb-6">
-                <p className="text-sm text-muted-foreground">Use coupon code to get a discount!</p>
-                <p className="text-2xl font-bold tracking-widest text-primary">FIRST1000</p>
+            <div className="bg-muted border-dashed border-2 border-primary/50 rounded-lg p-3 text-center mb-6">
+                <p className="text-xs text-muted-foreground">Exclusive Launch Offer Coupon:</p>
+                <p className="text-xl font-bold tracking-widest text-primary">FIRST1000</p>
             </div>
             
             <Button onClick={handleCopyAndRedirect} className="w-full" size="lg">
