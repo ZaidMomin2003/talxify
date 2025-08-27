@@ -14,6 +14,8 @@ import { cn } from "@/lib/utils";
 import React, { useMemo } from "react";
 import type { UserData, QuizResult } from "@/lib/types";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { Skeleton } from "@/components/ui/skeleton";
+
 
 const Section = ({ icon, title, children, className, id }: { icon: React.ReactNode, title: string, children: React.ReactNode, className?: string, id: string }) => (
     <section id={id} className={cn("py-12 scroll-mt-24", className)}>
@@ -98,6 +100,68 @@ function PortfolioHeader({ name, email, imageUrl }: { name: string, email: strin
     );
 }
 
+function PortfolioLoadingSkeleton() {
+    return (
+      <div className="bg-background min-h-screen animate-pulse">
+        {/* Header Skeleton */}
+        <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-sm border-b">
+          <div className="container mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-between h-16">
+              <div className="flex items-center gap-4">
+                <Skeleton className="w-10 h-10 rounded-full" />
+                <Skeleton className="h-6 w-32 rounded-md" />
+              </div>
+              <div className="hidden md:flex items-center gap-1">
+                {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-8 w-20 rounded-md" />)}
+              </div>
+              <div className="flex items-center gap-2">
+                <Skeleton className="h-10 w-32 rounded-md" />
+              </div>
+            </div>
+          </div>
+        </header>
+        {/* Main content skeleton */}
+        <div className="container mx-auto max-w-6xl p-4 sm:p-6 lg:p-8">
+          <div className="lg:grid lg:grid-cols-12 lg:gap-12">
+            <aside className="lg:col-span-4 lg:sticky lg:top-24 self-start mb-8 lg:mb-0">
+              <Card className="p-6 text-center shadow-lg">
+                <Skeleton className="w-32 h-32 mx-auto mb-4 rounded-full" />
+                <Skeleton className="h-8 w-3/4 mx-auto mb-2 rounded-md" />
+                <Skeleton className="h-6 w-1/2 mx-auto mb-6 rounded-md" />
+                <div className="flex justify-center flex-wrap gap-2 mb-6">
+                  {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="w-10 h-10 rounded-md" />)}
+                </div>
+                <Skeleton className="h-10 w-full rounded-md" />
+              </Card>
+              <Card className="p-6 mt-8 shadow-lg">
+                <Skeleton className="h-6 w-1/3 mb-4 rounded-md" />
+                <div className="flex flex-wrap gap-2">
+                  {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-8 w-20 rounded-full" />)}
+                </div>
+              </Card>
+            </aside>
+            <main className="lg:col-span-8 space-y-12">
+              <Skeleton className="w-full h-48 md:h-64 rounded-xl" />
+              <div>
+                <Skeleton className="h-10 w-48 mb-8 rounded-md" />
+                <Skeleton className="h-24 w-full rounded-md" />
+              </div>
+              <div>
+                <Skeleton className="h-10 w-48 mb-8 rounded-md" />
+                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                  <Skeleton className="h-28 w-full rounded-xl" />
+                  <Skeleton className="h-28 w-full rounded-xl" />
+                  <Skeleton className="h-28 w-full rounded-xl" />
+                </div>
+              </div>
+            </main>
+          </div>
+        </div>
+      </div>
+    );
+}
+
+
 export default function PortfolioComponent({ userData }: { userData: UserData | null }) {
     const portfolio = userData?.portfolio;
 
@@ -138,6 +202,10 @@ export default function PortfolioComponent({ userData }: { userData: UserData | 
         return `https://www.youtube.com/embed/${videoId}`;
     };
 
+    if (!userData) {
+        return <PortfolioLoadingSkeleton />;
+    }
+    
     if (!portfolio) {
         return (
             <div className="flex h-screen items-center justify-center">

@@ -27,9 +27,9 @@ const getSystemPrompt = (state: InterviewState) => `
     2.  Ask ONE main question at a time. The questions must be relevant to the topic, role, and level.
     3.  After the user answers, provide a VERY brief, encouraging acknowledgment (like "Good approach," "Thanks, that makes sense," "Okay, I see.") before immediately asking the next logical follow-up question.
     4.  Your follow-up question should extend the previous topic or ask for more detail. For example, if they answered about React Hooks, ask them to elaborate on a specific hook or a use case.
-    5.  Keep your responses concise and conversational. DO NOT speak in long paragraphs.
+    5.  Keep your responses extremely concise and conversational. DO NOT speak in long paragraphs. Your responses should be one or two sentences at most.
     6.  After you have asked ${MAX_QUESTIONS} questions and the user has responded, you MUST conclude the interview.
-    7.  Your final message MUST be a harsh but fair and realistic review of the user's performance based on the entire conversation. Start with "Okay, that's all the questions I have. Here's my feedback...". Provide specific examples of their strengths and weaknesses. Be direct and constructive.
+    7.  Your final message MUST be a fair and realistic review of the user's performance based on the entire conversation. Start with "Okay, that's all the questions I have. Here's my feedback...". Provide specific examples of their strengths and weaknesses. Be direct and constructive.
     8.  Do not say "goodbye" or other pleasantries in the final review. Just give the feedback and end.
 `;
 
@@ -42,8 +42,8 @@ export async function generateInterviewResponse(state: InterviewState): Promise<
       { role: 'system', content: systemPrompt },
       ...state.history,
     ],
-    temperature: 0.7,
-    max_tokens: 300,
+    temperature: 0.5,
+    max_tokens: 250,
   });
 
   const aiResponseText = response.choices[0]?.message?.content || "I'm sorry, I seem to be having trouble responding.";
@@ -51,7 +51,6 @@ export async function generateInterviewResponse(state: InterviewState): Promise<
   const newState: InterviewState = { ...state };
   newState.history.push({ role: 'assistant', content: aiResponseText });
 
-  // The number of questions asked is half the length of the history (user + ai responses).
   const questionsAsked = Math.floor(newState.history.length / 2);
   
   if (questionsAsked >= MAX_QUESTIONS) {
@@ -63,5 +62,3 @@ export async function generateInterviewResponse(state: InterviewState): Promise<
     newState: newState,
   };
 }
-
-    

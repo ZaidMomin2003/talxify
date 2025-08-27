@@ -7,11 +7,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/context/auth-context';
-import { Briefcase, Loader2, PlayCircle, Building } from 'lucide-react';
+import { Briefcase, Loader2, PlayCircle, Building, Wifi, AlertTriangle } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect, Suspense } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { checkAndIncrementUsage } from '@/lib/firebase-service';
+import { checkAndIncrementUsage, getUserData } from '@/lib/firebase-service';
+import type { UserData } from '@/lib/types';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 function InterviewSetup() {
   const router = useRouter();
@@ -25,13 +27,17 @@ function InterviewSetup() {
   const [company, setCompany] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [userData, setUserData] = useState<UserData | null>(null);
 
   useEffect(() => {
+    if (user) {
+        getUserData(user.uid).then(setUserData);
+    }
     const topicFromParams = searchParams.get('topic');
     if (topicFromParams) {
       setTopic(topicFromParams);
     }
-  }, [searchParams]);
+  }, [searchParams, user]);
 
   const handleStartInterview = async () => {
     if (!user) {
@@ -67,6 +73,8 @@ function InterviewSetup() {
     }
   };
 
+  const isFreePlan = !userData?.subscription?.plan || userData.subscription.plan === 'free';
+
   return (
     <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
       <div className="max-w-2xl mx-auto">
@@ -79,6 +87,22 @@ function InterviewSetup() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
+            <Alert>
+                <Wifi className="h-4 w-4" />
+                <AlertTitle>Stable Connection Required</AlertTitle>
+                <AlertDescription>
+                    For the best experience, please ensure you are on a stable internet connection before starting the interview.
+                </AlertDescription>
+            </Alert>
+            {isFreePlan && (
+                <Alert variant="destructive">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertTitle>Free Plan Limit</AlertTitle>
+                    <AlertDescription>
+                        Starting this session will use one of your limited AI credits for the free plan.
+                    </AlertDescription>
+                </Alert>
+            )}
             <div className="space-y-2">
               <Label htmlFor="topic">Interview Topic*</Label>
               <Input

@@ -10,7 +10,7 @@ import { addActivity } from '@/lib/firebase-service';
 import type { InterviewActivity } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Mic, MicOff, Video, VideoOff, Phone, Loader2, MessageSquare, Bot, Power, User, AlertTriangle } from 'lucide-react';
+import { Mic, MicOff, Video, VideoOff, Phone, Loader2, MessageSquare, Bot, Power, User, AlertTriangle, Wifi } from 'lucide-react';
 import { generateInterviewResponse } from '@/ai/flows/generate-interview-response';
 import { speechToText } from '@/ai/flows/speech-to-text';
 import { textToSpeech } from '@/ai/flows/text-to-speech';
@@ -49,12 +49,11 @@ export function InterviewContainer({ interviewId }: { interviewId: string }) {
           mediaRecorderRef.current.stop();
           isRecording.current = false;
           if (silenceTimer.current) clearTimeout(silenceTimer.current);
-          setInterimTranscript(""); // Clear interim transcript
+          setInterimTranscript(""); 
           
           setStatus('processing');
           const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
 
-          // Ignore very short audio clips which are likely noise
           if(audioBlob.size < 2000) { 
               setStatus('listening');
               startRecording();
@@ -74,6 +73,7 @@ export function InterviewContainer({ interviewId }: { interviewId: string }) {
                 setInterviewState(newState);
                 processAndRespond(newState);
               } else {
+                toast({ title: "Couldn't hear you", description: "The AI didn't catch that. Please try speaking again.", variant: "destructive"});
                 setStatus('listening');
                 startRecording();
               }
@@ -90,22 +90,16 @@ export function InterviewContainer({ interviewId }: { interviewId: string }) {
   const startRecording = useCallback(() => {
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'recording') {
       audioChunksRef.current = [];
-      mediaRecorderRef.current.start(1000); // Record in 1s chunks
+      mediaRecorderRef.current.start(1000); 
       isRecording.current = true;
       setStatus('listening');
-      // Reset silence timer whenever we start recording
       if (silenceTimer.current) clearTimeout(silenceTimer.current);
-      silenceTimer.current = setTimeout(handleStopRecordingAndProcess, 2500); // 2.5s silence
+      silenceTimer.current = setTimeout(handleStopRecordingAndProcess, 2500);
     }
   }, [handleStopRecordingAndProcess]);
 
   const processAndRespond = useCallback(async (state: InterviewState) => {
     if (!state) return;
-    if (state.isComplete) {
-      // Delay ending the session slightly to allow the final AI message to play
-      setTimeout(() => endSession(true), 500);
-      return;
-    }
     
     setStatus('speaking');
     try {
@@ -120,7 +114,6 @@ export function InterviewContainer({ interviewId }: { interviewId: string }) {
       }
       setInterviewState(newState);
 
-      // Add event listener to the audio player
       const audio = audioPlayerRef.current;
       const onAudioEnd = () => {
         if(newState.isComplete) {
@@ -136,6 +129,7 @@ export function InterviewContainer({ interviewId }: { interviewId: string }) {
       console.error("Error processing AI response:", error);
       toast({ title: "AI Error", description: "Could not get a response from the AI. Please try again.", variant: "destructive"});
       setStatus('listening');
+      startRecording();
     }
   }, [startRecording, toast]);
 
@@ -238,7 +232,12 @@ export function InterviewContainer({ interviewId }: { interviewId: string }) {
           <Card className="max-w-lg text-center">
             <CardHeader>
               <CardTitle>Ready for your mock interview?</CardTitle>
-               <CardDescription>Click the button below to start your session. The conversation will be hands-free. The AI will detect when you've finished speaking.</CardDescription>
+               <CardDescription>
+                  The conversation will be hands-free. The AI will detect when you've finished speaking.
+                  <div className="mt-4 flex items-center justify-center gap-2 text-sm text-amber-600 dark:text-amber-500 bg-amber-500/10 p-2 rounded-md">
+                      <Wifi className="h-4 w-4"/> A stable internet connection is recommended.
+                  </div>
+               </CardDescription>
             </CardHeader>
             <CardContent>
               <Button onClick={startSession} size="lg" disabled={status === 'connecting'}>
