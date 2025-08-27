@@ -13,9 +13,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
-import { BarChart, BrainCircuit, Code, Copy, Sparkles, X, BookOpen, Swords, ChevronDown } from 'lucide-react';
-import Image from 'next/image';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { BrainCircuit, Code, Copy, Swords, BookOpen } from 'lucide-react';
 
 
 const features = [
@@ -64,49 +62,42 @@ export default function PromotionalPopup() {
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="max-w-md w-[90vw] rounded-xl p-6 sm:p-8">
-        <DialogHeader className="text-center">
-        <DialogTitle className="text-2xl font-bold font-headline mb-2">Welcome to Talxify!</DialogTitle>
-        <DialogDescription>
-            Get a head start on your career with our exclusive launch offer.
-        </DialogDescription>
-        </DialogHeader>
-        
-        <div className="my-4">
-           <Accordion type="single" collapsible className="w-full">
-              <AccordionItem value="item-1">
-                <AccordionTrigger className="text-sm hover:no-underline">View Features</AccordionTrigger>
-                <AccordionContent>
-                   <div className="space-y-4 pt-2">
-                        {features.map(feature => (
-                            <div key={feature.title} className="flex items-start gap-4">
-                                <div className="bg-primary/10 text-primary rounded-lg p-2 mt-0.5">
-                                    <feature.icon className="w-5 h-5" />
-                                </div>
-                                <div>
-                                    <p className="font-semibold text-foreground text-sm">{feature.title}</p>
-                                    <p className="text-xs text-muted-foreground">{feature.description}</p>
-                                </div>
-                            </div>
-                        ))}
+      <DialogContent className="max-w-md w-[90vw] rounded-xl p-0 overflow-hidden">
+        <div className="p-6 sm:p-8">
+            <DialogHeader className="text-center mb-6">
+                <DialogTitle className="text-2xl font-bold font-headline">Unlock Your Potential with Talxify</DialogTitle>
+                <DialogDescription>
+                    Get a head start on your career with our exclusive launch offer.
+                </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4 mb-6">
+                {features.map(feature => (
+                    <div key={feature.title} className="flex items-start gap-4">
+                        <div className="bg-primary/10 text-primary rounded-lg p-2 mt-0.5">
+                            <feature.icon className="w-5 h-5" />
+                        </div>
+                        <div>
+                            <p className="font-semibold text-foreground text-sm">{feature.title}</p>
+                            <p className="text-xs text-muted-foreground">{feature.description}</p>
+                        </div>
                     </div>
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
-        </div>
-
-
-        <div className="bg-muted border-dashed border-2 border-primary/50 rounded-lg p-4 text-center space-y-2">
-            <p className="text-sm text-muted-foreground">Use coupon code to get a discount!</p>
-            <p className="text-2xl font-bold tracking-widest text-primary">FIRST1000</p>
-        </div>
-        
-        <div className="mt-6">
+                ))}
+            </div>
+            
+            <div className="bg-muted border-dashed border-2 border-primary/50 rounded-lg p-4 text-center space-y-2 mb-6">
+                <p className="text-sm text-muted-foreground">Use coupon code to get a discount!</p>
+                <p className="text-2xl font-bold tracking-widest text-primary">FIRST1000</p>
+            </div>
+            
             <Button onClick={handleCopyAndRedirect} className="w-full" size="lg">
                 <Copy className="mr-2 h-4 w-4" />
                 Copy Code & Claim Offer
             </Button>
         </div>
+        <button onClick={() => handleDismiss(false)} className="w-full text-center py-3 text-sm text-muted-foreground hover:bg-muted transition-colors">
+            Maybe later
+        </button>
       </DialogContent>
     </Dialog>
   );
