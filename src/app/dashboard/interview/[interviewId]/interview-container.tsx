@@ -313,7 +313,7 @@ export function InterviewContainer({ interviewId }: { interviewId: string }) {
             <Button onClick={toggleWebcam} variant={localWebcamOn ? "secondary" : "destructive"} size="icon" className="rounded-full h-12 w-12">
                 {localWebcamOn ? <Video /> : <VideoOff />}
             </Button>
-            <Button onClick={() => endSession()} variant="destructive" size="icon" className="rounded-full h-14 w-14">
+            <Button onClick={() => endSession(true)} variant="destructive" size="icon" className="rounded-full h-14 w-14">
                 <Phone />
             </Button>
              <Button
@@ -328,3 +328,5 @@ export function InterviewContainer({ interviewId }: { interviewId: string }) {
     </div>
   );
 }
+
+    
