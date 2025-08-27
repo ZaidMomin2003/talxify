@@ -14,6 +14,7 @@ import LandingFooter from "./landing-footer";
 import { Badge } from "@/components/ui/badge";
 import LandingProductFeatures from "./landing-product-features";
 import LandingHowItWorks from "./landing-how-it-works";
+import Image from "next/image";
 
 
 export default function LandingPage() {
@@ -38,16 +39,17 @@ export default function LandingPage() {
                     Experience Talxify Firsthand
                 </h2>
                 <p className="text-muted-foreground max-w-2xl mx-auto mb-12">
-                    Watch a quick walkthrough to see how our AI-powered tools can help you prepare for your next technical interview and land your dream job.
+                    Our AI-powered tools can help you prepare for your next technical interview and land your dream job.
                 </p>
                 <div className="aspect-video overflow-hidden rounded-2xl border border-border shadow-2xl shadow-primary/10">
-                    <iframe
-                        className="w-full h-full"
-                        src="https://www.youtube.com/embed/3tXVSpImzXk?si=YOUR_SHARE_CODE"
-                        title="YouTube video player"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                        allowFullScreen
-                    ></iframe>
+                    <Image
+                      src="/image.png"
+                      alt="Talxify in action"
+                      width={1280}
+                      height={720}
+                      className="w-full h-full object-cover"
+                      data-ai-hint="product screenshot"
+                    />
                 </div>
             </div>
         </section>
