@@ -87,22 +87,31 @@ function InterviewSetup() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            <Alert>
-                <Keyboard className="h-4 w-4" />
-                <AlertTitle>Push-to-Talk Enabled</AlertTitle>
-                <AlertDescription>
-                    To speak, press and hold the <kbd className="px-2 py-1 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-200 rounded-lg">Spacebar</kbd>. Release when you're done.
-                </AlertDescription>
-            </Alert>
-            {isFreePlan && (
-                <Alert variant="destructive">
-                    <AlertTriangle className="h-4 w-4" />
-                    <AlertTitle>Free Plan Limit</AlertTitle>
-                    <AlertDescription>
-                        Starting this session will use one of your limited AI credits for the free plan.
-                    </AlertDescription>
-                </Alert>
-            )}
+            <div className="space-y-3">
+              <Alert>
+                  <Keyboard className="h-4 w-4" />
+                  <AlertTitle>Push-to-Talk Enabled</AlertTitle>
+                  <AlertDescription>
+                      To speak, press and hold the <kbd className="px-2 py-1 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-200 rounded-lg">Spacebar</kbd>. Release when you're done.
+                  </AlertDescription>
+              </Alert>
+               <Alert>
+                  <Wifi className="h-4 w-4" />
+                  <AlertTitle>Stable Connection Required</AlertTitle>
+                  <AlertDescription>
+                      For the best experience, please ensure you have a stable internet connection before starting the interview.
+                  </AlertDescription>
+              </Alert>
+              {isFreePlan && (
+                  <Alert variant="destructive">
+                      <AlertTriangle className="h-4 w-4" />
+                      <AlertTitle>Free Plan Limit</AlertTitle>
+                      <AlertDescription>
+                          Starting this session will use one of your limited AI credits for the free plan.
+                      </AlertDescription>
+                  </Alert>
+              )}
+            </div>
             <div className="space-y-2">
               <Label htmlFor="topic">Interview Topic*</Label>
               <Input
