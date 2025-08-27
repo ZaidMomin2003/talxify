@@ -79,7 +79,7 @@ export default function PromotionalPopup() {
                         </div>
                         <div>
                             <p className="font-semibold text-foreground text-sm">{feature.title}</p>
-                            <p className="text-xs text-muted-foreground">{feature.description}</p>
+                            <p className="text-xs text-muted-foreground hidden sm:block">{feature.description}</p>
                         </div>
                     </div>
                 ))}
