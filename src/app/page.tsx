@@ -74,7 +74,7 @@ export default function LandingPage() {
                 <p className="text-muted-foreground max-w-2xl mx-auto mb-12">
                     Our AI-powered tools can help you prepare for your next technical interview and land your dream job.
                 </p>
-                <div className="h-[80vh] overflow-hidden rounded-2xl border border-border shadow-2xl shadow-primary/10">
+                <div className="md:h-[80vh] overflow-hidden rounded-2xl border border-border shadow-2xl shadow-primary/10">
                     <Image
                       src="/image.png"
                       alt="Talxify in action"
