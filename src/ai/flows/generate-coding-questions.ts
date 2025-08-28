@@ -59,7 +59,7 @@ Here is an example of a good, well-defined question: "{{example}}"
 {{/if}}
 
 Each question you generate must be a clear, self-contained problem that a developer can solve in {{language}}. Ensure you generate the exact number of questions requested.
-IMPORTANT: Format the question text using Markdown. Use backticks for inline code, asterisks for lists, and newlines for spacing to ensure the question is clear and readable.
+IMPORTANT: Format the question text using standard Markdown. Use backticks for inline code, asterisks for lists, and newlines for spacing to ensure the question is clear and professionally formatted. For example, use '**Input:**' for bold text.
 `,
 });
 

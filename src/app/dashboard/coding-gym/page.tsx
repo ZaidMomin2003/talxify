@@ -77,14 +77,14 @@ function CodingGymComponent() {
       } else {
            toast({ title: 'No More Questions', description: `The AI could not generate more ${currentDifficulty} questions for this topic.`, variant: 'destructive' });
            setStatus('finished');
-           if (quizSubmissions.length > 0) saveQuizToActivity();
+           if (quizSubmissions.length > 0) saveQuizToActivity(quizSubmissions);
       }
     } catch (error) {
       console.error('Failed to generate coding questions:', error);
       toast({ title: 'Error', description: 'Failed to generate the next question. Please try again.', variant: 'destructive' });
       router.back();
     }
-  }, [topic, router, toast, user, quizSubmissions.length]);
+  }, [topic, router, toast, user, quizSubmissions]);
 
   useEffect(() => {
     fetchNextQuestion('easy');
@@ -151,8 +151,7 @@ function CodingGymComponent() {
     try {
       await addActivity(user.uid, quizResult);
       toast({ title: "Progress Saved", description: "Your Code Izanami session has been saved to your activity."});
-    } catch (err) {
-      console.error("Failed to save Izanami results:", err);
+    } catch (err)      console.error("Failed to save Izanami results:", err);
     }
   };
 
@@ -194,7 +193,7 @@ function CodingGymComponent() {
                 <>
                 <CardHeader>
                     <CardTitle className="text-xl font-semibold">Question {questionCount}</CardTitle>
-                    <CardDescription className="prose dark:prose-invert" dangerouslySetInnerHTML={{ __html: question.questionText.replace(/\n/g, '<br />') }} />
+                    <CardDescription className="prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: question.questionText.replace(/\n/g, '<br />') }} />
                 </CardHeader>
                 <CardContent className="flex-grow flex flex-col">
                     <Textarea
