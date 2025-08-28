@@ -24,7 +24,8 @@ export async function getAssemblyAiToken(): Promise<string | null> {
   });
   
   try {
-    const token = await client.realtime.createTemporaryToken({ expires_in: 3600 });
+    // The SDK handles the API call to generate the token.
+    const token = await client.realtime.createTemporaryToken({ expires_in: 3600 }); // Expires in 1 hour
     return token;
   } catch (error) {
     console.error('Error generating AssemblyAI temporary token:', error);
