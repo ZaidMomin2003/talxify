@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Rocket, Code, Briefcase, Percent, Search, RefreshCw, BarChart, Info, CalendarDays, Loader2, Lock, Building, BrainCircuit, User, Gem, CheckCircle, BookOpen, PlayCircle, Star, Swords } from "lucide-react";
+import { Rocket, Code, Briefcase, Percent, Search, RefreshCw, BarChart, Info, CalendarDays, Loader2, Lock, Building, BrainCircuit, User, Gem, CheckCircle, BookOpen, PlayCircle, Star, Swords, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useForm } from "react-hook-form";
@@ -14,7 +14,7 @@ import { z } from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useRouter } from "next/navigation";
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import type { StoredActivity, QuizResult, InterviewActivity, UserData } from "@/lib/types";
+import type { StoredActivity, QuizResult, InterviewActivity, UserData, SyllabusDay } from "@/lib/types";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
@@ -47,6 +47,16 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   return null;
 };
 
+const FocusChecklistItem = ({ icon, text, isCompleted }: { icon: React.ElementType, text: string, isCompleted: boolean }) => (
+    <div className={cn("flex items-center gap-3 p-3 rounded-lg bg-muted/50", isCompleted && "opacity-50")}>
+        {isCompleted ? 
+            <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" /> :
+            React.createElement(icon, { className: "h-5 w-5 text-primary flex-shrink-0" })
+        }
+        <p className={cn("font-medium text-foreground", isCompleted && "line-through text-muted-foreground")}>{text}</p>
+    </div>
+);
+
 export default function DashboardPage() {
   const router = useRouter();
   const { user } = useAuth();
@@ -69,7 +79,7 @@ export default function DashboardPage() {
 
   const allActivity = userData?.activity || [];
   
-  const { questionsSolved, interviewsCompleted, recentQuizzes, averageScore, hasTakenQuiz, performanceData } = useMemo(() => {
+  const { questionsSolved, interviewsCompleted, recentQuizzes, averageScore, hasTakenQuiz, performanceData, completedDays, dailyTaskStatus } = useMemo(() => {
     const quizzes = allActivity.filter(item => item.type === 'quiz') as QuizResult[];
     const interviews = allActivity.filter(item => item.type === 'interview') as InterviewActivity[];
     const completedQuizzes = quizzes.filter(item => item.analysis.length > 0);
@@ -86,7 +96,7 @@ export default function DashboardPage() {
     const quizTaken = completedQuizzes.length > 0;
     
     const perfData = [...completedQuizzes]
-        .sort((a,b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
+        .sort((a,b) => new Date(a.timestamp).getTime() - new Date(a.timestamp).getTime())
         .map((result) => {
             const totalQuizScore = result.analysis.reduce((sum, item) => sum + item.score, 0);
             const averageQuizScore = Math.round((totalQuizScore / Math.max(result.analysis.length, 1)) * 100);
@@ -96,15 +106,52 @@ export default function DashboardPage() {
             };
         });
 
+    // Arena progress calculation
+    const syllabus = userData?.syllabus || [];
+    const activity = userData?.activity || [];
+    const status: { [day: number]: { learn: boolean; quiz: boolean; interview: boolean; } } = {};
+
+    syllabus.forEach(day => {
+        status[day.day] = { learn: false, quiz: false, interview: false };
+    });
+
+    activity.forEach(act => {
+        const actTopic = act.details.topic.toLowerCase();
+        const day = syllabus.find(d => d.topic.toLowerCase().includes(actTopic) || actTopic.includes(d.topic.toLowerCase()));
+        
+        if (day) {
+            if (act.type === 'note-generation') status[day.day].learn = true;
+            if (act.type === 'quiz') status[day.day].quiz = true;
+            if (act.type === 'interview') status[day.day].interview = true;
+        }
+    });
+
+    let lastCompletedDay = 0;
+    for (let i = 1; i <= syllabus.length; i++) {
+        const dayStatus = status[i];
+        const isDay30 = i === 30;
+        const interviewRequired = isDay30 || (i % 2 !== 0);
+        const learnRequired = !isDay30;
+        const isDayComplete = dayStatus && dayStatus.quiz && (learnRequired ? dayStatus.learn : true) && (interviewRequired ? dayStatus.interview : true);
+
+        if (isDayComplete) {
+            lastCompletedDay = i;
+        } else {
+            break;
+        }
+    }
+
     return {
         questionsSolved: solved,
         interviewsCompleted: interviews.length,
         recentQuizzes: quizzes.sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()),
         averageScore: avgScore,
         hasTakenQuiz: quizTaken,
-        performanceData: perfData
+        performanceData: perfData,
+        completedDays: lastCompletedDay,
+        dailyTaskStatus: status,
     };
-  }, [allActivity]);
+  }, [allActivity, userData]);
   
   const planExpiresDays = useMemo(() => {
     if (userData?.subscription?.endDate) {
@@ -141,6 +188,10 @@ export default function DashboardPage() {
     setSelectedQuiz(quiz);
   }
   
+  const currentDayNumber = completedDays + 1;
+  const currentDayData = userData?.syllabus?.find(d => d.day === currentDayNumber);
+  const currentDayStatus = dailyTaskStatus[currentDayNumber] || { learn: false, quiz: false, interview: false };
+  const isFinalDay = currentDayNumber === 30;
 
   return (
     <main className="flex-1 overflow-auto p-4 sm:p-6">
@@ -201,51 +252,87 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      <div className="grid grid-cols-1">
-        <Card>
-            <CardHeader>
-                <CardTitle>Performance Over Time</CardTitle>
-                <CardDescription>
-                    Your average quiz scores over time. Complete more quizzes to see your progress!
-                </CardDescription>
-            </CardHeader>
-            <CardContent className="h-[300px] w-full pr-6">
-                 {performanceData.length > 0 ? (
-                    <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart
-                        data={performanceData}
-                        margin={{
-                            top: 5, right: 10, left: -10, bottom: 5,
-                        }}
-                        >
-                        <defs>
-                            <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.4}/>
-                            <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
-                            </linearGradient>
-                        </defs>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
-                        <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
-                        <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value}%`} />
-                        <RechartsTooltip content={<CustomTooltip />} cursor={{ stroke: 'hsl(var(--primary))', strokeWidth: 1, strokeDasharray: '3 3' }} />
-                        <Area type="monotone" dataKey="score" stroke="hsl(var(--primary))" fillOpacity={1} fill="url(#colorScore)" strokeWidth={2} activeDot={{ r: 6, style: { fill: 'hsl(var(--primary))', stroke: 'hsl(var(--background))' } }} />
-                        </AreaChart>
-                    </ResponsiveContainer>
-                 ) : (
-                    <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
-                        <BarChart className="w-12 h-12 mb-4" />
-                        <p className="font-semibold">No performance data yet</p>
-                        <p className="text-sm">Take a quiz to see your progress.</p>
-                    </div>
-                 )}
-            </CardContent>
-        </Card>
+       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2">
+          <Card className="h-full">
+              <CardHeader>
+                  <CardTitle>Performance Over Time</CardTitle>
+                  <CardDescription>
+                      Your average quiz scores over time. Complete more quizzes to see your progress!
+                  </CardDescription>
+              </CardHeader>
+              <CardContent className="h-[300px] w-full pr-6">
+                  {performanceData.length > 0 ? (
+                      <ResponsiveContainer width="100%" height="100%">
+                          <AreaChart
+                          data={performanceData}
+                          margin={{
+                              top: 5, right: 10, left: -10, bottom: 5,
+                          }}
+                          >
+                          <defs>
+                              <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.4}/>
+                              <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                              </linearGradient>
+                          </defs>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                          <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
+                          <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value}%`} />
+                          <RechartsTooltip content={<CustomTooltip />} cursor={{ stroke: 'hsl(var(--primary))', strokeWidth: 1, strokeDasharray: '3 3' }} />
+                          <Area type="monotone" dataKey="score" stroke="hsl(var(--primary))" fillOpacity={1} fill="url(#colorScore)" strokeWidth={2} activeDot={{ r: 6, style: { fill: 'hsl(var(--primary))', stroke: 'hsl(var(--background))' } }} />
+                          </AreaChart>
+                      </ResponsiveContainer>
+                  ) : (
+                      <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
+                          <BarChart className="w-12 h-12 mb-4" />
+                          <p className="font-semibold">No performance data yet</p>
+                          <p className="text-sm">Take a quiz to see your progress.</p>
+                      </div>
+                  )}
+              </CardContent>
+          </Card>
+        </div>
+
+        <div>
+            <Card className="h-full flex flex-col">
+                 <CardHeader>
+                    <CardTitle>Today's Focus: Day {currentDayNumber}</CardTitle>
+                    {currentDayData ? (
+                        <CardDescription>Topic: <span className="font-semibold text-foreground">{currentDayData.topic}</span></CardDescription>
+                    ) : (
+                         <CardDescription>You've completed the Arena!</CardDescription>
+                    )}
+                </CardHeader>
+                 <CardContent className="flex-grow space-y-3">
+                    {currentDayData ? (
+                        <>
+                           {!isFinalDay && <FocusChecklistItem icon={BookOpen} text="Study Core Concepts" isCompleted={currentDayStatus.learn} />}
+                           <FocusChecklistItem icon={Code} text="Take Code Izanami" isCompleted={currentDayStatus.quiz} />
+                           {(currentDayNumber % 2 !== 0 || isFinalDay) && (
+                                <FocusChecklistItem icon={Briefcase} text="Mock Interview" isCompleted={currentDayStatus.interview} />
+                           )}
+                        </>
+                    ) : (
+                        <div className="text-center text-muted-foreground h-full flex flex-col justify-center items-center">
+                            <Star className="w-10 h-10 mb-4 text-yellow-500" />
+                            <p className="font-semibold">Congratulations!</p>
+                        </div>
+                    )}
+                </CardContent>
+                <CardFooter>
+                     <Button asChild className="w-full">
+                        <Link href="/dashboard/arena">Go to Arena <ArrowRight className="ml-2 w-4 h-4"/></Link>
+                    </Button>
+                </CardFooter>
+            </Card>
+        </div>
       </div>
       
       <div className="mt-8">
         <Card>
           <CardHeader>
-            <CardTitle>Activity</CardTitle>
+            <CardTitle>Standard Quiz History</CardTitle>
             <CardDescription>Review your past standard quizzes and retake them to improve.</CardDescription>
             <div className="relative pt-2">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
