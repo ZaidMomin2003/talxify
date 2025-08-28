@@ -1,41 +1,49 @@
 
 'use server';
 
-import axios, { isAxiosError } from 'axios';
-
 /**
  * @fileOverview A server action to generate a temporary token for AssemblyAI's real-time transcription.
  * This keeps the API key secure on the server.
  */
 
 export async function getAssemblyAiToken() {
-  if (!process.env.ASSEMBLYAI_API_KEY) {
-    // This is the most likely cause of the error.
-    // The environment variable is not set on the server.
-    throw new Error('CRITICAL: ASSEMBLYAI_API_KEY is not set in your .env file. Please add it and restart the server.');
+  const apiKey = process.env.ASSEMBLYAI_API_KEY;
+
+  if (!apiKey) {
+    throw new Error(
+      'CRITICAL: ASSEMBLYAI_API_KEY is not set in your .env file. Please add it and ensure the server is restarted.'
+    );
   }
 
   try {
-    const response = await axios.post(
-      'https://api.assemblyai.com/v2/realtime/token',
-      { expires_in: 3600 }, // Token valid for 1 hour
-      {
-        headers: {
-          'Authorization': process.env.ASSEMBLYAI_API_KEY,
-        },
-      }
-    );
-    return response.data.token;
-  } catch (error) {
-    if (isAxiosError(error)) {
+    const response = await fetch('https://api.assemblyai.com/v2/realtime/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: apiKey,
+      },
+      body: JSON.stringify({ expires_in: 3600 }), // Token valid for 1 hour
+    });
+    
+    const data = await response.json();
+
+    if (!response.ok) {
         // Log the detailed error from AssemblyAI's response
-        console.error('AssemblyAI API Error:', error.response?.data);
-        // Provide a more specific error message to the user
-        const assemblyError = error.response?.data?.error || 'Could not communicate with AssemblyAI. This often happens if the API key is invalid.';
-        throw new Error(`Could not generate AssemblyAI session token: ${assemblyError}`);
+        console.error('AssemblyAI API Error:', data);
+        const errorMessage = data.error || 'Could not communicate with AssemblyAI. This often happens if the API key is invalid.';
+        throw new Error(`Could not generate AssemblyAI session token: ${errorMessage}`);
     }
-    // Fallback for non-Axios errors
+
+    if (!data.token) {
+        console.error('AssemblyAI API Error: Token was not present in the successful response.', data);
+        throw new Error('Authentication with AssemblyAI succeeded, but no token was returned.');
+    }
+
+    return data.token;
+    
+  } catch (error) {
     console.error('Error getting AssemblyAI token:', error);
-    throw new Error('Could not generate AssemblyAI session token.');
+    // Re-throw a generic error to the client to avoid exposing internal details
+    throw new Error(`Could not generate AssemblyAI session token. ${(error as Error).message}`);
   }
 }
