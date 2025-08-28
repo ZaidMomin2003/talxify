@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { generateCodingQuestions, GenerateCodingQuestionsInput, CodingQuestion } from '@/ai/flows/generate-coding-questions';
 import { analyzeCodingAnswers, AnswerAnalysis } from '@/ai/flows/analyze-coding-answers';
 import { Progress } from '@/components/ui/progress';
-import { Loader2, AlertTriangle, Lightbulb, Sparkles, CheckCircle, XCircle, ChevronLeft, ChevronRight, Trophy } from 'lucide-react';
+import { Loader2, Sparkles, CheckCircle, XCircle, ChevronLeft, ChevronRight, Trophy } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { addActivity, checkAndIncrementUsage } from '@/lib/firebase-service';
@@ -31,21 +31,22 @@ function CodingGymComponent() {
   const [analysis, setAnalysis] = useState<AnswerAnalysis | null>(null);
   const [userAnswer, setUserAnswer] = useState('');
   const [difficulty, setDifficulty] = useState<Difficulty>('easy');
-  const [questionCount, setQuestionCount] = useState(0);
   const [status, setStatus] = useState<QuizStatus>('generating');
   const [quizSubmissions, setQuizSubmissions] = useState<{question: CodingQuestion; userAnswer: string; analysis: AnswerAnalysis}[]>([]);
   
   const topic = useMemo(() => searchParams.get('topic') || '', [searchParams]);
   const SOFT_LIMIT = 10;
+  const questionCount = quizSubmissions.length + (status !== 'generating' && status !== 'finished' ? 1 : 0);
 
-  const fetchNextQuestion = useCallback(async (currentDifficulty: Difficulty, isInitial: boolean = false) => {
+  const fetchNextQuestion = useCallback(async (currentDifficulty: Difficulty) => {
     if (!user) {
        router.push('/login');
        return;
     }
     setStatus('generating');
 
-    if (isInitial) {
+    // Only check usage on the very first question of a new session
+    if (quizSubmissions.length === 0) {
         const usageCheck = await checkAndIncrementUsage(user.uid);
         if (!usageCheck.success) {
             toast({ title: "Usage Limit Reached", description: usageCheck.message, variant: "destructive" });
@@ -73,22 +74,22 @@ function CodingGymComponent() {
           setUserAnswer('');
           setAnalysis(null);
           setStatus('answering');
-          setQuestionCount(prev => prev + 1);
       } else {
            toast({ title: 'No More Questions', description: `The AI could not generate more ${currentDifficulty} questions for this topic.`, variant: 'destructive' });
            setStatus('finished');
-           saveQuizToActivity();
+           if (quizSubmissions.length > 0) saveQuizToActivity();
       }
     } catch (error) {
       console.error('Failed to generate coding questions:', error);
       toast({ title: 'Error', description: 'Failed to generate the next question. Please try again.', variant: 'destructive' });
       router.back();
     }
-  }, [topic, router, toast, user]);
+  }, [topic, router, toast, user, quizSubmissions.length]);
 
   useEffect(() => {
-    fetchNextQuestion('easy', true);
-  }, [fetchNextQuestion]);
+    fetchNextQuestion('easy');
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   
 
   const handleSubmitAnswer = async () => {
@@ -105,11 +106,12 @@ function CodingGymComponent() {
             setAnalysis(currentAnalysis);
             setStatus('feedback');
 
-            setQuizSubmissions(prev => [...prev, { question, userAnswer, analysis: currentAnalysis }]);
+            const newSubmissions = [...quizSubmissions, { question, userAnswer, analysis: currentAnalysis }];
+            setQuizSubmissions(newSubmissions);
             
-            if (questionCount >= SOFT_LIMIT) {
+            if (newSubmissions.length >= SOFT_LIMIT) {
                 setStatus('finished');
-                saveQuizToActivity();
+                saveQuizToActivity(newSubmissions);
             } else {
                 if (currentAnalysis.score > 0.75) {
                     if (difficulty === 'easy') setDifficulty('moderate');
@@ -124,11 +126,11 @@ function CodingGymComponent() {
     }
   }
 
-  const saveQuizToActivity = async () => {
-    if (!user || quizSubmissions.length === 0) return;
+  const saveQuizToActivity = async (finalSubmissions: typeof quizSubmissions) => {
+    if (!user || finalSubmissions.length === 0) return;
 
-    const quizState = quizSubmissions.map(s => ({ question: s.question, userAnswer: s.userAnswer }));
-    const analysisResults = quizSubmissions.map(s => s.analysis);
+    const quizState = finalSubmissions.map(s => ({ question: s.question, userAnswer: s.userAnswer }));
+    const analysisResults = finalSubmissions.map(s => s.analysis);
     const score = Math.round(analysisResults.reduce((sum, a) => sum + a.score, 0) / analysisResults.length * 100);
 
     const quizResult: QuizResult = {
@@ -158,7 +160,7 @@ function CodingGymComponent() {
     fetchNextQuestion(difficulty);
   }
 
-  const progress = (questionCount / SOFT_LIMIT) * 100;
+  const progress = (quizSubmissions.length / SOFT_LIMIT) * 100;
 
   return (
     <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
@@ -175,7 +177,7 @@ function CodingGymComponent() {
             </div>
             <Progress value={progress} className="w-full" />
             <p className="text-sm text-muted-foreground mt-2 text-center">
-                Question {questionCount} of {SOFT_LIMIT}
+                Question {questionCount > SOFT_LIMIT ? SOFT_LIMIT : questionCount} of {SOFT_LIMIT}
             </p>
         </div>
 
@@ -192,7 +194,7 @@ function CodingGymComponent() {
                 <>
                 <CardHeader>
                     <CardTitle className="text-xl font-semibold">Question {questionCount}</CardTitle>
-                    <CardDescription className="text-base">{question.questionText}</CardDescription>
+                    <CardDescription className="prose dark:prose-invert" dangerouslySetInnerHTML={{ __html: question.questionText.replace(/\n/g, '<br />') }} />
                 </CardHeader>
                 <CardContent className="flex-grow flex flex-col">
                     <Textarea
@@ -226,7 +228,7 @@ function CodingGymComponent() {
                     </div>
                     <div>
                         <h3 className="font-semibold text-foreground mb-2">AI Feedback:</h3>
-                        <div className="p-4 bg-background rounded-md border">
+                        <div className="p-4 bg-background rounded-md border prose prose-sm dark:prose-invert max-w-none">
                             <p>{analysis.feedback}</p>
                         </div>
                     </div>
@@ -247,8 +249,12 @@ function CodingGymComponent() {
                     <Trophy className="w-16 h-16 text-yellow-500 mb-4"/>
                     <h2 className="text-3xl font-bold font-headline">Workout Complete!</h2>
                     <p className="text-muted-foreground mt-2 max-w-md">
-                        Great job! You've completed your training session. Review your progress on the dashboard.
+                        Great job! You've completed your training session. Your results have been saved to your activity log.
                     </p>
+                    <div className="mt-4 p-4 rounded-lg bg-muted border w-full max-w-xs">
+                        <p className="text-sm text-muted-foreground">Overall Score</p>
+                        <p className="text-4xl font-bold text-primary">{Math.round(quizSubmissions.reduce((sum, s) => sum + s.analysis.score, 0) / quizSubmissions.length * 100)}%</p>
+                    </div>
                     <Button onClick={() => router.push('/dashboard/arena')} className="mt-6">Back to Arena</Button>
                 </CardContent>
             )}

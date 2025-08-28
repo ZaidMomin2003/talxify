@@ -5,7 +5,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription as DialogDescriptionComponent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Swords, Lock, PlayCircle, BookOpen, Code, Briefcase, CheckCircle, Loader2, Gem, Eye, RefreshCw, Trophy } from "lucide-react";
+import { Swords, Lock, PlayCircle, BookOpen, Code, Briefcase, CheckCircle, Loader2, Gem, Eye, RefreshCw, Trophy, History } from "lucide-react";
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
@@ -74,7 +74,7 @@ export default function ArenaPage() {
     }, [user, fetchSyllabusAndActivity]);
     
     const { completedDays, dailyTaskStatus } = useMemo(() => {
-        const status: { [day: number]: { learn: boolean; quiz: boolean; interview: boolean; interviewId?: string } } = {};
+        const status: { [day: number]: { learn: boolean; quiz: boolean; interview: boolean; interviewId?: string, isInterviewInProgress?: boolean } } = {};
 
         syllabus.forEach(day => {
             status[day.day] = { learn: false, quiz: false, interview: false };
@@ -92,8 +92,14 @@ export default function ArenaPage() {
                 if (act.type === 'note-generation') status[day.day].learn = true;
                 if (act.type === 'quiz') status[day.day].quiz = true;
                 if (act.type === 'interview') {
-                    status[day.day].interview = true;
-                    status[day.day].interviewId = act.id;
+                    // Check if feedback is pending, which means it might be in progress
+                    const interviewAct = act as InterviewActivity;
+                    if (interviewAct.feedback === "Feedback will be generated on the results page.") {
+                         status[day.day].isInterviewInProgress = true;
+                    } else {
+                        status[day.day].interview = true;
+                    }
+                    status[day.day].interviewId = interviewAct.id;
                 }
             }
         });
@@ -120,7 +126,7 @@ export default function ArenaPage() {
     }, [syllabus, activity]);
 
 
-    const handleStartChallenge = (day: number, type: 'learn' | 'quiz' | 'interview') => {
+    const handleStartChallenge = (day: number, type: 'learn' | 'quiz' | 'interview', interviewId?: string) => {
         const topic = syllabus.find(d => d.day === day)?.topic || 'JavaScript';
         const isDay30 = day === 30;
 
@@ -130,8 +136,12 @@ export default function ArenaPage() {
             const quizTopic = isDay30 ? syllabus.slice(0, 29).map(d => d.topic).join(', ') : topic;
             router.push(`/dashboard/coding-gym?topic=${encodeURIComponent(quizTopic)}`);
         } else if (type === 'interview') {
-            const interviewTopic = isDay30 ? 'Final Comprehensive Review' : topic;
-            router.push(`/dashboard/interview/setup?topic=${encodeURIComponent(interviewTopic)}`);
+            if (interviewId) {
+                router.push(`/dashboard/interview/${interviewId}`);
+            } else {
+                 const interviewTopic = isDay30 ? 'Final Comprehensive Review' : topic;
+                 router.push(`/dashboard/interview/setup?topic=${encodeURIComponent(interviewTopic)}`);
+            }
         }
     }
 
@@ -243,8 +253,13 @@ export default function ArenaPage() {
                                             <p className="font-semibold text-foreground">{isFinalDay ? "Final Comprehensive Interview" : "Take a Mock Interview"}</p>
                                             <p className="text-xs text-muted-foreground">{isFinalDay ? "A 20-minute interview on all learned concepts." : "Practice your interview skills."}</p>
                                         </div>
-                                         <Button size="sm" onClick={() => handleStartChallenge(day.day, 'interview')} disabled={!isUnlocked}>
-                                            {dayStatus.interview ? <><RefreshCw className="mr-2 h-4 w-4"/>Retake</> : isUnlocked ? 'Start' : <Lock className="h-4 w-4" />}
+                                         <Button size="sm" onClick={() => handleStartChallenge(day.day, 'interview', dayStatus.interviewId)} disabled={!isUnlocked}>
+                                            {dayStatus.isInterviewInProgress 
+                                                ? <><History className="mr-2 h-4 w-4"/>Resume</>
+                                                : dayStatus.interview 
+                                                    ? <><RefreshCw className="mr-2 h-4 w-4"/>Retake</>
+                                                    : isUnlocked ? 'Start' : <Lock className="h-4 w-4" />
+                                            }
                                         </Button>
                                     </div>
                                     )}
