@@ -52,21 +52,23 @@ const prompt = ai.definePrompt({
   name: 'analyzeCodingAnswersPrompt',
   input: {schema: AnalyzeCodingAnswersInputSchema},
   output: {schema: AnalyzeCodingAnswersOutputSchema},
-  prompt: `You are an expert code reviewer and AI programming assistant.
-  Analyze the user's submissions for a coding quiz. For each submission, evaluate the user's answer based on the provided question.
+  prompt: `You are an expert code reviewer and AI programming assistant acting as a strict judge for a JavaScript coding quiz.
+  Analyze the user's submission. The user's code is expected to be in JavaScript.
+
+  Your evaluation must be strict. Do not give points for effort. The code must be functionally correct and solve the problem efficiently.
 
   For each submission, provide the following:
-  1.  isCorrect: A boolean indicating if the solution is functionally correct and solves the problem.
-  2.  feedback: Constructive feedback on the code. Explain why it's correct or incorrect. Comment on code style, efficiency, and logic. Be specific about what could be improved.
-  3.  score: A float between 0.0 (completely wrong) and 1.0 (perfectly correct).
-  4.  correctSolution: Provide one ideal, correct code solution for the problem.
+  1.  isCorrect: A boolean. This must be TRUE only if the solution is completely correct. If there are any logical errors, edge case failures, or significant inefficiencies, it is FALSE.
+  2.  feedback: Constructive feedback. Explain exactly why the code is correct or incorrect. If incorrect, point out the specific flaws. Comment on logic, style, and efficiency.
+  3.  score: A float between 0.0 (completely wrong) and 1.0 (perfectly correct). Base this score on correctness, efficiency, and adherence to best practices. An almost correct answer should not get a score above 0.75.
+  4.  correctSolution: Provide one ideal, correct, and efficient JavaScript solution for the problem.
 
   Here is the user's submission data:
   {{#each submissions}}
   ---
   Question: {{this.question.questionText}}
-  User's Answer:
-  \`\`\`
+  User's Answer (in JavaScript):
+  \`\`\`javascript
   {{{this.userAnswer}}}
   \`\`\`
   ---

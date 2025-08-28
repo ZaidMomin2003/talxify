@@ -48,7 +48,7 @@ const prompt = ai.definePrompt({
         },
     ],
   },
-  prompt: `You are an expert programmer and interview question creator. Your task is to generate exactly {{count}} coding questions for a quiz based on the provided specifications.
+  prompt: `You are an expert programmer and interview question creator. Your task is to generate exactly {{count}} coding questions for a quiz. The required programming language for the solution is {{language}}.
 
 Topics: {{topics}}
 Language: {{language}}
@@ -58,7 +58,7 @@ Difficulty: {{difficulty}}
 Here is an example of a good, well-defined question: "{{example}}"
 {{/if}}
 
-Each question you generate must be a clear, self-contained problem that a developer can solve. Ensure you generate the exact number of questions requested.
+Each question you generate must be a clear, self-contained problem that a developer can solve in {{language}}. Ensure you generate the exact number of questions requested.
 `,
 });
 

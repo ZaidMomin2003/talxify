@@ -12,9 +12,11 @@ import { Progress } from '@/components/ui/progress';
 import { Loader2, AlertTriangle, Lightbulb, Sparkles, CheckCircle, XCircle, ChevronLeft, ChevronRight, Trophy } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
-import { checkAndIncrementUsage } from '@/lib/firebase-service';
+import { addActivity, checkAndIncrementUsage } from '@/lib/firebase-service';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import type { QuizResult } from '@/lib/types';
+
 
 type Difficulty = 'easy' | 'moderate' | 'difficult';
 type QuizStatus = 'generating' | 'answering' | 'analyzing' | 'feedback' | 'finished';
@@ -31,22 +33,25 @@ function CodingGymComponent() {
   const [difficulty, setDifficulty] = useState<Difficulty>('easy');
   const [questionCount, setQuestionCount] = useState(0);
   const [status, setStatus] = useState<QuizStatus>('generating');
+  const [quizSubmissions, setQuizSubmissions] = useState<{question: CodingQuestion; userAnswer: string; analysis: AnswerAnalysis}[]>([]);
   
   const topic = useMemo(() => searchParams.get('topic') || '', [searchParams]);
   const SOFT_LIMIT = 10;
 
-  const fetchNextQuestion = useCallback(async (currentDifficulty: Difficulty) => {
+  const fetchNextQuestion = useCallback(async (currentDifficulty: Difficulty, isInitial: boolean = false) => {
     if (!user) {
        router.push('/login');
        return;
     }
     setStatus('generating');
 
-    const usageCheck = await checkAndIncrementUsage(user.uid);
-    if (!usageCheck.success) {
-        toast({ title: "Usage Limit Reached", description: usageCheck.message, variant: "destructive" });
-        router.push('/dashboard/pricing');
-        return;
+    if (isInitial) {
+        const usageCheck = await checkAndIncrementUsage(user.uid);
+        if (!usageCheck.success) {
+            toast({ title: "Usage Limit Reached", description: usageCheck.message, variant: "destructive" });
+            router.push('/dashboard/pricing');
+            return;
+        }
     }
     
     if (!topic) {
@@ -72,6 +77,7 @@ function CodingGymComponent() {
       } else {
            toast({ title: 'No More Questions', description: `The AI could not generate more ${currentDifficulty} questions for this topic.`, variant: 'destructive' });
            setStatus('finished');
+           saveQuizToActivity();
       }
     } catch (error) {
       console.error('Failed to generate coding questions:', error);
@@ -81,7 +87,7 @@ function CodingGymComponent() {
   }, [topic, router, toast, user]);
 
   useEffect(() => {
-    fetchNextQuestion('easy');
+    fetchNextQuestion('easy', true);
   }, [fetchNextQuestion]);
   
 
@@ -99,11 +105,16 @@ function CodingGymComponent() {
             setAnalysis(currentAnalysis);
             setStatus('feedback');
 
+            setQuizSubmissions(prev => [...prev, { question, userAnswer, analysis: currentAnalysis }]);
+            
             if (questionCount >= SOFT_LIMIT) {
                 setStatus('finished');
-            } else if (currentAnalysis.score > 0.75) {
-                if (difficulty === 'easy') setDifficulty('moderate');
-                else if (difficulty === 'moderate') setDifficulty('difficult');
+                saveQuizToActivity();
+            } else {
+                if (currentAnalysis.score > 0.75) {
+                    if (difficulty === 'easy') setDifficulty('moderate');
+                    else if (difficulty === 'moderate') setDifficulty('difficult');
+                }
             }
         }
     } catch(err) {
@@ -112,6 +123,36 @@ function CodingGymComponent() {
         setStatus('answering');
     }
   }
+
+  const saveQuizToActivity = async () => {
+    if (!user || quizSubmissions.length === 0) return;
+
+    const quizState = quizSubmissions.map(s => ({ question: s.question, userAnswer: s.userAnswer }));
+    const analysisResults = quizSubmissions.map(s => s.analysis);
+    const score = Math.round(analysisResults.reduce((sum, a) => sum + a.score, 0) / analysisResults.length * 100);
+
+    const quizResult: QuizResult = {
+        id: `izanami_${Date.now()}`,
+        type: 'quiz',
+        timestamp: new Date().toISOString(),
+        quizState: quizState,
+        analysis: analysisResults,
+        topics: topic,
+        difficulty: 'adaptive',
+        details: {
+            topic: topic,
+            difficulty: 'Izanami Mode',
+            score: `${score}%`,
+        }
+    };
+
+    try {
+      await addActivity(user.uid, quizResult);
+      toast({ title: "Progress Saved", description: "Your Code Izanami session has been saved to your activity."});
+    } catch (err) {
+      console.error("Failed to save Izanami results:", err);
+    }
+  };
 
   const handleNext = () => {
     fetchNextQuestion(difficulty);
@@ -155,7 +196,7 @@ function CodingGymComponent() {
                 </CardHeader>
                 <CardContent className="flex-grow flex flex-col">
                     <Textarea
-                        placeholder="Write your code here..."
+                        placeholder="Write your JavaScript code here..."
                         className="min-h-[300px] font-mono text-sm flex-grow"
                         value={userAnswer}
                         onChange={(e) => setUserAnswer(e.target.value)}
@@ -191,7 +232,7 @@ function CodingGymComponent() {
                     </div>
                     {!analysis.isCorrect && (
                         <div>
-                            <h3 className="font-semibold text-foreground mb-2">Correct Solution:</h3>
+                            <h3 className="font-semibold text-foreground mb-2">Correct Solution (JavaScript):</h3>
                             <pre className="p-4 bg-background rounded-md overflow-x-auto text-sm border font-mono"><code>{analysis.correctSolution}</code></pre>
                         </div>
                     )}

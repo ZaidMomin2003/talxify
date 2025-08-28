@@ -81,8 +81,12 @@ export default function ArenaPage() {
         });
 
         activity.forEach(act => {
+            // More robust topic matching
             const actTopic = act.details.topic.toLowerCase();
-            const day = syllabus.find(d => d.topic.toLowerCase().includes(actTopic) || actTopic.includes(d.topic.toLowerCase()));
+            const day = syllabus.find(d => {
+                const dayTopic = d.topic.toLowerCase();
+                return dayTopic.includes(actTopic) || actTopic.includes(dayTopic);
+            });
             
             if (day) {
                 if (act.type === 'note-generation') status[day.day].learn = true;
@@ -97,11 +101,13 @@ export default function ArenaPage() {
         let lastCompletedDay = 0;
         for (let i = 1; i <= syllabus.length; i++) {
             const dayStatus = status[i];
+            if (!dayStatus) continue;
+
             const isDay30 = i === 30;
-            const interviewRequired = isDay30 || (i % 2 !== 0);
             const learnRequired = !isDay30;
+            const interviewRequired = isDay30 || (i % 2 !== 0);
             
-            const isDayComplete = dayStatus && dayStatus.quiz && (learnRequired ? dayStatus.learn : true) && (interviewRequired ? dayStatus.interview : true);
+            const isDayComplete = dayStatus.quiz && (!learnRequired || dayStatus.learn) && (!interviewRequired || dayStatus.interview);
 
             if (isDayComplete) {
                 lastCompletedDay = i;
