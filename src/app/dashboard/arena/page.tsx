@@ -121,9 +121,8 @@ export default function ArenaPage() {
         if (type === 'learn') {
             router.push(`/dashboard/arena/notes?topic=${encodeURIComponent(topic)}`);
         } else if (type === 'quiz') {
-            const allTopics = isDay30 ? syllabus.slice(0, 29).map(d => d.topic).join(', ') : topic;
-            const numQuestions = isDay30 ? 15 : 3;
-            router.push(`/dashboard/coding-quiz/instructions?topics=${encodeURIComponent(allTopics)}&difficulty=${isDay30 ? 'moderate' : 'easy'}&numQuestions=${numQuestions}`);
+            const quizTopic = isDay30 ? syllabus.slice(0, 29).map(d => d.topic).join(', ') : topic;
+            router.push(`/dashboard/coding-gym?topic=${encodeURIComponent(quizTopic)}`);
         } else if (type === 'interview') {
             const interviewTopic = isDay30 ? 'Final Comprehensive Review' : topic;
             router.push(`/dashboard/interview/setup?topic=${encodeURIComponent(interviewTopic)}`);
@@ -224,8 +223,8 @@ export default function ArenaPage() {
                                     <div className="flex items-center gap-4 p-3 rounded-lg bg-muted/50">
                                         {dayStatus.quiz ? <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" /> : <Code className="h-5 w-5 text-blue-500 flex-shrink-0" />}
                                         <div className="flex-1">
-                                            <p className="font-semibold text-foreground">{isFinalDay ? "Final Coding Exam" : "Complete Coding Quiz"}</p>
-                                            <p className="text-xs text-muted-foreground">{isFinalDay ? "15 questions covering all topics." : `Test your knowledge on ${day.topic}.`}</p>
+                                            <p className="font-semibold text-foreground">{isFinalDay ? "Code Izanami: Final Exam" : "Code Izanami"}</p>
+                                            <p className="text-xs text-muted-foreground">{isFinalDay ? "Adaptive quiz on all topics." : `Master ${day.topic}.`}</p>
                                         </div>
                                         <Button size="sm" onClick={() => handleStartChallenge(day.day, 'quiz')} disabled={!isUnlocked}>
                                             {dayStatus.quiz ? <><RefreshCw className="mr-2 h-4 w-4"/>Retake</> : isUnlocked ? 'Start' : <Lock className="h-4 w-4" />}

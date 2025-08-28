@@ -125,9 +125,9 @@ function CodingGymComponent() {
          {/* Header & Progress */}
          <div className="mb-6">
             <div className="flex justify-between items-center mb-2">
-                <Button variant="outline" size="sm" onClick={() => router.push('/dashboard')}><ChevronLeft className="mr-2"/> Back to Dashboard</Button>
+                <Button variant="outline" size="sm" onClick={() => router.push('/dashboard/arena')}><ChevronLeft className="mr-2"/> Back to Arena</Button>
                 <div className="text-center">
-                    <h1 className="font-headline text-2xl font-bold">Coding Gym</h1>
+                    <h1 className="font-headline text-2xl font-bold">Code Izanami</h1>
                     <p className="text-muted-foreground text-sm capitalize">{topic}</p>
                 </div>
                 <Badge className="capitalize" variant={difficulty === 'easy' ? 'default' : difficulty === 'moderate' ? 'secondary' : 'destructive'}>{difficulty}</Badge>
@@ -208,7 +208,7 @@ function CodingGymComponent() {
                     <p className="text-muted-foreground mt-2 max-w-md">
                         Great job! You've completed your training session. Review your progress on the dashboard.
                     </p>
-                    <Button onClick={() => router.push('/dashboard')} className="mt-6">Back to Dashboard</Button>
+                    <Button onClick={() => router.push('/dashboard/arena')} className="mt-6">Back to Arena</Button>
                 </CardContent>
             )}
 

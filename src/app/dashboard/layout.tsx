@@ -151,7 +151,6 @@ function DashboardLayoutContent({
   const menuItems = [
     { href: "/dashboard", label: "Dashboard", icon: LayoutGrid },
     { href: "/dashboard/arena", label: "Arena", icon: Swords },
-    { href: "/dashboard/coding-gym", label: "Coding Gym", icon: Code, isPro: true },
     { href: "/dashboard/resume-builder", label: "Resume Builder", icon: FileText, isFree: true },
     { href: "/dashboard/portfolio", label: "Portfolio", icon: User },
   ];

@@ -69,21 +69,6 @@ export default function DashboardPage() {
 
   const allActivity = userData?.activity || [];
   
-  const codingGymForm = useForm<z.infer<typeof codingGymSchema>>({
-    resolver: zodResolver(codingGymSchema),
-    defaultValues: {
-      topics: "",
-    },
-  });
-
-  async function onCodingGymSubmit(values: z.infer<typeof codingGymSchema>) {
-    setIsCodingLoading(true);
-    const params = new URLSearchParams({
-        topic: values.topics,
-    });
-    router.push(`/dashboard/coding-gym?${params.toString()}`);
-  }
-
   const { questionsSolved, interviewsCompleted, recentQuizzes, averageScore, hasTakenQuiz, performanceData } = useMemo(() => {
     const quizzes = allActivity.filter(item => item.type === 'quiz') as QuizResult[];
     const interviews = allActivity.filter(item => item.type === 'interview') as InterviewActivity[];
@@ -216,8 +201,8 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2">
+      <div className="grid grid-cols-1">
+        <Card>
             <CardHeader>
                 <CardTitle>Performance Over Time</CardTitle>
                 <CardDescription>
@@ -254,47 +239,6 @@ export default function DashboardPage() {
                     </div>
                  )}
             </CardContent>
-        </Card>
-        
-        <Card className="flex flex-col">
-          <CardHeader>
-              <div className="flex items-center gap-3">
-                  <div className="bg-secondary/20 text-secondary-foreground rounded-lg p-2"><Swords className="h-6 w-6" /></div>
-                  <div className="flex flex-col">
-                      <CardTitle className="text-xl">
-                          Coding Gym
-                      </CardTitle>
-                      <CardDescription>
-                          Master concepts with adaptive quizzes.
-                      </CardDescription>
-                  </div>
-              </div>
-          </CardHeader>
-          <CardContent className="flex-grow flex flex-col justify-center">
-             <Form {...codingGymForm}>
-                <form onSubmit={codingGymForm.handleSubmit(onCodingGymSubmit)} className="space-y-4">
-                    <FormField
-                    control={codingGymForm.control}
-                    name="topics"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Topic</FormLabel>
-                        <FormControl>
-                            <Input placeholder="e.g., JavaScript, React" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                    />
-                     <Button type="submit" className="w-full" disabled={isCodingLoading}>
-                        {isCodingLoading ? <Loader2 className="animate-spin" /> : 'Start Training'}
-                    </Button>
-                </form>
-            </Form>
-          </CardContent>
-          <CardFooter>
-            <p className="text-xs text-muted-foreground">The AI will adapt the difficulty based on your performance.</p>
-          </CardFooter>
         </Card>
       </div>
       
