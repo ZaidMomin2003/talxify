@@ -1,17 +1,17 @@
 
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Mic, MicOff, Video, VideoOff, Phone, Bot, User, MessageSquare, ChevronLeft, Loader2, Sparkles, AlertTriangle } from 'lucide-react';
+import { Mic, MicOff, Video, VideoOff, Phone, Bot, User, MessageSquare, ChevronLeft, Loader2, Sparkles, AlertTriangle, Keyboard } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { getAssemblyAiToken } from '@/app/actions/assemblyai';
 
-type SessionStatus = 'idle' | 'connecting' | 'connected' | 'listening' | 'error';
+type SessionStatus = 'idle' | 'connecting' | 'connected' | 'listening' | 'processing' | 'error';
 type TranscriptEntry = {
     speaker: 'user' | 'ai' | 'system';
     text: string;
@@ -24,11 +24,10 @@ export default function InterviewV2Page() {
 
     const [status, setStatus] = useState<SessionStatus>('idle');
     const [transcript, setTranscript] = useState<TranscriptEntry[]>([]);
-    const [isRecording, setIsRecording] = useState(false);
     
     const socketRef = useRef<WebSocket | null>(null);
     const recorderRef = useRef<MediaRecorder | null>(null);
-
+    
     const startTranscription = async () => {
         setStatus('connecting');
         try {
@@ -44,12 +43,11 @@ export default function InterviewV2Page() {
 
             socket.onopen = () => {
                 setStatus('connected');
-                toast({ title: "Connected!", description: "You can start speaking now." });
+                toast({ title: "Connected!", description: "You are now connected to the transcription service." });
             };
 
             socket.onmessage = (message) => {
                 const res = JSON.parse(message.data);
-                
                 if (res.message_type === 'FinalTranscript' && res.text) {
                      setTranscript(prev => [...prev, { speaker: 'user', text: res.text }]);
                 }
@@ -72,57 +70,87 @@ export default function InterviewV2Page() {
         }
     };
     
-    const toggleRecording = async () => {
-        if (isRecording) {
-            // Stop recording
-            if (recorderRef.current && recorderRef.current.state === 'recording') {
-                recorderRef.current.stop();
-            }
-            if(socketRef.current?.readyState === WebSocket.OPEN) {
-                 socketRef.current.send(JSON.stringify({ terminate_session: true }));
-                 socketRef.current.close();
-            }
-            recorderRef.current = null;
-            socketRef.current = null;
-            setIsRecording(false);
-            setStatus('idle');
-        } else {
-            // Start recording
+    const startRecording = async () => {
+        if (socketRef.current?.readyState !== WebSocket.OPEN) {
             await startTranscription();
-            
-            // Wait for connection before starting recorder
-            const interval = setInterval(async () => {
-                if (socketRef.current?.readyState === WebSocket.OPEN) {
-                    clearInterval(interval);
-                    try {
-                        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                        const recorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
-                        recorderRef.current = recorder;
-
-                        recorder.ondataavailable = (event) => {
-                            if (event.data.size > 0 && socketRef.current?.readyState === WebSocket.OPEN) {
-                                socketRef.current.send(JSON.stringify({ audio_data: Buffer.from(event.data).toString('base64') }));
-                            }
-                        };
-                        
-                        recorder.onstart = () => {
-                            setIsRecording(true);
-                            setStatus('listening');
-                        };
-
-                        recorder.start(300); // Send data every 300ms
-                    } catch(err) {
-                        console.error("Microphone access error:", err);
-                        toast({title: "Microphone Error", description: "Could not access your microphone.", variant: "destructive"});
-                        setStatus('error');
-                    }
-                }
-            }, 100);
         }
+        
+        // Wait for connection to be ready before starting recorder
+        const waitForConnection = (callback: () => void) => {
+            if (socketRef.current?.readyState === WebSocket.OPEN) {
+                callback();
+            } else {
+                setTimeout(() => waitForConnection(callback), 100);
+            }
+        };
+
+        waitForConnection(async () => {
+             try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                const recorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+                recorderRef.current = recorder;
+
+                recorder.ondataavailable = (event) => {
+                    if (event.data.size > 0 && socketRef.current?.readyState === WebSocket.OPEN) {
+                        socketRef.current.send(JSON.stringify({ audio_data: Buffer.from(event.data).toString('base64') }));
+                    }
+                };
+                
+                recorder.start(300); // Send data every 300ms
+            } catch(err) {
+                console.error("Microphone access error:", err);
+                toast({title: "Microphone Error", description: "Could not access your microphone.", variant: "destructive"});
+                setStatus('error');
+            }
+        });
     };
 
+    const stopRecording = () => {
+        if (recorderRef.current && recorderRef.current.state === 'recording') {
+            recorderRef.current.stop();
+            
+             // Gently stop the microphone track
+            const stream = recorderRef.current.stream;
+            stream.getTracks().forEach(track => track.stop());
+        }
+        if(socketRef.current?.readyState === WebSocket.OPEN) {
+             socketRef.current.send(JSON.stringify({ terminate_session: true }));
+             socketRef.current.close();
+        }
+        recorderRef.current = null;
+        socketRef.current = null;
+        setStatus('connected');
+    };
+    
+    // Push-to-talk handlers
+    const handleKeyDown = useCallback((event: KeyboardEvent) => {
+        if (event.code === 'Space' && !event.repeat && (status === 'connected' || status === 'idle')) {
+          event.preventDefault();
+          setStatus('listening');
+          startRecording();
+        }
+    }, [status]);
+
+    const handleKeyUp = useCallback((event: KeyboardEvent) => {
+        if (event.code === 'Space' && status === 'listening') {
+            event.preventDefault();
+            setStatus('processing');
+            stopRecording();
+        }
+    }, [status]);
+    
     useEffect(() => {
-        // Cleanup on component unmount
+        window.addEventListener('keydown', handleKeyDown);
+        window.addEventListener('keyup', handleKeyUp);
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+            window.removeEventListener('keyup', handleKeyUp);
+        };
+    }, [handleKeyDown, handleKeyUp]);
+
+
+    // Cleanup on component unmount
+    useEffect(() => {
         return () => {
             if (recorderRef.current?.state === 'recording') recorderRef.current.stop();
             if (socketRef.current?.readyState === WebSocket.OPEN) {
@@ -134,10 +162,11 @@ export default function InterviewV2Page() {
 
     const getStatusIndicator = () => {
         switch (status) {
-            case 'idle': return <div className="flex items-center gap-2"><MicOff className="w-4 h-4"/>Not Recording</div>;
+            case 'idle': return <div className="flex items-center gap-2 text-blue-400"><Sparkles className="w-4 h-4"/>Ready to Connect</div>;
             case 'connecting': return <div className="flex items-center gap-2 text-yellow-400"><Loader2 className="w-4 h-4 animate-spin"/>Connecting...</div>;
-            case 'connected': return <div className="flex items-center gap-2 text-blue-400"><Sparkles className="w-4 h-4"/>Ready to Record</div>;
+            case 'connected': return <div className="flex items-center gap-2 text-green-400"><Keyboard className="w-4 h-4"/>Hold <kbd className="px-1.5 py-0.5 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-200 rounded">Space</kbd> to speak</div>;
             case 'listening': return <div className="flex items-center gap-2 text-green-400 animate-pulse"><Mic className="w-4 h-4"/>Listening...</div>;
+            case 'processing': return <div className="flex items-center gap-2 text-yellow-400"><Loader2 className="w-4 h-4 animate-spin"/>Processing...</div>;
             case 'error': return <div className="flex items-center gap-2 text-red-400"><AlertTriangle className="w-4 h-4"/>Error</div>;
             default: return null;
         }
@@ -214,8 +243,8 @@ export default function InterviewV2Page() {
 
         {/* Footer Controls */}
         <footer className="flex-shrink-0 flex justify-center items-center gap-4 py-4 border-t">
-            <Button onClick={toggleRecording} variant={isRecording ? "destructive" : "secondary"} size="icon" className="rounded-full h-14 w-14">
-                {isRecording ? <MicOff className="h-6 w-6" /> : <Mic className="h-6 w-6" />}
+            <Button variant={status === 'listening' ? 'destructive' : 'secondary'} size="icon" className="rounded-full h-14 w-14">
+                {status === 'listening' ? <MicOff className="h-6 w-6" /> : <Mic className="h-6 w-6" />}
             </Button>
              <Button variant="secondary" size="icon" className="rounded-full h-14 w-14">
                 <Video className="h-6 w-6" />
