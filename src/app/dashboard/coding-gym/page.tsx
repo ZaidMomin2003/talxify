@@ -151,7 +151,8 @@ function CodingGymComponent() {
     try {
       await addActivity(user.uid, quizResult);
       toast({ title: "Progress Saved", description: "Your Code Izanami session has been saved to your activity."});
-    } catch (err)      console.error("Failed to save Izanami results:", err);
+    } catch (err) {
+      console.error("Failed to save Izanami results:", err);
     }
   };
 
