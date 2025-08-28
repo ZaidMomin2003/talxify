@@ -9,7 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { AssemblyAI } from 'assemblyai';
+import { getAssemblyAiToken } from '@/app/actions/assemblyai';
 
 type SessionStatus = 'idle' | 'connecting' | 'connected' | 'listening' | 'processing' | 'error';
 type TranscriptEntry = {
@@ -31,15 +31,7 @@ export default function InterviewV2Page() {
     const startTranscription = async () => {
         setStatus('connecting');
         try {
-            if (!process.env.NEXT_PUBLIC_ASSEMBLYAI_API_KEY) {
-                throw new Error("CRITICAL: NEXT_PUBLIC_ASSEMBLYAI_API_KEY is not set in your environment variables. Please add it to .env and next.config.js, then restart the server.");
-            }
-
-            const client = new AssemblyAI({
-                apiKey: process.env.NEXT_PUBLIC_ASSEMBLYAI_API_KEY,
-            });
-
-            const token = await client.realtime.createTemporaryToken({ expires_in: 3600 });
+            const token = await getAssemblyAiToken();
             
             const socket = new WebSocket(`wss://api.assemblyai.com/v2/realtime/ws?sample_rate=16000&token=${token}`);
             socketRef.current = socket;
@@ -69,7 +61,7 @@ export default function InterviewV2Page() {
         } catch (error: any) {
             console.error(error);
             setStatus('error');
-            toast({ title: "Initialization Failed", description: error.message || "An unknown error occurred.", variant: "destructive" });
+            toast({ title: "Initialization Failed", description: "Could not get an auth token for the transcription service.", variant: "destructive" });
         }
     };
     
@@ -79,18 +71,23 @@ export default function InterviewV2Page() {
         }
         
         // Wait for connection to be ready before starting recorder
-        const waitForConnection = (callback: () => void) => {
+        const waitForConnection = (callback: () => void, retries = 10) => {
+            if (retries <= 0) {
+                setStatus('error');
+                toast({ title: "Connection Timeout", description: "Could not establish connection in time.", variant: "destructive"});
+                return;
+            }
             if (socketRef.current?.readyState === WebSocket.OPEN) {
                 callback();
             } else {
-                setTimeout(() => waitForConnection(callback), 100);
+                setTimeout(() => waitForConnection(callback, retries - 1), 500);
             }
         };
 
         waitForConnection(async () => {
              try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                const recorder = new MediaRecorder(stream);
+                const recorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
                 recorderRef.current = recorder;
 
                 recorder.addEventListener('dataavailable', (event) => {
