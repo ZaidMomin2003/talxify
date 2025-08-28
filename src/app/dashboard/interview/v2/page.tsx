@@ -9,7 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { getAssemblyAiToken } from '@/app/actions/assemblyai';
+import { AssemblyAI } from 'assemblyai';
 
 type SessionStatus = 'idle' | 'connecting' | 'connected' | 'listening' | 'processing' | 'error';
 type TranscriptEntry = {
@@ -31,13 +31,16 @@ export default function InterviewV2Page() {
     const startTranscription = async () => {
         setStatus('connecting');
         try {
-            const token = await getAssemblyAiToken();
-            if (!token) {
-                 toast({ title: "Authentication Failed", description: "Could not get an auth token for the transcription service.", variant: "destructive" });
-                 setStatus('error');
-                 return;
+            if (!process.env.NEXT_PUBLIC_ASSEMBLYAI_API_KEY) {
+                throw new Error("CRITICAL: NEXT_PUBLIC_ASSEMBLYAI_API_KEY is not set in your environment variables. Please add it to .env and next.config.js, then restart the server.");
             }
 
+            const client = new AssemblyAI({
+                apiKey: process.env.NEXT_PUBLIC_ASSEMBLYAI_API_KEY,
+            });
+
+            const token = await client.realtime.createTemporaryToken({ expires_in: 3600 });
+            
             const socket = new WebSocket(`wss://api.assemblyai.com/v2/realtime/ws?sample_rate=16000&token=${token}`);
             socketRef.current = socket;
 
@@ -87,16 +90,16 @@ export default function InterviewV2Page() {
         waitForConnection(async () => {
              try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                const recorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+                const recorder = new MediaRecorder(stream);
                 recorderRef.current = recorder;
 
-                recorder.ondataavailable = (event) => {
+                recorder.addEventListener('dataavailable', (event) => {
                     if (event.data.size > 0 && socketRef.current?.readyState === WebSocket.OPEN) {
                         socketRef.current.send(JSON.stringify({ audio_data: Buffer.from(event.data).toString('base64') }));
                     }
-                };
+                });
                 
-                recorder.start(300); // Send data every 300ms
+                recorder.start(250); // Send data every 250ms
             } catch(err) {
                 console.error("Microphone access error:", err);
                 toast({title: "Microphone Error", description: "Could not access your microphone.", variant: "destructive"});
