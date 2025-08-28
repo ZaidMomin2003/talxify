@@ -153,6 +153,7 @@ function DashboardLayoutContent({
     { href: "/dashboard/arena", label: "Arena", icon: Swords },
     { href: "/dashboard/resume-builder", label: "Resume Builder", icon: FileText, isFree: true },
     { href: "/dashboard/portfolio", label: "Portfolio", icon: User },
+    { href: "/dashboard/draft", label: "Draft", icon: FlaskConical },
   ];
   
   const recentActivity = userData?.activity?.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()) || [];
@@ -535,3 +536,5 @@ export default function DashboardLayout({
     <DashboardLayoutContent>{children}</DashboardLayoutContent>
   )
 }
+
+    
