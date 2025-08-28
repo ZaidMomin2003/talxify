@@ -62,7 +62,7 @@ function GettingStartedList({ activity }: { activity: StoredActivity[] }) {
     const checklistItems = [
         { name: "Generate Study Notes", completed: hasGeneratedNotes, href: "/dashboard/arena" },
         { name: "Take an Interview", completed: hasTakenInterview, href: "/dashboard/interview/setup" },
-        { name: "Take a Coding Quiz", completed: hasTakenQuiz, href: "/dashboard" },
+        { name: "Take a Coding Quiz", completed: hasTakenQuiz, href: "/dashboard/coding-gym" },
         { name: "Deploy your Portfolio", completed: canDeployPortfolio, href: "/dashboard/portfolio" }
     ];
 
@@ -151,6 +151,7 @@ function DashboardLayoutContent({
   const menuItems = [
     { href: "/dashboard", label: "Dashboard", icon: LayoutGrid },
     { href: "/dashboard/arena", label: "Arena", icon: Swords },
+    { href: "/dashboard/coding-gym", label: "Coding Gym", icon: Code, isPro: true },
     { href: "/dashboard/resume-builder", label: "Resume Builder", icon: FileText, isFree: true },
     { href: "/dashboard/portfolio", label: "Portfolio", icon: User },
   ];
@@ -285,6 +286,16 @@ function DashboardLayoutContent({
                         </TooltipTrigger>
                         <TooltipContent side="right">
                           <p>Forever Free</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    )}
+                     {(item as any).isPro && !isFreePlan && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                           <Gem className="w-4 h-4 ml-auto text-primary" />
+                        </TooltipTrigger>
+                        <TooltipContent side="right">
+                          <p>Pro Feature</p>
                         </TooltipContent>
                       </Tooltip>
                     )}

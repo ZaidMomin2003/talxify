@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Rocket, Code, Briefcase, Percent, Search, RefreshCw, BarChart, Info, CalendarDays, Loader2, Lock, Building, BrainCircuit, User, Gem, CheckCircle, BookOpen, PlayCircle, Star } from "lucide-react";
+import { Rocket, Code, Briefcase, Percent, Search, RefreshCw, BarChart, Info, CalendarDays, Loader2, Lock, Building, BrainCircuit, User, Gem, CheckCircle, BookOpen, PlayCircle, Star, Swords } from "lucide-react";
 import Link from "next/link";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useForm } from "react-hook-form";
@@ -29,8 +29,6 @@ import { cn } from "@/lib/utils";
 
 const codingGymSchema = z.object({
   topics: z.string().min(1, "Topics are required."),
-  difficulty: z.enum(["easy", "moderate", "difficult"]),
-  numQuestions: z.string(),
 });
 
 const CustomTooltip = ({ active, payload, label }: any) => {
@@ -70,27 +68,20 @@ export default function DashboardPage() {
   }, [fetchUserData]);
 
   const allActivity = userData?.activity || [];
-  const isFreePlan = !userData?.subscription?.plan || userData?.subscription?.plan === 'free';
-  const plan = userData?.subscription?.plan || 'free';
-
-
+  
   const codingGymForm = useForm<z.infer<typeof codingGymSchema>>({
     resolver: zodResolver(codingGymSchema),
     defaultValues: {
       topics: "",
-      difficulty: "easy",
-      numQuestions: "3"
     },
   });
 
   async function onCodingGymSubmit(values: z.infer<typeof codingGymSchema>) {
     setIsCodingLoading(true);
     const params = new URLSearchParams({
-        topics: values.topics,
-        difficulty: values.difficulty,
-        numQuestions: values.numQuestions,
+        topic: values.topics,
     });
-    router.push(`/dashboard/coding-quiz/instructions?${params.toString()}`);
+    router.push(`/dashboard/coding-gym?${params.toString()}`);
   }
 
   const { questionsSolved, interviewsCompleted, recentQuizzes, averageScore, hasTakenQuiz, performanceData } = useMemo(() => {
@@ -130,91 +121,6 @@ export default function DashboardPage() {
     };
   }, [allActivity]);
   
-   const { dailyTasks, currentDay } = useMemo(() => {
-    if (!userData || !userData.syllabus) {
-      return { dailyTasks: [], currentDay: null };
-    }
-  
-    const completedTopics = new Set(
-      userData.activity
-        .filter(act => act.type === 'note-generation' || act.type === 'quiz' || act.type === 'interview')
-        .map(act => act.details.topic.toLowerCase())
-    );
-
-    let lastCompletedDay = 0;
-    for (const day of userData.syllabus) {
-      const topicLower = day.topic.toLowerCase();
-      const hasLearned = userData.activity.some(a => a.type === 'note-generation' && a.details.topic.toLowerCase() === topicLower);
-      const hasQuizzed = userData.activity.some(a => a.type === 'quiz' && a.details.topic.toLowerCase() === topicLower);
-      // Interview is on odd days only.
-      const interviewRequired = day.day % 2 !== 0;
-      const hasInterviewed = userData.activity.some(a => a.type === 'interview' && a.details.topic.toLowerCase() === topicLower);
-
-      if (hasLearned && hasQuizzed && (interviewRequired ? hasInterviewed : true)) {
-        lastCompletedDay = day.day;
-      } else {
-        break;
-      }
-    }
-
-    const today = userData.syllabus.find(d => d.day === lastCompletedDay + 1);
-
-    if (!today) {
-      return { dailyTasks: [], currentDay: null };
-    }
-    
-    const topicLower = today.topic.toLowerCase();
-    const isLearned = userData.activity.some(a => a.type === 'note-generation' && a.details.topic.toLowerCase() === topicLower);
-    const isQuizzed = userData.activity.some(a => a.type === 'quiz' && a.details.topic.toLowerCase() === topicLower);
-    const isInterviewed = userData.activity.some(a => a.type === 'interview' && a.details.topic.toLowerCase() === topicLower);
-
-    const tasks = [
-      {
-        icon: <BookOpen className="h-6 w-6 text-yellow-500" />,
-        title: `Learn: ${today.topic}`,
-        description: "Study today's core concepts.",
-        isCompleted: isLearned,
-        action: () => router.push(`/dashboard/arena/notes?topic=${encodeURIComponent(today.topic)}`)
-      },
-      {
-        icon: <Code className="h-6 w-6 text-blue-500" />,
-        title: "Take a Quiz",
-        description: "Test your new knowledge.",
-        isCompleted: isQuizzed,
-        action: () => router.push(`/dashboard/coding-quiz/instructions?topics=${encodeURIComponent(today.topic)}&difficulty=easy&numQuestions=3`)
-      }
-    ];
-
-    // Add interview task only on odd days
-    if (today.day % 2 !== 0) {
-        tasks.push({
-            icon: <Briefcase className="h-6 w-6 text-green-500" />,
-            title: "Mock Interview",
-            description: "Practice your interview skills.",
-            isCompleted: isInterviewed,
-            action: () => router.push(`/dashboard/interview/setup?topic=${encodeURIComponent(today.topic)}`)
-        });
-    }
-
-    return { dailyTasks: tasks, currentDay: today };
-  }, [userData, router]);
-
-
-  const planLimits = useMemo(() => {
-    switch (plan) {
-      case 'monthly':
-        return { interviews: 20, quizzes: Infinity };
-      case 'yearly':
-        return { interviews: 300, quizzes: Infinity };
-      default: // free
-        return { interviews: 1, quizzes: 1 };
-    }
-  }, [plan]);
-
-  const quizzesLeft = planLimits.quizzes === Infinity ? Infinity : planLimits.quizzes - (hasTakenQuiz ? 1: 0);
-
-  const canTakeQuiz = isFreePlan ? !hasTakenQuiz : true;
-
   const planExpiresDays = useMemo(() => {
     if (userData?.subscription?.endDate) {
         const diff = differenceInDays(new Date(userData.subscription.endDate), new Date());
@@ -349,72 +255,46 @@ export default function DashboardPage() {
                  )}
             </CardContent>
         </Card>
+        
         <Card className="flex flex-col">
           <CardHeader>
               <div className="flex items-center gap-3">
-                  <div className="bg-secondary/20 text-secondary-foreground rounded-lg p-2"><Star className="h-6 w-6" /></div>
+                  <div className="bg-secondary/20 text-secondary-foreground rounded-lg p-2"><Swords className="h-6 w-6" /></div>
                   <div className="flex flex-col">
                       <CardTitle className="text-xl">
-                          {currentDay ? `Day ${currentDay.day}: ${currentDay.topic}` : "Daily Tasks"}
+                          Coding Gym
                       </CardTitle>
                       <CardDescription>
-                          {currentDay ? currentDay.description : "Complete your onboarding to get started!"}
+                          Master concepts with adaptive quizzes.
                       </CardDescription>
                   </div>
               </div>
           </CardHeader>
-          <CardContent className="flex-grow space-y-4">
-              {dailyTasks.length > 0 ? (
-                  dailyTasks.map((task, index) => (
-                      <Dialog key={index}>
-                          <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                              <div className="flex items-center gap-4">
-                                  {task.icon}
-                                  <div>
-                                      <p className="font-semibold text-foreground">{task.title}</p>
-                                      <p className="text-xs text-muted-foreground">{task.description}</p>
-                                  </div>
-                              </div>
-                              {task.isCompleted ? (
-                                  <div className="flex items-center gap-2 text-green-500">
-                                      <CheckCircle className="h-5 w-5" />
-                                      <span className="text-sm font-medium">Done</span>
-                                  </div>
-                              ) : (
-                                  <DialogTrigger asChild>
-                                      <Button size="sm" variant="secondary">Start</Button>
-                                  </DialogTrigger>
-                              )}
-                          </div>
-                          <DialogContent>
-                              <DialogHeader>
-                                  <DialogTitle className="flex items-center gap-3 text-2xl">
-                                      {task.icon} {task.title}
-                                  </DialogTitle>
-                                  <DialogDescription>
-                                      Welcome! Get ready to start your task.
-                                  </DialogDescription>
-                              </DialogHeader>
-                              <div className="py-6 text-center">
-                                  <p className="text-muted-foreground">Click the button below to begin.</p>
-                              </div>
-                              <DialogFooter>
-                                  <Button onClick={task.action} size="lg">
-                                      <PlayCircle className="mr-2 h-4 w-4"/> Let's Go
-                                  </Button>
-                              </DialogFooter>
-                          </DialogContent>
-                      </Dialog>
-                  ))
-              ) : (
-                  <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground p-4">
-                      <p>Your daily tasks will appear here once you've completed onboarding.</p>
-                      <Button asChild variant="link" className="mt-2">
-                        <Link href="/onboarding">Go to Onboarding</Link>
-                      </Button>
-                  </div>
-              )}
+          <CardContent className="flex-grow flex flex-col justify-center">
+             <Form {...codingGymForm}>
+                <form onSubmit={codingGymForm.handleSubmit(onCodingGymSubmit)} className="space-y-4">
+                    <FormField
+                    control={codingGymForm.control}
+                    name="topics"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Topic</FormLabel>
+                        <FormControl>
+                            <Input placeholder="e.g., JavaScript, React" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                     <Button type="submit" className="w-full" disabled={isCodingLoading}>
+                        {isCodingLoading ? <Loader2 className="animate-spin" /> : 'Start Training'}
+                    </Button>
+                </form>
+            </Form>
           </CardContent>
+          <CardFooter>
+            <p className="text-xs text-muted-foreground">The AI will adapt the difficulty based on your performance.</p>
+          </CardFooter>
         </Card>
       </div>
       
@@ -422,7 +302,7 @@ export default function DashboardPage() {
         <Card>
           <CardHeader>
             <CardTitle>Activity</CardTitle>
-            <CardDescription>Review your past coding quizzes and retake them to improve.</CardDescription>
+            <CardDescription>Review your past standard quizzes and retake them to improve.</CardDescription>
             <div className="relative pt-2">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <Input 
@@ -478,7 +358,7 @@ export default function DashboardPage() {
                     )) : (
                         <TableRow>
                             <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
-                                You haven't taken any quizzes yet.
+                                You haven't taken any standard quizzes yet.
                             </TableCell>
                         </TableRow>
                     )}
