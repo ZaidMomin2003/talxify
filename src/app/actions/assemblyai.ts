@@ -18,10 +18,9 @@ export async function getAssemblyAiToken() {
   try {
     const response = await axios.post(
       'https://api.assemblyai.com/v2/realtime/token',
-      { expires_in: 3600 }, // Token valid for 1 hour
+      JSON.stringify({ expires_in: 3600 }), // Token valid for 1 hour
       {
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': process.env.ASSEMBLYAI_API_KEY,
         },
       }
