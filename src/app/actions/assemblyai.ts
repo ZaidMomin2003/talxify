@@ -12,13 +12,13 @@ export async function getAssemblyAiToken() {
   if (!process.env.ASSEMBLYAI_API_KEY) {
     // This is the most likely cause of the error.
     // The environment variable is not set on the server.
-    throw new Error('AssemblyAI API key is not configured in environment variables.');
+    throw new Error('CRITICAL: ASSEMBLYAI_API_KEY is not set in your .env file. Please add it and restart the server.');
   }
 
   try {
     const response = await axios.post(
       'https://api.assemblyai.com/v2/realtime/token',
-      JSON.stringify({ expires_in: 3600 }), // Token valid for 1 hour
+      { expires_in: 3600 }, // Token valid for 1 hour
       {
         headers: {
           'Authorization': process.env.ASSEMBLYAI_API_KEY,
@@ -31,7 +31,7 @@ export async function getAssemblyAiToken() {
         // Log the detailed error from AssemblyAI's response
         console.error('AssemblyAI API Error:', error.response?.data);
         // Provide a more specific error message to the user
-        const assemblyError = error.response?.data?.error || 'Could not communicate with AssemblyAI.';
+        const assemblyError = error.response?.data?.error || 'Could not communicate with AssemblyAI. This often happens if the API key is invalid.';
         throw new Error(`Could not generate AssemblyAI session token: ${assemblyError}`);
     }
     // Fallback for non-Axios errors
