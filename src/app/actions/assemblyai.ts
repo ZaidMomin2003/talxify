@@ -1,7 +1,7 @@
 
 'use server';
 
-import axios from 'axios';
+import axios, { isAxiosError } from 'axios';
 
 /**
  * @fileOverview A server action to generate a temporary token for AssemblyAI's real-time transcription.
@@ -28,6 +28,14 @@ export async function getAssemblyAiToken() {
     );
     return response.data.token;
   } catch (error) {
+    if (isAxiosError(error)) {
+        // Log the detailed error from AssemblyAI's response
+        console.error('AssemblyAI API Error:', error.response?.data);
+        // Provide a more specific error message to the user
+        const assemblyError = error.response?.data?.error || 'Could not communicate with AssemblyAI.';
+        throw new Error(`Could not generate AssemblyAI session token: ${assemblyError}`);
+    }
+    // Fallback for non-Axios errors
     console.error('Error getting AssemblyAI token:', error);
     throw new Error('Could not generate AssemblyAI session token.');
   }
