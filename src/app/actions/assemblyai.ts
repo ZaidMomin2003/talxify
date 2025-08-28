@@ -10,6 +10,8 @@ import axios from 'axios';
 
 export async function getAssemblyAiToken() {
   if (!process.env.ASSEMBLYAI_API_KEY) {
+    // This is the most likely cause of the error.
+    // The environment variable is not set on the server.
     throw new Error('AssemblyAI API key is not configured in environment variables.');
   }
 
