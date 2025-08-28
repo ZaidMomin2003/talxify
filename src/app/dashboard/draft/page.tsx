@@ -7,16 +7,18 @@ import { FlaskConical, Briefcase, Building, BookOpen, ArrowRight } from "lucide-
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { useRouter } from 'next/navigation';
 
 export default function DraftPage() {
   const [role, setRole] = useState('');
   const [company, setCompany] = useState('');
   const [topic, setTopic] = useState('');
+  const router = useRouter();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // In the next step, we'll define what happens on submission.
-    console.log({ role, company, topic });
+    // Navigate to the new interview UI page
+    router.push('/dashboard/interview/v2');
   };
 
   return (
