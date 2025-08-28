@@ -3,22 +3,27 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Mic, MicOff, Video, VideoOff, Phone, Bot, User, MessageSquare, ChevronLeft, Loader2, Sparkles, AlertTriangle } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useRouter } from 'next/navigation';
-import { getAssemblyAiToken } from '@/app/actions/assemblyai';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { getAssemblyAiToken } from '@/app/actions/assemblyai';
 
 type SessionStatus = 'idle' | 'connecting' | 'connected' | 'listening' | 'error';
+type TranscriptEntry = {
+    speaker: 'user' | 'ai' | 'system';
+    text: string;
+};
+
 
 export default function InterviewV2Page() {
     const router = useRouter();
     const { toast } = useToast();
 
     const [status, setStatus] = useState<SessionStatus>('idle');
-    const [transcript, setTranscript] = useState('');
+    const [transcript, setTranscript] = useState<TranscriptEntry[]>([]);
     const [isRecording, setIsRecording] = useState(false);
     
     const socketRef = useRef<WebSocket | null>(null);
@@ -28,6 +33,12 @@ export default function InterviewV2Page() {
         setStatus('connecting');
         try {
             const token = await getAssemblyAiToken();
+            if (!token) {
+                 toast({ title: "Authentication Failed", description: "Could not get an auth token for the transcription service.", variant: "destructive" });
+                 setStatus('error');
+                 return;
+            }
+
             const socket = new WebSocket(`wss://api.assemblyai.com/v2/realtime/ws?sample_rate=16000&token=${token}`);
             socketRef.current = socket;
 
@@ -38,8 +49,9 @@ export default function InterviewV2Page() {
 
             socket.onmessage = (message) => {
                 const res = JSON.parse(message.data);
-                if (res.message_type === 'FinalTranscript') {
-                    setTranscript(prev => prev + res.text + ' ');
+                
+                if (res.message_type === 'FinalTranscript' && res.text) {
+                     setTranscript(prev => [...prev, { speaker: 'user', text: res.text }]);
                 }
             };
 
@@ -53,59 +65,77 @@ export default function InterviewV2Page() {
                 // Connection closed
             };
 
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
             setStatus('error');
-            toast({ title: "Initialization Failed", description: "Could not get an auth token for transcription service.", variant: "destructive" });
+            toast({ title: "Initialization Failed", description: error.message || "An unknown error occurred.", variant: "destructive" });
         }
     };
     
     const toggleRecording = async () => {
         if (isRecording) {
             // Stop recording
-            recorderRef.current?.stop();
-            recorderRef.current = null;
-            setIsRecording(false);
+            if (recorderRef.current && recorderRef.current.state === 'recording') {
+                recorderRef.current.stop();
+            }
             if(socketRef.current?.readyState === WebSocket.OPEN) {
                  socketRef.current.send(JSON.stringify({ terminate_session: true }));
+                 socketRef.current.close();
             }
-            socketRef.current?.close();
+            recorderRef.current = null;
             socketRef.current = null;
+            setIsRecording(false);
             setStatus('idle');
         } else {
             // Start recording
             await startTranscription();
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            const recorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
-            recorderRef.current = recorder;
-
-            recorder.ondataavailable = (event) => {
-                if (event.data.size > 0 && socketRef.current?.readyState === WebSocket.OPEN) {
-                    socketRef.current.send(JSON.stringify({ audio_data: event.data.toString('base64') }));
-                }
-            };
             
-            recorder.onstart = () => {
-                setIsRecording(true);
-                setStatus('listening');
-            };
+            // Wait for connection before starting recorder
+            const interval = setInterval(async () => {
+                if (socketRef.current?.readyState === WebSocket.OPEN) {
+                    clearInterval(interval);
+                    try {
+                        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                        const recorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+                        recorderRef.current = recorder;
 
-            recorder.start(1000); // Send data every 1000ms
+                        recorder.ondataavailable = (event) => {
+                            if (event.data.size > 0 && socketRef.current?.readyState === WebSocket.OPEN) {
+                                socketRef.current.send(JSON.stringify({ audio_data: Buffer.from(event.data).toString('base64') }));
+                            }
+                        };
+                        
+                        recorder.onstart = () => {
+                            setIsRecording(true);
+                            setStatus('listening');
+                        };
+
+                        recorder.start(300); // Send data every 300ms
+                    } catch(err) {
+                        console.error("Microphone access error:", err);
+                        toast({title: "Microphone Error", description: "Could not access your microphone.", variant: "destructive"});
+                        setStatus('error');
+                    }
+                }
+            }, 100);
         }
     };
 
     useEffect(() => {
         // Cleanup on component unmount
         return () => {
-            socketRef.current?.close();
-            recorderRef.current?.stop();
+            if (recorderRef.current?.state === 'recording') recorderRef.current.stop();
+            if (socketRef.current?.readyState === WebSocket.OPEN) {
+                socketRef.current.send(JSON.stringify({ terminate_session: true }));
+                socketRef.current.close();
+            }
         };
     }, []);
 
     const getStatusIndicator = () => {
         switch (status) {
             case 'idle': return <div className="flex items-center gap-2"><MicOff className="w-4 h-4"/>Not Recording</div>;
-            case 'connecting': return <div className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin"/>Connecting...</div>;
+            case 'connecting': return <div className="flex items-center gap-2 text-yellow-400"><Loader2 className="w-4 h-4 animate-spin"/>Connecting...</div>;
             case 'connected': return <div className="flex items-center gap-2 text-blue-400"><Sparkles className="w-4 h-4"/>Ready to Record</div>;
             case 'listening': return <div className="flex items-center gap-2 text-green-400 animate-pulse"><Mic className="w-4 h-4"/>Listening...</div>;
             case 'error': return <div className="flex items-center gap-2 text-red-400"><AlertTriangle className="w-4 h-4"/>Error</div>;
@@ -166,17 +196,17 @@ export default function InterviewV2Page() {
                                 <p className="text-sm">Good morning! Today, we're going to discuss system design. Can you walk me through how you would design a URL shortening service like TinyURL?</p>
                             </div>
                         </div>
-                         {transcript && (
-                            <div className="flex items-start gap-3 justify-end">
+                         {transcript.map((entry, index) => (
+                            <div key={index} className="flex items-start gap-3 justify-end">
                                 <div className="rounded-lg px-4 py-2 max-w-[80%] bg-blue-600 text-white">
                                     <p className="text-sm font-semibold">You</p>
-                                    <p className="text-sm">{transcript}</p>
+                                    <p className="text-sm">{entry.text}</p>
                                 </div>
                                 <Avatar className="w-8 h-8">
                                     <AvatarFallback>U</AvatarFallback>
                                 </Avatar>
                             </div>
-                        )}
+                        ))}
                     </CardContent>
                 </Card>
             </div>
