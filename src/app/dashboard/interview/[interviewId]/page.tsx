@@ -63,8 +63,7 @@ function InterviewPageContent() {
             audioPlayerRef.current.src = '';
         }
 
-        if (user && interviewState) {
-            // Create the final activity object
+        if (user && interviewState && transcript.length > 0) {
             const finalActivity: InterviewActivity = {
                 id: interviewId,
                 type: 'interview',
@@ -79,13 +78,12 @@ function InterviewPageContent() {
                 }
             };
             
-            // Serialize the data and pass it via URL to avoid race conditions
-            const queryParams = new URLSearchParams();
-            queryParams.set('data', JSON.stringify(finalActivity));
-            router.push(`/dashboard/interview/${interviewId}/results?${queryParams.toString()}`);
+            // Save the data first before redirecting.
+            await addActivity(user.uid, finalActivity);
+            router.push(`/dashboard/interview/${interviewId}/results`);
 
         } else {
-            // If something went wrong, just go to the dashboard
+            // If something went wrong or the interview was empty, just go to the dashboard
             router.push('/dashboard');
         }
     

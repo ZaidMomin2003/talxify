@@ -6,11 +6,11 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { BarChart, Bot, CheckCircle, ChevronLeft, MessageSquare, Mic, Sparkles, User, XCircle, Loader2, Building, RefreshCw, Trophy, Languages, Handshake } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter, useParams, useSearchParams } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { useAuth } from '@/context/auth-context';
-import type { InterviewActivity, StoredActivity } from '@/lib/types';
+import type { InterviewActivity } from '@/lib/types';
 import { getActivity, updateActivity, getRetakeCount, addActivity } from '@/lib/firebase-service';
 import { generateInterviewFeedback, GenerateInterviewFeedbackOutput } from '@/ai/flows/generate-interview-feedback';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -74,7 +74,6 @@ const demoAnalysisData: GenerateInterviewFeedbackOutput = {
 export default function InterviewResultsPage() {
     const router = useRouter();
     const params = useParams();
-    const searchParams = useSearchParams();
     const { user } = useAuth();
     
     const [isLoading, setIsLoading] = useState(true);
@@ -98,41 +97,47 @@ export default function InterviewResultsPage() {
 
         setIsLoading(true);
         try {
-            let currentInterview: InterviewActivity | null = null;
+            const allActivity = await getActivity(user.uid);
+            const currentInterview = allActivity.find(a => a.id === interviewId && a.type === 'interview') as InterviewActivity | undefined || null;
             
-            const dataFromUrl = searchParams.get('data');
-            if (dataFromUrl) {
-                currentInterview = JSON.parse(dataFromUrl) as InterviewActivity;
-                await addActivity(user.uid, currentInterview).catch(err => console.error("Failed to save URL data", err));
+            if (!currentInterview) {
+                // This might happen on first load after redirect.
+                // Give Firestore a moment to catch up.
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                const freshActivity = await getActivity(user.uid);
+                const freshInterview = freshActivity.find(a => a.id === interviewId && a.type === 'interview') as InterviewActivity | undefined || null;
+                if (!freshInterview) {
+                    setIsLoading(false);
+                    return;
+                }
+                setInterviewData(freshInterview);
             } else {
-                const allActivity = await getActivity(user.uid);
-                currentInterview = allActivity.find(a => a.id === interviewId && a.type === 'interview') as InterviewActivity | undefined || null;
+                setInterviewData(currentInterview);
             }
 
-            if (!currentInterview) {
+            const finalInterviewData = interviewData || currentInterview;
+            if (!finalInterviewData) {
                 setIsLoading(false);
                 return;
             }
             
-            setInterviewData(currentInterview);
-            
-            const retakes = await getRetakeCount(user.uid, currentInterview.details.topic);
+            const retakes = await getRetakeCount(user.uid, finalInterviewData.details.topic);
             setRetakeCount(retakes);
             
-            if (currentInterview.analysis && Object.keys(currentInterview.analysis).length > 0) {
-                setAnalysis(currentInterview.analysis);
+            if (finalInterviewData.analysis && Object.keys(finalInterviewData.analysis).length > 0) {
+                setAnalysis(finalInterviewData.analysis);
             } else {
                  setIsAnalyzing(true);
                  try {
                     const feedback = await generateInterviewFeedback({
-                        transcript: currentInterview.transcript,
-                        topic: currentInterview.details.topic,
-                        role: currentInterview.details.role || 'Software Engineer',
-                        company: currentInterview.details.company,
+                        transcript: finalInterviewData.transcript,
+                        topic: finalInterviewData.details.topic,
+                        role: finalInterviewData.details.role || 'Software Engineer',
+                        company: finalInterviewData.details.company,
                     });
                     setAnalysis(feedback);
                     
-                    const updatedInterview: InterviewActivity = { ...currentInterview, analysis: feedback };
+                    const updatedInterview: InterviewActivity = { ...finalInterviewData, analysis: feedback };
                     await updateActivity(user.uid, updatedInterview);
                     setInterviewData(updatedInterview);
 
@@ -147,12 +152,15 @@ export default function InterviewResultsPage() {
         } finally {
             setIsLoading(false);
         }
-    }, [user, params.interviewId, searchParams]);
+    }, [user, params.interviewId, interviewData]);
 
 
     useEffect(() => {
-        fetchAndAnalyze();
-    }, [fetchAndAnalyze]);
+        if(user) {
+          fetchAndAnalyze();
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [user]);
 
 
     const handleRetake = () => {
@@ -176,10 +184,14 @@ export default function InterviewResultsPage() {
                     <Card>
                         <CardHeader>
                             <CardTitle>Interview Not Found</CardTitle>
-                            <CardDescription>We could not find the results for this interview session.</CardDescription>
+                            <CardDescription>We could not find the results for this interview session. It might still be processing.</CardDescription>
                         </CardHeader>
-                        <CardContent>
-                             <Button asChild>
+                        <CardContent className="flex flex-col gap-4 items-center">
+                             <Button onClick={fetchAndAnalyze}>
+                                <RefreshCw className="mr-2 h-4 w-4" />
+                                Refresh
+                             </Button>
+                             <Button asChild variant="secondary">
                                 <Link href="/dashboard">Back to Dashboard</Link>
                             </Button>
                         </CardContent>
