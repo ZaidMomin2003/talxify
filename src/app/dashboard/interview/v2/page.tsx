@@ -14,7 +14,7 @@ import { generateInterviewResponse } from '@/ai/flows/generate-interview-respons
 import { textToSpeech } from '@/ai/flows/text-to-speech';
 import type { InterviewState } from '@/lib/interview-types';
 
-type SessionStatus = 'idle' | 'connecting' | 'connected' | 'listening' | 'processing' | 'speaking' | 'ending' | 'error';
+type SessionStatus = 'idle' | 'connecting' | 'speaking' | 'listening' | 'processing' | 'ending' | 'error';
 type TranscriptEntry = {
     speaker: 'user' | 'ai';
     text: string;
@@ -34,6 +34,12 @@ export default function InterviewV2Page() {
     const recorderRef = useRef<MediaRecorder | null>(null);
     const audioPlayerRef = useRef<HTMLAudioElement>(null);
     const finalTranscriptRef = useRef(''); // Store the final transcript from a single speech segment
+
+    const stopRecordingAndProcess = useCallback(() => {
+        if (recorderRef.current && recorderRef.current.state === 'recording') {
+            recorderRef.current.stop();
+        }
+    }, []);
 
     const processAndRespond = useCallback(async (state: InterviewState) => {
         if (!state) return;
@@ -88,16 +94,13 @@ export default function InterviewV2Page() {
         await processAndRespond(initialState);
     };
 
-    const stopRecordingAndProcess = useCallback(() => {
-        if (recorderRef.current && recorderRef.current.state === 'recording') {
-            recorderRef.current.stop();
-        }
-    }, []);
 
     const startRecording = useCallback(async () => {
         if (recorderRef.current || status === 'listening') return;
         
         setStatus('connecting');
+        finalTranscriptRef.current = '';
+        setInterimTranscript('');
 
         try {
             const token = await getAssemblyAiToken();
@@ -174,7 +177,6 @@ export default function InterviewV2Page() {
                     
                     setStatus('processing');
                     const userTranscript = finalTranscriptRef.current.trim();
-                    setInterimTranscript('');
                     
                     if (userTranscript && interviewState) {
                         setTranscript(prev => [...prev, { speaker: 'user', text: userTranscript }]);
@@ -191,7 +193,6 @@ export default function InterviewV2Page() {
                     const aStream = recorderRef.current?.stream;
                     aStream?.getTracks().forEach(track => track.stop());
                     recorderRef.current = null;
-                    finalTranscriptRef.current = '';
                 };
                 
                 recorder.start(250); // Send data every 250ms
@@ -221,7 +222,6 @@ export default function InterviewV2Page() {
             case 'idle': return <div className="flex items-center gap-2 text-blue-400"><Sparkles className="w-4 h-4"/>Ready to Start</div>;
             case 'connecting': return <div className="flex items-center gap-2 text-yellow-400"><Loader2 className="w-4 h-4 animate-spin"/>Connecting...</div>;
             case 'speaking': return <div className="flex items-center gap-2 text-blue-400"><Bot className="w-4 h-4" />AI Speaking...</div>;
-            case 'connected': return <div className="flex items-center gap-2 text-green-400"><Keyboard className="w-4 h-4"/>Hold <kbd className="px-1.5 py-0.5 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-200 rounded">Space</kbd> to speak</div>;
             case 'listening': return <div className="flex items-center gap-2 text-green-400 animate-pulse"><Mic className="w-4 h-4"/>Listening...</div>;
             case 'processing': return <div className="flex items-center gap-2 text-yellow-400"><Loader2 className="w-4 h-4 animate-spin"/>Processing...</div>;
             case 'ending': return <div className="flex items-center gap-2 text-red-400"><Loader2 className="w-4 h-4 animate-spin"/>Ending Session...</div>;
@@ -331,5 +331,3 @@ export default function InterviewV2Page() {
     </div>
   );
 }
-
-
