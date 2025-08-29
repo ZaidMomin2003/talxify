@@ -16,6 +16,7 @@ import React, { useMemo } from "react";
 import type { UserData, QuizResult } from "@/lib/types";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Skeleton } from "@/components/ui/skeleton";
+import { initialPortfolioData } from "@/lib/initial-data";
 
 
 const Section = ({ icon, title, children, className, id, isVisible }: { icon: React.ReactNode, title: string, children: React.ReactNode, className?: string, id: string, isVisible?: boolean }) => {
@@ -170,6 +171,9 @@ function PortfolioLoadingSkeleton() {
 export default function PortfolioComponent({ userData }: { userData: UserData | null }) {
     const portfolio = userData?.portfolio;
 
+    // Safely access displayOptions, providing a default if it doesn't exist
+    const displayOptions = portfolio?.displayOptions ?? initialPortfolioData.portfolio.displayOptions;
+
     const { questionsSolved, interviewsCompleted, averageScore } = useMemo(() => {
         if (!userData?.activity) {
             return { questionsSolved: 0, interviewsCompleted: 0, averageScore: 0 };
@@ -271,12 +275,12 @@ export default function PortfolioComponent({ userData }: { userData: UserData | 
                     <main className="lg:col-span-8">
                          <Image src={portfolio.personalInfo.bannerUrl || 'https://placehold.co/1200x300.png'} alt="Portfolio Banner" width={1200} height={300} className="w-full h-48 md:h-64 object-cover rounded-xl shadow-lg" data-ai-hint="abstract banner" />
 
-                        <Section id="about" icon={<UserIcon />} title="About Me" isVisible={portfolio.displayOptions.showAbout}>
+                        <Section id="about" icon={<UserIcon />} title="About Me" isVisible={displayOptions.showAbout}>
                             <p className="text-lg text-muted-foreground leading-relaxed">{portfolio.personalInfo.bio}</p>
                         </Section>
                         
                         {youtubeEmbedUrl && (
-                            <Section id="video-intro" icon={<Youtube />} title="Video Introduction" isVisible={portfolio.displayOptions.showVideo}>
+                            <Section id="video-intro" icon={<Youtube />} title="Video Introduction" isVisible={displayOptions.showVideo}>
                                 <Card className="overflow-hidden">
                                     <div className="aspect-video">
                                         <iframe
@@ -292,7 +296,7 @@ export default function PortfolioComponent({ userData }: { userData: UserData | 
                         )}
 
 
-                        <Section id="stats" icon={<Percent />} title="Activity Stats" isVisible={portfolio.displayOptions.showStats}>
+                        <Section id="stats" icon={<Percent />} title="Activity Stats" isVisible={displayOptions.showStats}>
                              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                                 <Card>
                                     <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -327,7 +331,7 @@ export default function PortfolioComponent({ userData }: { userData: UserData | 
                             </div>
                         </Section>
                         
-                         <Section id="skill-proficiency" icon={<BarChart />} title="Skill Proficiency" isVisible={portfolio.displayOptions.showSkills}>
+                         <Section id="skill-proficiency" icon={<BarChart />} title="Skill Proficiency" isVisible={displayOptions.showSkills}>
                             <Card>
                                 <CardContent className="pt-6 h-[300px] w-full">
                                     <ResponsiveContainer width="100%" height="100%">
@@ -352,7 +356,7 @@ export default function PortfolioComponent({ userData }: { userData: UserData | 
                             </Card>
                         </Section>
 
-                        <Section id="experience" icon={<Briefcase />} title="Work Experience" isVisible={portfolio.displayOptions.showExperience}>
+                        <Section id="experience" icon={<Briefcase />} title="Work Experience" isVisible={displayOptions.showExperience}>
                             <div className="space-y-8 relative before:absolute before:inset-y-0 before:w-px before:bg-border before:left-6">
                                 {portfolio.experience.map((exp, index) => (
                                     <div key={index} className="relative pl-12">
@@ -368,7 +372,7 @@ export default function PortfolioComponent({ userData }: { userData: UserData | 
                             </div>
                         </Section>
                         
-                        <Section id="education" icon={<School />} title="Education" isVisible={portfolio.displayOptions.showEducation}>
+                        <Section id="education" icon={<School />} title="Education" isVisible={displayOptions.showEducation}>
                             <div className="space-y-4">
                                 {portfolio.education.map((edu, index) => (
                                     <Card key={index} className="p-4 flex items-center gap-4">
@@ -384,7 +388,7 @@ export default function PortfolioComponent({ userData }: { userData: UserData | 
                             </div>
                         </Section>
 
-                        <Section id="projects" icon={<Sparkles />} title="Projects" isVisible={portfolio.displayOptions.showProjects}>
+                        <Section id="projects" icon={<Sparkles />} title="Projects" isVisible={displayOptions.showProjects}>
                              <div className="grid md:grid-cols-2 gap-8">
                                 {portfolio.projects.map((project, index) => (
                                     <Card key={index} className="shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden flex flex-col">
@@ -408,7 +412,7 @@ export default function PortfolioComponent({ userData }: { userData: UserData | 
                             </div>
                         </Section>
 
-                        <Section id="certificates" icon={<Award />} title="Certificates" isVisible={portfolio.displayOptions.showCertificates}>
+                        <Section id="certificates" icon={<Award />} title="Certificates" isVisible={displayOptions.showCertificates}>
                             <div className="space-y-4">
                                 {portfolio.certificates.map((cert, index) => (
                                     <Card key={index} className="p-4 flex items-start gap-4">
@@ -422,7 +426,7 @@ export default function PortfolioComponent({ userData }: { userData: UserData | 
                             </div>
                         </Section>
 
-                        <Section id="achievements" icon={<Award />} title="Achievements" isVisible={portfolio.displayOptions.showAchievements}>
+                        <Section id="achievements" icon={<Award />} title="Achievements" isVisible={displayOptions.showAchievements}>
                             <Card className="p-6">
                                 <ul className="space-y-4">
                                     {portfolio.achievements.map((ach, index) => (
@@ -438,7 +442,7 @@ export default function PortfolioComponent({ userData }: { userData: UserData | 
                             </Card>
                         </Section>
 
-                        <Section id="testimonials" icon={<MessageSquare />} title="Testimonials" isVisible={portfolio.displayOptions.showTestimonials}>
+                        <Section id="testimonials" icon={<MessageSquare />} title="Testimonials" isVisible={displayOptions.showTestimonials}>
                             <div className="space-y-6">
                                 {portfolio.testimonials.map((test, index) => (
                                     <blockquote key={index} className="p-6 bg-muted/50 rounded-lg border-l-4 border-primary">
@@ -449,7 +453,7 @@ export default function PortfolioComponent({ userData }: { userData: UserData | 
                             </div>
                         </Section>
 
-                        <Section id="faqs" icon={<HelpCircle />} title="FAQs" isVisible={portfolio.displayOptions.showFaqs}>
+                        <Section id="faqs" icon={<HelpCircle />} title="FAQs" isVisible={displayOptions.showFaqs}>
                             <Accordion type="single" collapsible className="w-full">
                                 {portfolio.faqs.map((faq, index) => (
                                     <AccordionItem value={`item-${index}`} key={index}>
