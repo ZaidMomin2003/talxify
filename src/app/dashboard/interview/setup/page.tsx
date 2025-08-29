@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/context/auth-context';
-import { Briefcase, Loader2, PlayCircle, Building, Wifi, AlertTriangle, Keyboard, RefreshCw } from 'lucide-react';
+import { Briefcase, Loader2, PlayCircle, Building, RefreshCw } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect, Suspense, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
@@ -87,7 +87,7 @@ function InterviewSetup() {
         if (company) {
             params.append('company', company);
         }
-        router.push(`/dashboard/interview/${meetingId}?${params.toString()}`);
+        router.push(`/dashboard/interview/${meetingId}/instructions?${params.toString()}`);
     } catch (e) {
         console.error("Failed to start interview session:", e);
         setError('Failed to create an interview session. Please try again.');
@@ -110,31 +110,6 @@ function InterviewSetup() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="space-y-3">
-              <Alert>
-                  <Keyboard className="h-4 w-4" />
-                  <AlertTitle>Push-to-Talk Enabled</AlertTitle>
-                  <AlertDescription>
-                      To speak, press and hold the <kbd className="px-2 py-1 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-200 rounded-lg">Spacebar</kbd>. Release when you're done.
-                  </AlertDescription>
-              </Alert>
-               <Alert>
-                  <Wifi className="h-4 w-4" />
-                  <AlertTitle>Stable Connection Required</AlertTitle>
-                  <AlertDescription>
-                      For the best experience, please ensure you have a stable internet connection before starting the interview.
-                  </AlertDescription>
-              </Alert>
-              {isFreePlan && (
-                  <Alert variant="destructive">
-                      <AlertTriangle className="h-4 w-4" />
-                      <AlertTitle>Free Plan Limit</AlertTitle>
-                      <AlertDescription>
-                          Starting this session will use one of your limited AI credits for the free plan.
-                      </AlertDescription>
-                  </Alert>
-              )}
-            </div>
             <div className="space-y-2">
               <Label htmlFor="topic">Interview Topic*</Label>
               <Input
@@ -194,7 +169,7 @@ function InterviewSetup() {
             <div className="text-center pt-4">
               <Button onClick={handleStartInterview} size="lg" disabled={loading || (chancesLeft <= 0 && !!topic)}>
                 {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlayCircle className="mr-2 h-4 w-4" />}
-                Start Interview
+                Proceed to Instructions
               </Button>
             </div>
           </CardContent>

@@ -3,9 +3,9 @@
 
 import React, { useState, useEffect, useRef, useCallback, Suspense } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Mic, Video, Phone, Bot, User, MessageSquare, ChevronLeft, Loader2, Keyboard, Headphones, CheckCircle, AlertTriangle } from 'lucide-react';
-import { useRouter, useParams, useSearchParams } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { generateInterviewResponse } from '@/ai/flows/generate-interview-response';
@@ -14,8 +14,8 @@ import { textToSpeech } from '@/ai/flows/text-to-speech';
 import type { InterviewState } from '@/lib/interview-types';
 import Image from 'next/image';
 import { useAuth } from '@/context/auth-context';
-import { addActivity } from '@/lib/firebase-service';
-import type { InterviewActivity } from '@/lib/types';
+import { addActivity, getUserData } from '@/lib/firebase-service';
+import type { InterviewActivity, UserData } from '@/lib/types';
 
 
 type SessionStatus = 'idle' | 'connecting' | 'speaking' | 'ready' | 'listening' | 'processing' | 'ending' | 'error';
@@ -27,14 +27,13 @@ type TranscriptEntry = {
 function InterviewPageContent() {
     const router = useRouter();
     const params = useParams();
-    const searchParams = useSearchParams();
     const interviewId = params.interviewId as string;
     const { user } = useAuth();
     const { toast } = useToast();
-
+    
+    const [userData, setUserData] = useState<UserData | null>(null);
     const [status, setStatus] = useState<SessionStatus>('idle');
     const [transcript, setTranscript] = useState<TranscriptEntry[]>([]);
-    const [interimTranscript, setInterimTranscript] = useState('');
     const [interviewState, setInterviewState] = useState<InterviewState | null>(null);
     
     const audioPlayerRef = useRef<HTMLAudioElement>(null);
@@ -42,9 +41,15 @@ function InterviewPageContent() {
     const audioChunksRef = useRef<Blob[]>([]);
     const transcriptEndRef = useRef<HTMLDivElement>(null);
 
+     useEffect(() => {
+        if (user) {
+            getUserData(user.uid).then(setUserData);
+        }
+    }, [user]);
+
     useEffect(() => {
         transcriptEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [transcript, interimTranscript]);
+    }, [transcript]);
     
     const endSession = useCallback(async (isFinished: boolean = false) => {
         setStatus('ending');
@@ -67,6 +72,8 @@ function InterviewPageContent() {
                 }
             };
             await addActivity(user.uid, finalActivity);
+            router.push(`/dashboard/interview/${interviewId}/results`);
+        } else if (isFinished) {
             router.push(`/dashboard/interview/${interviewId}/results`);
         } else {
             router.push('/dashboard');
@@ -94,7 +101,6 @@ function InterviewPageContent() {
           const audio = audioPlayerRef.current;
           const onAudioEnd = () => {
             if(newState.isComplete) {
-              setStatus('ending');
                setTimeout(() => {
                 endSession(true);
                }, 2000);
@@ -112,19 +118,10 @@ function InterviewPageContent() {
         }
     }, [toast, endSession]);
     
-    const startSession = async () => {
+    // This is now called from the instructions page. The interview itself doesn't need to fetch its own details.
+    const startSession = async (initialState: InterviewState) => {
+        if(!initialState) return;
         setStatus('connecting');
-        
-        const initialState: InterviewState = {
-            interviewId: interviewId,
-            topic: searchParams.get('topic') || 'general',
-            level: searchParams.get('level') || 'entry-level',
-            role: searchParams.get('role') || 'Software Engineer',
-            company: searchParams.get('company') || undefined,
-            history: [],
-            isComplete: false,
-        };
-        
         setInterviewState(initialState);
         setTranscript([]);
         await processAndRespond(initialState);
@@ -147,6 +144,25 @@ function InterviewPageContent() {
             mediaRecorderRef.current?.stop();
         }
     }, [status]);
+
+    useEffect(() => {
+        // Automatically start the session when the component mounts and has user data
+        if (userData) {
+            const urlParams = new URLSearchParams(window.location.search);
+            const initialState: InterviewState = {
+                interviewId,
+                topic: urlParams.get('topic') || 'general',
+                level: urlParams.get('level') || 'entry-level',
+                role: urlParams.get('role') || 'Software Engineer',
+                company: urlParams.get('company') || undefined,
+                history: [],
+                isComplete: false,
+            };
+            startSession(initialState);
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [userData]);
+
 
     useEffect(() => {
         window.addEventListener('keydown', handleKeyDown);
@@ -214,13 +230,13 @@ function InterviewPageContent() {
     const getStatusIndicator = () => {
         const baseClasses = "flex items-center justify-center gap-2 p-3 font-semibold text-sm transition-all duration-300";
         switch (status) {
-            case 'idle': return { text: "Ready to Start", className: "bg-muted text-muted-foreground", icon: <Phone/> };
+            case 'idle': return { text: "Preparing Session...", className: "bg-muted text-muted-foreground", icon: <Loader2 className="animate-spin"/> };
             case 'connecting': return { text: "Connecting...", className: "bg-yellow-500/10 text-yellow-500", icon: <Loader2 className="animate-spin"/> };
             case 'speaking': return { text: "AI is Speaking", className: "bg-blue-500/10 text-blue-500", icon: <Headphones className="animate-pulse"/> };
             case 'ready': return { text: <><Keyboard className="h-5 w-5 mr-1"/> Hold <kbd className="mx-1 px-1.5 py-0.5 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-200 rounded-md">Space</kbd> to Speak</>, className: "bg-green-500/10 text-green-500", icon: null };
             case 'listening': return { text: "Listening...", className: "bg-green-500/10 text-green-500 animate-pulse", icon: <Mic/> };
             case 'processing': return { text: "Processing...", className: "bg-yellow-500/10 text-yellow-500", icon: <Loader2 className="animate-spin"/> };
-            case 'ending': return { text: "Interview Over", className: "bg-red-500/10 text-red-500", icon: <CheckCircle/> };
+            case 'ending': return { text: "Interview Over. Redirecting...", className: "bg-red-500/10 text-red-500", icon: <CheckCircle/> };
             case 'error': return { text: "Error", className: "bg-red-500/10 text-red-500", icon: <AlertTriangle/> };
             default: return { text: "Idle", className: "bg-muted text-muted-foreground", icon: null };
         }
@@ -247,10 +263,10 @@ function InterviewPageContent() {
         <main className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-4 p-4 min-h-0">
             {/* Video Feed */}
             <div className="lg:col-span-2 bg-muted rounded-lg overflow-hidden relative flex items-center justify-center border">
-                {status === 'idle' ? (
+                {status === 'idle' || status === 'connecting' ? (
                      <div className="text-center">
-                        <Bot className="w-24 h-24 text-primary/30"/>
-                        <p className="mt-4 text-muted-foreground">The AI interviewer will appear here.</p>
+                        <Loader2 className="w-16 h-16 text-primary animate-spin"/>
+                        <p className="mt-4 text-muted-foreground">Preparing your session...</p>
                      </div>
                 ) : (
                     <>
@@ -258,7 +274,7 @@ function InterviewPageContent() {
                         <div className={cn("relative w-40 h-40 rounded-full transition-all duration-500",
                             (status === 'speaking' || status === 'connecting') && "animate-pulse"
                         )}>
-                            <Image src="/popup.png" alt="AI Interviewer" layout="fill" className="rounded-full object-cover" />
+                            <Image src="/popup.png" alt="AI Interviewer" layout="fill" className="rounded-full object-cover" data-ai-hint="abstract female person"/>
                             <div className={cn(
                                 "absolute inset-0 rounded-full",
                                 (status === 'speaking' || status === 'connecting') ? "shadow-[0_0_40px_10px] shadow-primary/60" : "shadow-[0_0_20px_5px] shadow-primary/30",
@@ -296,15 +312,6 @@ function InterviewPageContent() {
                                     {entry.speaker === 'user' && <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white"><User className="w-5 h-5"/></div>}
                                 </div>
                             ))}
-                            {interimTranscript && (
-                                <div className="flex items-start gap-3 justify-end opacity-70">
-                                    <div className="rounded-lg px-4 py-2 max-w-[80%] bg-blue-600/80 text-white">
-                                        <p className="text-sm font-semibold">You</p>
-                                        <p className="text-sm italic">{interimTranscript}</p>
-                                    </div>
-                                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white"><User className="w-5 h-5"/></div>
-                                </div>
-                            )}
                         </div>
                         <div ref={transcriptEndRef} />
                     </CardContent>
@@ -318,21 +325,15 @@ function InterviewPageContent() {
 
         {/* Footer Controls */}
         <footer className="flex-shrink-0 flex justify-center items-center gap-4 py-4 border-t">
-             {status === 'idle' ? (
-                <Button size="lg" onClick={startSession}>Start Interview</Button>
-             ) : (
-                <>
-                    <Button variant='secondary' size="icon" className="rounded-full h-14 w-14">
-                        <Mic className="h-6 w-6" />
-                    </Button>
-                     <Button variant="secondary" size="icon" className="rounded-full h-14 w-14">
-                        <Video className="h-6 w-6" />
-                    </Button>
-                    <Button variant="destructive" size="icon" className="rounded-full h-16 w-16" onClick={() => endSession(false)}>
-                        <Phone className="h-7 w-7" />
-                    </Button>
-                </>
-             )}
+            <Button variant='secondary' size="icon" className="rounded-full h-14 w-14">
+                <Mic className="h-6 w-6" />
+            </Button>
+            <Button variant="secondary" size="icon" className="rounded-full h-14 w-14">
+                <Video className="h-6 w-6" />
+            </Button>
+            <Button variant="destructive" size="icon" className="rounded-full h-16 w-16" onClick={() => endSession(true)}>
+                <Phone className="h-7 w-7" />
+            </Button>
         </footer>
     </div>
   );
