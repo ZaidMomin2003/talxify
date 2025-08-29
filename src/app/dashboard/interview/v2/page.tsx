@@ -4,8 +4,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Mic, Video, Phone, Bot, User, MessageSquare, ChevronLeft, Loader2, Keyboard, Headphones } from 'lucide-react';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Mic, Video, Phone, Bot, User, MessageSquare, ChevronLeft, Loader2, Keyboard, Headphones, CheckCircle, AlertTriangle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -48,7 +47,7 @@ export default function InterviewV2Page() {
           setTranscript(prev => [...prev, { speaker: 'ai', text: aiText }]);
           setInterviewState(newState);
           
-          const { audioDataUri } = await textToSpeech({ text: aiText });
+          const { audioDataUri } = await textToSpeech({ text: aiText, voice: 'aura-orion-en' });
           
           if (audioPlayerRef.current) {
             audioPlayerRef.current.src = audioDataUri;
