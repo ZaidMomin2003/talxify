@@ -1,11 +1,9 @@
 
 'use server';
 
-import { AssemblyAI } from 'assemblyai';
-
 /**
  * This server action securely generates a temporary token for the AssemblyAI real-time transcription service.
- * It uses the official AssemblyAI SDK and ensures the API key is never exposed to the client.
+ * It uses a direct fetch call to the AssemblyAI token endpoint to ensure reliability.
  */
 export async function getAssemblyAiToken(): Promise<string> {
   const apiKey = process.env.ASSEMBLYAI_API_KEY;
@@ -15,15 +13,36 @@ export async function getAssemblyAiToken(): Promise<string> {
     throw new Error('CRITICAL: ASSEMBLYAI_API_KEY environment variable not set on the server. Please add it to your .env file and restart the server.');
   }
 
-  const client = new AssemblyAI({ apiKey });
-
   try {
-    // This is the correct method for generating a streaming token with the correct parameter name.
-    const token = await client.streaming.createTemporaryToken({ expires_in_seconds: 3600 }); 
-    return token;
+    const url = new URL("https://api.assemblyai.com/v2/realtime/token");
+    url.search = new URLSearchParams({
+      expires_in: '3600', // Expires in 1 hour
+    }).toString();
+
+    const response = await fetch(url.toString(), {
+      method: 'POST',
+      headers: {
+        'Authorization': apiKey,
+      },
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json();
+        console.error('AssemblyAI token generation failed:', errorData);
+        throw new Error(`Authentication Failed: Could not get an auth token for the transcription service. Original error: ${JSON.stringify(errorData)}`);
+    }
+
+    const data = await response.json();
+    
+    if (!data.token) {
+        console.error('AssemblyAI token response did not contain a token:', data);
+        throw new Error('Authentication Failed: Invalid token response from service.');
+    }
+    
+    return data.token;
+
   } catch (error: any) {
     console.error('Error generating AssemblyAI token:', error.message);
-    // Provide a more specific error message to the client.
     throw new Error(`Authentication Failed: Could not get an auth token for the transcription service. Original error: ${error.message}`);
   }
 }
