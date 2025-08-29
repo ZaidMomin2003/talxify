@@ -126,7 +126,7 @@ export default function ArenaPage() {
     }, [syllabus, activity]);
 
 
-    const handleStartChallenge = (day: number, type: 'learn' | 'quiz' | 'interview', interviewId?: string) => {
+    const handleStartChallenge = (day: number, type: 'learn' | 'quiz' | 'interview') => {
         const topic = syllabus.find(d => d.day === day)?.topic || 'JavaScript';
         const isDay30 = day === 30;
 
@@ -136,10 +136,10 @@ export default function ArenaPage() {
             const quizTopic = isDay30 ? syllabus.slice(0, 29).map(d => d.topic).join(', ') : topic;
             router.push(`/dashboard/coding-gym?topic=${encodeURIComponent(quizTopic)}`);
         } else if (type === 'interview') {
-            // Whether it's a new interview or a retake, go to the setup/instructions flow.
-            // The setup page will handle creating a new ID or using an existing one.
             const interviewTopic = isDay30 ? 'Final Comprehensive Review' : topic;
-            router.push(`/dashboard/interview/setup?topic=${encodeURIComponent(interviewTopic)}`);
+            const meetingId = user!.uid + "_" + Date.now();
+            const params = new URLSearchParams({ topic: interviewTopic });
+            router.push(`/dashboard/interview/${meetingId}/instructions?${params.toString()}`);
         }
     }
 
@@ -251,7 +251,7 @@ export default function ArenaPage() {
                                             <p className="font-semibold text-foreground">{isFinalDay ? "Final Comprehensive Interview" : "Take a Mock Interview"}</p>
                                             <p className="text-xs text-muted-foreground">{isFinalDay ? "A 20-minute interview on all learned concepts." : "Practice your interview skills."}</p>
                                         </div>
-                                         <Button size="sm" onClick={() => handleStartChallenge(day.day, 'interview', dayStatus.interviewId)} disabled={!isUnlocked}>
+                                         <Button size="sm" onClick={() => handleStartChallenge(day.day, 'interview')} disabled={!isUnlocked}>
                                             {dayStatus.isInterviewInProgress 
                                                 ? <><History className="mr-2 h-4 w-4"/>Resume</>
                                                 : dayStatus.interview 

@@ -15,7 +15,7 @@ import { getActivity, updateActivity, getRetakeCount, addActivity } from '@/lib/
 import { generateInterviewFeedback, GenerateInterviewFeedbackOutput } from '@/ai/flows/generate-interview-feedback';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
-const MAX_RETAKES = 8;
+const MAX_RETAKES = 3;
 
 const demoInterviewData: InterviewActivity = {
     id: 'demo',
@@ -164,13 +164,14 @@ export default function InterviewResultsPage() {
 
 
     const handleRetake = () => {
-        if (!interviewData) return;
+        if (!interviewData || !user) return;
         const { topic, role, level, company } = interviewData.details;
+        const meetingId = user.uid + "_" + Date.now();
         const params = new URLSearchParams({ topic, role: role || '', level: level || '' });
         if (company) {
             params.append('company', company);
         }
-        router.push(`/dashboard/interview/setup?${params.toString()}`);
+        router.push(`/dashboard/interview/${meetingId}/instructions?${params.toString()}`);
     }
 
     if (isLoading) {
@@ -333,11 +334,11 @@ export default function InterviewResultsPage() {
                                 <Button onClick={handleRetake} size="lg" disabled={chancesLeft <= 0}>
                                     <RefreshCw className="mr-2 h-4 w-4"/> 
                                     Retake Interview
-                                    <Badge variant="secondary" className="ml-2">{chancesLeft} left</Badge>
+                                    <Badge variant="secondary" className="ml-2">{chancesLeft > 0 ? chancesLeft : 0} left</Badge>
                                 </Button>
                             </TooltipTrigger>
                             <TooltipContent>
-                                <p>You have {chancesLeft} of {MAX_RETAKES} retakes left for this topic.</p>
+                                <p>You have {chancesLeft > 0 ? chancesLeft : 0} of {MAX_RETAKES} retakes left for this topic.</p>
                             </TooltipContent>
                         </Tooltip>
                     </TooltipProvider>

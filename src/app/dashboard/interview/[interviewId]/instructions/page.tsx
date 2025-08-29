@@ -3,84 +3,168 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { CheckCircle, Wifi, BrainCircuit, Keyboard, Briefcase, PlayCircle, Laptop } from 'lucide-react';
-import Link from 'next/link';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Briefcase, PlayCircle, Loader2, Building, RefreshCw, Alert, AlertDescription, AlertTitle, AlertTriangle } from 'lucide-react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
-import React, { Suspense } from 'react';
+import React, { Suspense, useState, useEffect, useCallback } from 'react';
+import { useAuth } from '@/context/auth-context';
+import { useToast } from '@/hooks/use-toast';
+import { checkAndIncrementUsage, getRetakeCount, incrementRetakeCount } from '@/lib/firebase-service';
+
+const MAX_RETAKES = 3;
 
 function Instructions() {
   const router = useRouter();
   const params = useParams();
   const searchParams = useSearchParams();
-  const interviewId = params.interviewId as string;
-
-  const topic = searchParams.get('topic') || 'your selected topic';
+  const { user } = useAuth();
+  const { toast } = useToast();
   
-  const queryParams = new URLSearchParams(window.location.search);
+  const interviewId = params.interviewId as string;
+  const initialTopic = searchParams.get('topic') || '';
+
+  const [topic, setTopic] = useState(initialTopic);
+  const [level, setLevel] = useState(searchParams.get('level') || 'entry-level');
+  const [role, setRole] = useState(searchParams.get('role') || 'Software Engineer');
+  const [company, setCompany] = useState(searchParams.get('company') || '');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [retakeCount, setRetakeCount] = useState(0);
+
+  const fetchRetakeCount = useCallback(async () => {
+    if (user && topic) {
+        const count = await getRetakeCount(user.uid, topic);
+        setRetakeCount(count);
+    }
+  }, [user, topic]);
+
+  useEffect(() => {
+    fetchRetakeCount();
+  }, [fetchRetakeCount]);
+
+  const handleStartInterview = async () => {
+    if (!user) {
+        router.push('/login');
+        return;
+    }
+    if (!topic || !level || !role) {
+      setError('Please fill in all required fields.');
+      return;
+    }
+
+    if(retakeCount >= MAX_RETAKES) {
+        toast({ title: "Retake Limit Reached", description: `You have used all ${MAX_RETAKES} retakes for this topic.`, variant: "destructive" });
+        return;
+    }
+
+    setLoading(true);
+    setError('');
+
+    try {
+        const usageCheck = await checkAndIncrementUsage(user.uid);
+        if (!usageCheck.success) {
+            toast({ title: "Usage Limit Reached", description: usageCheck.message, variant: "destructive" });
+            router.push('/dashboard/pricing');
+            setLoading(false);
+            return;
+        }
+
+        await incrementRetakeCount(user.uid, topic);
+
+        const queryParams = new URLSearchParams({ topic, level, role });
+        if (company) {
+            queryParams.append('company', company);
+        }
+        router.push(`/dashboard/interview/${interviewId}?${queryParams.toString()}`);
+    } catch (e) {
+        console.error("Failed to start interview session:", e);
+        setError('Failed to create an interview session. Please try again.');
+        setLoading(false);
+    }
+  };
+
+  const chancesLeft = MAX_RETAKES - retakeCount;
 
   return (
     <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-2xl mx-auto space-y-8">
         <Card className="shadow-lg">
           <CardHeader className="text-center">
             <Briefcase className="mx-auto h-12 w-12 text-primary mb-4" />
-            <h1 className="font-headline text-4xl font-bold">Interview Instructions</h1>
+            <CardTitle className="font-headline text-4xl font-bold">Mock Interview Setup</CardTitle>
             <CardDescription className="text-lg">
-              You're about to start your mock interview on <span className="font-semibold text-foreground">{topic}</span>.
+              Confirm the details for your AI-powered mock interview session.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-8 px-8 py-6">
-            
-            <div className="space-y-4">
-              <h2 className="font-semibold text-2xl">How It Works</h2>
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="flex items-start gap-4">
-                  <div className="bg-primary/10 text-primary rounded-full p-2">
-                    <Laptop className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold">Use a Laptop/Desktop</h3>
-                    <p className="text-muted-foreground text-sm">For the best experience, please use a computer with a physical keyboard.</p>
-                  </div>
-                </div>
-                 <div className="flex items-start gap-4">
-                  <div className="bg-primary/10 text-primary rounded-full p-2">
-                    <Keyboard className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold">Push-to-Talk</h3>
-                    <p className="text-muted-foreground text-sm">When it's your turn, press and hold the <kbd className="px-2 py-1 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-200 rounded-lg">Spacebar</kbd> to speak. Release to submit your answer.</p>
-                  </div>
-                </div>
-                 <div className="flex items-start gap-4">
-                  <div className="bg-primary/10 text-primary rounded-full p-2">
-                    <Wifi className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold">Stable Connection</h3>
-                    <p className="text-muted-foreground text-sm">For the best experience, please ensure you have a stable and fast internet connection.</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-4">
-                  <div className="bg-primary/10 text-primary rounded-full p-2">
-                    <CheckCircle className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold">Get Feedback</h3>
-                    <p className="text-muted-foreground text-sm">After the interview, you'll receive a detailed analysis of your performance.</p>
-                  </div>
-                </div>
+          <CardContent className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="topic">Interview Topic*</Label>
+              <Input
+                id="topic"
+                placeholder="e.g., JavaScript, System Design"
+                value={topic}
+                onChange={(e) => setTopic(e.target.value)}
+                required
+              />
+            </div>
+             <div className="space-y-2">
+              <Label htmlFor="company">Target Company (Optional)</Label>
+               <div className="relative">
+                 <Building className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="company"
+                  placeholder="e.g., Google, Amazon, Netflix"
+                  value={company}
+                  onChange={(e) => setCompany(e.target.value)}
+                  className="pl-10"
+                />
               </div>
+              <p className="text-xs text-muted-foreground">Specifying a company helps the AI tailor its questions and interview style.</p>
             </div>
-
-            <div className="text-center pt-4">
-              <Button onClick={() => router.push(`/dashboard/interview/${interviewId}?${queryParams.toString()}`)} size="lg">
-                <PlayCircle className="mr-2 h-5 w-5"/>
-                Start Interview
-              </Button>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                <Label htmlFor="level">Experience Level*</Label>
+                <Select value={level} onValueChange={setLevel}>
+                    <SelectTrigger id="level">
+                    <SelectValue placeholder="Select level" />
+                    </SelectTrigger>
+                    <SelectContent>
+                    <SelectItem value="entry-level">Entry-level</SelectItem>
+                    <SelectItem value="mid-level">Mid-level</SelectItem>
+                    <SelectItem value="senior">Senior</SelectItem>
+                    </SelectContent>
+                </Select>
+                </div>
+                <div className="space-y-2">
+                <Label htmlFor="role">Job Role*</Label>
+                <Input
+                    id="role"
+                    placeholder="e.g., Frontend Developer"
+                    value={role}
+                    onChange={(e) => setRole(e.target.value)}
+                    required
+                />
+                </div>
             </div>
+            {error && <p className="text-sm text-destructive">{error}</p>}
+            <Alert variant={chancesLeft > 0 ? "default" : "destructive"}>
+                <RefreshCw className="h-4 w-4" />
+                <AlertTitle>Retake Information</AlertTitle>
+                <AlertDescription>
+                    You have {chancesLeft > 0 ? chancesLeft : 0} of {MAX_RETAKES} retakes left for this topic.
+                </AlertDescription>
+            </Alert>
           </CardContent>
         </Card>
+
+        <div className="text-center pt-4">
+            <Button onClick={handleStartInterview} size="lg" disabled={loading || (chancesLeft <= 0 && !!topic)}>
+                {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlayCircle className="mr-2 h-4 w-4" />}
+                Start Interview
+            </Button>
+        </div>
       </div>
     </main>
   );
@@ -89,7 +173,7 @@ function Instructions() {
 
 export default function InterviewInstructionsPage() {
     return (
-        <Suspense fallback={<div>Loading...</div>}>
+        <Suspense fallback={<div className="flex h-screen items-center justify-center"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>}>
             <Instructions />
         </Suspense>
     )

@@ -100,7 +100,7 @@ function InterviewPageContent() {
           setTranscript(prev => [...prev, { speaker: 'ai', text: aiText }]);
           setInterviewState(newState);
           
-          const { audioDataUri } = await textToSpeech({ text: aiText, voice: 'aura-orion-en' });
+          const { audioDataUri } = await textToSpeech({ text: aiText, voice: 'aura-hera-en' });
           
           if (audioPlayerRef.current) {
             audioPlayerRef.current.src = audioDataUri;
