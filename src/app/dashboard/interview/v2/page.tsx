@@ -52,9 +52,9 @@ export default function InterviewV2Page() {
             socket.onopen = () => {
                 setStatus('connected');
                 toast({ title: "Connected!", description: "You are now connected to the transcription service." });
+                // Correctly configure the audio format to match what the browser provides
                 socketRef.current?.send(JSON.stringify({
-                    audio_format: "pcm_s16le",
-                    sample_rate: 16000,
+                    audio_format: "audio/webm",
                 }));
             };
 
