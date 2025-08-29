@@ -35,9 +35,13 @@ export default function InterviewV2Page() {
         try {
             console.log("Requesting temporary token from server...");
             const token = await getAssemblyAiToken();
+            if (!token) {
+              throw new Error("Received an empty token from the server.");
+            }
             console.log("Token received from server.");
             
-            const socket = new WebSocket(`wss://api.assemblyai.com/v2/realtime/ws?sample_rate=16000&token=${token}`);
+            // Correctly form the WebSocket URL with the model parameter
+            const socket = new WebSocket(`wss://api.assemblyai.com/v2/realtime/ws?sample_rate=16000&token=${token}&model=nova-2-general`);
             socketRef.current = socket;
 
             socket.onopen = () => {
@@ -72,7 +76,7 @@ export default function InterviewV2Page() {
     const startRecording = async () => {
         if (recorderRef.current) return;
 
-        if (socketRef.current?.readyState !== WebSocket.OPEN) {
+        if (!socketRef.current || socketRef.current.readyState !== WebSocket.OPEN) {
             await startTranscription();
         }
         
@@ -98,7 +102,12 @@ export default function InterviewV2Page() {
 
                 recorder.addEventListener('dataavailable', (event) => {
                     if (event.data.size > 0 && socketRef.current?.readyState === WebSocket.OPEN) {
-                        socketRef.current.send(JSON.stringify({ audio_data: Buffer.from(event.data).toString('base64') }));
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                            const base64AudioData = (reader.result as string).split(',')[1];
+                             socketRef.current?.send(JSON.stringify({ audio_data: base64AudioData }));
+                        };
+                        reader.readAsDataURL(event.data);
                     }
                 });
                 
