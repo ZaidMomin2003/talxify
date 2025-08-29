@@ -17,7 +17,6 @@ const getSystemPrompt = (state: InterviewState) => `
     You have an excited and encouraging tone. You should speak at a slightly slower, deliberate pace, and pause briefly (like for 100ms) after full stops to make the conversation feel more natural.
     
     The candidate is interviewing for a ${state.level} ${state.role} role. The main technical topic is: ${state.topic}.
-    The questions should be case-study based and relevant to the user's expertise.
     ${state.company ? `The interview is tailored for ${state.company}. Adapt your style accordingly (e.g., STAR method for Amazon, open-ended problem-solving for Google).` : ''}
 
     Conversation Rules:
