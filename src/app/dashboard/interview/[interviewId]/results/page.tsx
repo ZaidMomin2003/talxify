@@ -232,7 +232,7 @@ export default function InterviewResultsPage() {
                     {/* Left Column - Summary */}
                     <div className="lg:col-span-1 space-y-8">
                         <div className="grid grid-cols-2 gap-4">
-                           <Card>
+                           <Card className="bg-destructive/10 text-destructive-foreground border-destructive/50">
                                 <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Overall Score</CardTitle></CardHeader>
                                 <CardContent><div className="text-2xl font-bold">{analysis.overallScore}%</div></CardContent>
                            </Card>
