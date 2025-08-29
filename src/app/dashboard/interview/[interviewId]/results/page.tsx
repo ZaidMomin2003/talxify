@@ -200,20 +200,21 @@ export default function InterviewResultsPage() {
                         <ChevronLeft className="mr-2 h-4 w-4" />
                         Back to Dashboard
                     </Button>
-                    <Card className="shadow-lg">
-                        <CardHeader className="text-center">
+                    <div className="relative rounded-xl shadow-lg p-8 text-center overflow-hidden bg-gradient-to-br from-primary/10 to-background">
+                         <div className="absolute inset-0 w-full h-full animate-vivid-gradient bg-[linear-gradient(-45deg,_#ee7752,_#e73c7e,_#23a6d5,_#23d5ab)] bg-[size:400%_400%] opacity-20 blur-2xl"></div>
+                        <div className="relative">
                             <Sparkles className="mx-auto h-12 w-12 text-primary mb-4" />
-                            <CardTitle className="font-headline text-4xl font-bold">Interview Analysis</CardTitle>
-                            <CardDescription className="text-lg">
+                            <h1 className="font-headline text-4xl font-bold text-foreground">Interview Analysis</h1>
+                            <p className="text-lg text-muted-foreground mt-2 max-w-2xl mx-auto">
                                 Here's a detailed breakdown of your mock interview for the <span className="font-semibold text-foreground">{interviewData.details.role}</span> role on the topic of <span className="font-semibold text-foreground">{interviewData.details.topic}</span>.
                                 {interviewData.details.company && (
                                     <>
                                         <br />Tailored for <span className="font-semibold text-foreground">{interviewData.details.company}</span>.
                                     </>
                                 )}
-                            </CardDescription>
-                        </CardHeader>
-                    </Card>
+                            </p>
+                        </div>
+                    </div>
                 </div>
 
                 {isAnalyzing ? (
