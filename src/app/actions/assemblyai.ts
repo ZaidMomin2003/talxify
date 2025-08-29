@@ -9,11 +9,11 @@ export async function getAssemblyAiToken(): Promise<string | null> {
 
   if (!apiKey) {
     console.error('CRITICAL: ASSEMBLYAI_API_KEY environment variable not set on the server.');
-    // Do not expose detailed error messages to the client for security reasons.
     throw new Error('Server configuration error: AssemblyAI API key is missing.');
   }
 
   try {
+    // Correctly append the required query parameter to the URL
     const url = "https://streaming.assemblyai.com/v3/token?expires_in_seconds=3600";
     console.log(`[assemblyai.ts] Attempting to fetch from URL: ${url}`);
 
@@ -21,7 +21,7 @@ export async function getAssemblyAiToken(): Promise<string | null> {
     console.log(`[assemblyai.ts] Using headers: ${JSON.stringify(headers, null, 2)}`);
 
     const response = await fetch(url, {
-      method: 'GET',
+      method: 'POST', // The documentation shows POST for the token endpoint
       headers: headers,
     });
 
