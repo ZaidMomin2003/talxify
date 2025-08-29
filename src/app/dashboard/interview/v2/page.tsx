@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
@@ -12,6 +13,7 @@ import { generateInterviewResponse } from '@/ai/flows/generate-interview-respons
 import { speechToText } from '@/ai/flows/speech-to-text';
 import { textToSpeech } from '@/ai/flows/text-to-speech';
 import type { InterviewState } from '@/lib/interview-types';
+import Image from 'next/image';
 
 type SessionStatus = 'idle' | 'connecting' | 'speaking' | 'ready' | 'listening' | 'processing' | 'ending' | 'error';
 type TranscriptEntry = {
@@ -98,7 +100,6 @@ export default function InterviewV2Page() {
         if (event.code === 'Space' && !event.repeat && status === 'ready') {
             event.preventDefault();
             setStatus('listening');
-            setInterimTranscript("Listening...");
             audioChunksRef.current = [];
             mediaRecorderRef.current?.start();
         }
@@ -137,7 +138,6 @@ export default function InterviewV2Page() {
             };
             
             recorder.onstop = async () => {
-                setInterimTranscript("");
                 const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
                 if (audioBlob.size < 1000) { // Ignore very short recordings
                     setStatus('ready');
@@ -213,10 +213,16 @@ export default function InterviewV2Page() {
             {/* Video Feed */}
             <div className="lg:col-span-2 bg-muted rounded-lg overflow-hidden relative flex items-center justify-center border">
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/50">
-                    {status === 'speaking' || status === 'connecting' ? 
-                        <Bot className="w-24 h-24 text-primary animate-pulse"/> :
-                        <Bot className="w-24 h-24 text-primary/30"/>
-                    }
+                    <div className={cn("relative w-40 h-40 rounded-full transition-all duration-500",
+                        (status === 'speaking' || status === 'connecting') && "animate-pulse"
+                    )}>
+                        <Image src="/popup.png" alt="AI Interviewer" layout="fill" className="rounded-full object-cover" />
+                        <div className={cn(
+                            "absolute inset-0 rounded-full",
+                            (status === 'speaking' || status === 'connecting') ? "shadow-[0_0_40px_10px] shadow-primary/60" : "shadow-[0_0_20px_5px] shadow-primary/30",
+                            "transition-all duration-500"
+                        )}></div>
+                    </div>
                     <p className="text-muted-foreground mt-4 text-lg">{status === 'speaking' ? 'AI Interviewer is speaking...' : 'AI Interviewer'}</p>
                 </div>
 
