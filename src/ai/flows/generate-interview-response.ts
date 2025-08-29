@@ -2,24 +2,19 @@
 'use server';
 
 /**
- * @fileOverview A flow to generate conversational responses for a mock interview using Groq.
- * This flow is designed for a streaming, low-latency setup.
+ * @fileOverview A flow to generate conversational responses for a mock interview.
+ * This flow is designed for a streaming, low-latency setup and uses Genkit with Gemini.
  */
 
+import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import { Groq } from 'groq-sdk';
 import { InterviewStateSchema, type InterviewState, type InterviewResponse } from '@/lib/interview-types';
 
-if (!process.env.GROQ_API_KEY) {
-  throw new Error('GROQ_API_KEY is not set in environment variables.');
-}
-
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 const MAX_QUESTIONS = 6;
 
 const getSystemPrompt = (state: InterviewState) => `
     You are Kathy, an expert, friendly, and professional AI interviewer. Your goal is to conduct a natural, conversational mock interview that lasts about ${MAX_QUESTIONS} questions.
-    You have an excited and encouraging tone. You should speak at a slightly slower, deliberate pace, and pause briefly after full stops to make the conversation feel more natural.
+    You have an excited and encouraging tone. You should speak at a slightly slower, deliberate pace, and pause briefly (like for 100ms) after full stops to make the conversation feel more natural.
     
     The candidate is interviewing for a ${state.level} ${state.role} role. The main technical topic is: ${state.topic}.
     The questions should be case-study based and relevant to the user's expertise.
@@ -32,31 +27,42 @@ const getSystemPrompt = (state: InterviewState) => `
     4.  Your follow-up question should extend the previous topic or ask for more detail.
     5.  Keep your responses extremely concise. DO NOT speak in long paragraphs.
     6.  After you have asked ${MAX_QUESTIONS} questions and the user has responded, you MUST conclude the interview.
-    7.  Your final message MUST be a fair and realistic review of the user's performance based on the entire conversation. Start with "Okay, that's all the questions I have. Here's my feedback...". Provide specific examples of their strengths and weaknesses. Be direct and constructive.
-    8.  Do not say "goodbye" or other pleasantries in the final review. Just give the feedback and end.
+    7.  Your final message MUST start with "Okay, that's all the questions I have for today. Great job!". Do not provide detailed feedback, as that is handled by another flow. Just give a brief concluding statement.
+    8.  Do not say "goodbye" or other pleasantries in the final message. Just give the concluding statement and end.
 `;
 
-export async function generateInterviewResponse(state: InterviewState): Promise<InterviewResponse> {
-  const systemPrompt = getSystemPrompt(state);
-  
-  const response = await groq.chat.completions.create({
-    model: 'llama3-70b-8192',
-    messages: [
-      { role: 'system', content: systemPrompt },
-      ...state.history,
-    ],
-    temperature: 0.7,
-    max_tokens: 250,
-  });
+const generateInterviewResponseFlow = ai.defineFlow(
+  {
+    name: 'generateInterviewResponseFlow',
+    inputSchema: InterviewStateSchema,
+    outputSchema: z.string(), // The output is just the AI's text response
+  },
+  async (state) => {
+    const systemPrompt = getSystemPrompt(state);
+    
+    const llmResponse = await ai.generate({
+      model: 'googleai/gemini-1.5-flash-latest',
+      prompt: state.history.map(msg => msg.content).join('\n\n'),
+      system: systemPrompt,
+      config: {
+        temperature: 0.8,
+      },
+    });
 
-  const aiResponseText = response.choices[0]?.message?.content || "I'm sorry, I seem to be having trouble responding.";
+    return llmResponse.text;
+  }
+);
+
+
+export async function generateInterviewResponse(state: InterviewState): Promise<InterviewResponse> {
+  const aiResponseText = await generateInterviewResponseFlow(state);
 
   const newState: InterviewState = { ...state };
   newState.history.push({ role: 'assistant', content: aiResponseText });
 
-  const questionsAsked = Math.floor(newState.history.length / 2);
+  const questionsAsked = newState.history.filter(m => m.role === 'assistant').length;
   
-  if (questionsAsked >= MAX_QUESTIONS) {
+  if (questionsAsked >= MAX_QUESTIONS || aiResponseText.startsWith("Okay, that's all the questions I have")) {
       newState.isComplete = true;
   }
 
