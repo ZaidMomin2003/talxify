@@ -47,7 +47,9 @@ export default function CodingQuizDemoPage() {
         <Card className="shadow-lg">
           <CardHeader>
             <CardTitle className="text-2xl font-semibold">Question 1</CardTitle>
-            <CardDescription className="prose dark:prose-invert max-w-none text-base" dangerouslySetInnerHTML={{ __html: demoQuestion.questionText.replace(/\n/g, '<br />') }} />
+            <CardDescription className="prose dark:prose-invert max-w-none text-base">
+                <div dangerouslySetInnerHTML={{ __html: demoQuestion.questionText.replace(/\n/g, '<br />') }} />
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <Textarea
