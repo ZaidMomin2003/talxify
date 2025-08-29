@@ -5,7 +5,7 @@ import React, { useState, useEffect, useRef, useCallback, Suspense } from 'react
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Mic, Video, Phone, Bot, User, MessageSquare, ChevronLeft, Loader2, Keyboard, Headphones, CheckCircle, AlertTriangle } from 'lucide-react';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { generateInterviewResponse } from '@/ai/flows/generate-interview-response';
@@ -27,6 +27,7 @@ type TranscriptEntry = {
 function InterviewPageContent() {
     const router = useRouter();
     const params = useParams();
+    const searchParams = useSearchParams();
     const interviewId = params.interviewId as string;
     const { user } = useAuth();
     const { toast } = useToast();
@@ -157,20 +158,19 @@ function InterviewPageContent() {
     useEffect(() => {
         // Automatically start the session when the component mounts and has user data
         if (userData) {
-            const urlParams = new URLSearchParams(window.location.search);
             const initialState: InterviewState = {
                 interviewId,
-                topic: urlParams.get('topic') || 'general',
-                level: urlParams.get('level') || 'entry-level',
-                role: urlParams.get('role') || 'Software Engineer',
-                company: urlParams.get('company') || undefined,
+                topic: searchParams.get('topic') || 'general',
+                level: searchParams.get('level') || 'entry-level',
+                role: searchParams.get('role') || 'Software Engineer',
+                company: searchParams.get('company') || undefined,
                 history: [],
                 isComplete: false,
             };
             startSession(initialState);
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [userData]);
+    }, [userData, interviewId, searchParams]);
 
 
     useEffect(() => {
