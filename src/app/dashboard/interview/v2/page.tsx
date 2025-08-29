@@ -10,10 +10,13 @@ import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { getAssemblyAiToken } from '@/app/actions/assemblyai';
+import { generateInterviewResponse } from '@/ai/flows/generate-interview-response';
+import { textToSpeech } from '@/ai/flows/text-to-speech';
+import type { InterviewState } from '@/lib/interview-types';
 
-type SessionStatus = 'idle' | 'connecting' | 'connected' | 'listening' | 'processing' | 'error';
+type SessionStatus = 'idle' | 'connecting' | 'connected' | 'listening' | 'processing' | 'speaking' | 'ending' | 'error';
 type TranscriptEntry = {
-    speaker: 'user' | 'ai' | 'system';
+    speaker: 'user' | 'ai';
     text: string;
 };
 
@@ -25,67 +28,102 @@ export default function InterviewV2Page() {
     const [status, setStatus] = useState<SessionStatus>('idle');
     const [transcript, setTranscript] = useState<TranscriptEntry[]>([]);
     const [interimTranscript, setInterimTranscript] = useState('');
+    const [interviewState, setInterviewState] = useState<InterviewState | null>(null);
     
     const socketRef = useRef<WebSocket | null>(null);
     const recorderRef = useRef<MediaRecorder | null>(null);
-    
-    const startTranscription = async () => {
-        if (socketRef.current) return;
+    const audioPlayerRef = useRef<HTMLAudioElement>(null);
+    const finalTranscriptRef = useRef(''); // Store the final transcript from a single speech segment
+
+    const processAndRespond = useCallback(async (state: InterviewState) => {
+        if (!state) return;
         
-        setStatus('connecting');
+        setStatus('speaking');
         try {
-            console.log("Requesting temporary token from server...");
-            const token = await getAssemblyAiToken();
-
-            if (!token) {
-              throw new Error("Received an empty or null token from the server.");
-            }
-            console.log("Token received from server.");
-            
-            const wsUrl = `wss://streaming.assemblyai.com/v3/ws?token=${token}`;
-            const socket = new WebSocket(wsUrl);
-            socketRef.current = socket;
-
-            socket.onopen = () => {
-                setStatus('connected');
-                toast({ title: "Connected!", description: "You are now connected to the transcription service." });
-                socketRef.current?.send(JSON.stringify({
-                    audio_format: "audio/webm",
-                }));
-            };
-
-            socket.onmessage = (message) => {
-                const res = JSON.parse(message.data);
-                if (res.message_type === 'PartialTranscript' && res.text) {
-                    setInterimTranscript(res.text);
-                } else if (res.message_type === 'FinalTranscript' && res.text) {
-                     setInterimTranscript('');
-                     setTranscript(prev => [...prev, { speaker: 'user', text: res.text }]);
-                }
-            };
-
-            socket.onerror = (event) => {
-                console.error("WebSocket error:", event);
-                setStatus('error');
-                toast({ title: "Connection Error", description: "Could not connect to transcription service.", variant: "destructive" });
-            };
-
-            socket.onclose = () => {
-                // Connection closed
-            };
-
-        } catch (error: any) {
-            console.error("Failed to start transcription session:", error);
-            setStatus('error');
-            toast({ title: "Initialization Failed", description: error.message, variant: "destructive" });
-        }
-    };
+          const { response: aiText, newState } = await generateInterviewResponse(state);
+          
+          setTranscript(prev => [...prev, { speaker: 'ai', text: aiText }]);
+          setInterviewState(newState);
+          
+          const { audioDataUri } = await textToSpeech({ text: aiText });
+          
+          if (audioPlayerRef.current) {
+            audioPlayerRef.current.src = audioDataUri;
+            audioPlayerRef.current.play().catch(e => console.error("Audio playback failed:", e));
+          }
     
+          const audio = audioPlayerRef.current;
+          const onAudioEnd = () => {
+            if(newState.isComplete) {
+              // endSession(true); // TODO: Implement end session logic
+              setStatus('ending');
+            } else {
+              setStatus('connected');
+            }
+            audio?.removeEventListener('ended', onAudioEnd);
+          };
+          audio?.addEventListener('ended', onAudioEnd);
+    
+        } catch (error) {
+          console.error("Error processing AI response:", error);
+          toast({ title: "AI Error", description: "Could not get a response from the AI. Please try again.", variant: "destructive"});
+          setStatus('connected');
+        }
+    }, [toast]);
+    
+    const startSession = async () => {
+        setStatus('connecting');
+        
+        const initialState: InterviewState = {
+            interviewId: `interview_${Date.now()}`,
+            topic: 'System Design', // Example topic
+            level: 'Senior',
+            role: 'Software Engineer',
+            company: 'Google',
+            history: [],
+            isComplete: false,
+        };
+        
+        setInterviewState(initialState);
+        setTranscript([]);
+        await processAndRespond(initialState);
+    };
+
     const startRecording = async () => {
         if (recorderRef.current) return;
 
         if (!socketRef.current || socketRef.current.readyState !== WebSocket.OPEN) {
-            await startTranscription();
+            try {
+                const token = await getAssemblyAiToken();
+                const wsUrl = `wss://streaming.assemblyai.com/v3/ws?token=${token}`;
+                socketRef.current = new WebSocket(wsUrl);
+
+                socketRef.current.onopen = () => {
+                    socketRef.current?.send(JSON.stringify({ audio_format: "audio/webm" }));
+                };
+
+                socketRef.current.onmessage = (message) => {
+                    const res = JSON.parse(message.data);
+                    if (res.message_type === 'PartialTranscript' && res.text) {
+                        setInterimTranscript(res.text);
+                    } else if (res.message_type === 'FinalTranscript' && res.text) {
+                        finalTranscriptRef.current = res.text;
+                        setInterimTranscript('');
+                    }
+                };
+
+                socketRef.current.onerror = (event) => {
+                    console.error("WebSocket error:", event);
+                    setStatus('error');
+                    toast({ title: "Connection Error", description: "Could not connect to transcription service.", variant: "destructive" });
+                };
+
+            } catch (error: any) {
+                console.error("Failed to start transcription session:", error);
+                setStatus('error');
+                toast({ title: "Initialization Failed", description: error.message, variant: "destructive" });
+                return;
+            }
         }
         
         const waitForConnection = (callback: () => void, retries = 10) => {
@@ -109,7 +147,6 @@ export default function InterviewV2Page() {
 
                 recorder.addEventListener('dataavailable', (event) => {
                     if (event.data.size > 0 && socketRef.current?.readyState === WebSocket.OPEN) {
-                         // Send the raw audio data (Blob) directly
                          socketRef.current.send(event.data);
                     }
                 });
@@ -124,27 +161,48 @@ export default function InterviewV2Page() {
         });
     };
 
-    const stopRecording = () => {
+    const stopRecordingAndProcess = () => {
         if (recorderRef.current && recorderRef.current.state === 'recording') {
             recorderRef.current.stop();
             
-            const stream = recorderRef.current.stream;
-            stream.getTracks().forEach(track => track.stop());
+            // This event listener handles processing after the recording stops.
+            recorderRef.current.onstop = () => {
+                if(socketRef.current?.readyState === WebSocket.OPEN) {
+                     socketRef.current.send(JSON.stringify({ terminate_session: true }));
+                     socketRef.current.close();
+                     socketRef.current = null;
+                }
+                
+                const userTranscript = finalTranscriptRef.current;
+                
+                if (userTranscript && interviewState) {
+                    setTranscript(prev => [...prev, { speaker: 'user', text: userTranscript }]);
+                    const newHistory = [...interviewState.history, { role: 'user', content: userTranscript }];
+                    const newState = { ...interviewState, history: newHistory };
+                    setInterviewState(newState);
+                    processAndRespond(newState);
+                } else {
+                    toast({ title: "Couldn't hear you", description: "The AI didn't catch that. Please try speaking again.", variant: "destructive"});
+                    setStatus('connected');
+                }
+
+                // Clean up
+                const stream = recorderRef.current?.stream;
+                stream?.getTracks().forEach(track => track.stop());
+                recorderRef.current = null;
+                finalTranscriptRef.current = '';
+            };
         }
-        if(socketRef.current?.readyState === WebSocket.OPEN) {
-             socketRef.current.send(JSON.stringify({ terminate_session: true }));
-             socketRef.current.close();
-             socketRef.current = null;
-        }
-        recorderRef.current = null;
-        setStatus('connected');
     };
     
-    // Push-to-talk handlers
     const handleKeyDown = useCallback((event: KeyboardEvent) => {
-        if (event.code === 'Space' && !event.repeat && (status === 'connected' || status === 'idle')) {
+        if (event.code === 'Space' && !event.repeat && (status === 'connected' || status === 'idle' || status === 'error')) {
           event.preventDefault();
-          startRecording();
+          if (status === 'idle') {
+              startSession(); // Start the whole session if it's the first time
+          } else {
+              startRecording();
+          }
         }
     }, [status]);
 
@@ -152,7 +210,7 @@ export default function InterviewV2Page() {
         if (event.code === 'Space' && status === 'listening') {
             event.preventDefault();
             setStatus('processing');
-            stopRecording();
+            stopRecordingAndProcess();
         }
     }, [status]);
     
@@ -179,11 +237,13 @@ export default function InterviewV2Page() {
 
     const getStatusIndicator = () => {
         switch (status) {
-            case 'idle': return <div className="flex items-center gap-2 text-blue-400"><Sparkles className="w-4 h-4"/>Ready to Connect</div>;
+            case 'idle': return <div className="flex items-center gap-2 text-blue-400"><Sparkles className="w-4 h-4"/>Ready to Start</div>;
             case 'connecting': return <div className="flex items-center gap-2 text-yellow-400"><Loader2 className="w-4 h-4 animate-spin"/>Connecting...</div>;
+            case 'speaking': return <div className="flex items-center gap-2 text-blue-400"><Bot className="w-4 h-4" />AI Speaking...</div>;
             case 'connected': return <div className="flex items-center gap-2 text-green-400"><Keyboard className="w-4 h-4"/>Hold <kbd className="px-1.5 py-0.5 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-200 rounded">Space</kbd> to speak</div>;
             case 'listening': return <div className="flex items-center gap-2 text-green-400 animate-pulse"><Mic className="w-4 h-4"/>Listening...</div>;
             case 'processing': return <div className="flex items-center gap-2 text-yellow-400"><Loader2 className="w-4 h-4 animate-spin"/>Processing...</div>;
+            case 'ending': return <div className="flex items-center gap-2 text-red-400"><Loader2 className="w-4 h-4 animate-spin"/>Ending Session...</div>;
             case 'error': return <div className="flex items-center gap-2 text-red-400"><AlertTriangle className="w-4 h-4"/>Error</div>;
             default: return null;
         }
@@ -191,6 +251,7 @@ export default function InterviewV2Page() {
 
   return (
     <div className="flex h-screen w-full flex-col bg-background text-foreground">
+        <audio ref={audioPlayerRef} hidden />
         {/* Header */}
         <header className="flex h-16 items-center justify-between border-b px-4 sm:px-6">
             <Button variant="ghost" size="icon" onClick={() => router.back()}>
@@ -198,7 +259,7 @@ export default function InterviewV2Page() {
                 <span className="sr-only">Back</span>
             </Button>
             <div className="text-center">
-                <h1 className="text-lg font-semibold">System Design Interview</h1>
+                <h1 className="text-lg font-semibold">{interviewState?.topic || 'Interview'}</h1>
                 <p className="text-sm text-muted-foreground">AI Interviewer: Alex</p>
             </div>
             <div className="w-10"></div>
@@ -208,13 +269,14 @@ export default function InterviewV2Page() {
         <main className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-4 p-4 min-h-0">
             {/* Video Feed */}
             <div className="lg:col-span-2 bg-muted rounded-lg overflow-hidden relative flex items-center justify-center border">
-                {/* AI Interviewer Placeholder */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/50">
-                    <Bot className="w-24 h-24 text-primary animate-pulse"/>
-                    <p className="text-muted-foreground mt-4 text-lg">AI Interviewer is speaking...</p>
+                    {status === 'speaking' || status === 'connecting' ? 
+                        <Bot className="w-24 h-24 text-primary animate-pulse"/> :
+                        <Bot className="w-24 h-24 text-primary/30"/>
+                    }
+                    <p className="text-muted-foreground mt-4 text-lg">{status === 'speaking' ? 'AI Interviewer is speaking...' : 'AI Interviewer'}</p>
                 </div>
 
-                {/* User Video Placeholder */}
                 <div className="absolute bottom-6 right-6 w-1/4 max-w-[200px] aspect-video bg-black/80 rounded-lg border-2 border-primary shadow-lg flex items-center justify-center">
                     <div className="text-center text-white">
                         <User className="w-8 h-8 mx-auto" />
@@ -233,24 +295,22 @@ export default function InterviewV2Page() {
                         </div>
                     </CardHeader>
                     <CardContent className="flex-grow overflow-y-auto pr-2 space-y-4">
-                        <div className="flex items-start gap-3 justify-start">
-                            <Avatar className="w-8 h-8 border-2 border-primary">
-                                <AvatarFallback><Bot className="w-4 h-4"/></AvatarFallback>
-                            </Avatar>
-                            <div className="rounded-lg px-4 py-2 max-w-[80%] bg-secondary">
-                                <p className="text-sm font-semibold text-primary">Alex (AI)</p>
-                                <p className="text-sm">Good morning! Today, we're going to discuss system design. Can you walk me through how you would design a URL shortening service like TinyURL?</p>
-                            </div>
-                        </div>
                          {transcript.map((entry, index) => (
-                            <div key={index} className="flex items-start gap-3 justify-end">
-                                <div className="rounded-lg px-4 py-2 max-w-[80%] bg-blue-600 text-white">
-                                    <p className="text-sm font-semibold">You</p>
+                             <div key={index} className={cn("flex items-start gap-3", entry.speaker === 'user' ? 'justify-end' : 'justify-start')}>
+                                {entry.speaker === 'ai' && (
+                                    <Avatar className="w-8 h-8 border-2 border-primary">
+                                        <AvatarFallback><Bot className="w-4 h-4"/></AvatarFallback>
+                                    </Avatar>
+                                )}
+                                <div className={cn("rounded-lg px-4 py-2 max-w-[80%]", entry.speaker === 'user' ? 'bg-blue-600 text-white' : 'bg-secondary')}>
+                                     <p className="text-sm font-semibold">{entry.speaker === 'ai' ? 'Alex (AI)' : 'You'}</p>
                                     <p className="text-sm">{entry.text}</p>
                                 </div>
-                                <Avatar className="w-8 h-8">
-                                    <AvatarFallback>U</AvatarFallback>
-                                </Avatar>
+                                {entry.speaker === 'user' && (
+                                    <Avatar className="w-8 h-8">
+                                        <AvatarFallback>U</AvatarFallback>
+                                    </Avatar>
+                                )}
                             </div>
                         ))}
                          {interimTranscript && (
@@ -284,3 +344,5 @@ export default function InterviewV2Page() {
     </div>
   );
 }
+
+    
