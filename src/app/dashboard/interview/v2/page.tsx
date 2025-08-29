@@ -4,7 +4,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Mic, Video, Phone, Bot, User, MessageSquare, ChevronLeft, Loader2, Keyboard } from 'lucide-react';
+import { Mic, Video, Phone, Bot, User, MessageSquare, ChevronLeft, Loader2, Keyboard, Headphones } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
@@ -59,6 +59,9 @@ export default function InterviewV2Page() {
           const onAudioEnd = () => {
             if(newState.isComplete) {
               setStatus('ending');
+               setTimeout(() => {
+                // Navigate to results page or show a summary
+               }, 2000);
             } else {
               setStatus('ready');
             }
@@ -125,7 +128,7 @@ export default function InterviewV2Page() {
         const initializeRecorder = async () => {
           try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            const recorder = new MediaRecorder(stream);
+            const recorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
             mediaRecorderRef.current = recorder;
     
             recorder.ondataavailable = (event) => {
@@ -175,18 +178,20 @@ export default function InterviewV2Page() {
     }, [interviewState, toast, processAndRespond]);
 
     const getStatusIndicator = () => {
+        const baseClasses = "flex items-center justify-center gap-2 p-3 font-semibold text-sm transition-all duration-300";
         switch (status) {
-            case 'idle': return <div className="flex items-center gap-2 text-blue-400">Ready to Start</div>;
-            case 'connecting': return <div className="flex items-center gap-2 text-yellow-400"><Loader2 className="w-4 h-4 animate-spin"/>Connecting...</div>;
-            case 'speaking': return <div className="flex items-center gap-2 text-blue-400"><Bot className="w-4 h-4" />AI Speaking...</div>;
-            case 'ready': return <div className="flex items-center justify-center gap-2 text-green-400"><Keyboard className="h-5 w-5" /><span>Hold <kbd className="px-2 py-1 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-200 rounded-lg">Space</kbd> to speak</span></div>;
-            case 'listening': return <div className="flex items-center gap-2 text-green-400 animate-pulse"><Mic className="w-4 h-4"/>Listening...</div>;
-            case 'processing': return <div className="flex items-center gap-2 text-yellow-400"><Loader2 className="w-4 h-4 animate-spin"/>Processing...</div>;
-            case 'ending': return <div className="flex items-center gap-2 text-red-400"><Loader2 className="w-4 h-4 animate-spin"/>Ending Session...</div>;
-            case 'error': return <div className="flex items-center gap-2 text-red-400">Error</div>;
-            default: return null;
+            case 'idle': return { text: "Ready to Start", className: "bg-muted text-muted-foreground", icon: <Phone/> };
+            case 'connecting': return { text: "Connecting...", className: "bg-yellow-500/10 text-yellow-500", icon: <Loader2 className="animate-spin"/> };
+            case 'speaking': return { text: "AI is Speaking", className: "bg-blue-500/10 text-blue-500", icon: <Headphones className="animate-pulse"/> };
+            case 'ready': return { text: <><Keyboard className="h-5 w-5 mr-1"/> Hold <kbd className="mx-1 px-1.5 py-0.5 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-200 rounded-md">Space</kbd> to Speak</>, className: "bg-green-500/10 text-green-500", icon: null };
+            case 'listening': return { text: "Listening...", className: "bg-green-500/10 text-green-500 animate-pulse", icon: <Mic/> };
+            case 'processing': return { text: "Processing...", className: "bg-yellow-500/10 text-yellow-500", icon: <Loader2 className="animate-spin"/> };
+            case 'ending': return { text: "Interview Over", className: "bg-red-500/10 text-red-500", icon: <CheckCircle/> };
+            case 'error': return { text: "Error", className: "bg-red-500/10 text-red-500", icon: <AlertTriangle/> };
+            default: return { text: "Idle", className: "bg-muted text-muted-foreground", icon: null };
         }
     }
+    const { text, className: statusClassName, icon: statusIcon } = getStatusIndicator();
 
   return (
     <div className="flex h-screen w-full flex-col bg-background text-foreground">
@@ -228,10 +233,7 @@ export default function InterviewV2Page() {
             <div className="flex flex-col gap-4 min-h-0">
                 <Card className="flex-grow flex flex-col min-h-0">
                     <CardHeader>
-                        <div className="flex justify-between items-center">
-                           <CardTitle className="flex items-center gap-2"><MessageSquare/> Transcript</CardTitle>
-                           <div className="text-xs font-mono">{getStatusIndicator()}</div>
-                        </div>
+                       <CardTitle className="flex items-center gap-2"><MessageSquare/> Transcript</CardTitle>
                     </CardHeader>
                     <CardContent className="flex-grow overflow-y-auto pr-2">
                          <div className="space-y-4">
@@ -257,6 +259,10 @@ export default function InterviewV2Page() {
                         </div>
                         <div ref={transcriptEndRef} />
                     </CardContent>
+                     <div className={cn("flex items-center justify-center gap-2 p-3 font-semibold text-sm transition-all duration-300 border-t", statusClassName)}>
+                        {statusIcon}
+                        <span>{text}</span>
+                    </div>
                 </Card>
             </div>
         </main>
@@ -282,5 +288,3 @@ export default function InterviewV2Page() {
     </div>
   );
 }
-
-    
