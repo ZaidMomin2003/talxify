@@ -13,30 +13,29 @@ export async function getAssemblyAiToken(): Promise<string | null> {
   }
 
   try {
-    // Correctly append the required query parameter to the URL
-    const url = "https://streaming.assemblyai.com/v3/token?expires_in_seconds=3600";
-    console.log(`[assemblyai.ts] Attempting to fetch from URL: ${url}`);
-
-    const headers = { 'Authorization': apiKey };
-    console.log(`[assemblyai.ts] Using headers: ${JSON.stringify(headers, null, 2)}`);
+    const url = "https://api.assemblyai.com/v2/realtime/token";
+    console.log(`[assemblyai.ts] Attempting to POST to URL: ${url}`);
 
     const response = await fetch(url, {
-      method: 'POST', // The documentation shows POST for the token endpoint
-      headers: headers,
+      method: 'POST',
+      headers: {
+        'Authorization': apiKey,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ expires_in: 3600 })
     });
 
     const responseText = await response.text();
     console.log(`[assemblyai.ts] Raw response text: ${responseText}`);
     
     if (!response.ok) {
-        // Attempt to parse JSON, but fall back to raw text if it fails
         let errorData;
         try {
             errorData = JSON.parse(responseText);
         } catch (e) {
             errorData = { detail: responseText };
         }
-        console.error('[assemblyai.ts] AssemblyAI token error response:', errorData);
+        console.error(`[assemblyai.ts] AssemblyAI token error response (Status: ${response.status}):`, errorData);
         throw new Error(`Failed to fetch token. Status: ${response.status}. Body: ${JSON.stringify(errorData)}`);
     }
     
@@ -52,7 +51,6 @@ export async function getAssemblyAiToken(): Promise<string | null> {
     
   } catch (error: any) {
     console.error('[assemblyai.ts] Error generating AssemblyAI temporary token:', error);
-    // Re-throw a more user-friendly error to be caught by the client
     throw new Error(`Authentication Failed: Could not get an auth token for the transcription service. Original error: ${error.message}`);
   }
 }
