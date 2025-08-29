@@ -1,10 +1,9 @@
-
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback, Suspense } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Mic, Video, PhoneOff, Bot, User, MessageSquare, ChevronLeft, Loader2, Keyboard, Headphones, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Mic, Video, Phone, Bot, User, MessageSquare, ChevronLeft, Loader2, Keyboard, Headphones, CheckCircle, AlertTriangle } from 'lucide-react';
 import { useRouter, useParams } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -57,9 +56,8 @@ function InterviewPageContent() {
             mediaRecorderRef.current.stop();
         }
         
-        // Ensure state exists before trying to save
-        if (user && isFinished && interviewState) {
-             const finalActivity: InterviewActivity = {
+        if (user && isFinished && transcript.length > 0 && interviewState) {
+            const finalActivity: InterviewActivity = {
                 id: interviewId,
                 type: 'interview',
                 timestamp: new Date().toISOString(),
@@ -72,13 +70,13 @@ function InterviewPageContent() {
                     company: interviewState.company,
                 }
             };
-            // Add activity even if transcript is empty, so results page can be shown
             await addActivity(user.uid, finalActivity);
+            router.push(`/dashboard/interview/${interviewId}/results`);
+        } else if (isFinished) {
+            router.push(`/dashboard/interview/${interviewId}/results`);
+        } else {
+            router.push('/dashboard');
         }
-        
-        // Always redirect to the results page when the session ends
-        router.push(`/dashboard/interview/${interviewId}/results`);
-
       }, [user, transcript, interviewState, interviewId, router]);
 
 
@@ -92,8 +90,7 @@ function InterviewPageContent() {
           setTranscript(prev => [...prev, { speaker: 'ai', text: aiText }]);
           setInterviewState(newState);
           
-          // Using a new female voice as requested
-          const { audioDataUri } = await textToSpeech({ text: aiText, voice: 'aura-kathleen-en' });
+          const { audioDataUri } = await textToSpeech({ text: aiText, voice: 'aura-orion-en' });
           
           if (audioPlayerRef.current) {
             audioPlayerRef.current.src = audioDataUri;
@@ -103,8 +100,9 @@ function InterviewPageContent() {
           const audio = audioPlayerRef.current;
           const onAudioEnd = () => {
             if(newState.isComplete) {
-                // When interview is naturally complete, end session and save.
+               setTimeout(() => {
                 endSession(true);
+               }, 2000);
             } else {
               setStatus('ready');
             }
@@ -255,7 +253,7 @@ function InterviewPageContent() {
             </Button>
             <div className="text-center">
                 <h1 className="text-lg font-semibold">{interviewState?.topic || 'Interview'}</h1>
-                <p className="text-sm text-muted-foreground">AI Interviewer: Kathy</p>
+                <p className="text-sm text-muted-foreground">AI Interviewer: Alex</p>
             </div>
             <div className="w-10"></div>
         </header>
@@ -304,10 +302,10 @@ function InterviewPageContent() {
                     <CardContent className="flex-grow overflow-y-auto pr-2">
                          <div className="space-y-4">
                             {transcript.map((entry, index) => (
-                                <div key={index} className={cn('flex items-start gap-3', entry.speaker === 'user' ? 'justify-end' : 'justify-start')}>
+                                <div key={index} className={cn("flex items-start gap-3", entry.speaker === 'user' ? 'justify-end' : 'justify-start')}>
                                     {entry.speaker === 'ai' && <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground"><Bot className="w-5 h-5"/></div>}
                                     <div className={cn("rounded-lg px-4 py-2 max-w-[80%]", entry.speaker === 'user' ? 'bg-blue-600 text-white' : 'bg-secondary')}>
-                                         <p className="text-sm font-semibold">{entry.speaker === 'ai' ? 'Kathy (AI)' : 'You'}</p>
+                                         <p className="text-sm font-semibold">{entry.speaker === 'ai' ? 'Alex (AI)' : 'You'}</p>
                                         <p className="text-sm">{entry.text}</p>
                                     </div>
                                     {entry.speaker === 'user' && <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white"><User className="w-5 h-5"/></div>}
@@ -326,9 +324,14 @@ function InterviewPageContent() {
 
         {/* Footer Controls */}
         <footer className="flex-shrink-0 flex justify-center items-center gap-4 py-4 border-t">
-             <Button onClick={() => endSession(true)} variant="destructive" size="lg">
-                <PhoneOff className="mr-2 h-5 w-5" />
-                End Interview
+            <Button variant='secondary' size="icon" className="rounded-full h-14 w-14">
+                <Mic className="h-6 w-6" />
+            </Button>
+            <Button variant="secondary" size="icon" className="rounded-full h-14 w-14">
+                <Video className="h-6 w-6" />
+            </Button>
+            <Button variant="destructive" size="icon" className="rounded-full h-16 w-16" onClick={() => endSession(true)}>
+                <Phone className="h-7 w-7" />
             </Button>
         </footer>
     </div>
