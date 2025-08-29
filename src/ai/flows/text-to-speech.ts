@@ -2,7 +2,7 @@
 'use server';
 
 /**
- * @fileOverview A flow to convert text to speech using Deepgram.
+ * @fileOverview A flow to convert text to speech using Google's Gemini model.
  *
  * - textToSpeech - A function that takes text and returns an audio data URI.
  * - TextToSpeechInput - The input type for the textToSpeech function.
@@ -11,35 +11,47 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import { createClient } from '@deepgram/sdk';
+import wav from 'wav';
+import { googleAI } from '@genkit-ai/googleai';
 
 const TextToSpeechInputSchema = z.object({
   text: z.string().describe('The text to be converted to speech.'),
-  voice: z.string().optional().describe('The voice model to use for the speech synthesis.'),
+  voice: z.string().optional().describe('The voice model to use for the speech synthesis. (e.g., Algenib, Achernar)'),
 });
 export type TextToSpeechInput = z.infer<typeof TextToSpeechInputSchema>;
 
 const TextToSpeechOutputSchema = z.object({
-  audioDataUri: z.string().describe("The generated audio as a data URI in MP3 format. Format: 'data:audio/mp3;base64,<encoded_data>'."),
+  audioDataUri: z.string().describe("The generated audio as a data URI in WAV format. Format: 'data:audio/wav;base64,<encoded_data>'."),
 });
 export type TextToSpeechOutput = z.infer<typeof TextToSpeechOutputSchema>;
 
-export async function textToSpeech(input: TextToSpeechInput): Promise<TextToSpeechOutput> {
-  return textToSpeechFlow(input);
-}
 
-// Helper function to convert a web stream to a buffer
-async function streamToBuffer(stream: ReadableStream<Uint8Array>): Promise<Buffer> {
-  const reader = stream.getReader();
-  const chunks: Buffer[] = [];
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) {
-      break;
-    }
-    chunks.push(Buffer.from(value));
-  }
-  return Buffer.concat(chunks);
+// Helper function to convert PCM audio buffer to WAV format
+async function toWav(
+  pcmData: Buffer,
+  channels = 1,
+  rate = 24000,
+  sampleWidth = 2
+): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const writer = new wav.Writer({
+      channels,
+      sampleRate: rate,
+      bitDepth: sampleWidth * 8,
+    });
+
+    let bufs: any[] = [];
+    writer.on('error', reject);
+    writer.on('data', function (d) {
+      bufs.push(d);
+    });
+    writer.on('end', function () {
+      resolve(Buffer.concat(bufs).toString('base64'));
+    });
+
+    writer.write(pcmData);
+    writer.end();
+  });
 }
 
 
@@ -50,30 +62,38 @@ const textToSpeechFlow = ai.defineFlow(
     outputSchema: TextToSpeechOutputSchema,
   },
   async (input) => {
-    if (!process.env.DEEPGRAM_API_KEY) {
-      throw new Error('Deepgram API key is not set in environment variables.');
-    }
-
-    const deepgram = createClient(process.env.DEEPGRAM_API_KEY);
-    const voiceModel = input.voice || 'aura-asteria-en';
-
-    const response = await deepgram.speak.request(
-      { text: input.text },
-      {
-        model: voiceModel,
-        encoding: 'mp3',
-      }
-    );
-
-    const stream = await response.getStream();
-    if (!stream) {
-      throw new Error('Failed to get audio stream from Deepgram.');
-    }
-    const buffer = await streamToBuffer(stream);
-    const base64Audio = buffer.toString('base64');
+    const { media } = await ai.generate({
+      model: googleAI.model('gemini-2.5-flash-preview-tts'),
+      config: {
+        responseModalities: ['AUDIO'],
+        speechConfig: {
+          voiceConfig: {
+            // Default to a female voice, but allow override
+            prebuiltVoiceConfig: { voiceName: input.voice || 'Algenib' },
+          },
+        },
+      },
+      prompt: input.text,
+    });
     
+    if (!media) {
+      throw new Error('No media was returned from the TTS model.');
+    }
+    
+    // The Gemini TTS model returns raw PCM data, which we need to convert to a usable format like WAV.
+    const audioBuffer = Buffer.from(
+      media.url.substring(media.url.indexOf(',') + 1),
+      'base64'
+    );
+    
+    const wavBase64 = await toWav(audioBuffer);
+
     return {
-      audioDataUri: `data:audio/mp3;base64,${base64Audio}`,
+      audioDataUri: `data:audio/wav;base64,${wavBase64}`,
     };
   }
 );
+
+export async function textToSpeech(input: TextToSpeechInput): Promise<TextToSpeechOutput> {
+  return textToSpeechFlow(input);
+}
