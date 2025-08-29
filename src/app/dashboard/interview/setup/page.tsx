@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/context/auth-context';
-import { Briefcase, Loader2, PlayCircle, Building, RefreshCw } from 'lucide-react';
+import { Briefcase, Loader2, PlayCircle, Building, RefreshCw, Mic, Wifi, Brain, MessageSquare, ShieldCheck } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect, Suspense, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
@@ -16,6 +16,14 @@ import type { UserData } from '@/lib/types';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const MAX_RETAKES = 8;
+
+const tips = [
+    { icon: Mic, text: "Find a quiet place to avoid background noise." },
+    { icon: Wifi, text: "Ensure you have a stable internet connection." },
+    { icon: Brain, text: "Explain your thought process clearly and concisely." },
+    { icon: MessageSquare, text: "Hold the Spacebar to speak, and release it when you're done." },
+    { icon: ShieldCheck, text: "Treat it like a real interview to get the most out of it." }
+];
 
 function InterviewSetup() {
   const router = useRouter();
@@ -100,7 +108,7 @@ function InterviewSetup() {
 
   return (
     <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
-      <div className="max-w-2xl mx-auto">
+      <div className="max-w-2xl mx-auto space-y-8">
         <Card className="shadow-lg">
           <CardHeader className="text-center">
             <Briefcase className="mx-auto h-12 w-12 text-primary mb-4" />
@@ -166,14 +174,32 @@ function InterviewSetup() {
                 </div>
             </div>
             {error && <p className="text-sm text-destructive">{error}</p>}
-            <div className="text-center pt-4">
-              <Button onClick={handleStartInterview} size="lg" disabled={loading || (chancesLeft <= 0 && !!topic)}>
-                {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlayCircle className="mr-2 h-4 w-4" />}
-                Proceed to Instructions
-              </Button>
-            </div>
           </CardContent>
         </Card>
+
+        <Card>
+            <CardHeader>
+                <CardTitle>Quick Tips for Success</CardTitle>
+                <CardDescription>Follow these best practices for the most effective session.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+                {tips.map((tip, index) => (
+                    <div key={index} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                        <div className="flex-shrink-0 text-primary">
+                            <tip.icon className="w-5 h-5"/>
+                        </div>
+                        <p className="text-sm text-muted-foreground">{tip.text}</p>
+                    </div>
+                ))}
+            </CardContent>
+        </Card>
+
+        <div className="text-center pt-4">
+            <Button onClick={handleStartInterview} size="lg" disabled={loading || (chancesLeft <= 0 && !!topic)}>
+            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlayCircle className="mr-2 h-4 w-4" />}
+            Proceed to Instructions
+            </Button>
+        </div>
       </div>
     </main>
   );
