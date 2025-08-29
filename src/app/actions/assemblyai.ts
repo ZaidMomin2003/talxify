@@ -14,7 +14,7 @@ export async function getAssemblyAiToken(): Promise<string> {
   }
   
   // Manually construct the URL with the required query parameter.
-  const url = 'https://streaming.assemblyai.com/v3/token?expires_in_seconds=3600';
+  const url = 'https://streaming.assemblyai.com/v3/token?expires_in_seconds=600';
 
   console.log(`[assemblyai.ts] Attempting to generate token via GET from: ${url}`);
 
