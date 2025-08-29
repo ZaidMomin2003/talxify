@@ -57,8 +57,8 @@ function InterviewPageContent() {
             mediaRecorderRef.current.stop();
         }
         
-        if (user && isFinished && transcript.length > 0 && interviewState) {
-            const finalActivity: InterviewActivity = {
+        if (user && isFinished && interviewState) {
+             const finalActivity: InterviewActivity = {
                 id: interviewId,
                 type: 'interview',
                 timestamp: new Date().toISOString(),
@@ -72,12 +72,11 @@ function InterviewPageContent() {
                 }
             };
             await addActivity(user.uid, finalActivity);
-            router.push(`/dashboard/interview/${interviewId}/results`);
-        } else if (isFinished) {
-            router.push(`/dashboard/interview/${interviewId}/results`);
-        } else {
-            router.push('/dashboard');
         }
+        
+        // Always redirect to the results page when the session ends
+        router.push(`/dashboard/interview/${interviewId}/results`);
+
       }, [user, transcript, interviewState, interviewId, router]);
 
 
@@ -353,3 +352,5 @@ export default function InterviewPage() {
         </Suspense>
     )
 }
+
+    
