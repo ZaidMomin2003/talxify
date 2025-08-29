@@ -26,6 +26,7 @@ export default function InterviewV2Page() {
 
     const [status, setStatus] = useState<SessionStatus>('idle');
     const [transcript, setTranscript] = useState<TranscriptEntry[]>([]);
+    const [interimTranscript, setInterimTranscript] = useState('');
     
     const socketRef = useRef<WebSocket | null>(null);
     const recorderRef = useRef<MediaRecorder | null>(null);
@@ -54,13 +55,15 @@ export default function InterviewV2Page() {
                 socketRef.current?.send(JSON.stringify({
                     audio_format: "pcm_s16le",
                     sample_rate: 16000,
-                    model: "Conformer-2"
                 }));
             };
 
             socket.onmessage = (message) => {
                 const res = JSON.parse(message.data);
-                if (res.message_type === 'FinalTranscript' && res.text) {
+                if (res.message_type === 'PartialTranscript' && res.text) {
+                    setInterimTranscript(res.text);
+                } else if (res.message_type === 'FinalTranscript' && res.text) {
+                     setInterimTranscript('');
                      setTranscript(prev => [...prev, { speaker: 'user', text: res.text }]);
                 }
             };
@@ -260,6 +263,17 @@ export default function InterviewV2Page() {
                                 </Avatar>
                             </div>
                         ))}
+                         {interimTranscript && (
+                            <div className="flex items-start gap-3 justify-end opacity-70">
+                                <div className="rounded-lg px-4 py-2 max-w-[80%] bg-blue-600/80 text-white">
+                                    <p className="text-sm font-semibold">You</p>
+                                    <p className="text-sm italic">{interimTranscript}</p>
+                                </div>
+                                <Avatar className="w-8 h-8">
+                                    <AvatarFallback>U</AvatarFallback>
+                                </Avatar>
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
             </div>
