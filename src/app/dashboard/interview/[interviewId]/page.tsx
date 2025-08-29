@@ -100,9 +100,7 @@ function InterviewPageContent() {
           const audio = audioPlayerRef.current;
           const onAudioEnd = () => {
             if(newState.isComplete) {
-               setTimeout(() => {
                 endSession(true);
-               }, 2000);
             } else {
               setStatus('ready');
             }
@@ -302,7 +300,7 @@ function InterviewPageContent() {
                     <CardContent className="flex-grow overflow-y-auto pr-2">
                          <div className="space-y-4">
                             {transcript.map((entry, index) => (
-                                <div key={index} className={cn("flex items-start gap-3", entry.speaker === 'user' ? 'justify-end' : 'justify-start')}>
+                                <div key={index} className={cn('flex items-start gap-3', entry.speaker === 'user' ? 'justify-end' : 'justify-start')}>
                                     {entry.speaker === 'ai' && <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground"><Bot className="w-5 h-5"/></div>}
                                     <div className={cn("rounded-lg px-4 py-2 max-w-[80%]", entry.speaker === 'user' ? 'bg-blue-600 text-white' : 'bg-secondary')}>
                                          <p className="text-sm font-semibold">{entry.speaker === 'ai' ? 'Alex (AI)' : 'You'}</p>
