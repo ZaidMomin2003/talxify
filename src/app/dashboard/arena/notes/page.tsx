@@ -134,10 +134,12 @@ function NotesComponent() {
                              {notes.coreConcepts.map((concept, index) => (
                                 <AccordionItem value={`item-${index}`} key={index}>
                                     <AccordionTrigger className="text-lg">{concept.concept}</AccordionTrigger>
-                                    <AccordionContent 
-                                        className="prose prose-sm dark:prose-invert max-w-none text-muted-foreground"
-                                        dangerouslySetInnerHTML={{ __html: concept.description.replace(/\n/g, '<br />') }}
-                                    />
+                                    <AccordionContent>
+                                        <div
+                                            className="prose prose-sm dark:prose-invert max-w-none text-muted-foreground"
+                                            dangerouslySetInnerHTML={{ __html: concept.description.replace(/\n/g, '<br />') }}
+                                        />
+                                    </AccordionContent>
                                 </AccordionItem>
                              ))}
                            </Accordion>
