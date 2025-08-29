@@ -21,6 +21,7 @@ import { differenceInHours } from 'date-fns';
 import Image from "next/image";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger, DialogClose } from "@/components/ui/dialog";
 import Script from "next/script";
+import { Switch } from "@/components/ui/switch";
 
 
 const CloudinaryIcon = () => (
@@ -46,7 +47,6 @@ const ImagePicker = ({ value, onChange, dataAiHint, isAvatar }: { value: string,
     const widgetRef = useRef<any>();
 
     useEffect(() => {
-        // When the script is loaded, create the widget instance
         if (isCloudinaryLoaded) {
             cloudinaryRef.current = (window as any).cloudinary;
             widgetRef.current = cloudinaryRef.current.createUploadWidget({
@@ -159,7 +159,12 @@ export default function PortfolioPage() {
         getPortfolio(user.uid),
         getUserData(user.uid)
     ]);
-    setPortfolio(portfolioData ?? initialPortfolioData.portfolio);
+    const currentPortfolio = portfolioData ?? initialPortfolioData.portfolio;
+    // Ensure displayOptions exists
+    if (!currentPortfolio.displayOptions) {
+        currentPortfolio.displayOptions = initialPortfolioData.portfolio.displayOptions;
+    }
+    setPortfolio(currentPortfolio);
     setUserData(allUserData);
     setIsLoading(false);
   }, [user]);
@@ -244,6 +249,20 @@ export default function PortfolioPage() {
       .replace(/\-\-+/g, '-');    // Replace multiple - with single -
     setPortfolio({...portfolio, personalInfo: {...portfolio.personalInfo, slug: sanitizedSlug}});
   }
+
+  const handleDisplayOptionChange = (option: keyof Portfolio['displayOptions'], value: boolean) => {
+    if (!portfolio) return;
+    setPortfolio(prev => {
+      if (!prev) return null;
+      return {
+        ...prev,
+        displayOptions: {
+          ...prev.displayOptions,
+          [option]: value,
+        },
+      };
+    });
+  };
 
   if (isLoading || !portfolio || !userData || !user) {
     return (
@@ -377,7 +396,13 @@ export default function PortfolioPage() {
         </Card>
         
         <Card className="shadow-lg border-primary/10">
-            <CardHeader><CardTitle>Skills</CardTitle></CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle>Skills</CardTitle>
+                <div className="flex items-center gap-2">
+                    <Label htmlFor="show-skills">Show</Label>
+                    <Switch id="show-skills" checked={portfolio.displayOptions.showSkills} onCheckedChange={(checked) => handleDisplayOptionChange('showSkills', checked)} />
+                </div>
+            </CardHeader>
             <CardContent className="space-y-6">
                 {portfolio.skills.map((item, index) => (
                     <div key={index} className="flex items-center gap-4">
@@ -402,7 +427,13 @@ export default function PortfolioPage() {
         </Card>
 
         <Card className="shadow-lg border-primary/10">
-            <CardHeader><CardTitle>Work Experience</CardTitle></CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle>Work Experience</CardTitle>
+                 <div className="flex items-center gap-2">
+                    <Label htmlFor="show-experience">Show</Label>
+                    <Switch id="show-experience" checked={portfolio.displayOptions.showExperience} onCheckedChange={(checked) => handleDisplayOptionChange('showExperience', checked)} />
+                </div>
+            </CardHeader>
             <CardContent className="space-y-6">
                 {portfolio.experience.map((item, index) => (
                     <div key={index} className="space-y-4 p-4 border rounded-lg relative">
@@ -420,7 +451,13 @@ export default function PortfolioPage() {
         </Card>
 
         <Card className="shadow-lg border-primary/10">
-            <CardHeader><CardTitle>Education</CardTitle></CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle>Education</CardTitle>
+                <div className="flex items-center gap-2">
+                    <Label htmlFor="show-education">Show</Label>
+                    <Switch id="show-education" checked={portfolio.displayOptions.showEducation} onCheckedChange={(checked) => handleDisplayOptionChange('showEducation', checked)} />
+                </div>
+            </CardHeader>
             <CardContent className="space-y-6">
                 {portfolio.education.map((item, index) => (
                     <div key={index} className="space-y-4 p-4 border rounded-lg relative">
@@ -437,7 +474,13 @@ export default function PortfolioPage() {
         </Card>
 
         <Card className="shadow-lg border-primary/10">
-          <CardHeader><CardTitle>Projects</CardTitle></CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>Projects</CardTitle>
+             <div className="flex items-center gap-2">
+                <Label htmlFor="show-projects">Show</Label>
+                <Switch id="show-projects" checked={portfolio.displayOptions.showProjects} onCheckedChange={(checked) => handleDisplayOptionChange('showProjects', checked)} />
+            </div>
+          </CardHeader>
           <CardContent className="space-y-6">
             {portfolio.projects.map((item, index) => (
                 <div key={index} className="space-y-4 p-4 border rounded-lg relative">
@@ -461,7 +504,13 @@ export default function PortfolioPage() {
         </Card>
 
         <Card className="shadow-lg border-primary/10">
-          <CardHeader><CardTitle>Certificates</CardTitle></CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>Certificates</CardTitle>
+            <div className="flex items-center gap-2">
+                <Label htmlFor="show-certificates">Show</Label>
+                <Switch id="show-certificates" checked={portfolio.displayOptions.showCertificates} onCheckedChange={(checked) => handleDisplayOptionChange('showCertificates', checked)} />
+            </div>
+          </CardHeader>
           <CardContent className="space-y-6">
             {portfolio.certificates.map((item, index) => (
                 <div key={index} className="space-y-4 p-4 border rounded-lg relative">
@@ -484,7 +533,13 @@ export default function PortfolioPage() {
         </Card>
 
         <Card className="shadow-lg border-primary/10">
-            <CardHeader><CardTitle>Achievements</CardTitle></CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle>Achievements</CardTitle>
+                <div className="flex items-center gap-2">
+                    <Label htmlFor="show-achievements">Show</Label>
+                    <Switch id="show-achievements" checked={portfolio.displayOptions.showAchievements} onCheckedChange={(checked) => handleDisplayOptionChange('showAchievements', checked)} />
+                </div>
+            </CardHeader>
             <CardContent className="space-y-6">
                 {portfolio.achievements.map((item, index) => (
                     <div key={index} className="space-y-4 p-4 border rounded-lg relative">
@@ -505,7 +560,13 @@ export default function PortfolioPage() {
         </Card>
 
         <Card className="shadow-lg border-primary/10">
-            <CardHeader><CardTitle>Testimonials</CardTitle></CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle>Testimonials</CardTitle>
+                <div className="flex items-center gap-2">
+                    <Label htmlFor="show-testimonials">Show</Label>
+                    <Switch id="show-testimonials" checked={portfolio.displayOptions.showTestimonials} onCheckedChange={(checked) => handleDisplayOptionChange('showTestimonials', checked)} />
+                </div>
+            </CardHeader>
             <CardContent className="space-y-6">
                 {portfolio.testimonials.map((item, index) => (
                     <div key={index} className="space-y-4 p-4 border rounded-lg relative">
@@ -519,7 +580,13 @@ export default function PortfolioPage() {
         </Card>
 
         <Card className="shadow-lg border-primary/10">
-            <CardHeader><CardTitle>FAQs</CardTitle></CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle>FAQs</CardTitle>
+                <div className="flex items-center gap-2">
+                    <Label htmlFor="show-faqs">Show</Label>
+                    <Switch id="show-faqs" checked={portfolio.displayOptions.showFaqs} onCheckedChange={(checked) => handleDisplayOptionChange('showFaqs', checked)} />
+                </div>
+            </CardHeader>
             <CardContent className="space-y-6">
                 {portfolio.faqs.map((item, index) => (
                     <div key={index} className="space-y-4 p-4 border rounded-lg relative">

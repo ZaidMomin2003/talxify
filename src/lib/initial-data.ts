@@ -1,4 +1,5 @@
 
+
 import type { UserData } from './types';
 
 export const initialPortfolioData: UserData = {
@@ -13,6 +14,19 @@ export const initialPortfolioData: UserData = {
             email: 'john.doe@example.com',
             phone: '+1 234 567 890',
             youtubeVideoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        },
+        displayOptions: {
+            showAbout: true,
+            showVideo: true,
+            showStats: true,
+            showSkills: true,
+            showExperience: true,
+            showEducation: true,
+            showProjects: true,
+            showCertificates: true,
+            showAchievements: true,
+            showTestimonials: true,
+            showFaqs: true,
         },
         themeColor: '221.2 83.2% 53.3%',
         socials: {

@@ -1,5 +1,6 @@
 
 
+
 import type { AnswerAnalysis } from "@/ai/flows/analyze-coding-answers";
 import type { GenerateInterviewFeedbackOutput } from "@/ai/flows/generate-interview-feedback";
 import type { QuizState } from "@/app/dashboard/coding-quiz/quiz/page";
@@ -120,6 +121,19 @@ export interface Portfolio {
     achievements: Achievement[];
     testimonials: Testimonial[];
     faqs: FAQ[];
+    displayOptions: {
+        showAbout: boolean;
+        showVideo: boolean;
+        showStats: boolean;
+        showSkills: boolean;
+        showExperience: boolean;
+        showEducation: boolean;
+        showProjects: boolean;
+        showCertificates: boolean;
+        showAchievements: boolean;
+        showTestimonials: boolean;
+        showFaqs: boolean;
+    }
 }
 
 export interface PersonalInfo {
@@ -206,7 +220,7 @@ const EducationSchema = z.object({
 });
 
 const SkillSchema = z.object({ name: z.string() });
-const LanguageSchema = z.object({ name: z.string(), proficiency: z.string(), level: number() });
+const LanguageSchema = z.object({ name: z.string(), proficiency: z.string(), level: z.number() });
 const HobbySchema = z.object({ name: z.string() });
 
 export const ResumeDataInputSchema = z.object({
