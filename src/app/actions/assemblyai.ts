@@ -13,20 +13,18 @@ export async function getAssemblyAiToken(): Promise<string> {
     throw new Error('Server configuration error: AssemblyAI API key is missing.');
   }
   
-  // The token endpoint for the v3 streaming API.
-  const url = 'https://streaming.assemblyai.com/v3/token';
-  const params = new URLSearchParams({
-      expires_in_seconds: '3600' // Token valid for 1 hour
-  });
+  // Manually construct the URL with the required query parameter.
+  const url = 'https://streaming.assemblyai.com/v3/token?expires_in_seconds=3600';
 
-  console.log(`[assemblyai.ts] Attempting to generate token via GET from: ${url}?${params}`);
+  console.log(`[assemblyai.ts] Attempting to generate token via GET from: ${url}`);
 
   try {
-    const response = await fetch(`${url}?${params.toString()}`, {
+    const response = await fetch(url, {
       method: 'GET',
       headers: {
         'Authorization': `${apiKey}`, // The v3 token endpoint does not require the "Bearer" prefix.
       },
+      cache: 'no-store', // Disable caching to ensure a fresh request every time
     });
 
     if (!response.ok) {
