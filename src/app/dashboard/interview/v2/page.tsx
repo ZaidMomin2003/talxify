@@ -55,10 +55,9 @@ export default function InterviewV2Page() {
           const audio = audioPlayerRef.current;
           const onAudioEnd = () => {
             if(newState.isComplete) {
-              // endSession(true); // TODO: Implement end session logic
               setStatus('ending');
             } else {
-              setStatus('connected');
+              startRecording(); // Automatically start listening for user's turn
             }
             audio?.removeEventListener('ended', onAudioEnd);
           };
@@ -67,7 +66,7 @@ export default function InterviewV2Page() {
         } catch (error) {
           console.error("Error processing AI response:", error);
           toast({ title: "AI Error", description: "Could not get a response from the AI. Please try again.", variant: "destructive"});
-          setStatus('connected');
+          setStatus('error');
         }
     }, [toast]);
     
@@ -89,41 +88,58 @@ export default function InterviewV2Page() {
         await processAndRespond(initialState);
     };
 
-    const startRecording = async () => {
-        if (recorderRef.current) return;
+    const stopRecordingAndProcess = useCallback(() => {
+        if (recorderRef.current && recorderRef.current.state === 'recording') {
+            recorderRef.current.stop();
+        }
+    }, []);
 
-        if (!socketRef.current || socketRef.current.readyState !== WebSocket.OPEN) {
-            try {
-                const token = await getAssemblyAiToken();
-                const wsUrl = `wss://streaming.assemblyai.com/v3/ws?token=${token}`;
-                socketRef.current = new WebSocket(wsUrl);
+    const startRecording = useCallback(async () => {
+        if (recorderRef.current || status === 'listening') return;
+        
+        setStatus('connecting');
 
-                socketRef.current.onopen = () => {
-                    socketRef.current?.send(JSON.stringify({ audio_format: "audio/webm" }));
-                };
+        try {
+            const token = await getAssemblyAiToken();
+            const wsUrl = `wss://streaming.assemblyai.com/v3/ws?token=${token}`;
+            socketRef.current = new WebSocket(wsUrl);
 
-                socketRef.current.onmessage = (message) => {
-                    const res = JSON.parse(message.data);
-                    if (res.message_type === 'PartialTranscript' && res.text) {
-                        setInterimTranscript(res.text);
-                    } else if (res.message_type === 'FinalTranscript' && res.text) {
-                        finalTranscriptRef.current = res.text;
-                        setInterimTranscript('');
-                    }
-                };
+            socketRef.current.onopen = () => {
+                socketRef.current?.send(JSON.stringify({
+                    audio_format: "audio/webm",
+                    turn_detection: true,
+                    end_of_turn_confidence_threshold: 0.7,
+                    min_end_of_turn_silence_when_confident: 400,
+                    max_turn_silence: 1200
+                }));
+            };
 
-                socketRef.current.onerror = (event) => {
-                    console.error("WebSocket error:", event);
-                    setStatus('error');
-                    toast({ title: "Connection Error", description: "Could not connect to transcription service.", variant: "destructive" });
-                };
+            socketRef.current.onmessage = (message) => {
+                const res = JSON.parse(message.data);
+                if (res.message_type === 'PartialTranscript' && res.text) {
+                    setInterimTranscript(res.text);
+                } else if (res.message_type === 'FinalTranscript' && res.text) {
+                    finalTranscriptRef.current += res.text + ' ';
+                } else if (res.end_of_turn) {
+                    stopRecordingAndProcess();
+                }
+            };
 
-            } catch (error: any) {
-                console.error("Failed to start transcription session:", error);
+            socketRef.current.onerror = (event) => {
+                console.error("WebSocket error:", event);
                 setStatus('error');
-                toast({ title: "Initialization Failed", description: error.message, variant: "destructive" });
-                return;
+                toast({ title: "Connection Error", description: "Could not connect to transcription service.", variant: "destructive" });
+            };
+            
+            socketRef.current.onclose = () => {
+                 socketRef.current = null;
             }
+
+        } catch (error: any) {
+            console.error("Failed to start transcription session:", error);
+            setStatus('error');
+            toast({ title: "Initialization Failed", description: error.message, variant: "destructive" });
+            return;
         }
         
         const waitForConnection = (callback: () => void, retries = 10) => {
@@ -150,6 +166,33 @@ export default function InterviewV2Page() {
                          socketRef.current.send(event.data);
                     }
                 });
+
+                recorder.onstop = () => {
+                    if (socketRef.current?.readyState === WebSocket.OPEN) {
+                         socketRef.current.send(JSON.stringify({ terminate_session: true }));
+                    }
+                    
+                    setStatus('processing');
+                    const userTranscript = finalTranscriptRef.current.trim();
+                    setInterimTranscript('');
+                    
+                    if (userTranscript && interviewState) {
+                        setTranscript(prev => [...prev, { speaker: 'user', text: userTranscript }]);
+                        const newHistory = [...interviewState.history, { role: 'user', content: userTranscript }];
+                        const newState = { ...interviewState, history: newHistory };
+                        setInterviewState(newState);
+                        processAndRespond(newState);
+                    } else {
+                        // If no transcript, just go back to listening state
+                        startRecording();
+                    }
+
+                    // Clean up for next turn
+                    const aStream = recorderRef.current?.stream;
+                    aStream?.getTracks().forEach(track => track.stop());
+                    recorderRef.current = null;
+                    finalTranscriptRef.current = '';
+                };
                 
                 recorder.start(250); // Send data every 250ms
                 setStatus('listening');
@@ -159,71 +202,9 @@ export default function InterviewV2Page() {
                 setStatus('error');
             }
         });
-    };
+    }, [status, stopRecordingAndProcess, toast, interviewState, processAndRespond]);
 
-    const stopRecordingAndProcess = () => {
-        if (recorderRef.current && recorderRef.current.state === 'recording') {
-            recorderRef.current.stop();
-            
-            // This event listener handles processing after the recording stops.
-            recorderRef.current.onstop = () => {
-                if(socketRef.current?.readyState === WebSocket.OPEN) {
-                     socketRef.current.send(JSON.stringify({ terminate_session: true }));
-                     socketRef.current.close();
-                     socketRef.current = null;
-                }
-                
-                const userTranscript = finalTranscriptRef.current;
-                
-                if (userTranscript && interviewState) {
-                    setTranscript(prev => [...prev, { speaker: 'user', text: userTranscript }]);
-                    const newHistory = [...interviewState.history, { role: 'user', content: userTranscript }];
-                    const newState = { ...interviewState, history: newHistory };
-                    setInterviewState(newState);
-                    processAndRespond(newState);
-                } else {
-                    toast({ title: "Couldn't hear you", description: "The AI didn't catch that. Please try speaking again.", variant: "destructive"});
-                    setStatus('connected');
-                }
-
-                // Clean up
-                const stream = recorderRef.current?.stream;
-                stream?.getTracks().forEach(track => track.stop());
-                recorderRef.current = null;
-                finalTranscriptRef.current = '';
-            };
-        }
-    };
     
-    const handleKeyDown = useCallback((event: KeyboardEvent) => {
-        if (event.code === 'Space' && !event.repeat && (status === 'connected' || status === 'idle' || status === 'error')) {
-          event.preventDefault();
-          if (status === 'idle') {
-              startSession(); // Start the whole session if it's the first time
-          } else {
-              startRecording();
-          }
-        }
-    }, [status]);
-
-    const handleKeyUp = useCallback((event: KeyboardEvent) => {
-        if (event.code === 'Space' && status === 'listening') {
-            event.preventDefault();
-            setStatus('processing');
-            stopRecordingAndProcess();
-        }
-    }, [status]);
-    
-    useEffect(() => {
-        window.addEventListener('keydown', handleKeyDown);
-        window.addEventListener('keyup', handleKeyUp);
-        return () => {
-            window.removeEventListener('keydown', handleKeyDown);
-            window.removeEventListener('keyup', handleKeyUp);
-        };
-    }, [handleKeyDown, handleKeyUp]);
-
-
     // Cleanup on component unmount
     useEffect(() => {
         return () => {
@@ -331,18 +312,24 @@ export default function InterviewV2Page() {
 
         {/* Footer Controls */}
         <footer className="flex-shrink-0 flex justify-center items-center gap-4 py-4 border-t">
-            <Button variant={status === 'listening' ? 'destructive' : 'secondary'} size="icon" className="rounded-full h-14 w-14">
-                {status === 'listening' ? <MicOff className="h-6 w-6" /> : <Mic className="h-6 w-6" />}
-            </Button>
-             <Button variant="secondary" size="icon" className="rounded-full h-14 w-14">
-                <Video className="h-6 w-6" />
-            </Button>
-            <Button variant="destructive" size="icon" className="rounded-full h-16 w-16">
-                <Phone className="h-7 w-7" />
-            </Button>
+             {status === 'idle' ? (
+                <Button size="lg" onClick={startSession}>Start Interview</Button>
+             ) : (
+                <>
+                    <Button variant={status === 'listening' ? 'destructive' : 'secondary'} size="icon" className="rounded-full h-14 w-14" onClick={() => status === 'listening' ? stopRecordingAndProcess() : startRecording()}>
+                        <Mic className="h-6 w-6" />
+                    </Button>
+                     <Button variant="secondary" size="icon" className="rounded-full h-14 w-14">
+                        <Video className="h-6 w-6" />
+                    </Button>
+                    <Button variant="destructive" size="icon" className="rounded-full h-16 w-16">
+                        <Phone className="h-7 w-7" />
+                    </Button>
+                </>
+             )}
         </footer>
     </div>
   );
 }
 
-    
+
