@@ -177,7 +177,7 @@ function DashboardLayoutContent({
     { href: "/dashboard", label: "Dashboard", icon: LayoutGrid },
     { href: "/dashboard/arena", label: "Arena", icon: Swords },
     { href: "/dashboard/resume-builder", label: "Resume Builder", icon: FileText, isFree: true },
-    { href: "/dashboard/portfolio", label: "Portfolio", icon: User },
+    { href: "/dashboard/portfolio", label: "Portfolio Builder", icon: User },
   ];
   
   const recentActivity = userData?.activity?.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()) || [];
