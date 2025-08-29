@@ -85,19 +85,10 @@
 }
 
 @layer utilities {
-    @keyframes move-blobs {
-        0%, 100% {
-            transform: translate(0, 0) scale(1);
-        }
-        25% {
-            transform: translate(20px, -30px) scale(1.05);
-        }
-        50% {
-            transform: translate(-10px, 15px) scale(0.95);
-        }
-        75% {
-            transform: translate(15px, 25px) scale(1.02);
-        }
+    @keyframes move-gradient {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
     }
 
     .thermal-gradient-bg {
@@ -108,7 +99,8 @@
             radial-gradient(at 50% 80%, hsla(45, 95%, 55%, 0.7) 0px, transparent 50%),
             radial-gradient(at 75% 75%, hsla(260, 70%, 40%, 0.5) 0px, transparent 50%),
             radial-gradient(at 10% 90%, hsla(340, 85%, 60%, 0.6) 0px, transparent 50%);
-        animation: move-blobs 20s ease-in-out infinite alternate;
+        background-size: 200% 200%;
+        animation: move-gradient 20s ease-in-out infinite;
     }
 }
 
