@@ -17,6 +17,57 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 
 const MAX_RETAKES = 8;
 
+const demoInterviewData: InterviewActivity = {
+    id: 'demo',
+    type: 'interview',
+    timestamp: new Date().toISOString(),
+    transcript: [
+        { speaker: 'ai', text: 'Welcome! Let\'s talk about React Hooks. Can you explain what the `useEffect` hook is and its primary purpose?' },
+        { speaker: 'user', text: 'Sure, useEffect is a hook that lets you perform side effects in function components. It runs after every render by default.' },
+        { speaker: 'ai', text: 'Good start. What are some common examples of side effects you would manage with `useEffect`?' },
+        { speaker: 'user', text: 'Things like fetching data from an API, setting up subscriptions, or manually changing the DOM.' },
+    ],
+    feedback: "Feedback generated.",
+    details: {
+        topic: 'React Hooks',
+        role: 'Frontend Developer',
+        level: 'Mid-level',
+        company: 'Innovate Inc.',
+    }
+};
+
+const demoAnalysisData: GenerateInterviewFeedbackOutput = {
+    overallScore: 82,
+    summary: 'A strong performance overall. You have a solid grasp of React Hooks but could improve the depth of your explanations on dependency arrays and cleanup functions.',
+    strengths: [
+        'Clear and concise initial explanations.',
+        'Good understanding of common use cases for `useEffect`.',
+        'Demonstrated knowledge of the component lifecycle.'
+    ],
+    areasForImprovement: [
+        'Provide more detail on how the dependency array optimizes performance.',
+        'Explain the importance of the cleanup function in `useEffect` to prevent memory leaks.',
+        'Structure answers more completely, especially for behavioral questions.'
+    ],
+    questionFeedback: [
+        {
+            question: 'Can you explain what the `useEffect` hook is and its primary purpose?',
+            userAnswer: 'Sure, useEffect is a hook that lets you perform side effects in function components. It runs after every render by default.',
+            feedback: 'Your answer is correct and concise. To make it even better, you could have mentioned the dependency array and how it controls when the effect runs.',
+            idealAnswer: '`useEffect` is a React Hook that lets you synchronize a component with an external system. It’s used for side effects like data fetching, subscriptions, or manually changing the DOM. It runs after render, and you can control its execution by passing a dependency array, making it run only when specific values change.',
+            score: 85
+        },
+        {
+            question: 'What are some common examples of side effects you would manage with `useEffect`?',
+            userAnswer: 'Things like fetching data from an API, setting up subscriptions, or manually changing the DOM.',
+            feedback: 'Excellent examples! You covered the most common and important use cases for `useEffect`, showing practical knowledge.',
+            idealAnswer: 'Common side effects include fetching data from an API, setting up or cleaning up subscriptions (like to a WebSocket), manually manipulating the DOM (though it should be a last resort), and setting a document title. Essentially, any interaction with the world outside of the React component itself.',
+            score: 90
+        }
+    ]
+};
+
+
 export default function InterviewResultsPage() {
     const router = useRouter();
     const params = useParams();
@@ -30,22 +81,29 @@ export default function InterviewResultsPage() {
     const [retakeCount, setRetakeCount] = useState(0);
 
     const fetchAndAnalyze = useCallback(async () => {
-        if (!user || !params.interviewId) return;
+        const interviewId = params.interviewId as string;
+
+        if (interviewId === 'demo') {
+            setInterviewData(demoInterviewData);
+            setAnalysis(demoAnalysisData);
+            setRetakeCount(2); // Show some retakes for demo
+            setIsLoading(false);
+            return;
+        }
+
+        if (!user) return;
 
         setIsLoading(true);
         try {
             let currentInterview: InterviewActivity | null = null;
             
-            // Check for data passed via URL first
             const dataFromUrl = searchParams.get('data');
             if (dataFromUrl) {
                 currentInterview = JSON.parse(dataFromUrl) as InterviewActivity;
-                // Save the data to Firestore in the background
                 await addActivity(user.uid, currentInterview).catch(err => console.error("Failed to save URL data", err));
             } else {
-                // Fallback to fetching from Firestore
                 const allActivity = await getActivity(user.uid);
-                currentInterview = allActivity.find(a => a.id === params.interviewId && a.type === 'interview') as InterviewActivity | undefined || null;
+                currentInterview = allActivity.find(a => a.id === interviewId && a.type === 'interview') as InterviewActivity | undefined || null;
             }
 
             if (!currentInterview) {
@@ -58,7 +116,6 @@ export default function InterviewResultsPage() {
             const retakes = await getRetakeCount(user.uid, currentInterview.details.topic);
             setRetakeCount(retakes);
             
-            // Check if analysis is already stored
             if (currentInterview.analysis && Object.keys(currentInterview.analysis).length > 0) {
                 setAnalysis(currentInterview.analysis);
             } else {
@@ -72,10 +129,9 @@ export default function InterviewResultsPage() {
                     });
                     setAnalysis(feedback);
                     
-                    // Store the analysis back to Firebase
                     const updatedInterview: InterviewActivity = { ...currentInterview, analysis: feedback };
                     await updateActivity(user.uid, updatedInterview);
-                    setInterviewData(updatedInterview); // Update local state with analysis
+                    setInterviewData(updatedInterview);
 
                  } catch(error) {
                     console.error("Failed to generate interview feedback:", error);
