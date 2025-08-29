@@ -136,12 +136,10 @@ export default function ArenaPage() {
             const quizTopic = isDay30 ? syllabus.slice(0, 29).map(d => d.topic).join(', ') : topic;
             router.push(`/dashboard/coding-gym?topic=${encodeURIComponent(quizTopic)}`);
         } else if (type === 'interview') {
-            if (interviewId) {
-                router.push(`/dashboard/interview/${interviewId}`);
-            } else {
-                 const interviewTopic = isDay30 ? 'Final Comprehensive Review' : topic;
-                 router.push(`/dashboard/interview/setup?topic=${encodeURIComponent(interviewTopic)}`);
-            }
+            // Whether it's a new interview or a retake, go to the setup/instructions flow.
+            // The setup page will handle creating a new ID or using an existing one.
+            const interviewTopic = isDay30 ? 'Final Comprehensive Review' : topic;
+            router.push(`/dashboard/interview/setup?topic=${encodeURIComponent(interviewTopic)}`);
         }
     }
 
