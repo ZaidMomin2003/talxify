@@ -10,8 +10,6 @@ import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { getAssemblyAiToken } from '@/app/actions/assemblyai';
-import { AssemblyAI } from 'assemblyai';
-
 
 type SessionStatus = 'idle' | 'connecting' | 'connected' | 'listening' | 'processing' | 'error';
 type TranscriptEntry = {
@@ -44,7 +42,6 @@ export default function InterviewV2Page() {
             }
             console.log("Token received from server.");
             
-            // Correctly form the WebSocket URL for the V3 streaming API
             const wsUrl = `wss://streaming.assemblyai.com/v3/ws?token=${token}`;
             const socket = new WebSocket(wsUrl);
             socketRef.current = socket;
@@ -52,7 +49,6 @@ export default function InterviewV2Page() {
             socket.onopen = () => {
                 setStatus('connected');
                 toast({ title: "Connected!", description: "You are now connected to the transcription service." });
-                // Correctly configure the audio format to match what the browser provides
                 socketRef.current?.send(JSON.stringify({
                     audio_format: "audio/webm",
                 }));
@@ -92,7 +88,6 @@ export default function InterviewV2Page() {
             await startTranscription();
         }
         
-        // Wait for connection to be ready before starting recorder
         const waitForConnection = (callback: () => void, retries = 10) => {
             if (retries <= 0) {
                 setStatus('error');
@@ -114,12 +109,8 @@ export default function InterviewV2Page() {
 
                 recorder.addEventListener('dataavailable', (event) => {
                     if (event.data.size > 0 && socketRef.current?.readyState === WebSocket.OPEN) {
-                        const reader = new FileReader();
-                        reader.onload = () => {
-                            const base64AudioData = (reader.result as string).split(',')[1];
-                             socketRef.current?.send(JSON.stringify({ audio: base64AudioData }));
-                        };
-                        reader.readAsDataURL(event.data);
+                         // Send the raw audio data (Blob) directly
+                         socketRef.current.send(event.data);
                     }
                 });
                 
@@ -137,7 +128,6 @@ export default function InterviewV2Page() {
         if (recorderRef.current && recorderRef.current.state === 'recording') {
             recorderRef.current.stop();
             
-             // Gently stop the microphone track
             const stream = recorderRef.current.stream;
             stream.getTracks().forEach(track => track.stop());
         }
