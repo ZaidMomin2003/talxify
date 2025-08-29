@@ -6,7 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Briefcase, PlayCircle, Loader2, Building, RefreshCw, Alert, AlertDescription, AlertTitle, AlertTriangle } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Briefcase, PlayCircle, Loader2, Building, RefreshCw, AlertTriangle } from 'lucide-react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import React, { Suspense, useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/context/auth-context';
@@ -27,7 +28,7 @@ function Instructions() {
 
   const [topic, setTopic] = useState(initialTopic);
   const [level, setLevel] = useState(searchParams.get('level') || 'entry-level');
-  const [role, setRole] = useState(searchParams.get('role') || 'Software Engineer');
+  const [role, setRole] = useState(search_params.get('role') || 'Software Engineer');
   const [company, setCompany] = useState(searchParams.get('company') || '');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
