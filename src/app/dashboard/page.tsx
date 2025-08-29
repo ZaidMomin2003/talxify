@@ -83,6 +83,7 @@ export default function DashboardPage() {
     const quizzes = allActivity.filter(item => item.type === 'quiz') as QuizResult[];
     const interviews = allActivity.filter(item => item.type === 'interview') as InterviewActivity[];
     const completedQuizzes = quizzes.filter(item => item.analysis.length > 0);
+    const completedInterviews = interviews.filter(item => item.analysis && item.analysis.overallScore);
 
     const solved = completedQuizzes.reduce((acc, quiz) => acc + quiz.quizState.length, 0);
 
@@ -95,16 +96,13 @@ export default function DashboardPage() {
     
     const quizTaken = completedQuizzes.length > 0;
     
-    const perfData = [...completedQuizzes]
-        .sort((a,b) => new Date(a.timestamp).getTime() - new Date(a.timestamp).getTime())
-        .map((result) => {
-            const totalQuizScore = result.analysis.reduce((sum, item) => sum + item.score, 0);
-            const averageQuizScore = Math.round((totalQuizScore / Math.max(result.analysis.length, 1)) * 100);
-            return {
-                name: format(new Date(result.timestamp), 'MMM d'),
-                score: averageQuizScore,
-            };
-        });
+    const perfData = [...completedInterviews]
+        .sort((a,b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
+        .map((result, index) => ({
+            name: `Interview #${index + 1}`,
+            score: result.analysis?.overallScore ?? 0,
+        }));
+
 
     // Arena progress calculation
     const syllabus = userData?.syllabus || [];
@@ -258,7 +256,7 @@ export default function DashboardPage() {
               <CardHeader>
                   <CardTitle>Performance Over Time</CardTitle>
                   <CardDescription>
-                      Your average quiz scores over time. Complete more quizzes to see your progress!
+                      Your overall interview scores over time. Complete more interviews to see your progress!
                   </CardDescription>
               </CardHeader>
               <CardContent className="h-[300px] w-full pr-6">
@@ -287,7 +285,7 @@ export default function DashboardPage() {
                       <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
                           <BarChart className="w-12 h-12 mb-4" />
                           <p className="font-semibold">No performance data yet</p>
-                          <p className="text-sm">Take a quiz to see your progress.</p>
+                          <p className="text-sm">Take a mock interview to see your progress.</p>
                       </div>
                   )}
               </CardContent>
