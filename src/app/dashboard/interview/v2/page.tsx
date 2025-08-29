@@ -29,9 +29,13 @@ export default function InterviewV2Page() {
     const recorderRef = useRef<MediaRecorder | null>(null);
     
     const startTranscription = async () => {
+        if (socketRef.current) return;
+        
         setStatus('connecting');
         try {
+            console.log("Requesting temporary token from server...");
             const token = await getAssemblyAiToken();
+            console.log("Token received from server.");
             
             const socket = new WebSocket(`wss://api.assemblyai.com/v2/realtime/ws?sample_rate=16000&token=${token}`);
             socketRef.current = socket;
@@ -59,13 +63,15 @@ export default function InterviewV2Page() {
             };
 
         } catch (error: any) {
-            console.error(error);
+            console.error("Failed to start transcription session:", error);
             setStatus('error');
-            toast({ title: "Initialization Failed", description: "Could not get an auth token for the transcription service.", variant: "destructive" });
+            toast({ title: "Initialization Failed", description: error.message, variant: "destructive" });
         }
     };
     
     const startRecording = async () => {
+        if (recorderRef.current) return;
+
         if (socketRef.current?.readyState !== WebSocket.OPEN) {
             await startTranscription();
         }
@@ -87,7 +93,7 @@ export default function InterviewV2Page() {
         waitForConnection(async () => {
              try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                const recorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+                const recorder = new MediaRecorder(stream);
                 recorderRef.current = recorder;
 
                 recorder.addEventListener('dataavailable', (event) => {
@@ -97,6 +103,7 @@ export default function InterviewV2Page() {
                 });
                 
                 recorder.start(250); // Send data every 250ms
+                setStatus('listening');
             } catch(err) {
                 console.error("Microphone access error:", err);
                 toast({title: "Microphone Error", description: "Could not access your microphone.", variant: "destructive"});
@@ -116,9 +123,9 @@ export default function InterviewV2Page() {
         if(socketRef.current?.readyState === WebSocket.OPEN) {
              socketRef.current.send(JSON.stringify({ terminate_session: true }));
              socketRef.current.close();
+             socketRef.current = null;
         }
         recorderRef.current = null;
-        socketRef.current = null;
         setStatus('connected');
     };
     
@@ -126,7 +133,6 @@ export default function InterviewV2Page() {
     const handleKeyDown = useCallback((event: KeyboardEvent) => {
         if (event.code === 'Space' && !event.repeat && (status === 'connected' || status === 'idle')) {
           event.preventDefault();
-          setStatus('listening');
           startRecording();
         }
     }, [status]);

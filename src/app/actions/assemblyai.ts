@@ -11,15 +11,16 @@ export async function getAssemblyAiToken(): Promise<string> {
   const apiKey = process.env.ASSEMBLYAI_API_KEY;
 
   if (!apiKey) {
-    console.error('CRITICAL: ASSEMBLYAI_API_KEY environment variable not set.');
+    console.error('CRITICAL: ASSEMBLYAI_API_KEY environment variable not set on the server.');
     throw new Error('CRITICAL: ASSEMBLYAI_API_KEY environment variable not set on the server. Please add it to your .env file and restart the server.');
   }
 
   const client = new AssemblyAI({ apiKey });
 
   try {
-    // Correctly generate the token using the 'streaming' namespace as per official docs.
-    const token = await client.streaming.createTemporaryToken({ expires_in: 3600 }); // expires_in is correct, not expires_in_seconds for the SDK
+    // This is the correct method for generating a streaming token.
+    // The `expires_in` parameter sets the token's validity duration in seconds.
+    const token = await client.streaming.createTemporaryToken({ expires_in: 3600 }); 
     return token;
   } catch (error: any) {
     console.error('Error generating AssemblyAI token:', error);
