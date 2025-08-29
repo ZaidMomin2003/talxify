@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback, Suspense } from 'react';
@@ -50,13 +51,22 @@ function InterviewPageContent() {
         transcriptEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [transcript]);
     
-    const endSession = useCallback(async (isFinished: boolean = false) => {
+    const endSession = useCallback(async () => {
         setStatus('ending');
+    
+        // Stop any ongoing recording
         if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
             mediaRecorderRef.current.stop();
         }
-        
-        if (user && isFinished && transcript.length > 0 && interviewState) {
+
+        // Stop any ongoing audio playback
+        if(audioPlayerRef.current) {
+            audioPlayerRef.current.pause();
+            audioPlayerRef.current.src = '';
+        }
+    
+        // If the interview has started, save the activity
+        if (user && interviewState) {
             const finalActivity: InterviewActivity = {
                 id: interviewId,
                 type: 'interview',
@@ -70,13 +80,17 @@ function InterviewPageContent() {
                     company: interviewState.company,
                 }
             };
-            await addActivity(user.uid, finalActivity);
-            router.push(`/dashboard/interview/${interviewId}/results`);
-        } else if (isFinished) {
-            router.push(`/dashboard/interview/${interviewId}/results`);
-        } else {
-            router.push('/dashboard');
+            // Use try-catch for robustness, but don't block navigation
+            try {
+                await addActivity(user.uid, finalActivity);
+            } catch (error) {
+                console.error("Failed to save activity on premature exit:", error);
+            }
         }
+    
+        // Immediately navigate to the results page
+        router.push(`/dashboard/interview/${interviewId}/results`);
+    
       }, [user, transcript, interviewState, interviewId, router]);
 
 
@@ -101,7 +115,7 @@ function InterviewPageContent() {
           const onAudioEnd = () => {
             if(newState.isComplete) {
                setTimeout(() => {
-                endSession(true);
+                endSession();
                }, 2000);
             } else {
               setStatus('ready');
@@ -330,7 +344,7 @@ function InterviewPageContent() {
             <Button variant="secondary" size="icon" className="rounded-full h-14 w-14">
                 <Video className="h-6 w-6" />
             </Button>
-            <Button variant="destructive" size="icon" className="rounded-full h-16 w-16" onClick={() => endSession(true)}>
+            <Button variant="destructive" size="icon" className="rounded-full h-16 w-16" onClick={endSession}>
                 <Phone className="h-7 w-7" />
             </Button>
         </footer>
