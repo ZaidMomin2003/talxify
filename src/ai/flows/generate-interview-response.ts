@@ -1,87 +1,59 @@
-
 'use server';
 
 /**
- * @fileOverview A flow to generate conversational responses for a mock interview.
- * This flow is designed for a streaming, low-latency setup and uses Groq.
+ * @fileOverview A flow to generate conversational responses for a mock interview using Groq.
+ * This flow is designed for a streaming, low-latency setup.
  */
 
-import Groq from 'groq-sdk';
 import { z } from 'genkit';
+import { Groq } from 'groq-sdk';
 import { InterviewStateSchema, type InterviewState, type InterviewResponse } from '@/lib/interview-types';
 
+if (!process.env.GROQ_API_KEY) {
+  throw new Error('GROQ_API_KEY is not set in environment variables.');
+}
+
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 const MAX_QUESTIONS = 6;
 
-// Initialize Groq client
-const groq = new Groq({
-    apiKey: process.env.GROQ_API_KEY,
-});
-
-
 const getSystemPrompt = (state: InterviewState) => `
-    You are Kathy, an expert, friendly, and professional AI interviewer. Your goal is to conduct a natural, conversational mock interview that lasts about ${MAX_QUESTIONS} questions.
-    You have an excited and encouraging tone. You should speak at a slightly slower, deliberate pace, and pause briefly (like for 100ms) after full stops to make the conversation feel more natural.
-    
+    You are Alex, an expert, friendly, and professional AI interviewer. Your goal is to conduct a natural, conversational mock interview that lasts about ${MAX_QUESTIONS} questions.
     The candidate is interviewing for a ${state.level} ${state.role} role. The main technical topic is: ${state.topic}.
+    The questions should be case-study based and relevant to the user's expertise.
     ${state.company ? `The interview is tailored for ${state.company}. Adapt your style accordingly (e.g., STAR method for Amazon, open-ended problem-solving for Google).` : ''}
 
     Conversation Rules:
-    1.  **Initial Greeting**: If the history is empty, your first message MUST be a simple, friendly greeting like "Hey, how are you today?" or "Hi there, how are you doing?". Do not ask an interview question yet.
-    2.  **Transition to Interview**: After the user responds to your initial greeting, your next response must acknowledge their reply and then smoothly transition into the first interview question. For example: "Great to hear. Well, let's dive right in. For your first question..."
-    3.  **Core Interaction Loop**: For all subsequent turns, ask ONE main question at a time. After the user answers, provide a VERY brief, natural acknowledgment (like "Okkkk, that makes sense," "Hmm, interesting approach," or "Ahh, I see.") before immediately asking the next logical follow-up question. Your entire response should be just 1-2 sentences.
-    4.  **Follow-up Style**: Your follow-up question should extend the previous topic or ask for more detail. Keep your responses extremely concise. DO NOT speak in long paragraphs.
-    5.  **Concluding the Interview**: After you have asked ${MAX_QUESTIONS} questions and the user has responded, you MUST conclude the interview.
-    6.  **Final Message**: Your final message MUST start with "Okay, that's all the questions I have for today. Great job!". Do not provide detailed feedback, as that is handled by another flow. Just give a brief concluding statement.
-    7.  **No "Goodbye"**: Do not say "goodbye" or other pleasantries in the final message. Just give the concluding statement and end.
+    1.  Start with a brief, friendly greeting if the history is empty.
+    2.  Ask ONE main question at a time.
+    3.  After the user answers, provide a VERY brief, natural acknowledgment (like "Okkkk, that makes sense," "Hmm, interesting approach," "Ahh, I see.") before immediately asking the next logical follow-up question. Your entire response should be just 1-2 sentences.
+    4.  Your follow-up question should extend the previous topic or ask for more detail.
+    5.  Keep your responses extremely concise. DO NOT speak in long paragraphs.
+    6.  After you have asked ${MAX_QUESTIONS} questions and the user has responded, you MUST conclude the interview.
+    7.  Your final message MUST be a fair and realistic review of the user's performance based on the entire conversation. Start with "Okay, that's all the questions I have. Here's my feedback...". Provide specific examples of their strengths and weaknesses. Be direct and constructive.
+    8.  Do not say "goodbye" or other pleasantries in the final review. Just give the feedback and end.
 `;
 
-const generateInterviewResponseFlow = async (state: InterviewState): Promise<string> => {
-    const systemPrompt = getSystemPrompt(state);
-    
-    // Construct the messages for the Groq API
-    const messages: Groq.Chat.Completions.ChatCompletionMessageParam[] = [
-        {
-            role: 'system',
-            content: systemPrompt,
-        },
-        // Map history to the format Groq expects
-        ...state.history.map(msg => ({
-            role: msg.role as 'user' | 'assistant',
-            content: msg.content
-        }))
-    ];
-
-    try {
-        const chatCompletion = await groq.chat.completions.create({
-            messages: messages,
-            model: "llama3-70b-8192", // Using a powerful model on Groq
-            temperature: 0.9,
-            max_tokens: 150,
-            top_p: 1,
-            stream: false, // Keep stream false for simple response
-        });
-        
-        return chatCompletion.choices[0]?.message?.content || "I'm sorry, I couldn't think of a response.";
-
-    } catch (error) {
-        console.error("Groq API Error in generateInterviewResponseFlow:", error);
-        throw new Error("The AI service (Groq) failed to respond. Please check API keys and service status.");
-    }
-}
-
-
 export async function generateInterviewResponse(state: InterviewState): Promise<InterviewResponse> {
-  const aiResponseText = await generateInterviewResponseFlow(state);
+  const systemPrompt = getSystemPrompt(state);
+  
+  const response = await groq.chat.completions.create({
+    model: 'llama3-70b-8192',
+    messages: [
+      { role: 'system', content: systemPrompt },
+      ...state.history,
+    ],
+    temperature: 0.7,
+    max_tokens: 250,
+  });
+
+  const aiResponseText = response.choices[0]?.message?.content || "I'm sorry, I seem to be having trouble responding.";
 
   const newState: InterviewState = { ...state };
-  // The role 'assistant' is the correct one for the AI's response in the history
   newState.history.push({ role: 'assistant', content: aiResponseText });
 
-  const assistantMessages = newState.history.filter(m => m.role === 'assistant').length;
-  // Subtract 1 for the initial greeting
-  const questionsAsked = Math.max(0, assistantMessages - 1); 
+  const questionsAsked = Math.floor(newState.history.length / 2);
   
-  if (questionsAsked >= MAX_QUESTIONS || aiResponseText.startsWith("Okay, that's all the questions I have")) {
+  if (questionsAsked >= MAX_QUESTIONS) {
       newState.isComplete = true;
   }
 
