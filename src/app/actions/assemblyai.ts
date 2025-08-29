@@ -3,6 +3,7 @@
 
 /**
  * This server action securely generates a temporary token for the AssemblyAI streaming transcription service.
+ * It now uses the correct v3 endpoint and a GET request as per the latest documentation.
  */
 export async function getAssemblyAiToken(): Promise<string> {
   const apiKey = process.env.ASSEMBLYAI_API_KEY;
@@ -12,22 +13,23 @@ export async function getAssemblyAiToken(): Promise<string> {
     throw new Error('Server configuration error: AssemblyAI API key is missing.');
   }
   
-  console.log('[assemblyai.ts] Attempting to generate token via POST...');
+  // The token endpoint for the v3 streaming API.
+  const url = 'https://streaming.assemblyai.com/v3/token';
+  const params = new URLSearchParams({
+      expires_in_seconds: '3600' // Token valid for 1 hour
+  });
+
+  console.log(`[assemblyai.ts] Attempting to generate token via GET from: ${url}?${params}`);
 
   try {
-    const response = await fetch("https://api.assemblyai.com/v2/realtime/token", {
-      method: 'POST',
+    const response = await fetch(`${url}?${params.toString()}`, {
+      method: 'GET',
       headers: {
-        // The "Authorization" header requires the key to be prefixed with "Bearer ".
-        // This was the cause of the 401 Unauthorized error.
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
+        'Authorization': `${apiKey}`, // The v3 token endpoint does not require the "Bearer" prefix.
       },
-      body: JSON.stringify({ expires_in: 3600 }) // This token will be valid for 1 hour.
     });
 
     if (!response.ok) {
-        // Log the detailed error from AssemblyAI
         const errorData = await response.text();
         console.error(`[assemblyai.ts] AssemblyAI token error (Status: ${response.status}):`, errorData);
         throw new Error(`Failed to fetch token. Status: ${response.status}. Body: ${errorData}`);
@@ -45,7 +47,6 @@ export async function getAssemblyAiToken(): Promise<string> {
     
   } catch (error: any) {
     console.error('[assemblyai.ts] Error in getAssemblyAiToken:', error);
-    // Re-throw with a user-friendly message, but log the original for debugging.
     throw new Error(`Authentication Failed: Could not get an auth token for the transcription service. Original error: ${error.message}`);
   }
 }
