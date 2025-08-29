@@ -35,7 +35,8 @@ const FeaturebaseMessenger = () => {
     if (user) {
         bootConfig.email = user.email ?? undefined;
         bootConfig.userId = user.uid;
-        bootConfig.createdAt = user.metadata?.creationTime;
+        bootConfig.name = user.displayName ?? undefined;
+        bootConfig.createdAt = user.metadata?.creationTime ? new Date(user.metadata.creationTime) : undefined;
     }
 
     win.Featurebase("boot", bootConfig);
