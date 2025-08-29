@@ -12,18 +12,18 @@ export async function getAssemblyAiToken(): Promise<string> {
 
   if (!apiKey) {
     console.error('CRITICAL: ASSEMBLYAI_API_KEY environment variable not set.');
-    throw new Error('AssemblyAI API key is not configured on the server.');
+    throw new Error('CRITICAL: ASSEMBLYAI_API_KEY environment variable not set on the server. Please add it to your .env file and restart the server.');
   }
 
   const client = new AssemblyAI({ apiKey });
 
   try {
-    // The SDK handles the API call to generate the token.
-    const token = await client.realtime.createTemporaryToken({ expires_in: 3600 }); // Token is valid for 1 hour
+    // Correctly generate the token using the 'streaming' namespace as per official docs.
+    const token = await client.streaming.createTemporaryToken({ expires_in: 3600 }); // expires_in is correct, not expires_in_seconds for the SDK
     return token;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error generating AssemblyAI token:', error);
-    // Re-throw the error to be caught by the client-side caller.
-    throw new Error('Failed to get a session token from AssemblyAI. Please check server logs.');
+    // Provide a more specific error message to the client.
+    throw new Error(`Authentication Failed: Could not get an auth token for the transcription service. Original error: ${error.message}`);
   }
 }
