@@ -4,22 +4,21 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Mic, MicOff, Video, VideoOff, Phone, Bot, User, MessageSquare, ChevronLeft, Loader2, Sparkles, AlertTriangle, Keyboard } from 'lucide-react';
+import { Mic, Video, Phone, Bot, User, MessageSquare, ChevronLeft, Loader2, Keyboard } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { getAssemblyAiToken } from '@/app/actions/assemblyai';
 import { generateInterviewResponse } from '@/ai/flows/generate-interview-response';
+import { speechToText } from '@/ai/flows/speech-to-text';
 import { textToSpeech } from '@/ai/flows/text-to-speech';
 import type { InterviewState } from '@/lib/interview-types';
 
-type SessionStatus = 'idle' | 'connecting' | 'speaking' | 'listening' | 'processing' | 'ending' | 'error';
+type SessionStatus = 'idle' | 'connecting' | 'speaking' | 'ready' | 'listening' | 'processing' | 'ending' | 'error';
 type TranscriptEntry = {
     speaker: 'user' | 'ai';
     text: string;
 };
-
 
 export default function InterviewV2Page() {
     const router = useRouter();
@@ -30,17 +29,15 @@ export default function InterviewV2Page() {
     const [interimTranscript, setInterimTranscript] = useState('');
     const [interviewState, setInterviewState] = useState<InterviewState | null>(null);
     
-    const socketRef = useRef<WebSocket | null>(null);
-    const recorderRef = useRef<MediaRecorder | null>(null);
     const audioPlayerRef = useRef<HTMLAudioElement>(null);
-    const finalTranscriptRef = useRef(''); // Store the final transcript from a single speech segment
+    const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+    const audioChunksRef = useRef<Blob[]>([]);
+    const transcriptEndRef = useRef<HTMLDivElement>(null);
 
-    const stopRecordingAndProcess = useCallback(() => {
-        if (recorderRef.current && recorderRef.current.state === 'recording') {
-            recorderRef.current.stop();
-        }
-    }, []);
-
+    useEffect(() => {
+        transcriptEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [transcript, interimTranscript]);
+    
     const processAndRespond = useCallback(async (state: InterviewState) => {
         if (!state) return;
         
@@ -63,7 +60,7 @@ export default function InterviewV2Page() {
             if(newState.isComplete) {
               setStatus('ending');
             } else {
-              startRecording(); // Automatically start listening for user's turn
+              setStatus('ready');
             }
             audio?.removeEventListener('ended', onAudioEnd);
           };
@@ -72,7 +69,7 @@ export default function InterviewV2Page() {
         } catch (error) {
           console.error("Error processing AI response:", error);
           toast({ title: "AI Error", description: "Could not get a response from the AI. Please try again.", variant: "destructive"});
-          setStatus('error');
+          setStatus('ready');
         }
     }, [toast]);
     
@@ -94,138 +91,99 @@ export default function InterviewV2Page() {
         await processAndRespond(initialState);
     };
 
+    // Push-to-talk handlers
+    const handleKeyDown = useCallback((event: KeyboardEvent) => {
+        if (event.code === 'Space' && !event.repeat && status === 'ready') {
+            event.preventDefault();
+            setStatus('listening');
+            setInterimTranscript("Listening...");
+            audioChunksRef.current = [];
+            mediaRecorderRef.current?.start();
+        }
+    }, [status]);
 
-    const startRecording = useCallback(async () => {
-        if (recorderRef.current || status === 'listening') return;
-        
-        setStatus('connecting');
-        finalTranscriptRef.current = '';
-        setInterimTranscript('');
+    const handleKeyUp = useCallback((event: KeyboardEvent) => {
+        if (event.code === 'Space' && status === 'listening') {
+            event.preventDefault();
+            setStatus('processing');
+            mediaRecorderRef.current?.stop();
+        }
+    }, [status]);
 
-        try {
-            const token = await getAssemblyAiToken();
-            const wsUrl = `wss://streaming.assemblyai.com/v3/ws?token=${token}`;
-            socketRef.current = new WebSocket(wsUrl);
+    useEffect(() => {
+        window.addEventListener('keydown', handleKeyDown);
+        window.addEventListener('keyup', handleKeyUp);
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+            window.removeEventListener('keyup', handleKeyUp);
+        };
+    }, [handleKeyDown, handleKeyUp]);
 
-            socketRef.current.onopen = () => {
-                socketRef.current?.send(JSON.stringify({
-                    audio_format: "audio/webm",
-                    turn_detection: true,
-                    end_of_turn_confidence_threshold: 0.7,
-                    min_end_of_turn_silence_when_confident: 400,
-                    max_turn_silence: 1200
-                }));
-            };
 
-            socketRef.current.onmessage = (message) => {
-                const res = JSON.parse(message.data);
-                if (res.message_type === 'PartialTranscript' && res.text) {
-                    setInterimTranscript(res.text);
-                } else if (res.message_type === 'FinalTranscript' && res.text) {
-                    finalTranscriptRef.current += res.text + ' ';
-                } else if (res.end_of_turn) {
-                    stopRecordingAndProcess();
-                }
-            };
-
-            socketRef.current.onerror = (event) => {
-                console.error("WebSocket error:", event);
-                setStatus('error');
-                toast({ title: "Connection Error", description: "Could not connect to transcription service.", variant: "destructive" });
+    // Initialize Media Recorder
+    useEffect(() => {
+        const initializeRecorder = async () => {
+          try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const recorder = new MediaRecorder(stream);
+            mediaRecorderRef.current = recorder;
+    
+            recorder.ondataavailable = (event) => {
+              if (event.data.size > 0) {
+                audioChunksRef.current.push(event.data);
+              }
             };
             
-            socketRef.current.onclose = () => {
-                 socketRef.current = null;
-            }
-
-        } catch (error: any) {
-            console.error("Failed to start transcription session:", error);
-            setStatus('error');
-            toast({ title: "Initialization Failed", description: error.message, variant: "destructive" });
-            return;
-        }
-        
-        const waitForConnection = (callback: () => void, retries = 10) => {
-            if (retries <= 0) {
-                setStatus('error');
-                toast({ title: "Connection Timeout", description: "Could not establish connection in time.", variant: "destructive"});
-                return;
-            }
-            if (socketRef.current?.readyState === WebSocket.OPEN) {
-                callback();
-            } else {
-                setTimeout(() => waitForConnection(callback, retries - 1), 500);
-            }
-        };
-
-        waitForConnection(async () => {
-             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                const recorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
-                recorderRef.current = recorder;
-
-                recorder.addEventListener('dataavailable', (event) => {
-                    if (event.data.size > 0 && socketRef.current?.readyState === WebSocket.OPEN) {
-                         socketRef.current.send(event.data);
-                    }
-                });
-
-                recorder.onstop = () => {
-                    if (socketRef.current?.readyState === WebSocket.OPEN) {
-                         socketRef.current.send(JSON.stringify({ terminate_session: true }));
-                    }
-                    
-                    setStatus('processing');
-                    const userTranscript = finalTranscriptRef.current.trim();
-                    
-                    if (userTranscript && interviewState) {
-                        setTranscript(prev => [...prev, { speaker: 'user', text: userTranscript }]);
-                        const newHistory = [...interviewState.history, { role: 'user', content: userTranscript }];
-                        const newState = { ...interviewState, history: newHistory };
-                        setInterviewState(newState);
-                        processAndRespond(newState);
-                    } else {
-                        // If no transcript, just go back to listening state
-                        startRecording();
-                    }
-
-                    // Clean up for next turn
-                    const aStream = recorderRef.current?.stream;
-                    aStream?.getTracks().forEach(track => track.stop());
-                    recorderRef.current = null;
-                };
-                
-                recorder.start(250); // Send data every 250ms
-                setStatus('listening');
-            } catch(err) {
-                console.error("Microphone access error:", err);
-                toast({title: "Microphone Error", description: "Could not access your microphone.", variant: "destructive"});
-                setStatus('error');
-            }
-        });
-    }, [status, stopRecordingAndProcess, toast, interviewState, processAndRespond]);
-
+            recorder.onstop = async () => {
+                setInterimTranscript("");
+                const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+                if (audioBlob.size < 1000) { // Ignore very short recordings
+                    setStatus('ready');
+                    return;
+                }
     
-    // Cleanup on component unmount
-    useEffect(() => {
-        return () => {
-            if (recorderRef.current?.state === 'recording') recorderRef.current.stop();
-            if (socketRef.current?.readyState === WebSocket.OPEN) {
-                socketRef.current.send(JSON.stringify({ terminate_session: true }));
-                socketRef.current.close();
-            }
+                const reader = new FileReader();
+                reader.readAsDataURL(audioBlob);
+                reader.onloadend = async () => {
+                    const base64Audio = reader.result as string;
+                    try {
+                        const { transcript: userTranscript } = await speechToText({ audioDataUri: base64Audio });
+                        if (userTranscript && interviewState) {
+                            setTranscript(prev => [...prev, { speaker: 'user', text: userTranscript }]);
+                            const newHistory = [...interviewState.history, { role: 'user', content: userTranscript }];
+                            const newState = { ...interviewState, history: newHistory };
+                            setInterviewState(newState);
+                            processAndRespond(newState);
+                        } else {
+                            toast({ title: "Couldn't hear you", description: "The AI didn't catch that. Please try speaking again.", variant: "destructive"});
+                            setStatus('ready');
+                        }
+                    } catch (err) {
+                        console.error("Transcription error:", err);
+                        toast({ title: "Transcription Error", description: "Could not understand audio. Please try again.", variant: "destructive"});
+                        setStatus('ready');
+                    }
+                };
+            };
+    
+          } catch (error) {
+            console.error("Failed to get media devices:", error);
+            toast({ title: "Microphone Error", description: "Could not access your microphone.", variant: "destructive"});
+          }
         };
-    }, []);
+        initializeRecorder();
+    }, [interviewState, toast, processAndRespond]);
 
     const getStatusIndicator = () => {
         switch (status) {
-            case 'idle': return <div className="flex items-center gap-2 text-blue-400"><Sparkles className="w-4 h-4"/>Ready to Start</div>;
+            case 'idle': return <div className="flex items-center gap-2 text-blue-400">Ready to Start</div>;
             case 'connecting': return <div className="flex items-center gap-2 text-yellow-400"><Loader2 className="w-4 h-4 animate-spin"/>Connecting...</div>;
             case 'speaking': return <div className="flex items-center gap-2 text-blue-400"><Bot className="w-4 h-4" />AI Speaking...</div>;
+            case 'ready': return <div className="flex items-center justify-center gap-2 text-green-400"><Keyboard className="h-5 w-5" /><span>Hold <kbd className="px-2 py-1 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-200 rounded-lg">Space</kbd> to speak</span></div>;
             case 'listening': return <div className="flex items-center gap-2 text-green-400 animate-pulse"><Mic className="w-4 h-4"/>Listening...</div>;
             case 'processing': return <div className="flex items-center gap-2 text-yellow-400"><Loader2 className="w-4 h-4 animate-spin"/>Processing...</div>;
             case 'ending': return <div className="flex items-center gap-2 text-red-400"><Loader2 className="w-4 h-4 animate-spin"/>Ending Session...</div>;
-            case 'error': return <div className="flex items-center gap-2 text-red-400"><AlertTriangle className="w-4 h-4"/>Error</div>;
+            case 'error': return <div className="flex items-center gap-2 text-red-400">Error</div>;
             default: return null;
         }
     }
@@ -275,36 +233,29 @@ export default function InterviewV2Page() {
                            <div className="text-xs font-mono">{getStatusIndicator()}</div>
                         </div>
                     </CardHeader>
-                    <CardContent className="flex-grow overflow-y-auto pr-2 space-y-4">
-                         {transcript.map((entry, index) => (
-                             <div key={index} className={cn("flex items-start gap-3", entry.speaker === 'user' ? 'justify-end' : 'justify-start')}>
-                                {entry.speaker === 'ai' && (
-                                    <Avatar className="w-8 h-8 border-2 border-primary">
-                                        <AvatarFallback><Bot className="w-4 h-4"/></AvatarFallback>
-                                    </Avatar>
-                                )}
-                                <div className={cn("rounded-lg px-4 py-2 max-w-[80%]", entry.speaker === 'user' ? 'bg-blue-600 text-white' : 'bg-secondary')}>
-                                     <p className="text-sm font-semibold">{entry.speaker === 'ai' ? 'Alex (AI)' : 'You'}</p>
-                                    <p className="text-sm">{entry.text}</p>
+                    <CardContent className="flex-grow overflow-y-auto pr-2">
+                         <div className="space-y-4">
+                            {transcript.map((entry, index) => (
+                                <div key={index} className={cn("flex items-start gap-3", entry.speaker === 'user' ? 'justify-end' : 'justify-start')}>
+                                    {entry.speaker === 'ai' && <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground"><Bot className="w-5 h-5"/></div>}
+                                    <div className={cn("rounded-lg px-4 py-2 max-w-[80%]", entry.speaker === 'user' ? 'bg-blue-600 text-white' : 'bg-secondary')}>
+                                         <p className="text-sm font-semibold">{entry.speaker === 'ai' ? 'Alex (AI)' : 'You'}</p>
+                                        <p className="text-sm">{entry.text}</p>
+                                    </div>
+                                    {entry.speaker === 'user' && <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white"><User className="w-5 h-5"/></div>}
                                 </div>
-                                {entry.speaker === 'user' && (
-                                    <Avatar className="w-8 h-8">
-                                        <AvatarFallback>U</AvatarFallback>
-                                    </Avatar>
-                                )}
-                            </div>
-                        ))}
-                         {interimTranscript && (
-                            <div className="flex items-start gap-3 justify-end opacity-70">
-                                <div className="rounded-lg px-4 py-2 max-w-[80%] bg-blue-600/80 text-white">
-                                    <p className="text-sm font-semibold">You</p>
-                                    <p className="text-sm italic">{interimTranscript}</p>
+                            ))}
+                            {interimTranscript && (
+                                <div className="flex items-start gap-3 justify-end opacity-70">
+                                    <div className="rounded-lg px-4 py-2 max-w-[80%] bg-blue-600/80 text-white">
+                                        <p className="text-sm font-semibold">You</p>
+                                        <p className="text-sm italic">{interimTranscript}</p>
+                                    </div>
+                                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white"><User className="w-5 h-5"/></div>
                                 </div>
-                                <Avatar className="w-8 h-8">
-                                    <AvatarFallback>U</AvatarFallback>
-                                </Avatar>
-                            </div>
-                        )}
+                            )}
+                        </div>
+                        <div ref={transcriptEndRef} />
                     </CardContent>
                 </Card>
             </div>
@@ -316,7 +267,7 @@ export default function InterviewV2Page() {
                 <Button size="lg" onClick={startSession}>Start Interview</Button>
              ) : (
                 <>
-                    <Button variant={status === 'listening' ? 'destructive' : 'secondary'} size="icon" className="rounded-full h-14 w-14" onClick={() => status === 'listening' ? stopRecordingAndProcess() : startRecording()}>
+                    <Button variant='secondary' size="icon" className="rounded-full h-14 w-14">
                         <Mic className="h-6 w-6" />
                     </Button>
                      <Button variant="secondary" size="icon" className="rounded-full h-14 w-14">
@@ -331,3 +282,5 @@ export default function InterviewV2Page() {
     </div>
   );
 }
+
+    
