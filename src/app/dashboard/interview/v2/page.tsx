@@ -10,6 +10,8 @@ import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { getAssemblyAiToken } from '@/app/actions/assemblyai';
+import { AssemblyAI } from 'assemblyai';
+
 
 type SessionStatus = 'idle' | 'connecting' | 'connected' | 'listening' | 'processing' | 'error';
 type TranscriptEntry = {
@@ -35,20 +37,21 @@ export default function InterviewV2Page() {
         try {
             console.log("Requesting temporary token from server...");
             const token = await getAssemblyAiToken();
+
             if (!token) {
-              throw new Error("Received an empty token from the server.");
+              throw new Error("Received an empty or null token from the server.");
             }
             console.log("Token received from server.");
             
             // Correctly form the WebSocket URL for the V3 streaming API
-            const socket = new WebSocket(`wss://streaming.assemblyai.com/v3/ws?token=${token}`);
+            const wsUrl = `wss://streaming.assemblyai.com/v3/ws?token=${token}`;
+            const socket = new WebSocket(wsUrl);
             socketRef.current = socket;
 
             socket.onopen = () => {
                 setStatus('connected');
                 toast({ title: "Connected!", description: "You are now connected to the transcription service." });
-                // Send the configuration for the desired model after connection is open
-                 socketRef.current?.send(JSON.stringify({
+                socketRef.current?.send(JSON.stringify({
                     audio_format: "pcm_s16le",
                     sample_rate: 16000,
                     model: "Conformer-2"

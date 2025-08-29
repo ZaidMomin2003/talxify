@@ -1,35 +1,57 @@
 
 'use server';
 
-import { AssemblyAI } from 'assemblyai';
-
 /**
  * This server action securely generates a temporary token for the AssemblyAI real-time transcription service.
- * It uses the official AssemblyAI Node.js SDK.
  */
 export async function getAssemblyAiToken(): Promise<string | null> {
   const apiKey = process.env.ASSEMBLYAI_API_KEY;
 
   if (!apiKey) {
     console.error('CRITICAL: ASSEMBLYAI_API_KEY environment variable not set on the server.');
+    // Do not expose detailed error messages to the client for security reasons.
     throw new Error('Server configuration error: AssemblyAI API key is missing.');
   }
 
   try {
-    const client = new AssemblyAI({ apiKey });
-    // This now correctly uses 'expires_in' as per the SDK's expectation for the V3 API.
-    // The previous error was due to a mismatch between the raw API param (`expires_in_seconds`)
-    // and the SDK's parameter name.
-    const token = await client.streaming.createTemporaryToken({ expires_in: 3600 });
+    const url = "https://streaming.assemblyai.com/v3/token?expires_in_seconds=3600";
+    console.log(`[assemblyai.ts] Attempting to fetch from URL: ${url}`);
+
+    const headers = { 'Authorization': apiKey };
+    console.log(`[assemblyai.ts] Using headers: ${JSON.stringify(headers, null, 2)}`);
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: headers,
+    });
+
+    const responseText = await response.text();
+    console.log(`[assemblyai.ts] Raw response text: ${responseText}`);
     
-    if (!token) {
-        throw new Error("SDK returned a null or undefined token.");
+    if (!response.ok) {
+        // Attempt to parse JSON, but fall back to raw text if it fails
+        let errorData;
+        try {
+            errorData = JSON.parse(responseText);
+        } catch (e) {
+            errorData = { detail: responseText };
+        }
+        console.error('[assemblyai.ts] AssemblyAI token error response:', errorData);
+        throw new Error(`Failed to fetch token. Status: ${response.status}. Body: ${JSON.stringify(errorData)}`);
     }
     
-    return token;
+    const data = JSON.parse(responseText);
+    
+    if (!data.token) {
+        console.error('[assemblyai.ts] Token not found in successful response:', data);
+        throw new Error("Token not found in the response from AssemblyAI.");
+    }
+    
+    console.log('[assemblyai.ts] Successfully received token.');
+    return data.token;
     
   } catch (error: any) {
-    console.error('Error generating AssemblyAI temporary token:', error);
+    console.error('[assemblyai.ts] Error generating AssemblyAI temporary token:', error);
     // Re-throw a more user-friendly error to be caught by the client
     throw new Error(`Authentication Failed: Could not get an auth token for the transcription service. Original error: ${error.message}`);
   }
