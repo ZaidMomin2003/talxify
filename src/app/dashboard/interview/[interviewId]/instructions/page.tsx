@@ -28,7 +28,7 @@ function Instructions() {
 
   const [topic, setTopic] = useState(initialTopic);
   const [level, setLevel] = useState(searchParams.get('level') || 'entry-level');
-  const [role, setRole] = useState(search_params.get('role') || 'Software Engineer');
+  const [role, setRole] = useState(searchParams.get('role') || 'Software Engineer');
   const [company, setCompany] = useState(searchParams.get('company') || '');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
