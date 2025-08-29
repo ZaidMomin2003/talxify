@@ -41,7 +41,7 @@ export default function InterviewV2Page() {
             console.log("Token received from server.");
             
             // Correctly form the WebSocket URL with the model parameter
-            const socket = new WebSocket(`wss://api.assemblyai.com/v2/realtime/ws?sample_rate=16000&token=${token}&model=nova-2-general`);
+            const socket = new WebSocket(`wss://api.assemblyai.com/v2/realtime/ws?sample_rate=16000&token=${token}&model=Conformer-2`);
             socketRef.current = socket;
 
             socket.onopen = () => {
