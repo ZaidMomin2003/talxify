@@ -54,14 +54,24 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 
 
 function GettingStartedList({ activity }: { activity: StoredActivity[] }) {
+    const { user } = useAuth();
+    const router = useRouter();
+
     const hasGeneratedNotes = useMemo(() => activity.some(a => a.type === 'note-generation'), [activity]);
     const hasTakenInterview = useMemo(() => activity.some(a => a.type === 'interview'), [activity]);
     const hasTakenQuiz = useMemo(() => activity.some(a => a.type === 'quiz'), [activity]);
     const canDeployPortfolio = hasTakenInterview && hasTakenQuiz && hasGeneratedNotes;
 
+    const handleStartInterview = () => {
+        if (!user) return;
+        const meetingId = user.uid + "_" + Date.now();
+        const params = new URLSearchParams({ topic: 'General', role: 'Software Engineer', level: 'entry-level' });
+        router.push(`/dashboard/interview/${meetingId}/instructions?${params.toString()}`);
+    }
+
     const checklistItems = [
         { name: "Generate Study Notes", completed: hasGeneratedNotes, href: "/dashboard/arena" },
-        { name: "Take an Interview", completed: hasTakenInterview, href: "/dashboard/interview/setup" },
+        { name: "Take an Interview", completed: hasTakenInterview, action: handleStartInterview },
         { name: "Take a Coding Quiz", completed: hasTakenQuiz, href: "/dashboard/coding-gym" },
         { name: "Deploy your Portfolio", completed: canDeployPortfolio, href: "/dashboard/portfolio" }
     ];
@@ -70,14 +80,29 @@ function GettingStartedList({ activity }: { activity: StoredActivity[] }) {
         <SidebarMenu>
             {checklistItems.map(item => (
                 <SidebarMenuItem key={item.name}>
-                    <SidebarMenuButton asChild size="sm" className="justify-start text-muted-foreground hover:text-foreground">
-                         <Link href={item.href}>
-                           {item.completed ? 
-                                <CheckCircle className="text-green-500" /> : 
-                                <Circle className="text-muted-foreground/50" />
-                            }
-                            <span className={item.completed ? "text-foreground" : ""}>{item.name}</span>
-                         </Link>
+                    <SidebarMenuButton 
+                        asChild={!!item.href} 
+                        size="sm" 
+                        className="justify-start text-muted-foreground hover:text-foreground"
+                        onClick={item.action}
+                    >
+                         {item.href ? (
+                            <Link href={item.href}>
+                               {item.completed ? 
+                                    <CheckCircle className="text-green-500" /> : 
+                                    <Circle className="text-muted-foreground/50" />
+                                }
+                                <span className={item.completed ? "text-foreground" : ""}>{item.name}</span>
+                             </Link>
+                         ) : (
+                            <button className="w-full h-full flex items-center gap-2">
+                                {item.completed ? 
+                                    <CheckCircle className="text-green-500" /> : 
+                                    <Circle className="text-muted-foreground/50" />
+                                }
+                                <span className={item.completed ? "text-foreground" : ""}>{item.name}</span>
+                            </button>
+                         )}
                     </SidebarMenuButton>
                 </SidebarMenuItem>
             ))}

@@ -172,6 +172,7 @@ export default function LoginPage() {
                       id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required
                       className="block w-full rounded-md border border-input bg-transparent py-3 pr-3 pl-10 text-sm placeholder:text-muted-foreground focus:ring-ring focus:ring-2 focus:outline-none"
                       placeholder="Enter your email"
+                      autoComplete="email"
                     />
                   </div>
                 </div>
@@ -188,6 +189,7 @@ export default function LoginPage() {
                       id="password" type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} required
                       className="block w-full rounded-md border border-input bg-transparent py-3 pr-12 pl-10 text-sm placeholder:text-muted-foreground focus:ring-ring focus:ring-2 focus:outline-none"
                       placeholder="Enter your password"
+                      autoComplete="current-password"
                     />
                     <button type="button" className="absolute inset-y-0 right-0 flex items-center pr-3" onClick={() => setShowPassword(!showPassword)}>
                       {showPassword ? <EyeOff className="h-5 w-5 text-muted-foreground" /> : <Eye className="h-5 w-5 text-muted-foreground" />}
