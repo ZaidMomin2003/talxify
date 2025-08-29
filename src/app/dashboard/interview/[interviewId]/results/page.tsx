@@ -6,12 +6,12 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { BarChart, Bot, CheckCircle, ChevronLeft, MessageSquare, Mic, Sparkles, User, XCircle, Loader2, Building, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { useAuth } from '@/context/auth-context';
 import type { InterviewActivity, StoredActivity } from '@/lib/types';
-import { getActivity, updateActivity, getRetakeCount } from '@/lib/firebase-service';
+import { getActivity, updateActivity, getRetakeCount, addActivity } from '@/lib/firebase-service';
 import { generateInterviewFeedback, GenerateInterviewFeedbackOutput } from '@/ai/flows/generate-interview-feedback';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -20,6 +20,7 @@ const MAX_RETAKES = 8;
 export default function InterviewResultsPage() {
     const router = useRouter();
     const params = useParams();
+    const searchParams = useSearchParams();
     const { user } = useAuth();
     
     const [isLoading, setIsLoading] = useState(true);
@@ -32,46 +33,62 @@ export default function InterviewResultsPage() {
         if (!user || !params.interviewId) return;
 
         setIsLoading(true);
-        const allActivity = await getActivity(user.uid);
-        const currentInterview = allActivity.find(a => a.id === params.interviewId && a.type === 'interview') as InterviewActivity | undefined;
-        
-        if (!currentInterview) {
-             setIsLoading(false);
-             return;
-        }
-        
-        setInterviewData(currentInterview);
-        
-        const retakes = await getRetakeCount(user.uid, currentInterview.details.topic);
-        setRetakeCount(retakes);
-        
-        // Check if analysis is already stored
-        const storedAnalysis = (currentInterview as any).analysis;
-        if (storedAnalysis && Object.keys(storedAnalysis).length > 0) {
-            setAnalysis(storedAnalysis);
-        } else {
-             setIsAnalyzing(true);
-             try {
-                const feedback = await generateInterviewFeedback({
-                    transcript: currentInterview.transcript,
-                    topic: currentInterview.details.topic,
-                    role: currentInterview.details.role || 'Software Engineer',
-                    company: currentInterview.details.company,
-                });
-                setAnalysis(feedback);
-                
-                // Store the analysis back to Firebase
-                const updatedInterview: StoredActivity = { ...currentInterview, analysis: feedback };
-                await updateActivity(user.uid, updatedInterview);
+        try {
+            let currentInterview: InterviewActivity | null = null;
+            
+            // Check for data passed via URL first
+            const dataFromUrl = searchParams.get('data');
+            if (dataFromUrl) {
+                currentInterview = JSON.parse(dataFromUrl) as InterviewActivity;
+                // Save the data to Firestore in the background
+                await addActivity(user.uid, currentInterview).catch(err => console.error("Failed to save URL data", err));
+            } else {
+                // Fallback to fetching from Firestore
+                const allActivity = await getActivity(user.uid);
+                currentInterview = allActivity.find(a => a.id === params.interviewId && a.type === 'interview') as InterviewActivity | undefined || null;
+            }
 
-             } catch(error) {
-                console.error("Failed to generate interview feedback:", error);
-             } finally {
-                setIsAnalyzing(false);
-             }
+            if (!currentInterview) {
+                setIsLoading(false);
+                return;
+            }
+            
+            setInterviewData(currentInterview);
+            
+            const retakes = await getRetakeCount(user.uid, currentInterview.details.topic);
+            setRetakeCount(retakes);
+            
+            // Check if analysis is already stored
+            if (currentInterview.analysis && Object.keys(currentInterview.analysis).length > 0) {
+                setAnalysis(currentInterview.analysis);
+            } else {
+                 setIsAnalyzing(true);
+                 try {
+                    const feedback = await generateInterviewFeedback({
+                        transcript: currentInterview.transcript,
+                        topic: currentInterview.details.topic,
+                        role: currentInterview.details.role || 'Software Engineer',
+                        company: currentInterview.details.company,
+                    });
+                    setAnalysis(feedback);
+                    
+                    // Store the analysis back to Firebase
+                    const updatedInterview: InterviewActivity = { ...currentInterview, analysis: feedback };
+                    await updateActivity(user.uid, updatedInterview);
+                    setInterviewData(updatedInterview); // Update local state with analysis
+
+                 } catch(error) {
+                    console.error("Failed to generate interview feedback:", error);
+                 } finally {
+                    setIsAnalyzing(false);
+                 }
+            }
+        } catch (error) {
+            console.error("Error on results page:", error);
+        } finally {
+            setIsLoading(false);
         }
-        setIsLoading(false);
-    }, [user, params.interviewId]);
+    }, [user, params.interviewId, searchParams]);
 
 
     useEffect(() => {

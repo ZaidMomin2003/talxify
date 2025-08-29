@@ -54,19 +54,17 @@ function InterviewPageContent() {
     const endSession = useCallback(async () => {
         setStatus('ending');
     
-        // Stop any ongoing recording
         if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
             mediaRecorderRef.current.stop();
         }
-
-        // Stop any ongoing audio playback
-        if(audioPlayerRef.current) {
+    
+        if (audioPlayerRef.current) {
             audioPlayerRef.current.pause();
             audioPlayerRef.current.src = '';
         }
-    
-        // If the interview has started, save the activity
+
         if (user && interviewState) {
+            // Create the final activity object
             const finalActivity: InterviewActivity = {
                 id: interviewId,
                 type: 'interview',
@@ -80,16 +78,16 @@ function InterviewPageContent() {
                     company: interviewState.company,
                 }
             };
-            // Use try-catch for robustness, but don't block navigation
-            try {
-                await addActivity(user.uid, finalActivity);
-            } catch (error) {
-                console.error("Failed to save activity on premature exit:", error);
-            }
+            
+            // Serialize the data and pass it via URL to avoid race conditions
+            const queryParams = new URLSearchParams();
+            queryParams.set('data', JSON.stringify(finalActivity));
+            router.push(`/dashboard/interview/${interviewId}/results?${queryParams.toString()}`);
+
+        } else {
+            // If something went wrong, just go to the dashboard
+            router.push('/dashboard');
         }
-    
-        // Immediately navigate to the results page
-        router.push(`/dashboard/interview/${interviewId}/results`);
     
       }, [user, transcript, interviewState, interviewId, router]);
 
