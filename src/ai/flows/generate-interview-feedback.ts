@@ -27,6 +27,9 @@ export type GenerateInterviewFeedbackInput = z.infer<typeof GenerateInterviewFee
 
 const GenerateInterviewFeedbackOutputSchema = z.object({
     overallScore: z.number().min(0).max(100).describe("An overall score for the interview from 0 to 100."),
+    likelihoodToCrack: z.number().min(0).max(100).describe("The user's likelihood of cracking a real interview, as a percentage."),
+    englishProficiency: z.number().min(0).max(100).describe("A score from 0-100 for the user's English proficiency, grammar, and clarity."),
+    confidenceScore: z.number().min(0).max(100).describe("A score from 0-100 for the user's apparent confidence level."),
     summary: z.string().describe("A 2-3 sentence summary of the user's performance, highlighting their strengths and key areas for improvement."),
     strengths: z.array(z.string()).describe("A bulleted list of specific strengths the user demonstrated."),
     areasForImprovement: z.array(z.string()).describe("A bulleted list of the most important areas for the user to work on."),
@@ -61,10 +64,13 @@ const prompt = ai.definePrompt({
 
   Please analyze the entire transcript and provide the following:
   1.  **Overall Score**: An integer score from 0 to 100 representing the user's overall performance.
-  2.  **Summary**: A concise, 2-3 sentence summary of the user's performance.
-  3.  **Strengths**: A list of 2-3 key strengths the user displayed.
-  4.  **Areas for Improvement**: A list of the 2-3 most critical areas for improvement.
-  5.  **Question-by-Question Feedback**: For each question the AI asked, provide:
+  2.  **Likelihood to Crack**: A percentage (0-100) estimating the candidate's likelihood of passing a real-world interview based on this performance.
+  3.  **English Proficiency**: A score from 0-100 evaluating the candidate's English grammar, clarity, and vocabulary.
+  4.  **Confidence Score**: A score from 0-100 based on the candidate's tone, use of filler words, and the directness of their answers.
+  5.  **Summary**: A concise, 2-3 sentence summary of the user's performance.
+  6.  **Strengths**: A list of 2-3 key strengths the user displayed.
+  7.  **Areas for Improvement**: A list of the 2-3 most critical areas for improvement.
+  8.  **Question-by-Question Feedback**: For each question the AI asked, provide:
       - The question text.
       - The user's answer.
       - Specific, actionable feedback on the answer. For technical questions, comment on correctness and depth. For behavioral questions, evaluate the structure (e.g., STAR method). Consider the target company's known preferences.

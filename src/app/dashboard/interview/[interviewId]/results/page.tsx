@@ -4,7 +4,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { BarChart, Bot, CheckCircle, ChevronLeft, MessageSquare, Mic, Sparkles, User, XCircle, Loader2, Building, RefreshCw } from 'lucide-react';
+import { BarChart, Bot, CheckCircle, ChevronLeft, MessageSquare, Mic, Sparkles, User, XCircle, Loader2, Building, RefreshCw, Trophy, Languages, Handshake } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
@@ -38,6 +38,9 @@ const demoInterviewData: InterviewActivity = {
 
 const demoAnalysisData: GenerateInterviewFeedbackOutput = {
     overallScore: 82,
+    likelihoodToCrack: 75,
+    englishProficiency: 90,
+    confidenceScore: 85,
     summary: 'A strong performance overall. You have a solid grasp of React Hooks but could improve the depth of your explanations on dependency arrays and cleanup functions.',
     strengths: [
         'Clear and concise initial explanations.',
@@ -228,15 +231,24 @@ export default function InterviewResultsPage() {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     {/* Left Column - Summary */}
                     <div className="lg:col-span-1 space-y-8">
-                        <Card>
-                             <CardHeader>
-                                <CardTitle>Overall Score</CardTitle>
-                             </CardHeader>
-                             <CardContent className="text-center">
-                                 <span className="text-7xl font-bold text-primary">{analysis.overallScore}</span>
-                                 <span className="text-3xl text-muted-foreground">%</span>
-                             </CardContent>
-                        </Card>
+                        <div className="grid grid-cols-2 gap-4">
+                           <Card>
+                                <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Overall Score</CardTitle></CardHeader>
+                                <CardContent><div className="text-2xl font-bold">{analysis.overallScore}%</div></CardContent>
+                           </Card>
+                           <Card>
+                                <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Crack Likelihood</CardTitle></CardHeader>
+                                <CardContent><div className="text-2xl font-bold">{analysis.likelihoodToCrack}%</div></CardContent>
+                           </Card>
+                           <Card>
+                                <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Proficiency</CardTitle></CardHeader>
+                                <CardContent><div className="text-2xl font-bold">{analysis.englishProficiency}%</div></CardContent>
+                           </Card>
+                           <Card>
+                                <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Confidence</CardTitle></CardHeader>
+                                <CardContent><div className="text-2xl font-bold">{analysis.confidenceScore}%</div></CardContent>
+                           </Card>
+                        </div>
                         <Card>
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-3"><Bot className="h-6 w-6"/> AI Summary</CardTitle>
