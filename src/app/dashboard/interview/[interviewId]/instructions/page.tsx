@@ -3,7 +3,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { CheckCircle, Wifi, BrainCircuit, Keyboard, Briefcase, PlayCircle } from 'lucide-react';
+import { CheckCircle, Wifi, BrainCircuit, Keyboard, Briefcase, PlayCircle, Laptop } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import React, { Suspense } from 'react';
@@ -36,11 +36,11 @@ function Instructions() {
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="flex items-start gap-4">
                   <div className="bg-primary/10 text-primary rounded-full p-2">
-                    <BrainCircuit className="h-5 w-5" />
+                    <Laptop className="h-5 w-5" />
                   </div>
                   <div>
-                    <h3 className="font-semibold">AI Interviewer</h3>
-                    <p className="text-muted-foreground text-sm">Our AI, Alex, will ask you a series of questions relevant to your topic and role.</p>
+                    <h3 className="font-semibold">Use a Laptop/Desktop</h3>
+                    <p className="text-muted-foreground text-sm">For the best experience, please use a computer with a physical keyboard.</p>
                   </div>
                 </div>
                  <div className="flex items-start gap-4">
