@@ -40,13 +40,19 @@ export default function InterviewV2Page() {
             }
             console.log("Token received from server.");
             
-            // Correctly form the WebSocket URL with the model parameter
-            const socket = new WebSocket(`wss://api.assemblyai.com/v2/realtime/ws?sample_rate=16000&token=${token}&model=Conformer-2`);
+            // Correctly form the WebSocket URL for the V3 streaming API
+            const socket = new WebSocket(`wss://streaming.assemblyai.com/v3/ws?token=${token}`);
             socketRef.current = socket;
 
             socket.onopen = () => {
                 setStatus('connected');
                 toast({ title: "Connected!", description: "You are now connected to the transcription service." });
+                // Send the configuration for the desired model after connection is open
+                 socketRef.current?.send(JSON.stringify({
+                    audio_format: "pcm_s16le",
+                    sample_rate: 16000,
+                    model: "Conformer-2"
+                }));
             };
 
             socket.onmessage = (message) => {
@@ -97,7 +103,7 @@ export default function InterviewV2Page() {
         waitForConnection(async () => {
              try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                const recorder = new MediaRecorder(stream);
+                const recorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
                 recorderRef.current = recorder;
 
                 recorder.addEventListener('dataavailable', (event) => {
@@ -105,7 +111,7 @@ export default function InterviewV2Page() {
                         const reader = new FileReader();
                         reader.onload = () => {
                             const base64AudioData = (reader.result as string).split(',')[1];
-                             socketRef.current?.send(JSON.stringify({ audio_data: base64AudioData }));
+                             socketRef.current?.send(JSON.stringify({ audio: base64AudioData }));
                         };
                         reader.readAsDataURL(event.data);
                     }
