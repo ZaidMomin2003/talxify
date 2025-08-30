@@ -90,16 +90,16 @@ function GettingStartedList({ activity }: { activity: StoredActivity[] }) {
                          {item.href ? (
                             <Link href={item.href}>
                                {item.completed ? 
-                                    <CheckCircle className="text-green-500" /> : 
-                                    <Circle className="text-muted-foreground/50" />
+                                    <CheckCircle className="h-4 w-4 text-green-500" /> : 
+                                    <Circle className="h-4 w-4 text-muted-foreground/50" />
                                 }
                                 <span className={item.completed ? "text-foreground" : ""}>{item.name}</span>
                              </Link>
                          ) : (
                             <button className="w-full h-full flex items-center gap-2">
                                 {item.completed ? 
-                                    <CheckCircle className="text-green-500" /> : 
-                                    <Circle className="text-muted-foreground/50" />
+                                    <CheckCircle className="h-4 w-4 text-green-500" /> : 
+                                    <Circle className="h-4 w-4 text-muted-foreground/50" />
                                 }
                                 <span className={item.completed ? "text-foreground" : ""}>{item.name}</span>
                             </button>
