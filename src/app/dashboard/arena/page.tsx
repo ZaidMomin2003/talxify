@@ -5,7 +5,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription as DialogDescriptionComponent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Swords, Lock, PlayCircle, BookOpen, Code, Briefcase, CheckCircle, Loader2, Gem, Eye, RefreshCw, Trophy, History } from "lucide-react";
+import { Swords, Lock, PlayCircle, BookOpen, Code, Briefcase, CheckCircle, Loader2, Gem, Eye, RefreshCw, Trophy, History, ShieldQuestion, Target, BrainCircuit, BarChart, ArrowRight } from "lucide-react";
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
@@ -34,6 +34,51 @@ function UpgradeCard() {
         </Card>
     )
 }
+
+function QuizStartDialog({ day, topic, isFinalDay, onStart }: { day: number, topic: string, isFinalDay: boolean, onStart: () => void }) {
+    return (
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle className="flex items-center gap-3 text-2xl font-bold">
+                    <ShieldQuestion className="h-8 w-8 text-primary" />
+                    Code Izanami: {isFinalDay ? "Final Exam" : topic}
+                </DialogTitle>
+                <DialogDescriptionComponent>
+                    You are about to begin an adaptive coding challenge. Read the rules below before you start.
+                </DialogDescriptionComponent>
+            </DialogHeader>
+            <div className="my-6 space-y-4">
+                <div className="flex items-start gap-4 p-3 rounded-lg bg-muted/50">
+                    <Target className="h-5 w-5 text-yellow-500 flex-shrink-0 mt-1" />
+                    <div>
+                        <p className="font-semibold text-foreground">Adaptive Difficulty</p>
+                        <p className="text-xs text-muted-foreground">The questions will get harder as you answer correctly, and easier if you struggle.</p>
+                    </div>
+                </div>
+                <div className="flex items-start gap-4 p-3 rounded-lg bg-muted/50">
+                    <BrainCircuit className="h-5 w-5 text-blue-500 flex-shrink-0 mt-1" />
+                    <div>
+                        <p className="font-semibold text-foreground">10 Question Limit</p>
+                        <p className="text-xs text-muted-foreground">The workout consists of 10 questions to test your mastery of the topic.</p>
+                    </div>
+                </div>
+                <div className="flex items-start gap-4 p-3 rounded-lg bg-muted/50">
+                    <BarChart className="h-5 w-5 text-green-500 flex-shrink-0 mt-1" />
+                    <div>
+                        <p className="font-semibold text-foreground">Instant Analysis</p>
+                        <p className="text-xs text-muted-foreground">After each question, you'll get instant AI feedback on your code and the correct solution.</p>
+                    </div>
+                </div>
+            </div>
+            <DialogFooter>
+                <Button onClick={onStart} size="lg">
+                    Begin Challenge <ArrowRight className="ml-2 h-4 w-4"/>
+                </Button>
+            </DialogFooter>
+        </DialogContent>
+    )
+}
+
 
 export default function ArenaPage() {
     const router = useRouter();
@@ -234,16 +279,21 @@ export default function ArenaPage() {
                                             </Button>
                                         </div>
                                     )}
-                                    <div className="flex items-center gap-4 p-3 rounded-lg bg-muted/50">
-                                        {dayStatus.quiz ? <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" /> : <Code className="h-5 w-5 text-blue-500 flex-shrink-0" />}
-                                        <div className="flex-1">
-                                            <p className="font-semibold text-foreground">{isFinalDay ? "Code Izanami: Final Exam" : "Code Izanami"}</p>
-                                            <p className="text-xs text-muted-foreground">{isFinalDay ? "Adaptive quiz on all topics." : `Master ${day.topic}.`}</p>
+                                    <Dialog>
+                                        <div className="flex items-center gap-4 p-3 rounded-lg bg-muted/50">
+                                            {dayStatus.quiz ? <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" /> : <Code className="h-5 w-5 text-blue-500 flex-shrink-0" />}
+                                            <div className="flex-1">
+                                                <p className="font-semibold text-foreground">{isFinalDay ? "Code Izanami: Final Exam" : "Code Izanami"}</p>
+                                                <p className="text-xs text-muted-foreground">{isFinalDay ? "Adaptive quiz on all topics." : `Master ${day.topic}.`}</p>
+                                            </div>
+                                             <DialogTrigger asChild>
+                                                <Button size="sm" disabled={!isUnlocked}>
+                                                    {dayStatus.quiz ? <><RefreshCw className="mr-2 h-4 w-4"/>Retake</> : isUnlocked ? 'Start' : <Lock className="h-4 w-4" />}
+                                                </Button>
+                                            </DialogTrigger>
                                         </div>
-                                        <Button size="sm" onClick={() => handleStartChallenge(day.day, 'quiz')} disabled={!isUnlocked}>
-                                            {dayStatus.quiz ? <><RefreshCw className="mr-2 h-4 w-4"/>Retake</> : isUnlocked ? 'Start' : <Lock className="h-4 w-4" />}
-                                        </Button>
-                                    </div>
+                                        <QuizStartDialog day={day.day} topic={day.topic} isFinalDay={isFinalDay} onStart={() => handleStartChallenge(day.day, 'quiz')} />
+                                    </Dialog>
                                     {(day.day % 2 !== 0 || isFinalDay) && (
                                     <div className="flex items-center gap-4 p-3 rounded-lg bg-muted/50">
                                         {dayStatus.interview ? <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" /> : <Briefcase className="h-5 w-5 text-green-500 flex-shrink-0" />}
