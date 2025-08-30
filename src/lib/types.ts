@@ -1,6 +1,4 @@
 
-
-
 import type { AnswerAnalysis } from "@/ai/flows/analyze-coding-answers";
 import type { GenerateInterviewFeedbackOutput } from "@/ai/flows/generate-interview-feedback";
 import type { QuizState } from "@/app/dashboard/coding-quiz/quiz/page";
@@ -71,6 +69,7 @@ export interface OnboardingData {
 
 // All data stored under a user's document in Firestore
 export interface UserData {
+    id: string;
     portfolio: Portfolio;
     activity: StoredActivity[];
     subscription: Subscription;
@@ -301,3 +300,5 @@ export interface WaitlistSubmission {
     email: string;
     timestamp: any;
 }
+
+    

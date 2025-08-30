@@ -1,8 +1,7 @@
 
-
 import type { UserData } from './types';
 
-export const initialPortfolioData: UserData = {
+export const initialPortfolioData: Omit<UserData, 'activity' | 'subscription' | 'onboardingCompleted' | 'syllabus' | 'id'> = {
     portfolio: {
         personalInfo: {
             name: 'John Doe',
@@ -51,12 +50,6 @@ export const initialPortfolioData: UserData = {
         testimonials: [{ testimonial: 'John is a brilliant engineer who brings not only technical expertise but also a creative and collaborative spirit to every project. He was instrumental in our latest launch.', author: 'Jane Smith, CEO of Tech Innovations' }],
         faqs: [{ question: 'What are you most passionate about in software development?', answer: 'I am most passionate about creating elegant solutions to complex problems and building products that have a meaningful impact on people\'s lives. I love the blend of creativity and logic that software engineering requires.' }],
     },
-    activity: [],
-    subscription: {
-        plan: 'free',
-        status: 'inactive',
-        endDate: null
-    },
-    onboardingCompleted: false,
-    syllabus: [],
 };
+
+    

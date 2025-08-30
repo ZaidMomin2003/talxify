@@ -1,5 +1,4 @@
 
-
 'use client'
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -12,11 +11,13 @@ import { Github, Linkedin, Instagram, Mail, Phone, Link as LinkIcon, Award, Brie
 import Link from "next/link";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
-import React, { useMemo } from "react";
-import type { UserData, QuizResult } from "@/lib/types";
+import React, { useMemo, useState, useEffect } from "react";
+import type { UserData, QuizResult, Portfolio } from "@/lib/types";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Skeleton } from "@/components/ui/skeleton";
 import { initialPortfolioData } from "@/lib/initial-data";
+import { doc, onSnapshot } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 
 const Section = ({ icon, title, children, className, id, isVisible }: { icon: React.ReactNode, title: string, children: React.ReactNode, className?: string, id: string, isVisible?: boolean }) => {
@@ -168,10 +169,26 @@ function PortfolioLoadingSkeleton() {
 }
 
 
-export default function PortfolioComponent({ userData }: { userData: UserData | null }) {
-    const portfolio = userData?.portfolio;
+export default function PortfolioComponent({ userData: initialUserData }: { userData: UserData | null }) {
+    const [userData, setUserData] = useState<UserData | null>(initialUserData);
 
-    // Safely access displayOptions, providing a default if it doesn't exist
+    useEffect(() => {
+        if (!initialUserData?.portfolio?.personalInfo?.slug) return;
+        
+        // Slug is used as document ID
+        const userDocRef = doc(db, 'users', initialUserData.id);
+        const unsubscribe = onSnapshot(userDocRef, (doc) => {
+            if (doc.exists()) {
+                setUserData(doc.data() as UserData);
+            }
+        }, (error) => {
+            console.error("Error listening to portfolio updates:", error);
+        });
+
+        return () => unsubscribe();
+    }, [initialUserData]);
+
+    const portfolio = userData?.portfolio;
     const displayOptions = portfolio?.displayOptions ?? initialPortfolioData.portfolio.displayOptions;
 
     const { questionsSolved, interviewsCompleted, averageScore } = useMemo(() => {
@@ -211,19 +228,8 @@ export default function PortfolioComponent({ userData }: { userData: UserData | 
         return `https://www.youtube.com/embed/${videoId}`;
     };
 
-    if (!userData) {
+    if (!userData || !portfolio) {
         return <PortfolioLoadingSkeleton />;
-    }
-    
-    if (!portfolio) {
-        return (
-            <div className="flex h-screen items-center justify-center">
-                 <Card className="text-center p-8">
-                    <CardTitle>Portfolio Not Found</CardTitle>
-                    <CardDescription>We couldn't find a portfolio with that slug.</CardDescription>
-                </Card>
-            </div>
-        );
     }
     
     const youtubeEmbedUrl = getYouTubeEmbedUrl(portfolio?.personalInfo.youtubeVideoUrl);
@@ -478,3 +484,5 @@ export default function PortfolioComponent({ userData }: { userData: UserData | 
         </div>
     );
 }
+
+    

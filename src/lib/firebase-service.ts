@@ -1,8 +1,7 @@
 
-
 'use client';
 
-import { doc, getDoc, setDoc, updateDoc, arrayUnion, collection, getDocs, addDoc, serverTimestamp, runTransaction, deleteDoc, increment } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, arrayUnion, collection, getDocs, addDoc, serverTimestamp, runTransaction, deleteDoc, increment, DocumentReference } from 'firebase/firestore';
 import { db } from './firebase';
 import type { UserData, Portfolio, StoredActivity, OnboardingData, SurveySubmission } from './types';
 import { initialPortfolioData } from './initial-data';
@@ -17,6 +16,7 @@ export const createUserDocument = async (userId: string, email: string, name: st
   if (!docSnap.exists()) {
     const initialData: UserData = {
       ...initialPortfolioData,
+      id: userId,
       activity: [],
       subscription: {
         plan: 'free',
@@ -37,7 +37,7 @@ export const getUserData = async (userId: string): Promise<UserData | null> => {
   const userRef = doc(db, 'users', userId);
   const docSnap = await getDoc(userRef);
   if (docSnap.exists()) {
-    return docSnap.data() as UserData;
+    return { id: docSnap.id, ...docSnap.data() } as UserData;
   }
   return null;
 };
@@ -187,6 +187,11 @@ export const getPortfolio = async (userId: string): Promise<Portfolio | null> =>
   return userData?.portfolio ?? null;
 };
 
+export const getPortfolioRef = (userId: string): DocumentReference => {
+    return doc(db, 'users', userId);
+};
+
+
 export const updatePortfolio = async (userId: string, portfolio: Portfolio): Promise<void> => {
   const userRef = doc(db, 'users', userId);
   await setDoc(userRef, { portfolio }, { merge: true });
@@ -264,3 +269,5 @@ export const saveWaitlistSubmission = async (submission: {name: string, email: s
         throw error;
     }
 }
+
+    

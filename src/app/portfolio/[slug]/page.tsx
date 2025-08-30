@@ -38,6 +38,7 @@ export default async function PortfolioPage({ params }: { params: { slug:string 
     // If no user is found, we can pass the initial data to show a template/default view
     const portfolioData = userData ?? {
       ...initialPortfolioData,
+      id: "not-found", // Add a placeholder ID
       portfolio: {
         ...initialPortfolioData.portfolio,
         personalInfo: {
@@ -54,3 +55,5 @@ export default async function PortfolioPage({ params }: { params: { slug:string 
         <PortfolioComponent userData={portfolioData}/>
     )
 }
+
+    
