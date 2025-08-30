@@ -194,7 +194,7 @@ function CodingGymComponent() {
                 <>
                 <CardHeader>
                     <CardTitle className="text-xl font-semibold">Question {questionCount}</CardTitle>
-                    <CardDescription className="prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: question.questionText.replace(/\n/g, '<br />') }} />
+                    <CardDescription className="prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: question.questionText }} />
                 </CardHeader>
                 <CardContent className="flex-grow flex flex-col">
                     <Textarea

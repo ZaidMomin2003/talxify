@@ -14,7 +14,7 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const CodingQuestionSchema = z.object({
-  questionText: z.string().describe('The text of the coding question, formatted with Markdown for clarity (e.g., using backticks for code, asterisks for lists).'),
+  questionText: z.string().describe('The text of the coding question, formatted as an HTML string for direct rendering. Use tags like <strong>, <ul>, <li>, <code>, and <pre> for proper structure.'),
 });
 export type CodingQuestion = z.infer<typeof CodingQuestionSchema>;
 
@@ -59,7 +59,7 @@ Here is an example of a good, well-defined question: "{{example}}"
 {{/if}}
 
 Each question you generate must be a clear, self-contained problem that a developer can solve in {{language}}. Ensure you generate the exact number of questions requested.
-IMPORTANT: Format the question text using standard Markdown. Use backticks for inline code, asterisks for lists, and newlines for spacing to ensure the question is clear and professionally formatted. For example, use '**Input:**' for bold text.
+IMPORTANT: Format the entire question text as a valid HTML string. Use tags like <strong> for bold text, <ul> and <li> for lists, and <code> for inline code. Use <pre><code>...</code></pre> for code blocks. This HTML will be rendered directly in the browser.
 `,
 });
 
