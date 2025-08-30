@@ -176,7 +176,7 @@ function DashboardLayoutContent({
   const menuItems = [
     { href: "/dashboard", label: "Dashboard", icon: LayoutGrid },
     { href: "/dashboard/arena", label: "Arena", icon: Swords },
-    { href: "/dashboard/resume-builder", label: "Resume Builder", icon: FileText, isFree: true },
+    { href: "/dashboard/resume-builder", label: "Resume Builder", icon: FileText, isFree: true, isTesting: true },
     { href: "/dashboard/portfolio", label: "Portfolio Builder", icon: User },
   ];
   
@@ -303,26 +303,38 @@ function DashboardLayoutContent({
                   <Link href={item.href}>
                     <item.icon />
                     <span>{item.label}</span>
-                    {(item as any).isFree && (
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                           <Gem className="w-4 h-4 ml-auto text-green-500" />
-                        </TooltipTrigger>
-                        <TooltipContent side="right">
-                          <p>Forever Free</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    )}
-                     {(item as any).isPro && !isFreePlan && (
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                           <Gem className="w-4 h-4 ml-auto text-primary" />
-                        </TooltipTrigger>
-                        <TooltipContent side="right">
-                          <p>Pro Feature</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    )}
+                    <div className="ml-auto flex items-center gap-2">
+                        {(item as any).isTesting && (
+                             <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <FlaskConical className="w-4 h-4 text-yellow-500" />
+                                </TooltipTrigger>
+                                <TooltipContent side="right">
+                                <p>Under Testing</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        )}
+                        {(item as any).isFree && (
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                            <Gem className="w-4 h-4 text-green-500" />
+                            </TooltipTrigger>
+                            <TooltipContent side="right">
+                            <p>Forever Free</p>
+                            </TooltipContent>
+                        </Tooltip>
+                        )}
+                        {(item as any).isPro && !isFreePlan && (
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                            <Gem className="w-4 h-4 text-primary" />
+                            </TooltipTrigger>
+                            <TooltipContent side="right">
+                            <p>Pro Feature</p>
+                            </TooltipContent>
+                        </Tooltip>
+                        )}
+                    </div>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
