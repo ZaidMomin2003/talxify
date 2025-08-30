@@ -188,7 +188,7 @@ export const getPortfolio = async (userId: string): Promise<Portfolio | null> =>
 };
 
 
-export const updatePortfolio = async (userId: string, portfolio: Portfolio): Promise<void> => {
+export const updatePortfolio = async (userId: string, portfolio: Partial<Portfolio>): Promise<void> => {
   const userRef = doc(db, 'users', userId);
   await setDoc(userRef, { portfolio }, { merge: true });
 };

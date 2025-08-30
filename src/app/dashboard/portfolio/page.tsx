@@ -164,7 +164,6 @@ export default function PortfolioPage() {
         getUserData(user.uid)
     ]);
     const currentPortfolio = portfolioData ?? initialPortfolioData.portfolio;
-    // Ensure displayOptions exists
     if (!currentPortfolio.displayOptions) {
         currentPortfolio.displayOptions = initialPortfolioData.portfolio.displayOptions;
     }
@@ -245,13 +244,13 @@ export default function PortfolioPage() {
   
   const handleSlugChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!portfolio) return;
-    setSlugError(null); // Clear error on change
+    setSlugError(null);
     const rawSlug = e.target.value;
     const sanitizedSlug = rawSlug
       .toLowerCase()
-      .replace(/\s+/g, '-')       // Replace spaces with -
-      .replace(/[^\w\-]+/g, '')   // Remove all non-word chars
-      .replace(/\-\-+/g, '-');    // Replace multiple - with single -
+      .replace(/\s+/g, '-')
+      .replace(/[^\w\-]+/g, '')
+      .replace(/\-\-+/g, '-');
     setPortfolio({...portfolio, personalInfo: {...portfolio.personalInfo, slug: sanitizedSlug}});
   }
 
@@ -274,7 +273,6 @@ export default function PortfolioPage() {
     setIsSavingPersonalInfo(true);
     setSlugError(null);
 
-    // Slug validation
     const slugExists = await getUserBySlug(portfolio.personalInfo.slug);
     if (slugExists && slugExists.id !== user.uid) {
         setSlugError('This URL slug is already taken. Please choose another.');
@@ -283,15 +281,14 @@ export default function PortfolioPage() {
     }
 
     try {
-        // Only update the personal info part of the portfolio
         const updatedPartialPortfolio = {
             personalInfo: portfolio.personalInfo,
             socials: portfolio.socials
         };
-        await updatePortfolio(user.uid, updatedPartialPortfolio as Portfolio);
+        await updatePortfolio(user.uid, updatedPartialPortfolio as Partial<Portfolio>);
         toast({
             title: "Personal Info Saved",
-            description: "Your personal details have been updated.",
+            description: "Your personal details and URL have been updated.",
         });
     } catch (error) {
         console.error("Failed to save personal info:", error);
