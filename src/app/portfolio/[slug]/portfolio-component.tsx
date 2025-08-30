@@ -11,13 +11,11 @@ import { Github, Linkedin, Instagram, Mail, Phone, Link as LinkIcon, Award, Brie
 import Link from "next/link";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo } from "react";
 import type { UserData, QuizResult, Portfolio } from "@/lib/types";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Skeleton } from "@/components/ui/skeleton";
 import { initialPortfolioData } from "@/lib/initial-data";
-import { doc, onSnapshot } from "firebase/firestore";
-import { db } from "@/lib/firebase";
 
 
 const Section = ({ icon, title, children, className, id, isVisible }: { icon: React.ReactNode, title: string, children: React.ReactNode, className?: string, id: string, isVisible?: boolean }) => {
@@ -169,26 +167,10 @@ function PortfolioLoadingSkeleton() {
 }
 
 
-export default function PortfolioComponent({ userData: initialUserData }: { userData: UserData | null }) {
-    const [userData, setUserData] = useState<UserData | null>(initialUserData);
-
-    useEffect(() => {
-        if (!initialUserData?.portfolio?.personalInfo?.slug) return;
-        
-        // Slug is used as document ID
-        const userDocRef = doc(db, 'users', initialUserData.id);
-        const unsubscribe = onSnapshot(userDocRef, (doc) => {
-            if (doc.exists()) {
-                setUserData(doc.data() as UserData);
-            }
-        }, (error) => {
-            console.error("Error listening to portfolio updates:", error);
-        });
-
-        return () => unsubscribe();
-    }, [initialUserData]);
-
+export default function PortfolioComponent({ userData }: { userData: UserData | null }) {
     const portfolio = userData?.portfolio;
+    
+    // Fallback to default display options if they don't exist for a user
     const displayOptions = portfolio?.displayOptions ?? initialPortfolioData.portfolio.displayOptions;
 
     const { questionsSolved, interviewsCompleted, averageScore } = useMemo(() => {
@@ -484,5 +466,3 @@ export default function PortfolioComponent({ userData: initialUserData }: { user
         </div>
     );
 }
-
-    

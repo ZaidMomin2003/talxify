@@ -187,10 +187,6 @@ export const getPortfolio = async (userId: string): Promise<Portfolio | null> =>
   return userData?.portfolio ?? null;
 };
 
-export const getPortfolioRef = (userId: string): DocumentReference => {
-    return doc(db, 'users', userId);
-};
-
 
 export const updatePortfolio = async (userId: string, portfolio: Portfolio): Promise<void> => {
   const userRef = doc(db, 'users', userId);
@@ -269,5 +265,3 @@ export const saveWaitlistSubmission = async (submission: {name: string, email: s
         throw error;
     }
 }
-
-    
