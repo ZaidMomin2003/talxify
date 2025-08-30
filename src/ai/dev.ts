@@ -18,3 +18,4 @@ import '@/ai/flows/generate-interview-feedback.ts';
 import '@/ai/flows/enhance-resume.ts';
 import '@/ai/flows/speech-to-text.ts';
 import '@/ai/flows/text-to-speech.ts';
+import '@/ai/flows/conduct-icebreaker-interview.ts';

@@ -3,7 +3,7 @@
 
 import { doc, getDoc, setDoc, updateDoc, arrayUnion, collection, getDocs, addDoc, serverTimestamp, runTransaction, deleteDoc, increment, DocumentReference } from 'firebase/firestore';
 import { db } from './firebase';
-import type { UserData, Portfolio, StoredActivity, OnboardingData, SurveySubmission } from './types';
+import type { UserData, Portfolio, StoredActivity, OnboardingData, SurveySubmission, IcebreakerData } from './types';
 import { initialPortfolioData } from './initial-data';
 import type { SyllabusDay } from '@/ai/flows/generate-syllabus';
 import { format } from 'date-fns';
@@ -56,6 +56,33 @@ export const updateUserOnboardingData = async (userId: string, onboardingData: O
     };
     await setDoc(userRef, updateData, { merge: true });
 }
+
+export const updateUserFromIcebreaker = async (userId: string, icebreakerData: IcebreakerData): Promise<void> => {
+    const userRef = doc(db, 'users', userId);
+    const updateData: { [key: string]: any } = {};
+
+    if (icebreakerData.city) {
+        updateData['portfolio.personalInfo.address'] = icebreakerData.city;
+    }
+     if (icebreakerData.college) {
+        updateData['portfolio.education'] = arrayUnion({
+            institution: icebreakerData.college,
+            degree: 'Degree',
+            year: 'Year'
+        })
+    }
+    if (icebreakerData.hobbies && icebreakerData.hobbies.length > 0) {
+        updateData['portfolio.hobbies'] = arrayUnion(...icebreakerData.hobbies.map(h => ({ name: h })));
+    }
+     if (icebreakerData.skills && icebreakerData.skills.length > 0) {
+        updateData['portfolio.skills'] = arrayUnion(...icebreakerData.skills.map(s => ({ skill: s, expertise: 50 })));
+    }
+    
+    if (Object.keys(updateData).length > 0) {
+        await updateDoc(userRef, updateData);
+    }
+}
+
 
 export const deleteUserDocument = async (userId: string): Promise<void> => {
     const userRef = doc(db, 'users', userId);

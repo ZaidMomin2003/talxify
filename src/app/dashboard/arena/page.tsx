@@ -130,6 +130,10 @@ export default function ArenaPage() {
             const actTopic = act.details.topic.toLowerCase();
             const day = syllabus.find(d => {
                 const dayTopic = d.topic.toLowerCase();
+                // Special case for Day 1 icebreaker
+                if (d.day === 1 && (actTopic.includes('icebreaker') || actTopic.includes('introduction'))) {
+                    return true;
+                }
                 return dayTopic.includes(actTopic) || actTopic.includes(dayTopic);
             });
             
@@ -181,7 +185,8 @@ export default function ArenaPage() {
             const quizTopic = isDay30 ? syllabus.slice(0, 29).map(d => d.topic).join(', ') : topic;
             router.push(`/dashboard/coding-gym?topic=${encodeURIComponent(quizTopic)}`);
         } else if (type === 'interview') {
-            const interviewTopic = isDay30 ? 'Final Comprehensive Review' : topic;
+            const isDay1 = day === 1;
+            const interviewTopic = isDay1 ? 'Icebreaker Introduction' : (isDay30 ? 'Final Comprehensive Review' : topic);
             const meetingId = user!.uid + "_" + Date.now();
             const params = new URLSearchParams({ topic: interviewTopic });
             router.push(`/dashboard/interview/${meetingId}/instructions?${params.toString()}`);
@@ -298,8 +303,8 @@ export default function ArenaPage() {
                                     <div className="flex items-center gap-4 p-3 rounded-lg bg-muted/50">
                                         {dayStatus.interview ? <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" /> : <Briefcase className="h-5 w-5 text-green-500 flex-shrink-0" />}
                                         <div className="flex-1">
-                                            <p className="font-semibold text-foreground">{isFinalDay ? "Final Comprehensive Interview" : "Take a Mock Interview"}</p>
-                                            <p className="text-xs text-muted-foreground">{isFinalDay ? "A 20-minute interview on all learned concepts." : "Practice your interview skills."}</p>
+                                            <p className="font-semibold text-foreground">{day.day === 1 ? "Icebreaker Interview" : isFinalDay ? "Final Comprehensive Interview" : "Take a Mock Interview"}</p>
+                                            <p className="text-xs text-muted-foreground">{day.day === 1 ? "A friendly chat to get to know you." : (isFinalDay ? "A 20-minute interview on all learned concepts." : "Practice your interview skills.")}</p>
                                         </div>
                                          <Button size="sm" onClick={() => handleStartChallenge(day.day, 'interview')} disabled={!isUnlocked}>
                                             {dayStatus.isInterviewInProgress 

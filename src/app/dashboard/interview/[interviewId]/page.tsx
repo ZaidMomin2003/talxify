@@ -9,6 +9,7 @@ import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { generateInterviewResponse } from '@/ai/flows/generate-interview-response';
+import { conductIcebreakerInterview } from '@/ai/flows/conduct-icebreaker-interview';
 import { speechToText } from '@/ai/flows/speech-to-text';
 import { textToSpeech } from '@/ai/flows/text-to-speech';
 import type { InterviewState } from '@/lib/interview-types';
@@ -81,22 +82,40 @@ function InterviewPageContent() {
             
             // Save the data first before redirecting.
             await addActivity(user.uid, finalActivity);
-            router.push(`/dashboard/interview/${interviewId}/results`);
+
+            // Don't redirect for icebreaker, just go to dashboard.
+            if (interviewState.topic === 'Icebreaker Introduction') {
+                toast({ title: "Thank You!", description: "Your profile has been updated with your information." });
+                router.push('/dashboard/arena');
+            } else {
+                 router.push(`/dashboard/interview/${interviewId}/results`);
+            }
 
         } else {
             // If something went wrong or the interview was empty, just go to the dashboard
             router.push('/dashboard');
         }
     
-      }, [user, transcript, interviewState, interviewId, router]);
+      }, [user, transcript, interviewState, interviewId, router, toast]);
 
 
     const processAndRespond = useCallback(async (state: InterviewState) => {
-        if (!state) return;
+        if (!state || !user) return;
         
         setStatus('speaking');
         try {
-          const { response: aiText, newState } = await generateInterviewResponse(state);
+            const isIcebreaker = state.topic === 'Icebreaker Introduction';
+            let aiText, newState;
+            
+            if (isIcebreaker) {
+                const icebreakerResponse = await conductIcebreakerInterview(user.uid, state);
+                aiText = icebreakerResponse.response;
+                newState = icebreakerResponse.newState;
+            } else {
+                const standardResponse = await generateInterviewResponse(state);
+                aiText = standardResponse.response;
+                newState = standardResponse.newState;
+            }
           
           setTranscript(prev => [...prev, { speaker: 'ai', text: aiText }]);
           setInterviewState(newState);
@@ -126,7 +145,7 @@ function InterviewPageContent() {
           toast({ title: "AI Error", description: "Could not get a response from the AI. Please try again.", variant: "destructive"});
           setStatus('ready');
         }
-    }, [toast, endSession]);
+    }, [toast, endSession, user]);
     
     // This is now called from the instructions page. The interview itself doesn't need to fetch its own details.
     const startSession = async (initialState: InterviewState) => {

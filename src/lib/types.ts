@@ -67,6 +67,13 @@ export interface OnboardingData {
     companies: string[];
 }
 
+export interface IcebreakerData {
+    college?: string;
+    city?: string;
+    skills?: string[];
+    hobbies?: string[];
+}
+
 // All data stored under a user's document in Firestore
 export interface UserData {
     id: string;
@@ -120,6 +127,7 @@ export interface Portfolio {
     achievements: Achievement[];
     testimonials: Testimonial[];
     faqs: FAQ[];
+    hobbies: { name: string }[];
     displayOptions: {
         showAbout: boolean;
         showVideo: boolean;
@@ -144,6 +152,7 @@ export interface PersonalInfo {
     bannerUrl: string;
     email: string;
     phone: string;
+    address?: string;
     youtubeVideoUrl?: string;
 }
 
