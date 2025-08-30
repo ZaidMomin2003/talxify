@@ -9,6 +9,22 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 
+const getFriendlyAuthErrorMessage = (errorCode: string) => {
+  switch (errorCode) {
+    case 'auth/email-already-in-use':
+      return 'This email address is already in use by another account.';
+    case 'auth/invalid-email':
+      return 'The email address you entered is not valid.';
+    case 'auth/operation-not-allowed':
+      return 'Email and password sign-up is not currently enabled.';
+    case 'auth/weak-password':
+      return 'The password is too weak. It must be at least 6 characters long.';
+    default:
+      return 'An unexpected error occurred during sign-up. Please try again.';
+  }
+};
+
+
 export default function SignupPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -29,10 +45,11 @@ export default function SignupPage() {
       await signUp({ name, email, password });
       router.push('/dashboard');
     } catch (error: any) {
-      console.error(error);
+      console.error("Signup Error Code:", error.code);
+      const friendlyMessage = getFriendlyAuthErrorMessage(error.code);
       toast({
         title: "Sign-up failed",
-        description: error.message || "An unexpected error occurred.",
+        description: friendlyMessage,
         variant: "destructive",
       });
     } finally {

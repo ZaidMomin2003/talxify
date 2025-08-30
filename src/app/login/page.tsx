@@ -14,6 +14,24 @@ import { auth } from '@/lib/firebase';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 
+const getFriendlyAuthErrorMessage = (errorCode: string) => {
+  switch (errorCode) {
+    case 'auth/user-not-found':
+    case 'auth/wrong-password':
+    case 'auth/invalid-credential':
+      return 'Invalid email or password. Please check your credentials and try again.';
+    case 'auth/invalid-email':
+      return 'The email address you entered is not valid.';
+    case 'auth/user-disabled':
+      return 'This user account has been disabled.';
+    case 'auth/too-many-requests':
+        return 'Access to this account has been temporarily disabled due to too many failed login attempts. You can reset your password or try again later.';
+    default:
+      return 'An unexpected error occurred during sign-in. Please try again.';
+  }
+};
+
+
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -36,10 +54,11 @@ export default function LoginPage() {
       await signIn({ email, password });
       router.push('/dashboard');
     } catch (error: any) {
-      console.error(error);
+      console.error("Login Error Code:", error.code);
+      const friendlyMessage = getFriendlyAuthErrorMessage(error.code);
       toast({
         title: "Sign-in failed",
-        description: error.message || "An unexpected error occurred.",
+        description: friendlyMessage,
         variant: "destructive",
       });
     } finally {
