@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import Link from "next/link";
@@ -185,13 +186,20 @@ function DashboardLayoutContent({
   const filteredActivity = recentActivity.filter(item => {
     const query = searchQuery.toLowerCase();
     if (item.details.topic.toLowerCase().includes(query)) return true;
+    if (item.type.toLowerCase().replace(/-/g, ' ').includes(query)) return true;
 
     switch(item.type) {
         case 'quiz':
-            return (item as QuizResult).difficulty.toLowerCase().includes(query);
+            const quizItem = item as QuizResult;
+            return quizItem.difficulty.toLowerCase().includes(query) || 
+                   quizItem.details.score?.toString().toLowerCase().includes(query);
         case 'interview':
             const interviewItem = item as InterviewActivity;
-            return interviewItem.details.role?.toLowerCase().includes(query) || interviewItem.details.level?.toLowerCase().includes(query);
+            return interviewItem.details.role?.toLowerCase().includes(query) || 
+                   interviewItem.details.level?.toLowerCase().includes(query);
+        case 'note-generation':
+             // The main topic search already covers this.
+            return false;
         default:
             return false;
     }
@@ -208,7 +216,12 @@ function DashboardLayoutContent({
 
   const getActivityTitle = (item: StoredActivity) => {
     switch (item.type) {
-        case 'quiz': return `${item.details.topic} Quiz`;
+        case 'quiz': 
+            const quizItem = item as QuizResult;
+            if (quizItem.details.difficulty === 'Izanami Mode') {
+                return `Code Izanami: ${item.details.topic}`;
+            }
+            return `${item.details.topic} Quiz`;
         case 'interview': return `${item.details.topic} Interview`;
         case 'note-generation': return `Notes for ${item.details.topic}`;
         default: return 'Completed an activity';
