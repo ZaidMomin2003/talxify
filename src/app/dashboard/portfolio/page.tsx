@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { PlusCircle, Trash2, Loader2, Lock, Gem, ExternalLink, Link as LinkIcon, UploadCloud, Image as ImageIcon, Save } from "lucide-react";
+import { PlusCircle, Trash2, Loader2, Lock, Gem, ExternalLink, Link as LinkIcon, UploadCloud, Image as ImageIcon, Save, CheckCircle, AlertTriangle } from "lucide-react";
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/auth-context";
@@ -152,8 +152,10 @@ export default function PortfolioPage() {
   const [userData, setUserData] = useState<UserData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [isSavingPersonalInfo, setIsSavingPersonalInfo] = useState(false);
-  const [slugError, setSlugError] = useState<string | null>(null);
+  
+  const [isCheckingSlug, setIsCheckingSlug] = useState(false);
+  const [slugStatus, setSlugStatus] = useState<'idle' | 'available' | 'taken' | 'invalid'>('idle');
+  const [slugMessage, setSlugMessage] = useState('');
 
 
   const fetchPortfolio = useCallback(async () => {
@@ -244,7 +246,8 @@ export default function PortfolioPage() {
   
   const handleSlugChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!portfolio) return;
-    setSlugError(null);
+    setSlugStatus('idle');
+    setSlugMessage('');
     const rawSlug = e.target.value;
     const sanitizedSlug = rawSlug
       .toLowerCase()
@@ -252,6 +255,31 @@ export default function PortfolioPage() {
       .replace(/[^\w\-]+/g, '')
       .replace(/\-\-+/g, '-');
     setPortfolio({...portfolio, personalInfo: {...portfolio.personalInfo, slug: sanitizedSlug}});
+  }
+
+  const handleCheckSlug = async () => {
+    if (!user || !portfolio?.personalInfo.slug) return;
+
+    setIsCheckingSlug(true);
+    setSlugStatus('idle');
+    setSlugMessage('');
+
+    if (portfolio.personalInfo.slug.length < 3) {
+        setSlugStatus('invalid');
+        setSlugMessage('Slug must be at least 3 characters long.');
+        setIsCheckingSlug(false);
+        return;
+    }
+
+    const existingUser = await getUserBySlug(portfolio.personalInfo.slug);
+    if (existingUser && existingUser.id !== user.uid) {
+        setSlugStatus('taken');
+        setSlugMessage('This URL is already taken. Please choose another.');
+    } else {
+        setSlugStatus('available');
+        setSlugMessage('This URL is available!');
+    }
+    setIsCheckingSlug(false);
   }
 
   const handleDisplayOptionChange = (option: keyof Portfolio['displayOptions'], value: boolean) => {
@@ -267,40 +295,6 @@ export default function PortfolioPage() {
       };
     });
   };
-
-  const handleSavePersonalInfo = async () => {
-    if (!user || !portfolio) return;
-    setIsSavingPersonalInfo(true);
-    setSlugError(null);
-
-    const slugExists = await getUserBySlug(portfolio.personalInfo.slug);
-    if (slugExists && slugExists.id !== user.uid) {
-        setSlugError('This URL slug is already taken. Please choose another.');
-        setIsSavingPersonalInfo(false);
-        return;
-    }
-
-    try {
-        const updatedPartialPortfolio = {
-            personalInfo: portfolio.personalInfo,
-            socials: portfolio.socials
-        };
-        await updatePortfolio(user.uid, updatedPartialPortfolio as Partial<Portfolio>);
-        toast({
-            title: "Personal Info Saved",
-            description: "Your personal details and URL have been updated.",
-        });
-    } catch (error) {
-        console.error("Failed to save personal info:", error);
-        toast({
-            title: "Save Failed",
-            description: "Could not save your personal info. Please try again.",
-            variant: "destructive",
-        });
-    } finally {
-        setIsSavingPersonalInfo(false);
-    }
-  }
 
 
   if (isLoading || !portfolio || !userData || !user) {
@@ -344,16 +338,27 @@ export default function PortfolioPage() {
                 <Input id="profession" value={portfolio.personalInfo.profession} onChange={(e) => setPortfolio({...portfolio, personalInfo: {...portfolio.personalInfo, profession: e.target.value}})} />
               </div>
             </div>
-            <div>
+             <div>
                 <Label htmlFor="slug">Portfolio URL</Label>
                 <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground p-2 rounded-md bg-muted whitespace-nowrap">
+                    <span className="text-sm text-muted-foreground p-2 rounded-l-md bg-muted border border-r-0 whitespace-nowrap">
                        talxify.space/portfolio/
                     </span>
-                    <Input id="slug" value={portfolio.personalInfo.slug} onChange={handleSlugChange} />
+                    <Input id="slug" value={portfolio.personalInfo.slug} onChange={handleSlugChange} className="rounded-l-none" />
+                     <Button onClick={handleCheckSlug} disabled={isCheckingSlug}>
+                        {isCheckingSlug ? <Loader2 className="h-4 w-4 animate-spin"/> : 'Check Availability'}
+                     </Button>
                 </div>
-                 {slugError && <p className="text-sm text-destructive mt-1">{slugError}</p>}
-                <p className="text-sm text-muted-foreground mt-1">This will be your unique portfolio URL. Use only letters, numbers, and hyphens.</p>
+                 {slugMessage && (
+                    <div className={cn("flex items-center gap-2 text-sm mt-2", 
+                        slugStatus === 'available' && "text-green-500",
+                        (slugStatus === 'taken' || slugStatus === 'invalid') && "text-destructive"
+                    )}>
+                        {slugStatus === 'available' && <CheckCircle className="h-4 w-4"/>}
+                        {(slugStatus === 'taken' || slugStatus === 'invalid') && <AlertTriangle className="h-4 w-4"/>}
+                        {slugMessage}
+                    </div>
+                 )}
             </div>
             <div>
               <Label htmlFor="bio">Bio</Label>
@@ -401,13 +406,6 @@ export default function PortfolioPage() {
                     <Label htmlFor="phone">Phone (Optional)</Label>
                     <Input id="phone" type="tel" value={portfolio.personalInfo.phone} onChange={(e) => setPortfolio({...portfolio, personalInfo: {...portfolio.personalInfo, phone: e.target.value}})} />
                 </div>
-            </div>
-             <div className="flex justify-end pt-2">
-                <Button onClick={handleSavePersonalInfo} disabled={isSavingPersonalInfo}>
-                    {isSavingPersonalInfo && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    <Save className="mr-2 h-4 w-4" />
-                    Save Personal Info
-                </Button>
             </div>
           </CardContent>
         </Card>
