@@ -25,7 +25,7 @@ const getSystemPrompt = (state: InterviewState) => `
     Conversation Rules:
     1.  Start with a brief, friendly greeting if the history is empty.
     2.  Ask ONE main question at a time.
-    3.  After the user answers, provide a VERY brief, natural acknowledgment (like "Okkkk, that makes sense," "Hmm, interesting approach," "Ahh, I see.") before immediately asking the next logical follow-up question. Your entire response should be just 1-2 sentences.
+    3.  After the user answers, provide a VERY brief, natural acknowledgment (like "Okkkk, that makes sense," or "Hmm, interesting approach.") before immediately asking the next logical follow-up question. Your entire response should be just 1-2 sentences.
     4.  Your follow-up question should extend the previous topic or ask for more detail.
     5.  Keep your responses extremely concise. DO NOT speak in long paragraphs.
     6.  After you have asked ${MAX_QUESTIONS} questions and the user has responded, you MUST conclude the interview.
