@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { PlusCircle, Trash2, Loader2, Lock, Gem, ExternalLink, Link as LinkIcon, UploadCloud, Image as ImageIcon } from "lucide-react";
+import { PlusCircle, Trash2, Loader2, Lock, Gem, ExternalLink, Link as LinkIcon, UploadCloud, Image as ImageIcon, Save } from "lucide-react";
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/auth-context";
@@ -22,6 +22,7 @@ import Image from "next/image";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger, DialogClose } from "@/components/ui/dialog";
 import Script from "next/script";
 import { Switch } from "@/components/ui/switch";
+import { getUserBySlug } from "@/app/zaidmin/actions";
 
 
 const CloudinaryIcon = () => (
@@ -151,6 +152,9 @@ export default function PortfolioPage() {
   const [userData, setUserData] = useState<UserData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isSavingPersonalInfo, setIsSavingPersonalInfo] = useState(false);
+  const [slugError, setSlugError] = useState<string | null>(null);
+
 
   const fetchPortfolio = useCallback(async () => {
     if (!user) return;
@@ -241,6 +245,7 @@ export default function PortfolioPage() {
   
   const handleSlugChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!portfolio) return;
+    setSlugError(null); // Clear error on change
     const rawSlug = e.target.value;
     const sanitizedSlug = rawSlug
       .toLowerCase()
@@ -263,6 +268,43 @@ export default function PortfolioPage() {
       };
     });
   };
+
+  const handleSavePersonalInfo = async () => {
+    if (!user || !portfolio) return;
+    setIsSavingPersonalInfo(true);
+    setSlugError(null);
+
+    // Slug validation
+    const slugExists = await getUserBySlug(portfolio.personalInfo.slug);
+    if (slugExists && slugExists.id !== user.uid) {
+        setSlugError('This URL slug is already taken. Please choose another.');
+        setIsSavingPersonalInfo(false);
+        return;
+    }
+
+    try {
+        // Only update the personal info part of the portfolio
+        const updatedPartialPortfolio = {
+            personalInfo: portfolio.personalInfo,
+            socials: portfolio.socials
+        };
+        await updatePortfolio(user.uid, updatedPartialPortfolio as Portfolio);
+        toast({
+            title: "Personal Info Saved",
+            description: "Your personal details have been updated.",
+        });
+    } catch (error) {
+        console.error("Failed to save personal info:", error);
+        toast({
+            title: "Save Failed",
+            description: "Could not save your personal info. Please try again.",
+            variant: "destructive",
+        });
+    } finally {
+        setIsSavingPersonalInfo(false);
+    }
+  }
+
 
   if (isLoading || !portfolio || !userData || !user) {
     return (
@@ -292,6 +334,7 @@ export default function PortfolioPage() {
         <Card className="shadow-lg border-primary/10">
           <CardHeader>
             <CardTitle>Personal Information</CardTitle>
+            <CardDescription>This section covers your basic details and portfolio URL.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -312,6 +355,7 @@ export default function PortfolioPage() {
                     </span>
                     <Input id="slug" value={portfolio.personalInfo.slug} onChange={handleSlugChange} />
                 </div>
+                 {slugError && <p className="text-sm text-destructive mt-1">{slugError}</p>}
                 <p className="text-sm text-muted-foreground mt-1">This will be your unique portfolio URL. Use only letters, numbers, and hyphens.</p>
             </div>
             <div>
@@ -344,7 +388,14 @@ export default function PortfolioPage() {
                 Paste a link to a YouTube video for your introduction.
               </p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div><Label htmlFor="github">GitHub</Label><Input id="github" value={portfolio.socials.github} onChange={(e) => setPortfolio({...portfolio, socials: {...portfolio.socials, github: e.target.value}})} /></div>
+                <div><Label htmlFor="linkedin">LinkedIn</Label><Input id="linkedin" value={portfolio.socials.linkedin} onChange={(e) => setPortfolio({...portfolio, socials: {...portfolio.socials, linkedin: e.target.value}})} /></div>
+                <div><Label htmlFor="twitter">Twitter / X</Label><Input id="twitter" value={portfolio.socials.twitter} onChange={(e) => setPortfolio({...portfolio, socials: {...portfolio.socials, twitter: e.target.value}})} /></div>
+                <div><Label htmlFor="website">Personal Website (Optional)</Label><Input id="website" value={portfolio.socials.website} onChange={(e) => setPortfolio({...portfolio, socials: {...portfolio.socials, website: e.target.value}})} /></div>
+                <div><Label htmlFor="instagram">Instagram (Optional)</Label><Input id="instagram" value={portfolio.socials.instagram} onChange={(e) => setPortfolio({...portfolio, socials: {...portfolio.socials, instagram: e.target.value}})} /></div>
+            </div>
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <Label htmlFor="email">Email</Label>
                     <Input id="email" type="email" value={portfolio.personalInfo.email} onChange={(e) => setPortfolio({...portfolio, personalInfo: {...portfolio.personalInfo, email: e.target.value}})} />
@@ -353,6 +404,13 @@ export default function PortfolioPage() {
                     <Label htmlFor="phone">Phone (Optional)</Label>
                     <Input id="phone" type="tel" value={portfolio.personalInfo.phone} onChange={(e) => setPortfolio({...portfolio, personalInfo: {...portfolio.personalInfo, phone: e.target.value}})} />
                 </div>
+            </div>
+             <div className="flex justify-end pt-2">
+                <Button onClick={handleSavePersonalInfo} disabled={isSavingPersonalInfo}>
+                    {isSavingPersonalInfo && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    <Save className="mr-2 h-4 w-4" />
+                    Save Personal Info
+                </Button>
             </div>
           </CardContent>
         </Card>
@@ -376,21 +434,6 @@ export default function PortfolioPage() {
                   <Label>{color.name}</Label>
                 </div>
               ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-lg border-primary/10">
-          <CardHeader>
-            <CardTitle>Social Links</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div><Label htmlFor="github">GitHub</Label><Input id="github" value={portfolio.socials.github} onChange={(e) => setPortfolio({...portfolio, socials: {...portfolio.socials, github: e.target.value}})} /></div>
-                <div><Label htmlFor="linkedin">LinkedIn</Label><Input id="linkedin" value={portfolio.socials.linkedin} onChange={(e) => setPortfolio({...portfolio, socials: {...portfolio.socials, linkedin: e.target.value}})} /></div>
-                <div><Label htmlFor="twitter">Twitter / X</Label><Input id="twitter" value={portfolio.socials.twitter} onChange={(e) => setPortfolio({...portfolio, socials: {...portfolio.socials, twitter: e.target.value}})} /></div>
-                <div><Label htmlFor="website">Personal Website (Optional)</Label><Input id="website" value={portfolio.socials.website} onChange={(e) => setPortfolio({...portfolio, socials: {...portfolio.socials, website: e.target.value}})} /></div>
-                <div><Label htmlFor="instagram">Instagram (Optional)</Label><Input id="instagram" value={portfolio.socials.instagram} onChange={(e) => setPortfolio({...portfolio, socials: {...portfolio.socials, instagram: e.target.value}})} /></div>
             </div>
           </CardContent>
         </Card>
