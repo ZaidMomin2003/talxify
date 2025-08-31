@@ -5,24 +5,22 @@ import { conductIcebreakerInterview } from '@/ai/flows/conduct-icebreaker-interv
 import type { InterviewState } from '@/lib/interview-types';
 
 /**
- * This is the webhook that Dialogflow CX will call.
- * It receives the current state of the conversation from Dialogflow,
+ * This is the webhook that Dialogflow CX will call for text-only interactions.
+ * It receives the current state of the conversation from a custom-built client,
  * uses our custom Genkit AI flow to generate the next response,
- * and sends that response back to Dialogflow to be spoken to the user.
+ * and sends that response back to the client.
+ * The 'tag' is no longer required as we are not using the df-messenger component.
  */
 export async function POST(req: NextRequest) {
   try {
     const requestBody = await req.json();
 
-    // The webhook request contains a tag. We need to send it back in our response.
-    const tag = requestBody.fulfillmentInfo?.tag;
-
-    // The user's transcribed text is in the `text` field of the request.
+    // The user's text is in the `text` field of the request.
     const userQuery: string = requestBody.text || '';
-    const userId: string = requestBody.sessionInfo?.parameters?.userId || '';
+    const userId: string = requestBody.sessionInfo?.userId || '';
     
-    // The 'sessionInfo.parameters' object from Dialogflow contains our interview state.
-    const sessionParams = requestBody.sessionInfo?.parameters || {};
+    // The 'sessionInfo' object from our custom client contains our interview state.
+    const sessionParams = requestBody.sessionInfo || {};
 
     const currentState: InterviewState = {
         interviewId: sessionParams.interviewId || 'default-session',
@@ -41,6 +39,7 @@ export async function POST(req: NextRequest) {
 
     let aiText, newState;
 
+    // We can reuse the same backend flows
     if (currentState.topic === 'Icebreaker Introduction') {
         const { response, newState: updatedState } = await conductIcebreakerInterview(userId, currentState);
         aiText = response;
@@ -51,41 +50,19 @@ export async function POST(req: NextRequest) {
         newState = updatedState;
     }
 
-    // Format the response in the way Dialogflow expects.
-    // The tag must be included inside each message object.
+    // Format the response for our custom client.
     const responseJson = {
-      fulfillment_response: {
-        messages: [
-          {
-            text: {
-              text: [aiText],
-            },
-            tag: tag, // CORRECT: The tag must be inside the message object.
-          },
-        ],
-        merge_behavior: "REPLACE", // Best practice to prevent message duplication
-      },
-      session_info: {
-        parameters: {
-          ...newState, // Pass the entire new state back to Dialogflow
-        },
-      },
+      response: aiText,
+      sessionInfo: newState,
     };
 
     return NextResponse.json(responseJson);
 
   } catch (error) {
-    console.error('Error in Dialogflow webhook:', error);
+    console.error('Error in custom text webhook:', error);
     const errorResponse = {
-      fulfillment_response: {
-        messages: [
-          {
-            text: {
-              text: ["I'm sorry, I encountered a technical issue. Could you please repeat that?"],
-            },
-          },
-        ],
-      },
+      response: "I'm sorry, I encountered a technical issue. Could you please repeat that?",
+      sessionInfo: {},
     };
     return NextResponse.json(errorResponse, { status: 500 });
   }
