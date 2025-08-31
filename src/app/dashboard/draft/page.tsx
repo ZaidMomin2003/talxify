@@ -1,209 +1,224 @@
-
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useSearchParams } from 'next/navigation';
+import React, { useState, useEffect, useCallback, useRef, Suspense } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Loader2, Mic, MicOff, AlertTriangle, User, BrainCircuit, Play, StopCircle } from 'lucide-react';
-import { createClient, AgentEvents } from '@deepgram/sdk';
+import { Loader2, Mic, BrainCircuit, User, AlertTriangle } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
+import { speechToTextWithDeepgram } from '@/ai/flows/deepgram-stt';
+import { textToSpeechWithDeepgram } from '@/ai/flows/deepgram-tts';
+import type { InterviewState } from '@/lib/interview-types';
+import { addActivity, updateActivity } from '@/lib/firebase-service';
+import type { InterviewActivity } from '@/lib/types';
 
-type ConnectionState = 'disconnected' | 'connecting' | 'connected' | 'error';
-type AgentStatus = 'idle' | 'listening' | 'thinking' | 'speaking';
 
-const useDeepgramAgent = () => {
-    const [connection, setConnection] = useState<any>(null);
-    const [connectionState, setConnectionState] = useState<ConnectionState>('disconnected');
-    const [agentStatus, setAgentStatus] = useState<AgentStatus>('idle');
-    const [transcript, setTranscript] = useState('');
-    const micStream = useRef<MediaStream | null>(null);
-    const processor = useRef<any>(null);
-    const audioContext = useRef<AudioContext | null>(null);
-    const { toast } = useToast();
-
-    const connect = useCallback(async (interviewConfig: { topic: string, role: string, level: string, company?: string }) => {
-        if (connection) {
-            connection.finish();
-        }
-
-        setConnectionState('connecting');
-
-        try {
-            const newConnection = createClient(process.env.NEXT_PUBLIC_DEEPGRAM_API_KEY!).agent.listen();
-
-            newConnection.on(AgentEvents.Welcome, () => {
-                console.log("Agent Welcome");
-                const systemPrompt = `
-                    You are Alex, an expert, friendly, and professional AI interviewer. Your goal is to conduct a natural, conversational mock interview.
-                    The candidate is interviewing for a ${interviewConfig.level} ${interviewConfig.role} role. 
-                    The main technical topic is: ${interviewConfig.topic}.
-                    ${interviewConfig.company ? `The interview is tailored for ${interviewConfig.company}. Adapt your style accordingly.` : ''}
-
-                    Conversation Rules:
-                    1. Start with a brief, friendly greeting.
-                    2. Ask ONE main question at a time.
-                    3. Keep your responses concise (1-3 sentences).
-                    4. After you have asked about 6-7 questions, you MUST conclude the interview with a brief summary of feedback. Start the final message with "Okay, that's all the questions I have. Here's my feedback...".
-                `;
-
-                newConnection.configure({
-                    agent: {
-                        listen: { model: "nova-2" },
-                        think: { provider: "google", model: "gemini-1.5-flash", prompt: systemPrompt },
-                        speak: { model: "aura-asteria-en" },
-                    },
-                });
-                setConnectionState('connected');
-            });
-
-            newConnection.on(AgentEvents.AgentUtteranceEnd, () => setAgentStatus('idle'));
-            newConnection.on(AgentEvents.UserUtteranceEnd, () => setAgentStatus('thinking'));
-            newConnection.on(AgentEvents.UserStartedSpeaking, () => setAgentStatus('listening'));
-            newConnection.on(AgentEvents.AgentStartedSpeaking, () => setAgentStatus('speaking'));
-            
-            newConnection.on(AgentEvents.ConversationText, (data) => {
-                setTranscript(t => `${t}\n${data.role}: ${data.content}`);
-            });
-
-            newConnection.on(AgentEvents.Error, (error) => {
-                console.error("Agent Error:", error);
-                toast({ title: "Agent Error", description: "An error occurred with the agent.", variant: "destructive" });
-                setConnectionState('error');
-            });
-
-            newConnection.on(AgentEvents.Close, () => {
-                console.log("Connection closed.");
-                disconnect();
-            });
-
-            micStream.current = await navigator.mediaDevices.getUserMedia({ audio: true });
-            audioContext.current = new AudioContext();
-            const source = audioContext.current.createMediaStreamSource(micStream.current);
-            await audioContext.current.audioWorklet.addModule('/audio-processor.js');
-            processor.current = new AudioWorkletNode(audioContext.current, 'audio-processor');
-            source.connect(processor.current);
-            processor.current.port.onmessage = (event: MessageEvent) => {
-                if (newConnection.getReadyState() === 1) { // WebSocket.OPEN
-                    newConnection.send(event.data);
-                }
-            };
-            
-            setConnection(newConnection);
-            
-        } catch (error) {
-            console.error("Failed to connect to Deepgram Agent:", error);
-            setConnectionState('error');
-            toast({ title: "Connection Failed", description: "Could not connect to the voice agent. Please check microphone permissions.", variant: "destructive" });
-        }
-    }, [connection, toast]);
-    
-    const disconnect = useCallback(() => {
-        if(connection) {
-            connection.finish();
-        }
-        if (micStream.current) {
-            micStream.current.getTracks().forEach(track => track.stop());
-            micStream.current = null;
-        }
-        if (processor.current) {
-            processor.current.disconnect();
-            processor.current = null;
-        }
-        if (audioContext.current && audioContext.current.state !== 'closed') {
-             audioContext.current.close();
-        }
-        setConnection(null);
-        setConnectionState('disconnected');
-        setAgentStatus('idle');
-    }, [connection]);
-
-    useEffect(() => {
-      if (!process.env.NEXT_PUBLIC_DEEPGRAM_API_KEY) {
-        console.error("Deepgram API Key not found.");
-        setConnectionState('error');
-      }
-      // Ensure the audio processor script is available in the public folder.
-      // This is a client-side check.
-    }, []);
-
-    return { connect, disconnect, connectionState, agentStatus, transcript };
-};
-
+type AgentStatus = 'idle' | 'listening' | 'processing' | 'speaking';
 
 function DraftInterviewComponent() {
     const { user } = useAuth();
+    const router = useRouter();
     const searchParams = useSearchParams();
+    const { toast } = useToast();
     
-    const interviewConfig = {
+    const [status, setStatus] = useState<AgentStatus>('idle');
+    const [transcript, setTranscript] = useState<{ speaker: 'user' | 'ai', text: string }[]>([]);
+    const [isRecording, setIsRecording] = useState(false);
+
+    const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+    const audioChunksRef = useRef<Blob[]>([]);
+    const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
+    
+    const interviewId = `interview_${user?.uid}_${Date.now()}`;
+
+    const [interviewState, setInterviewState] = useState<InterviewState>({
+        interviewId: interviewId,
         topic: searchParams.get('topic') || 'General Software Engineering',
         role: searchParams.get('role') || 'Software Engineer',
         level: searchParams.get('level') || 'Entry-level',
-        company: searchParams.get('company') || undefined,
-    };
+        company: searchParams.get('company') || '',
+        history: [],
+        isComplete: false,
+    });
     
-    const { connect, disconnect, connectionState, agentStatus, transcript } = useDeepgramAgent();
+    const startRecording = useCallback(() => {
+        navigator.mediaDevices.getUserMedia({ audio: true })
+            .then(stream => {
+                mediaRecorderRef.current = new MediaRecorder(stream);
+                audioChunksRef.current = [];
+
+                mediaRecorderRef.current.addEventListener("dataavailable", event => {
+                    audioChunksRef.current.push(event.data);
+                });
+
+                mediaRecorderRef.current.start();
+                setIsRecording(true);
+                setStatus('listening');
+            })
+            .catch(err => {
+                console.error("Error accessing microphone:", err);
+                toast({ title: "Microphone Error", description: "Could not access microphone. Please check permissions.", variant: "destructive" });
+            });
+    }, [toast]);
+    
+    const stopRecordingAndProcess = useCallback(async () => {
+        if (mediaRecorderRef.current) {
+            mediaRecorderRef.current.stop();
+            setIsRecording(false);
+            setStatus('processing');
+
+            mediaRecorderRef.current.addEventListener("stop", async () => {
+                const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+                const reader = new FileReader();
+                reader.readAsDataURL(audioBlob);
+                reader.onloadend = async () => {
+                    const base64Audio = reader.result as string;
+                    
+                    try {
+                        // 1. STT: Transcribe user's speech
+                        const sttResult = await speechToTextWithDeepgram({ audioDataUri: base64Audio });
+                        const userText = sttResult.transcript;
+                        if (!userText) {
+                            setStatus('idle');
+                            toast({ description: "Could not understand audio. Please try again."})
+                            return;
+                        }
+
+                        setTranscript(prev => [...prev, { speaker: 'user', text: userText }]);
+                        
+                        const stateForApi = { ...interviewState };
+                        stateForApi.history.push({ role: 'user', parts: [{ text: userText }] });
+
+                        // 2. LLM: Get AI response
+                        const response = await fetch('/api/deepgram-agent', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ state: stateForApi, message: userText }),
+                        });
+
+                        if (!response.ok) throw new Error("Failed to get AI response.");
+
+                        const { text: aiText, newState } = await response.json();
+                        setInterviewState(newState);
+                        setTranscript(prev => [...prev, { speaker: 'ai', text: aiText }]);
+                        
+                        // 3. TTS: Convert AI response to speech and play
+                        setStatus('speaking');
+                        const ttsResult = await textToSpeechWithDeepgram({ text: aiText });
+                        
+                        if (audioPlayerRef.current) {
+                            audioPlayerRef.current.src = ttsResult.audioDataUri;
+                            audioPlayerRef.current.play();
+                            audioPlayerRef.current.onended = () => {
+                                 if (newState.isComplete) {
+                                    // Save the final results
+                                    const finalActivity: InterviewActivity = {
+                                        id: interviewId,
+                                        type: 'interview',
+                                        timestamp: new Date().toISOString(),
+                                        transcript: [...transcript, { speaker: 'user', text: userText }, { speaker: 'ai', text: aiText }],
+                                        feedback: "Feedback will be generated on the results page.",
+                                        details: interviewState
+                                    };
+                                    addActivity(user!.uid, finalActivity).then(() => {
+                                        router.push(`/dashboard/interview/${interviewId}/results`);
+                                    });
+                                } else {
+                                    setStatus('idle');
+                                }
+                            };
+                        }
+                    } catch (error) {
+                        console.error(error);
+                        toast({ title: "Error", description: "An error occurred during processing.", variant: "destructive" });
+                        setStatus('idle');
+                    }
+                };
+            });
+        }
+    }, [interviewState, toast, transcript, user, interviewId, router]);
+    
+    // Initial greeting
+    useEffect(() => {
+        if (transcript.length === 0 && user) {
+            setStatus('processing');
+            const initialGreeting = `Hello ${user.displayName}! I'm Alex, your AI interviewer. When you're ready, hold the button below and tell me a bit about yourself to get started.`;
+            
+            setInterviewState(prev => ({
+                ...prev,
+                history: [{ role: 'model', parts: [{text: initialGreeting}] }]
+            }));
+            
+            textToSpeechWithDeepgram({ text: initialGreeting }).then(ttsResult => {
+                setTranscript([{ speaker: 'ai', text: initialGreeting }]);
+                 if (audioPlayerRef.current) {
+                    audioPlayerRef.current.src = ttsResult.audioDataUri;
+                    audioPlayerRef.current.play();
+                    audioPlayerRef.current.onended = () => setStatus('idle');
+                }
+            }).catch(err => {
+                console.error(err);
+                setStatus('idle');
+                toast({ title: "Initialization Error", description: "Could not generate opening message.", variant: "destructive"})
+            });
+        }
+    }, [user, transcript.length, toast]);
 
     const getStatusInfo = () => {
-        switch (agentStatus) {
-            case 'listening': return { text: "Listening...", icon: <User className="w-12 h-12 text-blue-500"/> };
-            case 'thinking': return { text: "Thinking...", icon: <BrainCircuit className="w-12 h-12 text-purple-500 animate-pulse"/> };
-            case 'speaking': return { text: "Speaking...", icon: <BrainCircuit className="w-12 h-12 text-primary animate-pulse"/> };
-            default: return { text: "Idle", icon: <Mic className="w-12 h-12 text-muted-foreground"/> };
+        switch (status) {
+            case 'listening': return { text: "Listening...", icon: <User className="w-12 h-12 text-blue-500 animate-pulse"/>, color: "bg-blue-500" };
+            case 'processing': return { text: "Thinking...", icon: <BrainCircuit className="w-12 h-12 text-purple-500 animate-pulse"/>, color: "bg-purple-500" };
+            case 'speaking': return { text: "Speaking...", icon: <BrainCircuit className="w-12 h-12 text-primary animate-pulse"/>, color: "bg-primary" };
+            default: return { text: "Ready", icon: <Mic className="w-12 h-12 text-muted-foreground"/>, color: "bg-muted-foreground" };
         }
     };
 
     const statusInfo = getStatusInfo();
+    const lastMessage = transcript.slice(-1)[0];
 
     return (
         <main className="flex-1 p-4 sm:p-6 lg:p-8 flex items-center justify-center bg-muted/40">
-            <Card className="w-full max-w-lg shadow-2xl">
+            <audio ref={audioPlayerRef} hidden />
+            <Card className="w-full max-w-2xl shadow-2xl">
                 <CardHeader>
                     <CardTitle className="text-2xl font-bold">Live Voice Interview</CardTitle>
-                    <CardDescription>Topic: {interviewConfig.topic}</CardDescription>
+                    <CardDescription>Topic: {interviewState.topic}</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <div className="flex flex-col items-center justify-center h-64 border-2 border-dashed rounded-lg p-4">
-                        {connectionState === 'disconnected' && (
-                            <>
-                                <MicOff className="w-16 h-16 text-muted-foreground mb-4" />
-                                <h3 className="text-xl font-semibold">Ready to start?</h3>
-                                <p className="text-muted-foreground mb-6">Click below to begin the interview.</p>
-                                <Button onClick={() => connect(interviewConfig)} size="lg">
-                                    <Play className="mr-2" /> Start Interview
-                                </Button>
-                            </>
-                        )}
-                        {connectionState === 'connecting' && (
-                             <>
-                                <Loader2 className="w-16 h-16 text-primary animate-spin mb-4" />
-                                <h3 className="text-xl font-semibold">Connecting...</h3>
-                                <p className="text-muted-foreground">Please allow microphone access.</p>
-                             </>
-                        )}
-                         {connectionState === 'error' && (
-                             <>
-                                <AlertTriangle className="w-16 h-16 text-destructive mb-4" />
-                                <h3 className="text-xl font-semibold">Connection Failed</h3>
-                                <p className="text-muted-foreground mb-6">Could not connect. Please check permissions and refresh.</p>
-                                <Button onClick={() => connect(interviewConfig)} variant="destructive">Try Again</Button>
-                             </>
-                        )}
-                        {connectionState === 'connected' && (
-                           <>
-                                <div className="text-center mb-6">
-                                    {statusInfo.icon}
-                                    <p className="font-semibold mt-2">{statusInfo.text}</p>
-                                </div>
-                                <div className="h-16 text-sm text-center text-muted-foreground overflow-y-auto">
-                                    <p className="whitespace-pre-wrap">{transcript.split('\n').slice(-2).join('\n') || "The conversation will appear here."}</p>
-                                </div>
-                                <Button onClick={disconnect} size="lg" variant="destructive" className="mt-6">
-                                    <StopCircle className="mr-2" /> End Interview
-                                </Button>
-                           </>
-                        )}
+                    <div className="flex flex-col items-center justify-between h-96 border-2 border-dashed rounded-lg p-4">
+                        {/* Status Display */}
+                        <div className="text-center">
+                            {statusInfo.icon}
+                            <p className="font-semibold mt-2">{statusInfo.text}</p>
+                        </div>
+                        
+                        {/* Transcript */}
+                         <div className="h-24 w-full text-center text-lg text-foreground overflow-y-auto px-4">
+                            {lastMessage && (
+                                <p>
+                                    <span className={lastMessage.speaker === 'ai' ? "font-bold text-primary" : "font-bold text-blue-500"}>
+                                        {lastMessage.speaker === 'ai' ? 'AI: ' : 'You: '}
+                                    </span>
+                                    {lastMessage.text}
+                                </p>
+                            )}
+                         </div>
+
+                        {/* Control Button */}
+                        <div className="text-center">
+                             <button
+                                onMouseDown={startRecording}
+                                onMouseUp={stopRecordingAndProcess}
+                                onTouchStart={startRecording}
+                                onTouchEnd={stopRecordingAndProcess}
+                                disabled={status !== 'idle'}
+                                className="w-24 h-24 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg transition-all duration-300 transform hover:scale-105 active:scale-95 disabled:bg-muted-foreground disabled:cursor-not-allowed"
+                            >
+                                <Mic className="w-10 h-10" />
+                            </button>
+                            <p className="text-sm text-muted-foreground mt-4">Hold to Speak</p>
+                        </div>
                     </div>
                 </CardContent>
             </Card>
@@ -211,58 +226,10 @@ function DraftInterviewComponent() {
     );
 }
 
-// In-line script for the AudioWorkletProcessor
-const audioProcessorScript = `
-  class AudioProcessor extends AudioWorkletProcessor {
-    constructor() {
-      super();
-    }
-    process(inputs) {
-      const input = inputs[0];
-      if (input.length > 0) {
-        const pcmData = input[0];
-        // The data is already in Float32Array format, which is what Deepgram expects.
-        // We can just post it directly.
-        this.port.postMessage(pcmData);
-      }
-      return true;
-    }
-  }
-  try {
-    registerProcessor('audio-processor', AudioProcessor);
-  } catch(e) { console.error(e) }
-`;
-
-
-export default function DraftInterviewPage() {
-    const [isClient, setIsClient] = useState(false);
-    useEffect(() => {
-        setIsClient(true);
-        // Create a blob URL for the audio processor script to avoid CSP issues.
-        const blob = new Blob([audioProcessorScript], { type: 'application/javascript' });
-        const url = URL.createObjectURL(blob);
-        
-        // Inject the script if it doesn't exist
-        if (!document.getElementById('audio-processor-script')) {
-            const script = document.createElement('script');
-            script.id = 'audio-processor-script';
-            script.src = url;
-            document.body.appendChild(script);
-        }
-
-        // Cleanup the blob URL when the component unmounts
-        return () => {
-            URL.revokeObjectURL(url);
-            const existingScript = document.getElementById('audio-processor-script');
-            if (existingScript) {
-                document.body.removeChild(existingScript);
-            }
-        };
-    }, []);
-
-    if (!isClient) {
-        return <div className="flex h-screen w-full items-center justify-center bg-background text-foreground"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>
-    }
-
-    return <DraftInterviewComponent />;
+export default function DraftPage() {
+    return (
+        <Suspense fallback={<div className="flex h-screen w-full items-center justify-center"><Loader2 className="w-12 h-12 animate-spin text-primary" /></div>}>
+            <DraftInterviewComponent />
+        </Suspense>
+    )
 }
