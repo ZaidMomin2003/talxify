@@ -17,7 +17,5 @@ import '@/ai/flows/generate-interview-response.ts';
 import '@/ai/flows/generate-interview-feedback.ts';
 import '@/ai/flows/enhance-resume.ts';
 import '@/ai/flows/conduct-icebreaker-interview.ts';
-import '@/ai/flows/dialogflow-stt.ts';
-import '@/ai/flows/dialogflow-tts.ts';
-import '@/ai/flows/conduct-interview-es.ts';
-
+import '@/ai/flows/deepgram-stt.ts';
+import '@/ai/flows/deepgram-tts.ts';

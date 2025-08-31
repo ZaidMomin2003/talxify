@@ -4,6 +4,9 @@ import { generateInterviewResponse } from '@/ai/flows/generate-interview-respons
 import { conductIcebreakerInterview } from '@/ai/flows/conduct-icebreaker-interview';
 import type { InterviewState } from '@/lib/interview-types';
 
+import { speechToTextWithDeepgram } from '@/ai/flows/deepgram-stt';
+import { textToSpeechWithDeepgram } from '@/ai/flows/deepgram-tts';
+
 /**
  * This is the webhook that Dialogflow CX will call.
  * It receives the current state of the conversation, including the history and any custom parameters
@@ -14,39 +17,43 @@ export async function POST(req: NextRequest) {
   try {
     const requestBody = await req.json();
     
-    // The 'tag' is crucial for Dialogflow to correctly process the response.
-    // It's sent by Dialogflow and we must return it.
     const tag = requestBody.fulfillmentInfo?.tag;
-
-    // The user's query is in message.text
-    const userQuery: string = requestBody.message?.text || '';
-    
-    // Our custom state is passed in sessionInfo.parameters
     const sessionParams = requestBody.sessionInfo?.parameters || {};
-    
-    // Reconstruct the full interview state from the session parameters.
+
     const currentState: InterviewState = {
         interviewId: sessionParams.interviewId || 'default-session',
         topic: sessionParams.topic || 'general',
         level: sessionParams.level || 'entry-level',
         role: sessionParams.role || 'Software Engineer',
         company: sessionParams.company || undefined,
-        // History is passed as an array of structs (role, content)
         history: sessionParams.history || [],
         isComplete: sessionParams.isComplete || false,
     };
-    const userId: string = sessionParams.userId || '';
 
-    // Add the latest user message to the history for context in the next turn.
+    let userQuery = requestBody.message?.text || '';
+
+    // Check if audio input is provided and transcribe it
+    if (requestBody.message?.payload?.audio_base64) {
+        const audioDataUri = `data:audio/wav;base64,${requestBody.message.payload.audio_base64}`;
+        
+        // Use the appropriate STT provider based on session param
+        if (sessionParams.stt_provider === 'deepgram') {
+             const { transcript } = await speechToTextWithDeepgram({ audioDataUri });
+             userQuery = transcript;
+        } else {
+            // Default or Google STT would go here if implemented
+            throw new Error("Unsupported STT provider specified.");
+        }
+    }
+    
     if(userQuery) {
         currentState.history.push({ role: 'user', content: userQuery });
     }
 
     let aiText, newState;
 
-    // Route to the correct interview flow based on the topic.
     if (currentState.topic === 'Icebreaker Introduction') {
-        const { response, newState: updatedState } = await conductIcebreakerInterview(userId, currentState);
+        const { response, newState: updatedState } = await conductIcebreakerInterview(sessionParams.userId, currentState);
         aiText = response;
         newState = updatedState;
     } else {
@@ -55,30 +62,34 @@ export async function POST(req: NextRequest) {
         newState = updatedState;
     }
     
-    // If the flow marks the interview as complete, trigger the 'END_SESSION' event.
-    // Otherwise, send the AI's response back to the user.
+    let audioResponsePayload = {};
+
+    // Check if TTS is requested and generate audio
+    if (sessionParams.tts_provider === 'deepgram') {
+        const { audioDataUri } = await textToSpeechWithDeepgram({ text: aiText });
+        const base64Audio = audioDataUri.split(',')[1];
+        audioResponsePayload = {
+            audio_base64: base64Audio,
+            text: aiText, // It's good practice to send text fallback
+        };
+    }
+    
     const responseJson = {
       fulfillment_response: {
         messages: [
           {
-            text: {
-              text: [aiText],
-            },
+            text: { text: [aiText] },
           },
+          // Conditionally add the audio response payload if it was generated
+          ...(Object.keys(audioResponsePayload).length > 0 ? [{ payload: audioResponsePayload }] : []),
         ],
-        // IMPORTANT: We must include the tag in the response.
         tag: tag,
       },
-      // Pass the entire updated state back to Dialogflow to maintain context.
       session_info: {
-        parameters: {
-          ...newState,
-        },
+        parameters: { ...newState },
       },
       ...(newState.isComplete && {
         page_info: {
-            // This is a custom event defined in the Dialogflow agent.
-            // It tells Dialogflow to end the session gracefully.
             form_info: {
                 parameter_info: [{
                     "displayName": "end_session_event",
