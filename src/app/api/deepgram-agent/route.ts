@@ -6,22 +6,21 @@ import type { InterviewState } from '@/lib/interview-types';
 
 /**
  * This endpoint is the "brain" for the Deepgram Voice Agent.
- * Deepgram sends events (like user speech) here, and this endpoint
- * uses Genkit/Groq to generate a response, which it sends back to Deepgram.
+ * The client sends the user's transcript here, and this endpoint
+ * uses Genkit/Groq to generate a text response, which it sends back.
+ * The client is then responsible for converting this text to speech.
  */
 export async function POST(req: NextRequest) {
   try {
-    // Deepgram sends a JSON payload. We extract the text transcript and the session state (tag).
     const body = await req.json();
     const userMessage = body.messages.at(-1)?.transcript;
-    
-    // The 'tag' from Deepgram holds our stringified session state.
     const currentState: InterviewState = JSON.parse(body.tag);
 
-    if (!userMessage) {
-        // If there's no user message, it might be the initial connection.
-        // Send a greeting.
-        return NextResponse.json({ text: "Hello! I'm Alex, your AI interviewer. Are you ready to begin?" });
+    // If there's no user message, it's the initial connection.
+    if (!userMessage || userMessage.toLowerCase() === 'hello') {
+        const greeting = `Hello ${currentState.interviewId}! I'm Alex, your AI interviewer. Let's start with your ${currentState.topic}.`;
+        currentState.history.push({ role: 'assistant', content: greeting });
+        return NextResponse.json({ text: greeting, tag: JSON.stringify(currentState) });
     }
 
     // Add the new user message to the history.
@@ -31,7 +30,8 @@ export async function POST(req: NextRequest) {
 
     // Route to the correct interview flow based on the topic.
     if (currentState.topic === 'Icebreaker Introduction') {
-      const { response, newState: updatedState } = await conductIcebreakerInterview(currentState.interviewId, currentState); // Assuming interviewId can be userId for this
+      // For the icebreaker, we need a user ID, which we get from the interviewId.
+      const { response, newState: updatedState } = await conductIcebreakerInterview(currentState.interviewId, currentState);
       aiText = response;
       newState = updatedState;
     } else {
@@ -39,21 +39,18 @@ export async function POST(req: NextRequest) {
       aiText = response;
       newState = updatedState;
     }
-
-    // Prepare the response for Deepgram.
-    // We send back the text to be spoken and the updated session state in the 'tag'.
+    
+    // The tag is the updated session state, which the client will hold onto.
     const responseJson = {
       text: aiText,
       tag: JSON.stringify(newState),
-      end_of_speech: true, // Tell Deepgram TTS to start speaking immediately
-      end_conversation: newState.isComplete, // Tell Deepgram to hang up if the interview is over
     };
     
     return NextResponse.json(responseJson);
 
   } catch (error) {
     console.error('Error in Deepgram agent endpoint:', error);
-    // Send a generic error message back to Deepgram to be spoken to the user.
+    // Send a generic error message back to the client.
     return NextResponse.json({ text: "I'm sorry, I encountered an error. Let's try that again." }, { status: 500 });
   }
 }
