@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
         newState = updatedState;
     } else {
         const { response, newState: updatedState } = await generateInterviewResponse(currentState);
-aiText = response;
+        aiText = response;
         newState = updatedState;
     }
 
