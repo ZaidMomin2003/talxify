@@ -52,18 +52,18 @@ export async function POST(req: NextRequest) {
     }
 
     // Format the response in the way Dialogflow expects.
-    // The tag must be included in each message object.
+    // The tag must be included inside each message object.
     const responseJson = {
       fulfillment_response: {
         messages: [
           {
             text: {
               text: [aiText],
-              allow_playback_interruption: true, // Allow user to interrupt
             },
-            tag: tag, // The tag must be inside the message object.
+            tag: tag, // CORRECT: The tag must be inside the message object.
           },
         ],
+        merge_behavior: "REPLACE", // Best practice to prevent message duplication
       },
       session_info: {
         parameters: {
