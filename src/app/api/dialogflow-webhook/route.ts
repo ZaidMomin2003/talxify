@@ -47,11 +47,12 @@ export async function POST(req: NextRequest) {
         newState = updatedState;
     } else {
         const { response, newState: updatedState } = await generateInterviewResponse(currentState);
-        aiText = response;
+aiText = response;
         newState = updatedState;
     }
 
     // Format the response in the way Dialogflow expects.
+    // The tag must be included in each message object.
     const responseJson = {
       fulfillment_response: {
         messages: [
@@ -60,10 +61,9 @@ export async function POST(req: NextRequest) {
               text: [aiText],
               allow_playback_interruption: true, // Allow user to interrupt
             },
+            tag: tag, // The tag must be inside the message object.
           },
         ],
-        // The tag must be included here for Dialogflow to process the webhook response.
-        tag: tag,
       },
       session_info: {
         parameters: {
