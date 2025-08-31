@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
             },
           },
         ],
-        // Including the tag in the response is required by Dialogflow.
+        // The tag must be included here for Dialogflow to process the webhook response.
         tag: tag,
       },
       session_info: {
