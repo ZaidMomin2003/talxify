@@ -14,6 +14,9 @@ export async function POST(req: NextRequest) {
   try {
     const requestBody = await req.json();
 
+    // The webhook request contains a tag. We need to send it back in our response.
+    const tag = requestBody.fulfillmentInfo?.tag;
+
     // The user's transcribed text is in the `text` field of the request.
     const userQuery: string = requestBody.text || '';
     const userId: string = requestBody.sessionInfo?.parameters?.userId || '';
@@ -59,6 +62,8 @@ export async function POST(req: NextRequest) {
             },
           },
         ],
+        // Including the tag in the response is required by Dialogflow.
+        tag: tag,
       },
       session_info: {
         parameters: {
