@@ -15,7 +15,7 @@ if (!process.env.GROQ_API_KEY) {
 }
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
-const MAX_QUESTIONS = 8;
+const MAX_QUESTIONS = 6;
 
 const getSystemPrompt = (state: InterviewState) => `
     You are Alex, an expert, friendly, and professional AI interviewer. Your goal is to conduct a natural, conversational mock interview that lasts about ${MAX_QUESTIONS} questions.
