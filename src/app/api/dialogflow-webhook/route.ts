@@ -1,6 +1,7 @@
 
 import {NextRequest, NextResponse} from 'next/server';
 import { generateInterviewResponse } from '@/ai/flows/generate-interview-response';
+import { conductIcebreakerInterview } from '@/ai/flows/conduct-icebreaker-interview';
 import type { InterviewState } from '@/lib/interview-types';
 
 /**
@@ -13,15 +14,13 @@ export async function POST(req: NextRequest) {
   try {
     const requestBody = await req.json();
 
-    // Extract the user's transcribed text from the Dialogflow request.
-    // The exact path might need adjustment based on the final Dialogflow agent setup.
+    // The user's transcribed text is in the `text` field of the request.
     const userQuery: string = requestBody.text || '';
+    const userId: string = requestBody.sessionInfo?.parameters?.userId || '';
     
-    // The 'sessionInfo.parameters' object from Dialogflow will contain our interview state.
-    // We will need to define what parameters to pass in the Dialogflow console.
+    // The 'sessionInfo.parameters' object from Dialogflow contains our interview state.
     const sessionParams = requestBody.sessionInfo?.parameters || {};
 
-    // Placeholder for building the interview state. This will be more complex.
     const currentState: InterviewState = {
         interviewId: sessionParams.interviewId || 'default-session',
         topic: sessionParams.topic || 'general',
@@ -32,11 +31,22 @@ export async function POST(req: NextRequest) {
         isComplete: sessionParams.isComplete || false,
     };
     
-    // Add the latest user message to the history
-    currentState.history.push({ role: 'user', content: userQuery });
+    // Add the latest user message to the history.
+    if(userQuery) {
+        currentState.history.push({ role: 'user', content: userQuery });
+    }
 
-    // Call our existing Genkit flow to get the AI's intelligent response.
-    const { response: aiText, newState } = await generateInterviewResponse(currentState);
+    let aiText, newState;
+
+    if (currentState.topic === 'Icebreaker Introduction') {
+        const { response, newState: updatedState } = await conductIcebreakerInterview(userId, currentState);
+        aiText = response;
+        newState = updatedState;
+    } else {
+        const { response, newState: updatedState } = await generateInterviewResponse(currentState);
+        aiText = response;
+        newState = updatedState;
+    }
 
     // Format the response in the way Dialogflow expects.
     const responseJson = {
@@ -45,6 +55,7 @@ export async function POST(req: NextRequest) {
           {
             text: {
               text: [aiText],
+              allow_playback_interruption: true, // Allow user to interrupt
             },
           },
         ],
@@ -60,7 +71,6 @@ export async function POST(req: NextRequest) {
 
   } catch (error) {
     console.error('Error in Dialogflow webhook:', error);
-    // Return a generic error message to Dialogflow
     const errorResponse = {
       fulfillment_response: {
         messages: [
