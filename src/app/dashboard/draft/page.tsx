@@ -27,7 +27,11 @@ const useDeepgram = (onTranscript: (transcript: TranscriptState) => void, onConn
 
         setIsConnecting(true);
         try {
-            const deepgram = createClient(process.env.NEXT_PUBLIC_DEEPGRAM_API_KEY!);
+            // Ensure you have NEXT_PUBLIC_DEEPGRAM_API_KEY in your .env
+            if (!process.env.NEXT_PUBLIC_DEEPGRAM_API_KEY) {
+                throw new Error("Deepgram API Key not found.");
+            }
+            const deepgram = createClient(process.env.NEXT_PUBLIC_DEEPGRAM_API_KEY);
             const conn = deepgram.listen.live({
                 model: 'nova-2',
                 language: 'en-US',
@@ -99,7 +103,10 @@ function DraftInterviewComponent() {
                 playNextAudio();
             };
             setIsSpeaking(true);
-            audio.play();
+            audio.play().catch(e => {
+                console.error("Audio playback failed:", e);
+                setIsSpeaking(false);
+            });
         }
     }, []);
 
