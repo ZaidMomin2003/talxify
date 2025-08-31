@@ -20,6 +20,7 @@ const useDeepgramAgent = () => {
     const [transcript, setTranscript] = useState('');
     const micStream = useRef<MediaStream | null>(null);
     const processor = useRef<any>(null);
+    const audioContext = useRef<AudioContext | null>(null);
     const { toast } = useToast();
 
     const connect = useCallback(async (interviewConfig: { topic: string, role: string, level: string, company?: string }) => {
@@ -30,7 +31,7 @@ const useDeepgramAgent = () => {
         setConnectionState('connecting');
 
         try {
-            const newConnection = createClient(process.env.NEXT_PUBLIC_DEEPGRAM_API_KEY!).agent();
+            const newConnection = createClient(process.env.NEXT_PUBLIC_DEEPGRAM_API_KEY!).agent.listen();
 
             newConnection.on(AgentEvents.Welcome, () => {
                 console.log("Agent Welcome");
@@ -53,44 +54,35 @@ const useDeepgramAgent = () => {
                         think: { provider: "google", model: "gemini-1.5-flash", prompt: systemPrompt },
                         speak: { model: "aura-asteria-en" },
                     },
-                    audio: {
-                        input: { encoding: "linear16", sample_rate: 16000 },
-                        output: { encoding: "linear16", sample_rate: 24000, container: "wav" }
-                    }
                 });
                 setConnectionState('connected');
             });
 
-            newConnection.on(AgentEvents.AgentUtteranceEnd, () => {
-                setAgentStatus('idle');
-            });
-            newConnection.on(AgentEvents.UserUtteranceEnd, () => {
-                 setAgentStatus('thinking');
-            });
-            newConnection.on(AgentEvents.UserStartedSpeaking, () => {
-                setAgentStatus('listening');
-            });
-            newConnection.on(AgentEvents.AgentStartedSpeaking, () => {
-                 setAgentStatus('speaking');
-            });
+            newConnection.on(AgentEvents.AgentUtteranceEnd, () => setAgentStatus('idle'));
+            newConnection.on(AgentEvents.UserUtteranceEnd, () => setAgentStatus('thinking'));
+            newConnection.on(AgentEvents.UserStartedSpeaking, () => setAgentStatus('listening'));
+            newConnection.on(AgentEvents.AgentStartedSpeaking, () => setAgentStatus('speaking'));
+            
             newConnection.on(AgentEvents.ConversationText, (data) => {
                 setTranscript(t => `${t}\n${data.role}: ${data.content}`);
             });
-             newConnection.on(AgentEvents.Error, (error) => {
+
+            newConnection.on(AgentEvents.Error, (error) => {
                 console.error("Agent Error:", error);
                 toast({ title: "Agent Error", description: "An error occurred with the agent.", variant: "destructive" });
                 setConnectionState('error');
             });
-             newConnection.on(AgentEvents.Close, () => {
+
+            newConnection.on(AgentEvents.Close, () => {
                 console.log("Connection closed.");
                 disconnect();
             });
 
             micStream.current = await navigator.mediaDevices.getUserMedia({ audio: true });
-            const audioContext = new AudioContext();
-            const source = audioContext.createMediaStreamSource(micStream.current);
-            await audioContext.audioWorklet.addModule('/audio-processor.js');
-            processor.current = new AudioWorkletNode(audioContext, 'audio-processor');
+            audioContext.current = new AudioContext();
+            const source = audioContext.current.createMediaStreamSource(micStream.current);
+            await audioContext.current.audioWorklet.addModule('/audio-processor.js');
+            processor.current = new AudioWorkletNode(audioContext.current, 'audio-processor');
             source.connect(processor.current);
             processor.current.port.onmessage = (event: MessageEvent) => {
                 if (newConnection.getReadyState() === 1) { // WebSocket.OPEN
@@ -119,6 +111,9 @@ const useDeepgramAgent = () => {
             processor.current.disconnect();
             processor.current = null;
         }
+        if (audioContext.current && audioContext.current.state !== 'closed') {
+             audioContext.current.close();
+        }
         setConnection(null);
         setConnectionState('disconnected');
         setAgentStatus('idle');
@@ -129,34 +124,8 @@ const useDeepgramAgent = () => {
         console.error("Deepgram API Key not found.");
         setConnectionState('error');
       }
-      // Ensure the audio processor is available
-      if (!document.getElementById('audio-processor-script')) {
-        const script = document.createElement('script');
-        script.id = 'audio-processor-script';
-        script.innerHTML = `
-          class AudioProcessor extends AudioWorkletProcessor {
-            constructor() {
-              super();
-            }
-            process(inputs) {
-              const input = inputs[0];
-              if (input.length > 0) {
-                const pcmData = input[0];
-                const buffer = new Int16Array(pcmData.length);
-                for (let i = 0; i < pcmData.length; i++) {
-                  buffer[i] = pcmData[i] * 32767;
-                }
-                this.port.postMessage(buffer.buffer, [buffer.buffer]);
-              }
-              return true;
-            }
-          }
-          try {
-            registerProcessor('audio-processor', AudioProcessor);
-          } catch(e) { console.error(e) }
-        `;
-        document.body.appendChild(script);
-      }
+      // Ensure the audio processor script is available in the public folder.
+      // This is a client-side check.
     }, []);
 
     return { connect, disconnect, connectionState, agentStatus, transcript };
@@ -242,10 +211,53 @@ function DraftInterviewComponent() {
     );
 }
 
+// In-line script for the AudioWorkletProcessor
+const audioProcessorScript = `
+  class AudioProcessor extends AudioWorkletProcessor {
+    constructor() {
+      super();
+    }
+    process(inputs) {
+      const input = inputs[0];
+      if (input.length > 0) {
+        const pcmData = input[0];
+        // The data is already in Float32Array format, which is what Deepgram expects.
+        // We can just post it directly.
+        this.port.postMessage(pcmData);
+      }
+      return true;
+    }
+  }
+  try {
+    registerProcessor('audio-processor', AudioProcessor);
+  } catch(e) { console.error(e) }
+`;
+
+
 export default function DraftInterviewPage() {
     const [isClient, setIsClient] = useState(false);
     useEffect(() => {
         setIsClient(true);
+        // Create a blob URL for the audio processor script to avoid CSP issues.
+        const blob = new Blob([audioProcessorScript], { type: 'application/javascript' });
+        const url = URL.createObjectURL(blob);
+        
+        // Inject the script if it doesn't exist
+        if (!document.getElementById('audio-processor-script')) {
+            const script = document.createElement('script');
+            script.id = 'audio-processor-script';
+            script.src = url;
+            document.body.appendChild(script);
+        }
+
+        // Cleanup the blob URL when the component unmounts
+        return () => {
+            URL.revokeObjectURL(url);
+            const existingScript = document.getElementById('audio-processor-script');
+            if (existingScript) {
+                document.body.removeChild(existingScript);
+            }
+        };
     }, []);
 
     if (!isClient) {
@@ -254,4 +266,3 @@ export default function DraftInterviewPage() {
 
     return <DraftInterviewComponent />;
 }
-
