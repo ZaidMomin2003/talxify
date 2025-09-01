@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import { useSearchParams, useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
 import type { InterviewState } from '@/lib/interview-types';
@@ -46,7 +46,7 @@ function DraftInterviewComponent() {
   const processAIResponse = useCallback(async (userText?: string) => {
     setStatus('processing');
     try {
-      const res = await fetch('/api/deepgram-agent/route', {
+      const res = await fetch('/api/deepgram-agent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ state: interviewStateRef.current, message: userText || '' }),
@@ -77,6 +77,7 @@ function DraftInterviewComponent() {
       toast({ title: "Agent Error", description: "An error occurred with the agent.", variant: "destructive" });
       setStatus('error');
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [toast]);
   
   const handleStartInterview = useCallback(() => {
@@ -162,11 +163,11 @@ function DraftInterviewComponent() {
   }
 
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
-    if (event.code === 'Space' && !event.repeat && !isRecording) {
+    if (event.code === 'Space' && !event.repeat && !isRecording && status === 'idle') {
       event.preventDefault();
       startRecording();
     }
-  }, [isRecording]);
+  }, [isRecording, status]);
 
   const handleKeyUp = useCallback((event: KeyboardEvent) => {
     if (event.code === 'Space' && isRecording) {
@@ -242,8 +243,8 @@ function DraftInterviewComponent() {
 
 export default function DraftPage() {
     return (
-        <React.Suspense fallback={<div className="flex h-screen w-full items-center justify-center"><Loader2 className="w-12 h-12 animate-spin text-primary" /></div>}>
+        <Suspense fallback={<div className="flex h-screen w-full items-center justify-center"><Loader2 className="w-12 h-12 animate-spin text-primary" /></div>}>
             <DraftInterviewComponent />
-        </React.Suspense>
+        </Suspense>
     )
 }
