@@ -8,6 +8,8 @@ import { z } from 'genkit';
 // A generic type for any activity stored in the user's document
 export type StoredActivity = QuizResult | InterviewActivity | NoteGenerationActivity;
 
+export type TranscriptEntry = { speaker: 'user' | 'ai'; text: string };
+
 // The base interface that all activity types extend
 export interface BaseActivity {
     id: string;
@@ -37,7 +39,7 @@ export interface QuizResult extends BaseActivity {
 // A specific type for completed mock interviews
 export interface InterviewActivity extends BaseActivity {
     type: 'interview';
-    transcript: { speaker: 'user' | 'ai'; text: string }[];
+    transcript: TranscriptEntry[];
     feedback: string;
     analysis?: GenerateInterviewFeedbackOutput;
     details: {
@@ -309,5 +311,3 @@ export interface WaitlistSubmission {
     email: string;
     timestamp: any;
 }
-
-    

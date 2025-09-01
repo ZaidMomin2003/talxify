@@ -4,22 +4,18 @@
 import React, { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import { useSearchParams, useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
-import type { InterviewState } from '@/lib/interview-types';
 import { addActivity } from '@/lib/firebase-service';
-import type { InterviewActivity } from '@/lib/types';
-import { useToast } from '@/hooks/use-toast';
+import type { InterviewActivity, TranscriptEntry } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { Loader2, Mic, AlertTriangle, Square, Bot, MicOff, PhoneOff } from 'lucide-react';
+import { Loader2, Mic, AlertTriangle, Bot, MicOff, PhoneOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 
 type AgentStatus = 'idle' | 'listening' | 'processing' | 'speaking' | 'initializing' | 'error' | 'finished';
-type TranscriptEntry = { speaker: 'user' | 'ai'; text: string };
 
 function InterviewComponent() {
   const { user } = useAuth();
-  const { toast } = useToast();
   const router = useRouter();
   const searchParams = useSearchParams();
   const params = useParams();
@@ -29,34 +25,56 @@ function InterviewComponent() {
   const [isMuted, setIsMuted] = useState(false);
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioPlayerRef = useRef(new Audio());
+  const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
   const connectionRef = useRef<WebSocket | null>(null);
+  const audioQueueRef = useRef<Blob[]>([]);
+  const isPlayingRef = useRef(false);
 
-  const interviewStateRef = useRef<InterviewState>({
-    interviewId: params.interviewId as string,
-    topic: searchParams.get('topic') || 'General Software Engineering',
-    role: searchParams.get('role') || 'Software Engineer',
-    level: searchParams.get('level') || 'Entry-level',
-    company: searchParams.get('company') || '',
-    history: [],
-    isComplete: false,
-  });
+  const interviewId = params.interviewId as string;
+  const topic = searchParams.get('topic') || 'General Software Engineering';
+  const role = searchParams.get('role') || 'Software Engineer';
+  const level = searchParams.get('level') || 'Entry-level';
+  const company = searchParams.get('company') || '';
+
+  const processAudioQueue = useCallback(() => {
+    if (isPlayingRef.current || audioQueueRef.current.length === 0) {
+      return;
+    }
+    
+    isPlayingRef.current = true;
+    setStatus('speaking');
+    const audioBlob = audioQueueRef.current.shift();
+    if (audioBlob && audioPlayerRef.current) {
+      const url = URL.createObjectURL(audioBlob);
+      audioPlayerRef.current.src = url;
+      audioPlayerRef.current.play().catch(e => console.error("Audio playback error:", e));
+    }
+  }, []);
+
+  useEffect(() => {
+    audioPlayerRef.current = new Audio();
+    audioPlayerRef.current.onended = () => {
+      isPlayingRef.current = false;
+      if (audioQueueRef.current.length > 0) {
+        processAudioQueue();
+      } else {
+        setStatus('listening');
+      }
+    };
+  }, [processAudioQueue]);
+
 
   const setupAndStartInterview = useCallback(async () => {
     if (!user) return;
     setStatus('initializing');
 
-    const state = interviewStateRef.current;
-    
-    // Construct the WebSocket URL for our backend agent
     const wsUrl = new URL('/api/deepgram-agent', window.location.origin);
     wsUrl.protocol = wsUrl.protocol.replace('http', 'ws');
     
-    // Pass initial state as query parameters
-    wsUrl.searchParams.set('topic', state.topic);
-    wsUrl.searchParams.set('role', state.role);
-    wsUrl.searchParams.set('level', state.level);
-    if(state.company) wsUrl.searchParams.set('company', state.company);
+    wsUrl.searchParams.set('topic', topic);
+    wsUrl.searchParams.set('role', role);
+    wsUrl.searchParams.set('level', level);
+    if(company) wsUrl.searchParams.set('company', company);
     if(user.displayName) wsUrl.searchParams.set('userName', user.displayName);
 
     const ws = new WebSocket(wsUrl);
@@ -84,15 +102,13 @@ function InterviewComponent() {
                 setStatus('processing');
             }
         } else if (data.type === 'audio') {
-            setStatus('speaking');
-            const audioChunk = new Uint8Array(data.audio.data);
-            const blob = new Blob([audioChunk], { type: 'audio/mp3' });
-            const url = URL.createObjectURL(blob);
-            audioPlayerRef.current.src = url;
-            audioPlayerRef.current.play();
-            audioPlayerRef.current.onended = () => {
-                setStatus('listening');
-            };
+            const audioData = atob(data.audio);
+            const audioBytes = new Uint8Array(audioData.length);
+            for (let i = 0; i < audioData.length; i++) {
+                audioBytes[i] = audioData.charCodeAt(i);
+            }
+            audioQueueRef.current.push(new Blob([audioBytes], { type: 'audio/mp3' }));
+            processAudioQueue();
         } else if(data.type === 'ai_transcript') {
             setTranscript(prev => [...prev, { speaker: 'ai', text: data.text }]);
         } else if (data.type === 'finished') {
@@ -111,6 +127,7 @@ function InterviewComponent() {
             mediaRecorderRef.current.stop();
         }
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   useEffect(() => {
@@ -130,16 +147,15 @@ function InterviewComponent() {
     if (connectionRef.current) {
         connectionRef.current.close();
     }
-    interviewStateRef.current.isComplete = true;
 
     if (!user) return;
     const finalActivity: InterviewActivity = {
-      id: interviewStateRef.current.interviewId,
+      id: interviewId,
       type: 'interview',
       timestamp: new Date().toISOString(),
       transcript: transcript,
       feedback: "Feedback will be generated on the results page.",
-      details: interviewStateRef.current
+      details: { topic, role, level, company }
     };
     await addActivity(user.uid, finalActivity);
     router.push(`/dashboard/interview/${finalActivity.id}/results`);
@@ -182,7 +198,7 @@ function InterviewComponent() {
                 </div>
 
                 <div className="space-y-2">
-                    <h1 className="text-3xl font-bold font-headline">{interviewStateRef.current.topic}</h1>
+                    <h1 className="text-3xl font-bold font-headline">{topic}</h1>
                     <Badge variant={status === 'error' ? 'destructive' : 'secondary'}>{statusInfo[status].text}</Badge>
                 </div>
 
@@ -195,7 +211,7 @@ function InterviewComponent() {
                 <Button variant="outline" size="icon" onClick={toggleMute} className="h-14 w-14 rounded-full">
                     {isMuted ? <MicOff /> : <Mic />}
                 </Button>
-                 <Button variant="destructive" size="icon" onClick={handleEndInterview} disabled={status === 'initializing'} className="h-14 w-14 rounded-full">
+                 <Button variant="destructive" size="icon" onClick={handleEndInterview} disabled={status === 'initializing' || status === 'finished'} className="h-14 w-14 rounded-full">
                     <PhoneOff />
                  </Button>
             </div>

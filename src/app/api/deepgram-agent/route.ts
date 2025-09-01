@@ -45,13 +45,9 @@ function getSystemPrompt(topic: string, role: string, level: string, company?: s
     `;
 }
 
-export function GET(req: NextRequest) {
+export async function GET(req: NextRequest) {
     // This is a WebSocket endpoint, so we need to handle the upgrade request.
-    const upgradeHeader = req.headers.get('Upgrade');
-    if (upgradeHeader !== 'websocket') {
-        return new Response('Expected a WebSocket request', { status: 426 });
-    }
-    
+    // The library `ws` will handle the upgrade handshake.
     const { searchParams } = new URL(req.url);
     const topic = searchParams.get('topic') || 'general discussion';
     const role = searchParams.get('role') || 'candidate';
@@ -62,23 +58,20 @@ export function GET(req: NextRequest) {
     const deepgram = createClient(process.env.DEEPGRAM_API_KEY!);
 
     const deepgramConnection = deepgram.listen.live({
-        model: 'nova-2',
+        model: 'nova-2-general',
         smart_format: true,
-        interim_results: true,
-        // The AI model will speak back to the user
+        interim_results: false, // Set to false for cleaner transcript
         utterance_end_ms: 1000,
         endpointing: 250,
-        // The language of the AI model
         language: 'en-US',
-        // The AI model to use for thinking
         llm_model: 'llama-3-8b-8192',
-        // The prompt to use for the AI model
         system: getSystemPrompt(topic, role, level, company),
     });
     
     // Create a new TransformStream to read from and write to.
     const stream = new TransformStream();
     const writer = stream.writable.getWriter();
+    const reader = req.body!.getReader();
     
     deepgramConnection.on(LiveTranscriptionEvents.Open, () => {
         // Kick off the conversation with a greeting
@@ -112,9 +105,11 @@ export function GET(req: NextRequest) {
     
     deepgramConnection.on('utterance', (data) => {
         if(data.utterance) {
+             // Convert Uint8Array to base64 string for JSON serialization
+             const base64Audio = Buffer.from(data.utterance).toString('base64');
              writer.write(JSON.stringify({
                 type: 'audio',
-                audio: data.utterance,
+                audio: base64Audio,
             }));
         }
     });
@@ -129,24 +124,22 @@ export function GET(req: NextRequest) {
         writer.close();
     });
 
-    // Pipe the request body into the Deepgram connection.
-    req.body?.pipeTo(new WritableStream({
-        write: (chunk) => {
-            deepgramConnection.send(chunk);
-        },
-        close: () => {
-            deepgramConnection.finish();
+    // Pipe the client's audio stream into the Deepgram connection.
+    const pipeToDeepgram = async () => {
+        while(true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            deepgramConnection.send(value);
         }
-    }));
+    };
+    pipeToDeepgram();
     
     // Return the readable side of the stream to the client
     return new Response(stream.readable, {
         headers: {
-            'Connection': 'Upgrade',
-            'Upgrade': 'websocket',
-            'Sec-WebSocket-Accept': req.headers.get('sec-websocket-accept')!,
-            'Sec-WebSocket-Protocol': req.headers.get('sec-websocket-protocol')!
+            'Content-Type': 'text/event-stream',
+            'Connection': 'keep-alive',
+            'Cache-Control': 'no-cache',
         },
-        status: 101, // Switching Protocols
     });
 }
