@@ -13,7 +13,6 @@ import { Loader2, Mic, AlertTriangle, Square, Bot, MicOff, PhoneOff } from 'luci
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
-import { LiveClient, LiveConnectionState, LiveTranscriptionEvents } from '@deepgram/sdk';
 
 type AgentStatus = 'idle' | 'listening' | 'processing' | 'speaking' | 'initializing' | 'error' | 'finished';
 type TranscriptEntry = { speaker: 'user' | 'ai'; text: string };
@@ -31,7 +30,7 @@ function InterviewComponent() {
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioPlayerRef = useRef(new Audio());
-  const deepgramConnectionRef = useRef<LiveClient | null>(null);
+  const connectionRef = useRef<WebSocket | null>(null);
 
   const interviewStateRef = useRef<InterviewState>({
     interviewId: params.interviewId as string,
@@ -43,124 +42,84 @@ function InterviewComponent() {
     isComplete: false,
   });
 
-  const getAgentResponse = useCallback(async () => {
-    try {
-        const response = await fetch("/api/deepgram-agent", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ state: interviewStateRef.current }),
-        });
-
-        if (!response.body) return;
-
-        const reader = response.body.getReader();
-        const audioQueue: Uint8Array[] = [];
-        let isPlaying = false;
-
-        const playNextAudioChunk = () => {
-            if (audioQueue.length > 0 && !isPlaying) {
-                isPlaying = true;
-                const audioChunk = audioQueue.shift();
-                if (audioChunk) {
-                    const blob = new Blob([audioChunk], { type: 'audio/mp3' });
-                    const url = URL.createObjectURL(blob);
-                    audioPlayerRef.current.src = url;
-                    audioPlayerRef.current.play();
-                    audioPlayerRef.current.onended = () => {
-                        isPlaying = false;
-                        playNextAudioChunk();
-                    };
-                }
-            }
-        };
-
-        const processStream = async () => {
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-                audioQueue.push(value);
-                playNextAudioChunk();
-            }
-        };
-
-        processStream();
-
-    } catch(err) {
-        console.error("Error fetching or playing agent response:", err);
-        setStatus('error');
-    }
-  }, []);
-
-  const startDeepgramConnection = useCallback(async () => {
+  const setupAndStartInterview = useCallback(async () => {
+    if (!user) return;
     setStatus('initializing');
-    try {
-        const response = await fetch("/api/auth/deepgram-key");
-        const { key } = await response.json();
 
-        const deepgram = createClient(key);
-        const connection = deepgram.listen.live({
-            model: "nova-2",
-            interim_results: true,
-            smart_format: true,
-            endpointing: 200, // Milliseconds of silence to detect end of speech
-            no_delay: true,
-        });
+    const state = interviewStateRef.current;
+    
+    // Construct the WebSocket URL for our backend agent
+    const wsUrl = new URL('/api/deepgram-agent', window.location.origin);
+    wsUrl.protocol = wsUrl.protocol.replace('http', 'ws');
+    
+    // Pass initial state as query parameters
+    wsUrl.searchParams.set('topic', state.topic);
+    wsUrl.searchParams.set('role', state.role);
+    wsUrl.searchParams.set('level', state.level);
+    if(state.company) wsUrl.searchParams.set('company', state.company);
+    if(user.displayName) wsUrl.searchParams.set('userName', user.displayName);
 
-        connection.on(LiveTranscriptionEvents.Open, () => {
-            console.log("Deepgram connection opened.");
-            setStatus('listening');
-        });
+    const ws = new WebSocket(wsUrl);
+    connectionRef.current = ws;
 
-        connection.on(LiveTranscriptionEvents.Transcript, (data) => {
-            const text = data.channel.alternatives[0].transcript;
-            if (text && data.is_final) {
-                setTranscript(prev => [...prev, { speaker: 'user', text }]);
-                interviewStateRef.current.history.push({ role: 'user', parts: [{ text }]});
-                getAgentResponse(); // Get AI response after user speaks
+    ws.onopen = async () => {
+      console.log("Connected to agent.");
+      setStatus('listening');
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorderRef.current = new MediaRecorder(stream);
+      mediaRecorderRef.current.ondataavailable = (event) => {
+        if (event.data.size > 0 && ws.readyState === WebSocket.OPEN) {
+          ws.send(event.data);
+        }
+      };
+      mediaRecorderRef.current.start(250);
+    };
+
+    ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        if (data.type === 'transcript') {
+            const speaker = data.is_final ? 'user' : 'interim';
+            if (data.is_final) {
+                setTranscript(prev => [...prev, { speaker: 'user', text: data.text }]);
+                setStatus('processing');
             }
-        });
-        
-        connection.on(LiveTranscriptionEvents.Close, () => {
-            console.log("Deepgram connection closed.");
-            if (!interviewStateRef.current.isComplete) {
-                setStatus('idle');
-            }
-        });
+        } else if (data.type === 'audio') {
+            setStatus('speaking');
+            const audioChunk = new Uint8Array(data.audio.data);
+            const blob = new Blob([audioChunk], { type: 'audio/mp3' });
+            const url = URL.createObjectURL(blob);
+            audioPlayerRef.current.src = url;
+            audioPlayerRef.current.play();
+            audioPlayerRef.current.onended = () => {
+                setStatus('listening');
+            };
+        } else if(data.type === 'ai_transcript') {
+            setTranscript(prev => [...prev, { speaker: 'ai', text: data.text }]);
+        } else if (data.type === 'finished') {
+             handleEndInterview();
+        }
+    };
 
-        connection.on(LiveTranscriptionEvents.Error, (err) => {
-            console.error("Deepgram error:", err);
-            setStatus('error');
-        });
-        
-        deepgramConnectionRef.current = connection;
-        
-        // Start microphone stream
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        mediaRecorderRef.current = new MediaRecorder(stream, { mimeType: 'audio/webm' });
-        mediaRecorderRef.current.ondataavailable = (event) => {
-            if (event.data.size > 0 && connection.getReadyState() === LiveConnectionState.OPEN) {
-                connection.send(event.data);
-            }
-        };
-        mediaRecorderRef.current.start(250); // Send data every 250ms
-
-    } catch (err) {
-        console.error("Failed to initialize Deepgram:", err);
+    ws.onerror = (error) => {
+        console.error("WebSocket error:", error);
         setStatus('error');
-    }
-  }, [getAgentResponse]);
-  
-  
-   useEffect(() => {
+    };
+
+    ws.onclose = () => {
+        console.log("WebSocket connection closed.");
+        if (mediaRecorderRef.current?.state === 'recording') {
+            mediaRecorderRef.current.stop();
+        }
+    };
+  }, [user]);
+
+  useEffect(() => {
     if (user) {
-        startDeepgramConnection();
+        setupAndStartInterview();
     }
     return () => {
-        if (deepgramConnectionRef.current) {
-            deepgramConnectionRef.current.finish();
-        }
-        if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-            mediaRecorderRef.current.stop();
+        if (connectionRef.current) {
+            connectionRef.current.close();
         }
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -168,13 +127,9 @@ function InterviewComponent() {
 
   const handleEndInterview = async () => {
     setStatus('finished');
-    if (deepgramConnectionRef.current) {
-        deepgramConnectionRef.current.finish();
+    if (connectionRef.current) {
+        connectionRef.current.close();
     }
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-        mediaRecorderRef.current.stop();
-    }
-
     interviewStateRef.current.isComplete = true;
 
     if (!user) return;
@@ -192,12 +147,11 @@ function InterviewComponent() {
 
   const toggleMute = () => {
     if (mediaRecorderRef.current) {
-        if (isMuted) {
-            mediaRecorderRef.current.resume();
-        } else {
-            mediaRecorderRef.current.pause();
-        }
-        setIsMuted(!isMuted);
+        const isCurrentlyMuted = mediaRecorderRef.current.stream.getAudioTracks().every(track => !track.enabled);
+        mediaRecorderRef.current.stream.getAudioTracks().forEach(track => {
+            track.enabled = isCurrentlyMuted;
+        });
+        setIsMuted(!isCurrentlyMuted);
     }
   }
 
