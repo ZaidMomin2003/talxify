@@ -85,6 +85,14 @@ export default function DemoPage() {
                         <Video className="w-5 h-5"/>
                         <span className="sr-only">Cam</span>
                     </Button>
+                    <Button variant="outline" size="icon">
+                        <Mic className="w-5 h-5"/>
+                        <span className="sr-only">Mic</span>
+                    </Button>
+                     <Button variant="destructive" size="icon">
+                        <PhoneOff className="w-5 h-5"/>
+                        <span className="sr-only">Leave</span>
+                    </Button>
                 </div>
             </header>
 
@@ -99,16 +107,6 @@ export default function DemoPage() {
                         <p>Please grant camera access to start the video.</p>
                     </div>
                   )}
-               </div>
-               <div className="flex-shrink-0 bg-card/80 backdrop-blur-sm border-t p-3 flex items-center justify-center gap-4">
-                    <Button variant="outline" size="lg" className="flex flex-col h-auto p-3 gap-1">
-                        <Mic className="w-5 h-5"/>
-                        <span className="text-xs">Mic</span>
-                    </Button>
-                     <Button variant="destructive" size="lg" className="flex flex-col h-auto p-3 gap-1">
-                        <PhoneOff className="w-5 h-5"/>
-                        <span className="text-xs">Leave</span>
-                    </Button>
                </div>
             </div>
         </div>
