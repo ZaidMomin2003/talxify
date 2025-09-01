@@ -16,15 +16,15 @@ import { ListChecks } from 'lucide-react';
 
 type AgentStatus = 'initializing' | 'generating_questions' | 'connected' | 'speaking' | 'listening' | 'finished' | 'error' | 'questions_ready';
 
-const statusInfo: { [key in AgentStatus]: { text: string; color: string; showMic?: boolean } } = {
-  initializing: { text: "Initializing Session...", color: "bg-gray-500" },
-  generating_questions: { text: "Generating Questions...", color: "bg-yellow-500" },
-  connected: { text: "Connected, AI is ready.", color: "bg-blue-500" },
-  questions_ready: { text: "Ready to Start", color: "bg-blue-500" },
-  listening: { text: "Listening...", color: "bg-green-500", showMic: true },
-  speaking: { text: "AI is Speaking...", color: "bg-blue-500" },
-  finished: { text: "Interview Finished", color: "bg-gray-500" },
-  error: { text: "Connection Error", color: "bg-destructive" },
+const statusInfo: { [key in AgentStatus]: { text: string; showMic?: boolean } } = {
+  initializing: { text: "Initializing Session..." },
+  generating_questions: { text: "Generating Questions..." },
+  connected: { text: "Connected. The AI is ready." },
+  questions_ready: { text: "Ready to Start" },
+  listening: { text: "Listening...", showMic: true },
+  speaking: { text: "AI is Speaking..." },
+  finished: { text: "Interview Finished" },
+  error: { text: "Connection Error" },
 };
 
 function InterviewComponent() {
@@ -39,9 +39,10 @@ function InterviewComponent() {
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
-  const webSocketRef = useRef<WebSocket | null>(null);
   const audioQueueRef = useRef<AudioBuffer[]>([]);
   const isPlayingRef = useRef(false);
+  const responseReaderRef = useRef<ReadableStreamDefaultReader<Uint8Array> | null>(null);
+  const stopInterviewRef = useRef<boolean>(false);
 
   const interviewId = params.interviewId as string;
   const topic = searchParams.get('topic') || 'General Software Engineering';
@@ -50,53 +51,61 @@ function InterviewComponent() {
   const company = searchParams.get('company') || '';
 
   const processAudioQueue = useCallback(async () => {
-      if (isPlayingRef.current || audioQueueRef.current.length === 0 || !audioContextRef.current || audioContextRef.current.state === 'closed') {
-          return;
-      }
-      
-      isPlayingRef.current = true;
-      setStatus('speaking');
+    if (isPlayingRef.current || audioQueueRef.current.length === 0 || !audioContextRef.current || audioContextRef.current.state === 'closed') {
+      return;
+    }
+    
+    isPlayingRef.current = true;
+    setStatus('speaking');
 
-      const audioBuffer = audioQueueRef.current.shift();
-      if (audioBuffer) {
-          const source = audioContextRef.current.createBufferSource();
-          source.buffer = audioBuffer;
-          source.connect(audioContextRef.current.destination);
-          source.onended = () => {
-              isPlayingRef.current = false;
-              if (audioQueueRef.current.length === 0) {
-                  setStatus('listening');
-              }
-              processAudioQueue();
-          };
-          source.start();
-      } else {
+    const audioBuffer = audioQueueRef.current.shift();
+    if (audioBuffer) {
+      try {
+        const source = audioContextRef.current.createBufferSource();
+        source.buffer = audioBuffer;
+        source.connect(audioContextRef.current.destination);
+        source.onended = () => {
           isPlayingRef.current = false;
-          if (audioQueueRef.current.length === 0) {
+          if (audioQueueRef.current.length === 0 && !stopInterviewRef.current) {
             setStatus('listening');
           }
+          processAudioQueue();
+        };
+        source.start();
+      } catch (e) {
+        console.error("Error playing audio:", e);
+        isPlayingRef.current = false;
+        if (!stopInterviewRef.current) setStatus('listening');
       }
+    } else {
+      isPlayingRef.current = false;
+      if (audioQueueRef.current.length === 0 && !stopInterviewRef.current) {
+        setStatus('listening');
+      }
+    }
   }, []);
 
   const stopInterview = useCallback(async (save: boolean = false) => {
-    if (status === 'finished') return;
+    if (stopInterviewRef.current) return;
+    stopInterviewRef.current = true;
     setStatus('finished');
 
-    if (webSocketRef.current && webSocketRef.current.readyState === WebSocket.OPEN) {
-        webSocketRef.current.send(JSON.stringify({ type: 'terminate' }));
-        webSocketRef.current.close();
+    if(responseReaderRef.current) {
+        await responseReaderRef.current.cancel();
+        responseReaderRef.current = null;
     }
     
     if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
         mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
         mediaRecorderRef.current.stop();
+        mediaRecorderRef.current = null;
     }
     
     if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
       await audioContextRef.current.close();
     }
 
-    if (save && user) {
+    if (save && user && transcript.length > 0) {
         const finalActivity: InterviewActivity = {
             id: interviewId,
             type: 'interview',
@@ -110,103 +119,106 @@ function InterviewComponent() {
     } else if (!save) {
         router.push('/dashboard/arena');
     }
-
-  }, [status, user, interviewId, transcript, topic, role, level, company, router]);
+  }, [user, interviewId, transcript, topic, role, level, company, router]);
 
   const startInterview = useCallback(async () => {
-    if (!user || webSocketRef.current) return;
+    if (!user) return;
+    
+    stopInterviewRef.current = false;
     
     if (!audioContextRef.current) {
-        audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
+      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
     } else if (audioContextRef.current.state === 'suspended') {
-        await audioContextRef.current.resume();
+      await audioContextRef.current.resume();
     }
     
     setStatus('initializing');
 
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    
-    const wsUrl = new URL('/api/deepgram-agent', window.location.origin);
-    wsUrl.protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    wsUrl.searchParams.set('topic', topic);
-    wsUrl.searchParams.set('role', role);
-    wsUrl.searchParams.set('level', level);
-    if(company) wsUrl.searchParams.set('company', company);
-    if(user.displayName) wsUrl.searchParams.set('userName', user.displayName);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorderRef.current = new MediaRecorder(stream);
 
-    const ws = new WebSocket(wsUrl.toString());
-    webSocketRef.current = ws;
+      const apiUrl = new URL('/api/deepgram-agent', window.location.origin);
+      apiUrl.searchParams.set('topic', topic);
+      apiUrl.searchParams.set('role', role);
+      apiUrl.searchParams.set('level', level);
+      if(company) apiUrl.searchParams.set('company', company);
+      if(user.displayName) apiUrl.searchParams.set('userName', user.displayName);
 
-    ws.onopen = () => {
-        mediaRecorderRef.current = new MediaRecorder(stream);
-        mediaRecorderRef.current.ondataavailable = (event) => {
-            if (event.data.size > 0 && ws.readyState === WebSocket.OPEN) {
-                ws.send(event.data);
-            }
-        };
-        mediaRecorderRef.current.start(250); // Send data every 250ms
-    };
+      const response = await fetch(apiUrl, {
+          method: 'POST',
+          body: mediaRecorderRef.current.stream,
+      });
 
-    ws.onmessage = async (event) => {
-        if (typeof event.data === 'string') {
-            const message = JSON.parse(event.data);
-            switch (message.type) {
+      if (!response.ok || !response.body) {
+          throw new Error('Failed to connect to the agent.');
+      }
+      
+      mediaRecorderRef.current.start(250);
+
+      responseReaderRef.current = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (!stopInterviewRef.current) {
+          const { done, value } = await responseReaderRef.current.read();
+          if (done) break;
+
+          const chunk = decoder.decode(value, { stream: true });
+          buffer += chunk;
+
+          const parts = buffer.split('\n\n');
+          buffer = parts.pop() || ''; // Keep the last, possibly incomplete part
+
+          for (const part of parts) {
+            try {
+              const message = JSON.parse(part);
+              switch (message.type) {
                 case 'status':
-                    setStatus(message.status);
-                    break;
+                  setStatus(message.status);
+                  break;
                 case 'user_transcript':
-                    setTranscript(prev => {
-                        const newTranscript = [...prev];
-                        const lastEntry = newTranscript[newTranscript.length - 1];
-                        if (lastEntry && lastEntry.speaker === 'user') {
-                            lastEntry.text = message.text;
-                            return newTranscript;
-                        } else {
-                            return [...newTranscript, { speaker: 'user', text: message.text }];
-                        }
-                    });
-                    break;
                 case 'ai_transcript':
-                    setTranscript(prev => {
-                        const newTranscript = [...prev];
-                        const lastEntry = newTranscript[newTranscript.length - 1];
-                        if (lastEntry && lastEntry.speaker === 'ai') {
-                            lastEntry.text = message.text;
-                            return newTranscript;
-                        } else {
-                            return [...newTranscript, { speaker: 'ai', text: message.text }];
-                        }
-                    });
-                    break;
+                  setTranscript(prev => {
+                    const newTranscript = [...prev];
+                    const lastEntry = newTranscript[newTranscript.length - 1];
+                    if (lastEntry && lastEntry.speaker === message.type.split('_')[0]) {
+                      lastEntry.text = message.text;
+                      return newTranscript;
+                    } else {
+                      return [...newTranscript, { speaker: message.type.split('_')[0], text: message.text }];
+                    }
+                  });
+                  break;
                 case 'question':
-                    setCurrentQuestion({ text: message.text, index: message.index, total: message.total });
-                    break;
+                  setCurrentQuestion({ text: message.text, index: message.index, total: message.total });
+                  break;
                 case 'finished':
-                    await stopInterview(true);
-                    break;
+                  await stopInterview(true);
+                  break;
+              }
+            } catch (e) {
+                // This might be an audio chunk if we don't have a clear separator
+                 if (value instanceof Uint8Array) {
+                     const audioArrayBuffer = value.buffer;
+                     if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+                       try {
+                         const audioBuffer = await audioContextRef.current.decodeAudioData(audioArrayBuffer);
+                         audioQueueRef.current.push(audioBuffer);
+                         processAudioQueue();
+                       } catch (decodeError) {
+                         console.error("Error decoding audio data:", decodeError);
+                       }
+                     }
+                 }
             }
-        } else if (event.data instanceof Blob) {
-            const arrayBuffer = await event.data.arrayBuffer();
-            if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
-                const audioBuffer = await audioContextRef.current.decodeAudioData(arrayBuffer);
-                audioQueueRef.current.push(audioBuffer);
-                processAudioQueue();
-            }
-        }
-    };
-
-    ws.onerror = (error) => {
-        console.error('WebSocket error:', error);
-        setStatus('error');
-    };
-    
-    ws.onclose = () => {
-        if (status !== 'finished') {
-           stopInterview(false);
-        }
-    };
-
-  }, [user, topic, role, level, company, processAudioQueue, stopInterview, status]);
+          }
+      }
+    } catch (error) {
+      console.error("Interview failed:", error);
+      setStatus('error');
+    }
+  }, [user, topic, role, level, company, processAudioQueue, stopInterview]);
 
   useEffect(() => {
     if (user) {
@@ -246,7 +258,12 @@ function InterviewComponent() {
                 </div>
 
                 <div className="space-y-2">
-                    <Badge variant={status === 'error' ? 'destructive' : 'secondary'} className={cn(statusInfo[status].color, 'text-primary-foreground')}>{statusInfo[status].text}</Badge>
+                    <Badge variant={status === 'error' ? 'destructive' : 'secondary'} className={cn(
+                        status === 'listening' ? 'bg-green-500' :
+                        status === 'speaking' ? 'bg-blue-500' :
+                        'bg-gray-500',
+                        'text-primary-foreground'
+                    )}>{statusInfo[status].text}</Badge>
                 </div>
 
                 <div className="h-24 px-8 text-lg text-foreground font-medium">

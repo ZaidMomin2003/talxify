@@ -29,6 +29,7 @@ class InterviewManager {
 
   private async writeToClient(data: any) {
     try {
+      if (this.isFinished) return;
       await this.clientWriter.write(new TextEncoder().encode(JSON.stringify(data)));
     } catch (e) {
       console.error("Error writing to client:", e);
@@ -53,6 +54,7 @@ class InterviewManager {
       // Audio is PCM, client expects this format.
       // We can send it as a Blob.
       try {
+        if (this.isFinished) return;
         await this.clientWriter.write(new Blob([audio]));
       } catch (e) {
         console.error("Error writing audio to client:", e);
@@ -135,7 +137,7 @@ class InterviewManager {
         this.deepgramConnection.finish();
     }
     
-    if (!this.clientWriter.closed) {
+    if (this.clientWriter && !this.clientWriter.closed) {
         this.writeToClient({ type: 'finished' });
         this.clientWriter.close().catch(() => {}); // Ignore errors on close
     }
@@ -210,7 +212,10 @@ export async function GET(req: NextRequest) {
     });
     
     if (req.body) {
-        req.body.pipeTo(clientAudioStream);
+        req.body.pipeTo(clientAudioStream).catch(err => {
+            console.error("Error piping request body:", err);
+            interviewManager.finish();
+        });
     } else {
         return new Response("Request body is null", { status: 400 });
     }
