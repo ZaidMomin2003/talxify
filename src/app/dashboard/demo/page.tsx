@@ -80,14 +80,11 @@ export default function DemoPage() {
                         <p className="text-sm text-muted-foreground">Social Media Marketing</p>
                     </div>
                 </div>
-                <div className="flex items-center gap-2">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <span className="relative flex h-3 w-3">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-3 w-3 bg-destructive"></span>
-                        </span>
-                        LIVE 01:37:50
-                    </div>
+                 <div className="flex items-center gap-2">
+                    <Button variant="outline" size="icon">
+                        <Video className="w-5 h-5"/>
+                        <span className="sr-only">Cam</span>
+                    </Button>
                 </div>
             </header>
 
@@ -104,10 +101,6 @@ export default function DemoPage() {
                   )}
                </div>
                <div className="flex-shrink-0 bg-card/80 backdrop-blur-sm border-t p-3 flex items-center justify-center gap-4">
-                    <Button variant="outline" size="lg" className="flex flex-col h-auto p-3 gap-1">
-                        <Video className="w-5 h-5"/>
-                        <span className="text-xs">Cam</span>
-                    </Button>
                     <Button variant="outline" size="lg" className="flex flex-col h-auto p-3 gap-1">
                         <Mic className="w-5 h-5"/>
                         <span className="text-xs">Mic</span>
