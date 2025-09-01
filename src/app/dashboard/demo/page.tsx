@@ -21,8 +21,7 @@ import {
   Paperclip,
   Send,
   Bot,
-  Power,
-  PowerOff
+  PhoneOff
 } from "lucide-react";
 
 interface Message {
@@ -30,13 +29,14 @@ interface Message {
   author: string;
   avatar: string;
   text: string;
+  isSystem?: boolean;
 }
 
 const sampleMessages: Message[] = [
   { id: 1, author: 'Elwin Sharvill', avatar: 'https://randomuser.me/api/portraits/men/11.jpg', text: 'Hey-hey! 👋' },
   { id: 2, author: 'Kita Chihiro', avatar: 'https://randomuser.me/api/portraits/women/22.jpg', text: 'Hi everyone!' },
   { id: 3, author: 'Joseph', avatar: 'https://randomuser.me/api/portraits/men/33.jpg', text: 'Joseph here from California' },
-  { id: 4, author: 'System', avatar: '', text: 'There will also be a recording available', isSystem: true } as any,
+  { id: 4, author: 'System', avatar: '', text: 'There will also be a recording available', isSystem: true },
   { id: 5, author: 'Gvozden Boskovsky', avatar: 'https://randomuser.me/api/portraits/men/44.jpg', text: 'Hi everyone! Gvozden here from California 👋' },
 ];
 
@@ -80,17 +80,18 @@ export default function DemoPage() {
                 </div>
             </div>
             <div className="flex items-center gap-2">
-                <Button variant="outline">Leave</Button>
-                <Button>Finish the lesson</Button>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <span className="relative flex h-3 w-3">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-3 w-3 bg-destructive"></span>
+                    </span>
+                    LIVE 01:37:50
+                </div>
             </div>
         </header>
 
         {/* Video and Controls */}
         <div className="flex-grow bg-card rounded-lg border flex flex-col overflow-hidden relative">
-           <div className="absolute top-4 left-4 bg-destructive text-destructive-foreground px-2 py-1 rounded-md text-sm font-semibold flex items-center gap-2 z-10">
-                <span className="w-2 h-2 rounded-full bg-white animate-pulse"></span>
-                LIVE 01:37:50
-           </div>
            <div className="flex-grow bg-black flex items-center justify-center relative">
               <video ref={videoRef} className="w-full h-full object-cover" autoPlay muted />
               {hasCameraPermission === false && (
@@ -110,21 +111,9 @@ export default function DemoPage() {
                     <Mic className="w-5 h-5"/>
                     <span className="text-xs">Mic</span>
                 </Button>
-                <Button variant="outline" size="lg" className="flex flex-col h-auto p-3 gap-1">
-                    <Share2 className="w-5 h-5"/>
-                    <span className="text-xs">Share</span>
-                </Button>
-                 <Button variant="outline" size="lg" className="flex flex-col h-auto p-3 gap-1 text-destructive">
-                    <CircleDotDashed className="w-5 h-5"/>
-                    <span className="text-xs">Rec</span>
-                </Button>
-                <Button variant="outline" size="lg" className="flex flex-col h-auto p-3 gap-1">
-                    <Presentation className="w-5 h-5"/>
-                    <span className="text-xs">Slides</span>
-                </Button>
-                <Button variant="outline" size="lg" className="flex flex-col h-auto p-3 gap-1">
-                    <BarChart className="w-5 h-5"/>
-                    <span className="text-xs">Poll</span>
+                 <Button variant="destructive" size="lg" className="flex flex-col h-auto p-3 gap-1">
+                    <PhoneOff className="w-5 h-5"/>
+                    <span className="text-xs">Leave</span>
                 </Button>
            </div>
         </div>
@@ -135,28 +124,9 @@ export default function DemoPage() {
         <Tabs defaultValue="chat" className="flex flex-col h-full">
             <TabsList className="m-2 grid w-auto grid-cols-2">
                 <TabsTrigger value="chat">Chat</TabsTrigger>
-                <TabsTrigger value="attendee">Attendee (12)</TabsTrigger>
+                <TabsTrigger value="attendee">Attendee</TabsTrigger>
             </TabsList>
             <TabsContent value="chat" className="flex-grow flex flex-col overflow-y-auto px-4 space-y-4">
-                 {/* Poll */}
-                 <Card className="p-4 bg-green-900/20 border-green-500/30 text-foreground">
-                    <h3 className="font-semibold text-sm mb-3">Which platform will be the leader in your 2020 SMM strategy?</h3>
-                    <div className="space-y-2">
-                        <div>
-                            <div className="flex justify-between text-xs mb-1"><span>Facebook</span><span>33%</span></div>
-                            <Progress value={33} className="h-2 [&>div]:bg-green-500" />
-                        </div>
-                         <div>
-                            <div className="flex justify-between text-xs mb-1"><span>Instagram</span><span>52%</span></div>
-                            <Progress value={52} className="h-2 [&>div]:bg-green-500" />
-                        </div>
-                         <div>
-                            <div className="flex justify-between text-xs mb-1"><span>Twitter</span><span>15%</span></div>
-                            <Progress value={15} className="h-2 [&>div]:bg-green-500" />
-                        </div>
-                    </div>
-                </Card>
-
                 {/* Messages */}
                 {sampleMessages.map((msg) => (
                     msg.isSystem ? (
