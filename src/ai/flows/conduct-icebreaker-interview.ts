@@ -79,13 +79,13 @@ const conductIcebreakerInterviewFlow = ai.defineFlow(
                 name: 'extractIcebreakerInfo',
                 input: { schema: z.object({ conversation: z.string() }) },
                 output: { schema: ExtractedInfoSchema },
-                prompt: `Extract the following information from the conversation: college, city, skills, hobbies.
+                prompt: \`Extract the following information from the conversation: college, city, skills, hobbies.
                 
                 Conversation:
                 {{{conversation}}}
-                `,
+                \`,
             });
-            const conversationText = state.history.map(h => `${h.role}: ${h.parts[0].text}`).join('\n');
+            const conversationText = state.history.map(h => \`\${h.role}: \${h.parts[0].text}\`).join('\\n');
             const { output } = await extractionPrompt({ conversation: conversationText });
 
             if (output) {

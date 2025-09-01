@@ -18,5 +18,3 @@ export const InterviewResponseSchema = z.object({
   newState: InterviewStateSchema.describe('The updated state of the interview after this turn.'),
 });
 export type InterviewResponse = z.infer<typeof InterviewResponseSchema>;
-
-    
