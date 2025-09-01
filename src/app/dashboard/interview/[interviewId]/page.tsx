@@ -9,14 +9,13 @@ import { addActivity } from '@/lib/firebase-service';
 import type { InterviewActivity } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import { Loader2, Mic, AlertTriangle, Square, Bot } from 'lucide-react';
+import { Loader2, Mic, AlertTriangle, Square, Bot, MicOff, PhoneOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
-import { speechToTextWithDeepgram } from '@/ai/flows/deepgram-stt';
-import { textToSpeechWithDeepgram } from '@/ai/flows/deepgram-tts';
+import { Card } from '@/components/ui/card';
+import { LiveClient, LiveConnectionState, LiveTranscriptionEvents } from '@deepgram/sdk';
 
-type AgentStatus = 'idle' | 'listening' | 'processing' | 'speaking' | 'initializing' | 'error';
+type AgentStatus = 'idle' | 'listening' | 'processing' | 'speaking' | 'initializing' | 'error' | 'finished';
 type TranscriptEntry = { speaker: 'user' | 'ai'; text: string };
 
 function InterviewComponent() {
@@ -28,10 +27,11 @@ function InterviewComponent() {
 
   const [status, setStatus] = useState<AgentStatus>('initializing');
   const [transcript, setTranscript] = useState<TranscriptEntry[]>([]);
-  const [isRecording, setIsRecording] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
+  
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioChunksRef = useRef<Blob[]>([]);
-  const audioPlayerRef = useRef<HTMLAudioElement | null>(new Audio());
+  const audioPlayerRef = useRef(new Audio());
+  const deepgramConnectionRef = useRef<LiveClient | null>(null);
 
   const interviewStateRef = useRef<InterviewState>({
     interviewId: params.interviewId as string,
@@ -43,113 +43,141 @@ function InterviewComponent() {
     isComplete: false,
   });
 
-  const processAIResponse = useCallback(async (userText?: string) => {
-    setStatus('processing');
+  const getAgentResponse = useCallback(async () => {
     try {
-      const res = await fetch('/api/deepgram-agent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ state: interviewStateRef.current, message: userText || '' }),
-      });
+        const response = await fetch("/api/deepgram-agent", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ state: interviewStateRef.current }),
+        });
 
-      if (!res.ok) throw new Error('Failed to get AI response');
+        if (!response.body) return;
 
-      const { text: aiText, newState } = await res.json();
-      interviewStateRef.current = newState;
-      setTranscript(prev => [...prev, { speaker: 'ai', text: aiText }]);
-      
-      setStatus('speaking');
-      const ttsResult = await textToSpeechWithDeepgram({ text: aiText });
-      
-      if (audioPlayerRef.current) {
-        audioPlayerRef.current.src = ttsResult.audioDataUri;
-        audioPlayerRef.current.play();
-        audioPlayerRef.current.onended = () => {
-          if (newState.isComplete) {
-            handleEndInterview();
-          } else {
-            setStatus('idle');
-          }
+        const reader = response.body.getReader();
+        const audioQueue: Uint8Array[] = [];
+        let isPlaying = false;
+
+        const playNextAudioChunk = () => {
+            if (audioQueue.length > 0 && !isPlaying) {
+                isPlaying = true;
+                const audioChunk = audioQueue.shift();
+                if (audioChunk) {
+                    const blob = new Blob([audioChunk], { type: 'audio/mp3' });
+                    const url = URL.createObjectURL(blob);
+                    audioPlayerRef.current.src = url;
+                    audioPlayerRef.current.play();
+                    audioPlayerRef.current.onended = () => {
+                        isPlaying = false;
+                        playNextAudioChunk();
+                    };
+                }
+            }
         };
-      }
-    } catch (error) {
-      console.error("Error processing AI response:", error);
-      toast({ title: "Agent Error", description: "An error occurred with the agent.", variant: "destructive" });
-      setStatus('error');
+
+        const processStream = async () => {
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                audioQueue.push(value);
+                playNextAudioChunk();
+            }
+        };
+
+        processStream();
+
+    } catch(err) {
+        console.error("Error fetching or playing agent response:", err);
+        setStatus('error');
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [toast]);
-  
-  const handleStartInterview = useCallback(() => {
-    if (!user) return;
+  }, []);
+
+  const startDeepgramConnection = useCallback(async () => {
     setStatus('initializing');
-    processAIResponse(); // Get the initial greeting
+    try {
+        const response = await fetch("/api/auth/deepgram-key");
+        const { key } = await response.json();
+
+        const deepgram = createClient(key);
+        const connection = deepgram.listen.live({
+            model: "nova-2",
+            interim_results: true,
+            smart_format: true,
+            endpointing: 200, // Milliseconds of silence to detect end of speech
+            no_delay: true,
+        });
+
+        connection.on(LiveTranscriptionEvents.Open, () => {
+            console.log("Deepgram connection opened.");
+            setStatus('listening');
+        });
+
+        connection.on(LiveTranscriptionEvents.Transcript, (data) => {
+            const text = data.channel.alternatives[0].transcript;
+            if (text && data.is_final) {
+                setTranscript(prev => [...prev, { speaker: 'user', text }]);
+                interviewStateRef.current.history.push({ role: 'user', parts: [{ text }]});
+                getAgentResponse(); // Get AI response after user speaks
+            }
+        });
+        
+        connection.on(LiveTranscriptionEvents.Close, () => {
+            console.log("Deepgram connection closed.");
+            if (!interviewStateRef.current.isComplete) {
+                setStatus('idle');
+            }
+        });
+
+        connection.on(LiveTranscriptionEvents.Error, (err) => {
+            console.error("Deepgram error:", err);
+            setStatus('error');
+        });
+        
+        deepgramConnectionRef.current = connection;
+        
+        // Start microphone stream
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorderRef.current = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+        mediaRecorderRef.current.ondataavailable = (event) => {
+            if (event.data.size > 0 && connection.getReadyState() === LiveConnectionState.OPEN) {
+                connection.send(event.data);
+            }
+        };
+        mediaRecorderRef.current.start(250); // Send data every 250ms
+
+    } catch (err) {
+        console.error("Failed to initialize Deepgram:", err);
+        setStatus('error');
+    }
+  }, [getAgentResponse]);
+  
+  
+   useEffect(() => {
+    if (user) {
+        startDeepgramConnection();
+    }
+    return () => {
+        if (deepgramConnectionRef.current) {
+            deepgramConnectionRef.current.finish();
+        }
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+            mediaRecorderRef.current.stop();
+        }
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
-  useEffect(() => {
-    handleStartInterview();
-  }, [handleStartInterview]);
-
-  const startRecording = async () => {
-    if (status !== 'idle') return;
-    
-    try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        mediaRecorderRef.current = new MediaRecorder(stream);
-        audioChunksRef.current = [];
-
-        mediaRecorderRef.current.ondataavailable = (event) => {
-            audioChunksRef.current.push(event.data);
-        };
-        
-        mediaRecorderRef.current.onstop = async () => {
-            setStatus('processing');
-            const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-            
-            // Convert Blob to Base64 Data URI
-            const reader = new FileReader();
-            reader.readAsDataURL(audioBlob);
-            reader.onloadend = async () => {
-                const base64Audio = reader.result as string;
-                try {
-                    const { transcript: transcribedText } = await speechToTextWithDeepgram({ audioDataUri: base64Audio });
-                    if(transcribedText) {
-                        setTranscript(prev => [...prev, { speaker: 'user', text: transcribedText }]);
-                        processAIResponse(transcribedText);
-                    } else {
-                        // Handle no transcription
-                        setStatus('idle');
-                        toast({title: "Couldn't hear you", description: "No speech was detected. Please try again.", variant: "destructive"})
-                    }
-                } catch (error) {
-                    console.error("Transcription error:", error);
-                    setStatus('idle');
-                }
-            };
-        };
-
-        mediaRecorderRef.current.start();
-        setIsRecording(true);
-        setStatus('listening');
-    } catch (error) {
-        console.error("Microphone access denied:", error);
-        toast({ title: "Microphone Access Denied", description: "Please allow microphone access in your browser settings.", variant: "destructive" });
-        setStatus('error');
-    }
-  };
-
-  const stopRecording = () => {
-    if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop();
-      setIsRecording(false);
-      // Processing status is set in the onstop handler
-    }
-  };
-
   const handleEndInterview = async () => {
+    setStatus('finished');
+    if (deepgramConnectionRef.current) {
+        deepgramConnectionRef.current.finish();
+    }
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+        mediaRecorderRef.current.stop();
+    }
+
+    interviewStateRef.current.isComplete = true;
+
     if (!user) return;
-    setStatus('initializing'); // Show a generic loading state
     const finalActivity: InterviewActivity = {
       id: interviewStateRef.current.interviewId,
       type: 'interview',
@@ -162,84 +190,65 @@ function InterviewComponent() {
     router.push(`/dashboard/interview/${finalActivity.id}/results`);
   }
 
-  const handleKeyDown = useCallback((event: KeyboardEvent) => {
-    if (event.code === 'Space' && !event.repeat && !isRecording && status === 'idle') {
-      event.preventDefault();
-      startRecording();
+  const toggleMute = () => {
+    if (mediaRecorderRef.current) {
+        if (isMuted) {
+            mediaRecorderRef.current.resume();
+        } else {
+            mediaRecorderRef.current.pause();
+        }
+        setIsMuted(!isMuted);
     }
-  }, [isRecording, status]);
-
-  const handleKeyUp = useCallback((event: KeyboardEvent) => {
-    if (event.code === 'Space' && isRecording) {
-      event.preventDefault();
-      stopRecording();
-    }
-  }, [isRecording]);
-
-  useEffect(() => {
-    window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('keyup', handleKeyUp);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('keyup', handleKeyUp);
-    };
-  }, [handleKeyDown, handleKeyUp]);
+  }
 
 
   const statusInfo = {
-    initializing: { text: "Initializing Session...", color: "bg-gray-500", icon: <Loader2 className="animate-spin" /> },
-    idle: { text: "Ready", color: "bg-blue-500", icon: <Mic /> },
-    listening: { text: "Listening...", color: "bg-red-500", icon: <Mic /> },
-    processing: { text: "Processing...", color: "bg-yellow-500", icon: <Loader2 className="animate-spin" /> },
-    speaking: { text: "AI is Speaking...", color: "bg-green-500", icon: <Bot /> },
-    error: { text: "Error", color: "bg-destructive", icon: <AlertTriangle /> },
+    initializing: { text: "Initializing Session...", color: "bg-gray-500" },
+    listening: { text: "Listening...", color: "bg-green-500" },
+    speaking: { text: "AI is Speaking...", color: "bg-blue-500" },
+    processing: { text: "Thinking...", color: "bg-yellow-500" },
+    idle: { text: "Ready for you to speak", color: "bg-gray-500" },
+    finished: { text: "Interview Finished", color: "bg-gray-500" },
+    error: { text: "Connection Error", color: "bg-destructive" },
   };
 
   return (
     <div className="flex h-screen w-full flex-col items-center justify-center bg-background text-foreground p-4">
         <Card className="w-full max-w-4xl h-[80vh] flex flex-col shadow-2xl">
-            <CardContent className="p-6 flex-grow flex flex-col items-center justify-center gap-8 text-center">
-                 <div className={cn("flex items-center justify-center w-48 h-48 rounded-full border-8 transition-all duration-300", 
-                    isRecording ? 'border-red-500/50' : 'border-border'
+            <Card className="p-6 flex-grow flex flex-col items-center justify-center gap-8 text-center bg-muted/50 m-4 rounded-lg">
+                <div className={cn("relative flex items-center justify-center w-48 h-48 rounded-full border-8 transition-all duration-300", 
+                    status === 'listening' ? 'border-green-500/50' : 
+                    status === 'speaking' ? 'border-blue-500/50' : 'border-border'
                  )}>
-                    <div className={cn("flex items-center justify-center w-full h-full rounded-full transition-all duration-300",
-                        isRecording ? 'bg-red-500/20' : 'bg-muted'
-                    )}>
-                        <Bot className="w-24 h-24 text-primary" />
-                    </div>
+                    <div className={cn("absolute inset-0 rounded-full animate-pulse",
+                        status === 'listening' ? 'bg-green-500/20' : 
+                        status === 'speaking' ? 'bg-blue-500/20' : 'bg-transparent'
+                    )}></div>
+                    <Bot className="w-24 h-24 text-primary" />
                 </div>
 
                 <div className="space-y-2">
-                    <h1 className="text-3xl font-bold font-headline">{interviewStateRef.current.topic} Interview</h1>
+                    <h1 className="text-3xl font-bold font-headline">{interviewStateRef.current.topic}</h1>
                     <Badge variant={status === 'error' ? 'destructive' : 'secondary'}>{statusInfo[status].text}</Badge>
                 </div>
 
-                <div className="h-20 text-xl text-muted-foreground">
-                    <p>{transcript.slice(-1)[0]?.text || 'Press and hold spacebar to speak'}</p>
+                <div className="h-20 text-xl text-muted-foreground px-8">
+                    <p>{transcript.slice(-1)[0]?.text || 'The interview will begin shortly...'}</p>
                 </div>
-            </CardContent>
+            </Card>
             
-            <div className="flex flex-col items-center gap-4 p-6 border-t">
-                 <Button
-                    onMouseDown={startRecording}
-                    onMouseUp={stopRecording}
-                    onTouchStart={startRecording}
-                    onTouchEnd={stopRecording}
-                    className={cn("h-16 w-32", isRecording ? "bg-red-600 hover:bg-red-700" : "bg-primary")}
-                    disabled={status !== 'idle'}
-                 >
-                    {isRecording ? <Square /> : <Mic />}
-                 </Button>
-                 <p className="text-sm text-muted-foreground">Or hold the spacebar to talk</p>
-                 <Button variant="link" onClick={handleEndInterview} disabled={status === 'initializing'}>
-                    End Interview
+            <div className="flex items-center justify-center gap-4 p-6 border-t">
+                <Button variant="outline" size="icon" onClick={toggleMute} className="h-14 w-14 rounded-full">
+                    {isMuted ? <MicOff /> : <Mic />}
+                </Button>
+                 <Button variant="destructive" size="icon" onClick={handleEndInterview} disabled={status === 'initializing'} className="h-14 w-14 rounded-full">
+                    <PhoneOff />
                  </Button>
             </div>
         </Card>
     </div>
   );
 }
-
 
 export default function InterviewPage() {
     return (
