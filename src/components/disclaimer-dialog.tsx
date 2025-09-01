@@ -13,14 +13,15 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
-import { BrainCircuit, Code, Copy, Swords, BookOpen } from 'lucide-react';
+import { BrainCircuit, Code, Copy, Swords, BookOpen, FileText, User, Gem } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 
 const features = [
     { icon: BrainCircuit, title: 'AI Mock Interviews', description: 'Practice with a realistic AI that asks relevant questions.' },
     { icon: Swords, title: '30-Day Prep Arena', description: 'Follow a personalized syllabus to master key concepts.' },
-    { icon: BookOpen, title: 'AI Study Notes', description: 'Get detailed notes on any technical topic instantly.' },
-    { icon: Code, title: 'Live Coding Gym', description: 'Solve unlimited problems with instant analysis and feedback.' },
+    { icon: FileText, title: 'Resume Builder', description: 'Craft a professional resume with our easy-to-use tool.', badge: 'Free Forever' },
+    { icon: User, title: 'Portfolio Builder', description: 'Showcase your skills with an automatically generated portfolio.' },
 ];
 
 export default function PromotionalPopup() {
@@ -78,7 +79,10 @@ export default function PromotionalPopup() {
                             <feature.icon className="w-5 h-5" />
                         </div>
                         <div>
-                            <p className="font-semibold text-foreground">{feature.title}</p>
+                            <div className="flex items-center gap-2">
+                                <p className="font-semibold text-foreground">{feature.title}</p>
+                                {feature.badge && <Badge variant="secondary" className="bg-green-500/10 text-green-700 dark:text-green-400 border-none"><Gem className="w-3 h-3 mr-1"/>{feature.badge}</Badge>}
+                            </div>
                             <p className="text-xs text-muted-foreground hidden sm:block">{feature.description}</p>
                         </div>
                     </div>
