@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -6,34 +7,15 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import { Message, Part } from 'genkit/model';
 import Groq from 'groq-sdk';
 import { updateUserFromIcebreaker } from '@/lib/firebase-service';
+import type { InterviewState, InterviewResponse } from '@/lib/interview-types';
 
 if (!process.env.GROQ_API_KEY) {
   throw new Error('GROQ_API_KEY is not set in environment variables.');
 }
-if (!process.env.DEEPGRAM_API_KEY) {
-  throw new Error('DEEPGRAM_API_KEY is not set in environment variables.');
-}
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
-
-const IcebreakerStateSchema = z.object({
-  history: z.array(z.object({
-    role: z.enum(['user', 'model']),
-    parts: z.array(z.object({ text: z.string() })),
-  })),
-  interviewId: z.string(),
-  isComplete: z.boolean().optional(),
-});
-export type IcebreakerState = z.infer<typeof IcebreakerStateSchema>;
-
-const IcebreakerResponseSchema = z.object({
-  response: z.string(),
-  newState: IcebreakerStateSchema,
-});
-export type IcebreakerResponse = z.infer<typeof IcebreakerResponseSchema>;
 
 // Define a schema for data extraction
 const ExtractedInfoSchema = z.object({
@@ -47,8 +29,8 @@ const ExtractedInfoSchema = z.object({
 const conductIcebreakerInterviewFlow = ai.defineFlow(
   {
     name: 'conductIcebreakerInterviewFlow',
-    inputSchema: IcebreakerStateSchema,
-    outputSchema: IcebreakerResponseSchema,
+    inputSchema: InterviewState,
+    outputSchema: InterviewResponse,
   },
   async (state) => {
     const systemPrompt = `
@@ -107,6 +89,7 @@ const conductIcebreakerInterviewFlow = ai.defineFlow(
             const { output } = await extractionPrompt({ conversation: conversationText });
 
             if (output) {
+                // We use the interviewId as the userId here
                 await updateUserFromIcebreaker(state.interviewId, output);
             }
         } catch (error) {
@@ -128,7 +111,7 @@ const conductIcebreakerInterviewFlow = ai.defineFlow(
 
 
 export async function conductIcebreakerInterview(
-  state: IcebreakerState
-): Promise<IcebreakerResponse> {
+  state: InterviewState
+): Promise<InterviewResponse> {
   return conductIcebreakerInterviewFlow(state);
 }

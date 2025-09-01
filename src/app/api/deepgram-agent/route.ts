@@ -17,7 +17,9 @@ export async function POST(req: NextRequest) {
     const userMessage: string = body.message;
 
     // Add the new user message to the history.
-    currentState.history.push({ role: 'user', content: userMessage });
+    if(userMessage) {
+        currentState.history.push({ role: 'user', parts: [{ text: userMessage }] });
+    }
 
     let aiText, newState;
 
