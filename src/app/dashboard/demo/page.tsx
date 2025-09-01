@@ -146,16 +146,6 @@ export default function DemoPage() {
                         <Users className="w-8 h-8 mr-2"/> Attendee list would be here.
                     </div>
                 </TabsContent>
-                {/* Message Input */}
-                <div className="p-4 border-t mt-auto">
-                    <div className="relative">
-                        <Input placeholder="Write your message..." className="pr-20" />
-                        <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center">
-                            <Button variant="ghost" size="icon"><Paperclip className="w-4 h-4"/></Button>
-                            <Button variant="ghost" size="icon"><Send className="w-4 h-4"/></Button>
-                        </div>
-                    </div>
-                </div>
             </Tabs>
         </aside>
       </div>
