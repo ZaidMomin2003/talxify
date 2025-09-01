@@ -24,22 +24,6 @@ import {
   PhoneOff
 } from "lucide-react";
 
-interface Message {
-  id: number;
-  author: string;
-  avatar: string;
-  text: string;
-  isSystem?: boolean;
-}
-
-const sampleMessages: Message[] = [
-  { id: 1, author: 'Elwin Sharvill', avatar: 'https://randomuser.me/api/portraits/men/11.jpg', text: 'Hey-hey! 👋' },
-  { id: 2, author: 'Kita Chihiro', avatar: 'https://randomuser.me/api/portraits/women/22.jpg', text: 'Hi everyone!' },
-  { id: 3, author: 'Joseph', avatar: 'https://randomuser.me/api/portraits/men/33.jpg', text: 'Joseph here from California' },
-  { id: 4, author: 'System', avatar: '', text: 'There will also be a recording available', isSystem: true },
-  { id: 5, author: 'Gvozden Boskovsky', avatar: 'https://randomuser.me/api/portraits/men/44.jpg', text: 'Hi everyone! Gvozden here from California 👋' },
-];
-
 export default function DemoPage() {
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -117,27 +101,7 @@ export default function DemoPage() {
                 <h2 className="text-lg font-semibold">Chat</h2>
             </div>
             <div className="flex-grow flex flex-col overflow-y-auto px-4 py-4 space-y-4">
-                {/* Messages */}
-                {sampleMessages.map((msg) => (
-                    msg.isSystem ? (
-                        <div key={msg.id} className="text-center">
-                            <span className="bg-muted px-3 py-1 text-xs text-muted-foreground rounded-full">{msg.text}</span>
-                        </div>
-                    ) : (
-                        <div key={msg.id} className="flex items-start gap-3">
-                            <Avatar className="w-8 h-8 border">
-                                <AvatarImage src={msg.avatar} alt={msg.author} data-ai-hint="person avatar"/>
-                                <AvatarFallback>{msg.author.charAt(0)}</AvatarFallback>
-                            </Avatar>
-                            <div>
-                                <p className="font-semibold text-sm">{msg.author}</p>
-                                <div className="bg-muted p-2 rounded-lg text-sm text-muted-foreground mt-1">
-                                    {msg.text}
-                                </div>
-                            </div>
-                        </div>
-                    )
-                ))}
+                {/* Messages will be rendered here */}
             </div>
         </aside>
       </div>
