@@ -65,7 +65,7 @@ export default function PromotionalPopup() {
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="max-w-md w-[90vw] rounded-xl p-0 overflow-hidden">
+      <DialogContent className="max-w-xl w-[90vw] rounded-xl p-0 overflow-hidden">
         <div className="p-6 sm:p-8">
             <DialogHeader className="text-center mb-6">
                 <DialogTitle className="text-2xl font-bold font-headline">Unlock Your Potential with Talxify</DialogTitle>
@@ -74,16 +74,16 @@ export default function PromotionalPopup() {
                 </DialogDescription>
             </DialogHeader>
             
-            <div className="mb-6 space-y-4">
+            <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
                 {features.map(feature => (
-                    <div key={feature.title} className="flex items-start gap-4">
+                    <div key={feature.title} className="flex items-start gap-3">
                         <div className="bg-primary/10 text-primary rounded-lg p-2 mt-0.5">
                             <feature.icon className="w-5 h-5" />
                         </div>
                         <div>
                             <div className="flex items-center gap-2">
-                                <p className="font-semibold text-foreground">{feature.title}</p>
-                                {feature.badge && <Badge variant="secondary" className="bg-green-500/10 text-green-700 dark:text-green-400 border-none"><Gem className="w-3 h-3 mr-1"/>{feature.badge}</Badge>}
+                                <p className="font-semibold text-foreground text-sm">{feature.title}</p>
+                                {feature.badge && <Badge variant="secondary" className="bg-green-500/10 text-green-700 dark:text-green-400 border-none px-1.5 py-0 text-[10px]"><Gem className="w-2.5 h-2.5 mr-1"/>{feature.badge}</Badge>}
                             </div>
                             <p className="text-xs text-muted-foreground hidden sm:block">{feature.description}</p>
                         </div>
