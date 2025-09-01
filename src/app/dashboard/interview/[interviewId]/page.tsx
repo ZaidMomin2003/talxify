@@ -1,148 +1,250 @@
 
-
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect, useCallback, useRef, Suspense } from 'react';
+import { useSearchParams, useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
-import { useRouter, useParams, useSearchParams } from 'next/navigation';
-import { Loader2 } from 'lucide-react';
+import type { InterviewState } from '@/lib/interview-types';
 import { addActivity } from '@/lib/firebase-service';
-import type { InterviewActivity, StoredActivity } from '@/lib/types';
+import type { InterviewActivity } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
+import { Loader2, Mic, AlertTriangle, Square, Bot } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
+import { speechToTextWithDeepgram } from '@/ai/flows/deepgram-stt';
+import { textToSpeechWithDeepgram } from '@/ai/flows/deepgram-tts';
 
+type AgentStatus = 'idle' | 'listening' | 'processing' | 'speaking' | 'initializing' | 'error';
+type TranscriptEntry = { speaker: 'user' | 'ai'; text: string };
 
-// This component is now a wrapper for the Dialogflow Messenger.
-// The actual chat logic is handled by the `df-messenger` web component.
-// It communicates with the webhook defined at `/app/api/dialogflow-webhook/route.ts`.
+function InterviewComponent() {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const params = useParams();
 
-function InterviewPageComponent() {
-    const { user, loading } = useAuth();
-    const router = useRouter();
-    const params = useParams();
-    const searchParams = useSearchParams();
-    const { toast } = useToast();
+  const [status, setStatus] = useState<AgentStatus>('initializing');
+  const [transcript, setTranscript] = useState<TranscriptEntry[]>([]);
+  const [isRecording, setIsRecording] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const audioPlayerRef = useRef<HTMLAudioElement | null>(new Audio());
 
-    if (loading) {
-        return (
-            <div className="flex h-screen w-full items-center justify-center bg-background text-foreground">
-                <Loader2 className="h-12 w-12 animate-spin text-primary" />
-            </div>
-        );
+  const interviewStateRef = useRef<InterviewState>({
+    interviewId: params.interviewId as string,
+    topic: searchParams.get('topic') || 'General Software Engineering',
+    role: searchParams.get('role') || 'Software Engineer',
+    level: searchParams.get('level') || 'Entry-level',
+    company: searchParams.get('company') || '',
+    history: [],
+    isComplete: false,
+  });
+
+  const processAIResponse = useCallback(async (userText?: string) => {
+    setStatus('processing');
+    try {
+      const res = await fetch('/api/deepgram-agent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ state: interviewStateRef.current, message: userText || '' }),
+      });
+
+      if (!res.ok) throw new Error('Failed to get AI response');
+
+      const { text: aiText, newState } = await res.json();
+      interviewStateRef.current = newState;
+      setTranscript(prev => [...prev, { speaker: 'ai', text: aiText }]);
+      
+      setStatus('speaking');
+      const ttsResult = await textToSpeechWithDeepgram({ text: aiText });
+      
+      if (audioPlayerRef.current) {
+        audioPlayerRef.current.src = ttsResult.audioDataUri;
+        audioPlayerRef.current.play();
+        audioPlayerRef.current.onended = () => {
+          if (newState.isComplete) {
+            handleEndInterview();
+          } else {
+            setStatus('idle');
+          }
+        };
+      }
+    } catch (error) {
+      console.error("Error processing AI response:", error);
+      toast({ title: "Agent Error", description: "An error occurred with the agent.", variant: "destructive" });
+      setStatus('error');
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [toast]);
+  
+  const handleStartInterview = useCallback(() => {
+    if (!user) return;
+    setStatus('initializing');
+    processAIResponse(); // Get the initial greeting
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
-    if (!user) {
-        // This should be handled by a layout or higher-order component,
-        // but as a fallback, we redirect.
-        router.push('/login');
-        return null;
-    }
+  useEffect(() => {
+    handleStartInterview();
+  }, [handleStartInterview]);
+
+  const startRecording = async () => {
+    if (status !== 'idle') return;
     
-    const interviewId = params.interviewId as string;
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorderRef.current = new MediaRecorder(stream);
+        audioChunksRef.current = [];
 
-    // These parameters are passed to Dialogflow to initialize the session.
-    const topic = searchParams.get('topic') || 'General';
-    const level = searchParams.get('level') || 'entry-level';
-    const role = searchParams.get('role') || 'Software Engineer';
-    const company = searchParams.get('company') || '';
-
-    const handleSessionEnded = async (event: CustomEvent) => {
-        const history = event.detail.history;
-        if (history && history.length > 0) {
-            
-            const transcript = history.map((entry: any) => ({
-                speaker: entry.role === 'user' ? 'user' : 'ai',
-                text: entry.text,
-            }));
-
-            // Save the results to Firebase
-            const finalActivity: InterviewActivity = {
-                id: interviewId,
-                type: 'interview',
-                timestamp: new Date().toISOString(),
-                transcript: transcript,
-                feedback: "Feedback will be generated on the results page.",
-                details: { topic, role, level, company }
-            };
-            await addActivity(user.uid, finalActivity);
-            toast({ title: "Interview Complete!", description: "Redirecting to your results..." });
-            router.push(`/dashboard/interview/${interviewId}/results`);
-        } else {
-             // Handle case where interview ends prematurely
-            router.push('/dashboard');
-        }
-    };
-
-
-    React.useEffect(() => {
-        const dfMessenger = document.querySelector('df-messenger');
-        if (dfMessenger) {
-            // Set session parameters dynamically
-            const sessionParams = {
-                userId: user.uid,
-                interviewId: interviewId,
-                topic: topic,
-                level: level,
-                role: role,
-                company: company,
-                isComplete: false,
-                history: []
-            };
-            dfMessenger.setAttribute('session-parameters', JSON.stringify(sessionParams));
-
-            // Add event listener for session end
-            dfMessenger.addEventListener('df-session-ended', handleSessionEnded);
-        }
+        mediaRecorderRef.current.ondataavailable = (event) => {
+            audioChunksRef.current.push(event.data);
+        };
         
-        return () => {
-             if (dfMessenger) {
-                dfMessenger.removeEventListener('df-session-ended', handleSessionEnded);
-             }
-        }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [user.uid, interviewId, topic, level, role, company]);
-
-
-    return (
-        <div className="flex h-screen w-full flex-col bg-muted/40">
-            <style jsx global>{`
-                df-messenger {
-                    --df-messenger-bot-message: hsl(var(--primary-foreground));
-                    --df-messenger-button-titlebar-color: hsl(var(--primary));
-                    --df-messenger-chat-background-color: hsl(var(--background));
-                    --df-messenger-font-color: hsl(var(--foreground));
-                    --df-messenger-input-box-color: hsl(var(--card));
-                    --df-messenger-input-font-color: hsl(var(--foreground));
-                    --df-messenger-message-bot-font-size: 1rem;
-                    --df-messenger-message-user-font-size: 1rem;
-                    --df-messenger-user-message: hsl(var(--primary));
-                    --df-messenger-send-icon: hsl(var(--primary));
-                    --df-messenger-chip-border-color: hsl(var(--primary));
+        mediaRecorderRef.current.onstop = async () => {
+            setStatus('processing');
+            const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+            
+            // Convert Blob to Base64 Data URI
+            const reader = new FileReader();
+            reader.readAsDataURL(audioBlob);
+            reader.onloadend = async () => {
+                const base64Audio = reader.result as string;
+                try {
+                    const { transcript: transcribedText } = await speechToTextWithDeepgram({ audioDataUri: base64Audio });
+                    if(transcribedText) {
+                        setTranscript(prev => [...prev, { speaker: 'user', text: transcribedText }]);
+                        processAIResponse(transcribedText);
+                    } else {
+                        // Handle no transcription
+                        setStatus('idle');
+                        toast({title: "Couldn't hear you", description: "No speech was detected. Please try again.", variant: "destructive"})
+                    }
+                } catch (error) {
+                    console.error("Transcription error:", error);
+                    setStatus('idle');
                 }
-            `}</style>
-             <script src="https://www.gstatic.com/dialogflow-console/fast/messenger/bootstrap.js?v=1"></script>
-             <df-messenger
-                project-id="talxify-ijwhm"
-                agent-id="95a63960-4447-430b-936e-b6a4a7538357"
-                language-code="en"
-                intent="WELCOME"
-                chat-title="Talxify AI Interviewer"
-                chat-icon="/logo-icon-light.png"
-                wait-open="true"
-                expand="true"
-             >
-             </df-messenger>
-        </div>
-    );
+            };
+        };
+
+        mediaRecorderRef.current.start();
+        setIsRecording(true);
+        setStatus('listening');
+    } catch (error) {
+        console.error("Microphone access denied:", error);
+        toast({ title: "Microphone Access Denied", description: "Please allow microphone access in your browser settings.", variant: "destructive" });
+        setStatus('error');
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+      // Processing status is set in the onstop handler
+    }
+  };
+
+  const handleEndInterview = async () => {
+    if (!user) return;
+    setStatus('initializing'); // Show a generic loading state
+    const finalActivity: InterviewActivity = {
+      id: interviewStateRef.current.interviewId,
+      type: 'interview',
+      timestamp: new Date().toISOString(),
+      transcript: transcript,
+      feedback: "Feedback will be generated on the results page.",
+      details: interviewStateRef.current
+    };
+    await addActivity(user.uid, finalActivity);
+    router.push(`/dashboard/interview/${finalActivity.id}/results`);
+  }
+
+  const handleKeyDown = useCallback((event: KeyboardEvent) => {
+    if (event.code === 'Space' && !event.repeat && !isRecording && status === 'idle') {
+      event.preventDefault();
+      startRecording();
+    }
+  }, [isRecording, status]);
+
+  const handleKeyUp = useCallback((event: KeyboardEvent) => {
+    if (event.code === 'Space' && isRecording) {
+      event.preventDefault();
+      stopRecording();
+    }
+  }, [isRecording]);
+
+  useEffect(() => {
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, [handleKeyDown, handleKeyUp]);
+
+
+  const statusInfo = {
+    initializing: { text: "Initializing Session...", color: "bg-gray-500", icon: <Loader2 className="animate-spin" /> },
+    idle: { text: "Ready", color: "bg-blue-500", icon: <Mic /> },
+    listening: { text: "Listening...", color: "bg-red-500", icon: <Mic /> },
+    processing: { text: "Processing...", color: "bg-yellow-500", icon: <Loader2 className="animate-spin" /> },
+    speaking: { text: "AI is Speaking...", color: "bg-green-500", icon: <Bot /> },
+    error: { text: "Error", color: "bg-destructive", icon: <AlertTriangle /> },
+  };
+
+  return (
+    <div className="flex h-screen w-full flex-col items-center justify-center bg-background text-foreground p-4">
+        <Card className="w-full max-w-4xl h-[80vh] flex flex-col shadow-2xl">
+            <CardContent className="p-6 flex-grow flex flex-col items-center justify-center gap-8 text-center">
+                 <div className={cn("flex items-center justify-center w-48 h-48 rounded-full border-8 transition-all duration-300", 
+                    isRecording ? 'border-red-500/50' : 'border-border'
+                 )}>
+                    <div className={cn("flex items-center justify-center w-full h-full rounded-full transition-all duration-300",
+                        isRecording ? 'bg-red-500/20' : 'bg-muted'
+                    )}>
+                        <Bot className="w-24 h-24 text-primary" />
+                    </div>
+                </div>
+
+                <div className="space-y-2">
+                    <h1 className="text-3xl font-bold font-headline">{interviewStateRef.current.topic} Interview</h1>
+                    <Badge variant={status === 'error' ? 'destructive' : 'secondary'}>{statusInfo[status].text}</Badge>
+                </div>
+
+                <div className="h-20 text-xl text-muted-foreground">
+                    <p>{transcript.slice(-1)[0]?.text || 'Press and hold spacebar to speak'}</p>
+                </div>
+            </CardContent>
+            
+            <div className="flex flex-col items-center gap-4 p-6 border-t">
+                 <Button
+                    onMouseDown={startRecording}
+                    onMouseUp={stopRecording}
+                    onTouchStart={startRecording}
+                    onTouchEnd={stopRecording}
+                    className={cn("h-16 w-32", isRecording ? "bg-red-600 hover:bg-red-700" : "bg-primary")}
+                    disabled={status !== 'idle'}
+                 >
+                    {isRecording ? <Square /> : <Mic />}
+                 </Button>
+                 <p className="text-sm text-muted-foreground">Or hold the spacebar to talk</p>
+                 <Button variant="link" onClick={handleEndInterview} disabled={status === 'initializing'}>
+                    End Interview
+                 </Button>
+            </div>
+        </Card>
+    </div>
+  );
 }
+
 
 export default function InterviewPage() {
     return (
-        <React.Suspense fallback={
-            <div className="flex h-screen w-full items-center justify-center bg-background text-foreground">
-                <Loader2 className="h-12 w-12 animate-spin text-primary" />
-            </div>
-        }>
-            <InterviewPageComponent />
-        </React.Suspense>
+        <Suspense fallback={<div className="flex h-screen w-full items-center justify-center"><Loader2 className="w-12 h-12 animate-spin text-primary" /></div>}>
+            <InterviewComponent />
+        </Suspense>
     )
 }
