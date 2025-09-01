@@ -7,12 +7,24 @@ import { useAuth } from '@/context/auth-context';
 import { addActivity } from '@/lib/firebase-service';
 import type { InterviewActivity, TranscriptEntry } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { Loader2, Mic, AlertTriangle, Bot, MicOff, PhoneOff } from 'lucide-react';
+import { Loader2, Mic, Bot, PhoneOff, AlertTriangle, MessageSquare, ListChecks } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
 
-type AgentStatus = 'idle' | 'listening' | 'processing' | 'speaking' | 'initializing' | 'error' | 'finished';
+type AgentStatus = 'initializing' | 'generating_questions' | 'connected' | 'speaking' | 'listening' | 'finished' | 'error' | 'questions_ready';
+
+const statusInfo: { [key in AgentStatus]: { text: string; color: string; showMic?: boolean } } = {
+  initializing: { text: "Initializing Session...", color: "bg-gray-500" },
+  generating_questions: { text: "Generating Questions...", color: "bg-yellow-500" },
+  connected: { text: "Connected, AI is preparing...", color: "bg-blue-500" },
+  questions_ready: { text: "Ready to Start", color: "bg-blue-500" },
+  listening: { text: "Listening...", color: "bg-green-500", showMic: true },
+  speaking: { text: "AI is Speaking...", color: "bg-blue-500" },
+  finished: { text: "Interview Finished", color: "bg-gray-500" },
+  error: { text: "Connection Error", color: "bg-destructive" },
+};
 
 function InterviewComponent() {
   const { user } = useAuth();
@@ -22,13 +34,15 @@ function InterviewComponent() {
 
   const [status, setStatus] = useState<AgentStatus>('initializing');
   const [transcript, setTranscript] = useState<TranscriptEntry[]>([]);
-  const [isMuted, setIsMuted] = useState(false);
+  const [currentQuestion, setCurrentQuestion] = useState<{ text: string, index: number, total: number } | null>(null);
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
-  const connectionRef = useRef<WebSocket | null>(null);
-  const audioQueueRef = useRef<Blob[]>([]);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const connectionRef = useRef<ReadableStreamDefaultReader<any> | null>(null);
+  const audioQueueRef = useRef<AudioBuffer[]>([]);
   const isPlayingRef = useRef(false);
+  const responseStreamRef = useRef<Response | null>(null);
+
 
   const interviewId = params.interviewId as string;
   const topic = searchParams.get('topic') || 'General Software Engineering';
@@ -36,117 +50,60 @@ function InterviewComponent() {
   const level = searchParams.get('level') || 'Entry-level';
   const company = searchParams.get('company') || '';
 
-  const processAudioQueue = useCallback(() => {
-    if (isPlayingRef.current || audioQueueRef.current.length === 0) {
-      return;
-    }
-    
-    isPlayingRef.current = true;
-    setStatus('speaking');
-    const audioBlob = audioQueueRef.current.shift();
-    if (audioBlob && audioPlayerRef.current) {
-      const url = URL.createObjectURL(audioBlob);
-      audioPlayerRef.current.src = url;
-      audioPlayerRef.current.play().catch(e => console.error("Audio playback error:", e));
-    }
+  const processAudioQueue = useCallback(async () => {
+      if (isPlayingRef.current || audioQueueRef.current.length === 0 || !audioContextRef.current) {
+          return;
+      }
+      
+      isPlayingRef.current = true;
+      setStatus('speaking');
+
+      const audioBuffer = audioQueueRef.current.shift();
+      if (audioBuffer) {
+          const source = audioContextRef.current.createBufferSource();
+          source.buffer = audioBuffer;
+          source.connect(audioContextRef.current.destination);
+          source.onended = () => {
+              isPlayingRef.current = false;
+              processAudioQueue(); // Process next item in queue
+          };
+          source.start();
+      } else {
+          isPlayingRef.current = false;
+          // If queue is empty, transition to listening
+          if (audioQueueRef.current.length === 0) {
+            setStatus('listening');
+          }
+      }
   }, []);
 
-  useEffect(() => {
-    audioPlayerRef.current = new Audio();
-    audioPlayerRef.current.onended = () => {
-      isPlayingRef.current = false;
-      if (audioQueueRef.current.length > 0) {
-        processAudioQueue();
-      } else {
-        setStatus('listening');
-      }
-    };
-  }, [processAudioQueue]);
-
-
-  const setupAndStartInterview = useCallback(async () => {
-    if (!user) return;
-    setStatus('initializing');
-
-    const wsUrl = new URL('/api/deepgram-agent', window.location.origin);
-    wsUrl.protocol = wsUrl.protocol.replace('http', 'ws');
-    
-    wsUrl.searchParams.set('topic', topic);
-    wsUrl.searchParams.set('role', role);
-    wsUrl.searchParams.set('level', level);
-    if(company) wsUrl.searchParams.set('company', company);
-    if(user.displayName) wsUrl.searchParams.set('userName', user.displayName);
-
-    const ws = new WebSocket(wsUrl);
-    connectionRef.current = ws;
-
-    ws.onopen = async () => {
-      console.log("Connected to agent.");
-      setStatus('listening');
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      mediaRecorderRef.current = new MediaRecorder(stream);
-      mediaRecorderRef.current.ondataavailable = (event) => {
-        if (event.data.size > 0 && ws.readyState === WebSocket.OPEN) {
-          ws.send(event.data);
-        }
-      };
-      mediaRecorderRef.current.start(250);
-    };
-
-    ws.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-        if (data.type === 'transcript') {
-            const speaker = data.is_final ? 'user' : 'interim';
-            if (data.is_final) {
-                setTranscript(prev => [...prev, { speaker: 'user', text: data.text }]);
-                setStatus('processing');
-            }
-        } else if (data.type === 'audio') {
-            const audioData = atob(data.audio);
-            const audioBytes = new Uint8Array(audioData.length);
-            for (let i = 0; i < audioData.length; i++) {
-                audioBytes[i] = audioData.charCodeAt(i);
-            }
-            audioQueueRef.current.push(new Blob([audioBytes], { type: 'audio/mp3' }));
-            processAudioQueue();
-        } else if(data.type === 'ai_transcript') {
-            setTranscript(prev => [...prev, { speaker: 'ai', text: data.text }]);
-        } else if (data.type === 'finished') {
-             handleEndInterview();
-        }
-    };
-
-    ws.onerror = (error) => {
-        console.error("WebSocket error:", error);
-        setStatus('error');
-    };
-
-    ws.onclose = () => {
-        console.log("WebSocket connection closed.");
-        if (mediaRecorderRef.current?.state === 'recording') {
-            mediaRecorderRef.current.stop();
-        }
-    };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
-
-  useEffect(() => {
-    if (user) {
-        setupAndStartInterview();
-    }
-    return () => {
-        if (connectionRef.current) {
-            connectionRef.current.close();
-        }
-    };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
-
-  const handleEndInterview = async () => {
+  const stopInterview = useCallback(async () => {
     setStatus('finished');
-    if (connectionRef.current) {
-        connectionRef.current.close();
+    
+    // Stop microphone
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+        mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+        mediaRecorderRef.current.stop();
     }
+    
+    // Close audio context
+    if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+      audioContextRef.current.close();
+    }
+
+    // Cancel the readable stream
+    if (connectionRef.current) {
+        await connectionRef.current.cancel();
+        connectionRef.current = null;
+    }
+    if (responseStreamRef.current && responseStreamRef.current.body) {
+        await responseStreamRef.current.body.cancel();
+    }
+
+  }, []);
+
+  const handleEndInterview = useCallback(async () => {
+    await stopInterview();
 
     if (!user) return;
     const finalActivity: InterviewActivity = {
@@ -159,60 +116,138 @@ function InterviewComponent() {
     };
     await addActivity(user.uid, finalActivity);
     router.push(`/dashboard/interview/${finalActivity.id}/results`);
-  }
+  }, [stopInterview, user, interviewId, transcript, topic, role, level, company, router]);
+  
 
-  const toggleMute = () => {
-    if (mediaRecorderRef.current) {
-        const isCurrentlyMuted = mediaRecorderRef.current.stream.getAudioTracks().every(track => !track.enabled);
-        mediaRecorderRef.current.stream.getAudioTracks().forEach(track => {
-            track.enabled = isCurrentlyMuted;
+  const startInterview = useCallback(async () => {
+    if (!user) return;
+    
+    // Initialize AudioContext
+    if (!audioContextRef.current) {
+        audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({
+            sampleRate: 24000
         });
-        setIsMuted(!isCurrentlyMuted);
     }
-  }
+    
+    setStatus('initializing');
+
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    
+    const wsUrl = new URL('/api/deepgram-agent', window.location.origin);
+    wsUrl.searchParams.set('topic', topic);
+    wsUrl.searchParams.set('role', role);
+    wsUrl.searchParams.set('level', level);
+    if(company) wsUrl.searchParams.set('company', company);
+    if(user.displayName) wsUrl.searchParams.set('userName', user.displayName);
+
+    const response = await fetch(wsUrl.toString(), {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: stream as any, // Pass the stream as the body
+      duplex: 'half'
+    } as RequestInit);
+    
+    responseStreamRef.current = response;
+    
+    if (!response.body) {
+      setStatus('error');
+      return;
+    }
+    
+    const reader = response.body.getReader();
+    connectionRef.current = reader;
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) {
+        break;
+      }
+      
+      const message = JSON.parse(new TextDecoder().decode(value));
+      
+      switch (message.type) {
+        case 'status':
+          setStatus(message.status);
+          break;
+        case 'user_transcript':
+          setTranscript(prev => [...prev, { speaker: 'user', text: message.text }]);
+          break;
+        case 'ai_transcript':
+          setTranscript(prev => [...prev, { speaker: 'ai', text: message.text }]);
+          break;
+        case 'question':
+            setCurrentQuestion({ text: message.text, index: message.index, total: message.total });
+            break;
+        case 'audio':
+          const audioData = atob(message.audio);
+          const audioBytes = new Uint8Array(audioData.length);
+          for (let i = 0; i < audioData.length; i++) {
+            audioBytes[i] = audioData.charCodeAt(i);
+          }
+          const audioBuffer = await audioContextRef.current.decodeAudioData(audioBytes.buffer);
+          audioQueueRef.current.push(audioBuffer);
+          processAudioQueue();
+          break;
+        case 'finished':
+          handleEndInterview();
+          break;
+      }
+    }
+  }, [user, topic, role, level, company, processAudioQueue, handleEndInterview]);
 
 
-  const statusInfo = {
-    initializing: { text: "Initializing Session...", color: "bg-gray-500" },
-    listening: { text: "Listening...", color: "bg-green-500" },
-    speaking: { text: "AI is Speaking...", color: "bg-blue-500" },
-    processing: { text: "Thinking...", color: "bg-yellow-500" },
-    idle: { text: "Ready for you to speak", color: "bg-gray-500" },
-    finished: { text: "Interview Finished", color: "bg-gray-500" },
-    error: { text: "Connection Error", color: "bg-destructive" },
-  };
+  useEffect(() => {
+    if (user) {
+        startInterview();
+    }
+    return () => {
+        stopInterview();
+    };
+  }, [user, startInterview, stopInterview]);
+
 
   return (
     <div className="flex h-screen w-full flex-col items-center justify-center bg-background text-foreground p-4">
-        <Card className="w-full max-w-4xl h-[80vh] flex flex-col shadow-2xl">
-            <Card className="p-6 flex-grow flex flex-col items-center justify-center gap-8 text-center bg-muted/50 m-4 rounded-lg">
+        <Card className="w-full max-w-4xl h-[90vh] flex flex-col shadow-2xl">
+            <header className="p-4 border-b flex items-center justify-between">
+                 <div className='flex items-center gap-3'>
+                    <ListChecks className="h-6 w-6 text-primary" />
+                    <h1 className="text-lg font-semibold">{topic} Interview</h1>
+                 </div>
+                 {currentQuestion && (
+                    <div className='flex items-center gap-3 w-48'>
+                         <Progress value={(currentQuestion.index / currentQuestion.total) * 100} className="h-2" />
+                         <span className='text-sm text-muted-foreground font-medium'>{currentQuestion.index}/{currentQuestion.total}</span>
+                    </div>
+                 )}
+            </header>
+            <CardContent className="p-6 flex-grow flex flex-col items-center justify-center gap-8 text-center bg-muted/30 m-4 rounded-lg">
                 <div className={cn("relative flex items-center justify-center w-48 h-48 rounded-full border-8 transition-all duration-300", 
                     status === 'listening' ? 'border-green-500/50' : 
                     status === 'speaking' ? 'border-blue-500/50' : 'border-border'
                  )}>
-                    <div className={cn("absolute inset-0 rounded-full animate-pulse",
-                        status === 'listening' ? 'bg-green-500/20' : 
-                        status === 'speaking' ? 'bg-blue-500/20' : 'bg-transparent'
-                    )}></div>
-                    <Bot className="w-24 h-24 text-primary" />
+                    {statusInfo[status].showMic ? <Mic className="h-20 w-20 text-green-500"/> : <Bot className="w-24 h-24 text-primary" />}
+                     <div className={cn("absolute inset-0 rounded-full animate-pulse", statusInfo[status].color,
+                       status === 'listening' ? 'bg-green-500/20' : 
+                       status === 'speaking' ? 'bg-blue-500/20' : 'bg-transparent'
+                     )}></div>
                 </div>
 
                 <div className="space-y-2">
-                    <h1 className="text-3xl font-bold font-headline">{topic}</h1>
-                    <Badge variant={status === 'error' ? 'destructive' : 'secondary'}>{statusInfo[status].text}</Badge>
+                    <Badge variant={status === 'error' ? 'destructive' : 'secondary'} className={cn(statusInfo[status].color, 'text-primary-foreground')}>{statusInfo[status].text}</Badge>
                 </div>
 
-                <div className="h-20 text-xl text-muted-foreground px-8">
-                    <p>{transcript.slice(-1)[0]?.text || 'The interview will begin shortly...'}</p>
+                <div className="h-24 px-8 text-lg text-foreground font-medium">
+                    <p>{currentQuestion?.text || transcript.slice(-1)[0]?.text || 'The interview will begin shortly...'}</p>
                 </div>
-            </Card>
+            </CardContent>
             
             <div className="flex items-center justify-center gap-4 p-6 border-t">
-                <Button variant="outline" size="icon" onClick={toggleMute} className="h-14 w-14 rounded-full">
-                    {isMuted ? <MicOff /> : <Mic />}
-                </Button>
-                 <Button variant="destructive" size="icon" onClick={handleEndInterview} disabled={status === 'initializing' || status === 'finished'} className="h-14 w-14 rounded-full">
-                    <PhoneOff />
+                 <Button variant="destructive" size="lg" onClick={handleEndInterview} disabled={status === 'initializing' || status === 'finished'}>
+                    <PhoneOff className="mr-2" />
+                    End Interview
                  </Button>
             </div>
         </Card>
