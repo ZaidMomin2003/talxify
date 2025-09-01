@@ -113,40 +113,32 @@ export default function DemoPage() {
       
         {/* Sidebar */}
         <aside className="w-full max-w-sm ml-4 bg-card rounded-lg border flex flex-col">
-            <Tabs defaultValue="chat" className="flex flex-col h-full">
-                <TabsList className="m-2 grid w-auto grid-cols-2">
-                    <TabsTrigger value="chat">Chat</TabsTrigger>
-                    <TabsTrigger value="attendee">Attendee</TabsTrigger>
-                </TabsList>
-                <TabsContent value="chat" className="flex-grow flex flex-col overflow-y-auto px-4 space-y-4">
-                    {/* Messages */}
-                    {sampleMessages.map((msg) => (
-                        msg.isSystem ? (
-                            <div key={msg.id} className="text-center">
-                                <span className="bg-muted px-3 py-1 text-xs text-muted-foreground rounded-full">{msg.text}</span>
-                            </div>
-                        ) : (
-                            <div key={msg.id} className="flex items-start gap-3">
-                                <Avatar className="w-8 h-8 border">
-                                    <AvatarImage src={msg.avatar} alt={msg.author} data-ai-hint="person avatar"/>
-                                    <AvatarFallback>{msg.author.charAt(0)}</AvatarFallback>
-                                </Avatar>
-                                <div>
-                                    <p className="font-semibold text-sm">{msg.author}</p>
-                                    <div className="bg-muted p-2 rounded-lg text-sm text-muted-foreground mt-1">
-                                        {msg.text}
-                                    </div>
+            <div className="p-4 border-b">
+                <h2 className="text-lg font-semibold">Chat</h2>
+            </div>
+            <div className="flex-grow flex flex-col overflow-y-auto px-4 py-4 space-y-4">
+                {/* Messages */}
+                {sampleMessages.map((msg) => (
+                    msg.isSystem ? (
+                        <div key={msg.id} className="text-center">
+                            <span className="bg-muted px-3 py-1 text-xs text-muted-foreground rounded-full">{msg.text}</span>
+                        </div>
+                    ) : (
+                        <div key={msg.id} className="flex items-start gap-3">
+                            <Avatar className="w-8 h-8 border">
+                                <AvatarImage src={msg.avatar} alt={msg.author} data-ai-hint="person avatar"/>
+                                <AvatarFallback>{msg.author.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                            <div>
+                                <p className="font-semibold text-sm">{msg.author}</p>
+                                <div className="bg-muted p-2 rounded-lg text-sm text-muted-foreground mt-1">
+                                    {msg.text}
                                 </div>
                             </div>
-                        )
-                    ))}
-                </TabsContent>
-                <TabsContent value="attendee" className="flex-grow overflow-y-auto px-4">
-                    <div className="flex items-center justify-center h-full text-muted-foreground">
-                        <Users className="w-8 h-8 mr-2"/> Attendee list would be here.
-                    </div>
-                </TabsContent>
-            </Tabs>
+                        </div>
+                    )
+                ))}
+            </div>
         </aside>
       </div>
     </main>
