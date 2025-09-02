@@ -43,6 +43,11 @@ function InterviewComponent() {
   const isPlayingRef = useRef(false);
   const responseStreamController = useRef<AbortController | null>(null);
   const stopInterviewRef = useRef<boolean>(false);
+  const transcriptRef = useRef(transcript);
+
+  useEffect(() => {
+    transcriptRef.current = transcript;
+  }, [transcript]);
 
   const interviewId = params.interviewId as string;
   const topic = searchParams.get('topic') || 'General Software Engineering';
@@ -104,12 +109,12 @@ function InterviewComponent() {
     }
     audioContextRef.current = null;
 
-    if (save && user && transcript.length > 0) {
+    if (save && user && transcriptRef.current.length > 0) {
         const finalActivity: InterviewActivity = {
             id: interviewId,
             type: 'interview',
             timestamp: new Date().toISOString(),
-            transcript: transcript,
+            transcript: transcriptRef.current,
             feedback: "Feedback will be generated on the results page.",
             details: { topic, role, level, company }
         };
@@ -118,7 +123,7 @@ function InterviewComponent() {
     } else if (!save) {
         router.push('/dashboard/arena');
     }
-  }, [user, interviewId, transcript, topic, role, level, company, router]);
+  }, [user, interviewId, topic, role, level, company, router]);
 
   const startInterview = useCallback(async () => {
     if (!user) return;
@@ -241,10 +246,10 @@ function InterviewComponent() {
     }
     
     return () => {
-      // This cleanup function will be called when the component unmounts.
       stopInterview(false);
     };
-  }, [user, startInterview]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   return (
     <div className="flex h-screen w-full flex-col items-center justify-center bg-background text-foreground p-4">
