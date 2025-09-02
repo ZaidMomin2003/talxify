@@ -16,49 +16,44 @@ import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 
 type ConnectionState = "connecting" | "open" | "closing" | "closed" | "error";
+type AgentStatus = "listening" | "speaking" | "thinking";
 
 export default function DemoPage() {
   const [connectionState, setConnectionState] = useState<ConnectionState>("closed");
-  const [isListening, setIsListening] = useState(false);
-  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [agentStatus, setAgentStatus] = useState<AgentStatus | null>(null);
   const [transcript, setTranscript] = useState<{ speaker: 'ai' | 'user'; text: string }[]>([]);
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const audioQueue = useRef<ArrayBuffer[]>([]);
   const isPlaying = useRef(false);
-  const abortControllerRef = useRef<AbortController | null>(null);
+  const connectionRef = useRef<WebSocket | null>(null);
 
   const { toast } = useToast();
   
   const processAudioQueue = useCallback(async () => {
-    if (isPlaying.current || audioQueue.current.length === 0) return;
+    if (isPlaying.current || audioQueue.current.length === 0 || !audioContextRef.current) return;
     
     isPlaying.current = true;
+    setAgentStatus('speaking');
     
-    // Ensure AudioContext is running
-    if (audioContextRef.current && audioContextRef.current.state === 'suspended') {
+    if (audioContextRef.current.state === 'suspended') {
       await audioContextRef.current.resume();
     }
     
     const audioData = audioQueue.current.shift();
 
-    if (audioData && audioContextRef.current) {
+    if (audioData) {
         try {
-            const pcmData = new Int16Array(audioData);
-            const floatData = new Float32Array(pcmData.length);
-            for (let i = 0; i < pcmData.length; i++) {
-                floatData[i] = pcmData[i] / 32768.0;
-            }
-
-            const audioBuffer = audioContextRef.current.createBuffer(1, floatData.length, 24000);
-            audioBuffer.getChannelData(0).set(floatData);
-
+            const audioBuffer = await audioContextRef.current.decodeAudioData(audioData);
             const source = audioContextRef.current.createBufferSource();
             source.buffer = audioBuffer;
             source.connect(audioContextRef.current.destination);
             source.onended = () => {
                 isPlaying.current = false;
+                if (audioQueue.current.length === 0) {
+                    setAgentStatus('listening');
+                }
                 processAudioQueue(); 
             };
             source.start();
@@ -77,7 +72,7 @@ export default function DemoPage() {
     
     if (!audioContextRef.current) {
         try {
-            audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
+            audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
         } catch (e) {
             console.error("AudioContext not supported", e);
             setConnectionState("error");
@@ -88,109 +83,69 @@ export default function DemoPage() {
     
     try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        mediaRecorderRef.current = new MediaRecorder(stream);
+
+        const wsUrl = new URL('/api/deepgram', window.location.href);
+        wsUrl.protocol = wsUrl.protocol.replace('http', 'ws');
         
-        abortControllerRef.current = new AbortController();
+        connectionRef.current = new WebSocket(wsUrl);
+        const ws = connectionRef.current;
 
-        const response = await fetch('/api/deepgram', {
-            method: 'GET',
-            signal: abortControllerRef.current.signal,
-        });
-
-        if (!response.body) {
-            throw new Error("Response body is null");
-        }
-
-        const reader = response.body.getReader();
-
-        mediaRecorderRef.current.start(250); // Send data every 250ms
-
-        mediaRecorderRef.current.ondataavailable = (event) => {
-            if (event.data.size > 0 && dgSocket?.readyState === 1) {
-                dgSocket.send(event.data);
-            }
-        };
-
-        const dgSocket = new WebSocket("wss://api.deepgram.com/v1/agent", [
-            "token",
-            process.env.NEXT_PUBLIC_DEEPGRAM_API_KEY!,
-        ]);
-        
-        dgSocket.onopen = () => {
+        ws.onopen = () => {
             setConnectionState("open");
-            mediaRecorderRef.current?.addEventListener("dataavailable", (event) => {
-                if (event.data.size > 0 && dgSocket.readyState === 1) {
-                    dgSocket.send(event.data);
+            setAgentStatus('listening');
+            mediaRecorderRef.current = new MediaRecorder(stream);
+            mediaRecorderRef.current.ondataavailable = (event) => {
+                if (event.data.size > 0 && ws.readyState === WebSocket.OPEN) {
+                    ws.send(event.data);
                 }
-            });
+            };
+            mediaRecorderRef.current.start(250); // Send data every 250ms
         };
-        
-        dgSocket.onmessage = (event) => {
-             const data = JSON.parse(event.data);
-             if (data.type === 'transcript') {
-                setTranscript(prev => [...prev, { speaker: data.speaker, text: data.text }]);
-            } else if (data.type === 'listening') {
-                setIsListening(data.value);
-            } else if (data.type === 'speaking') {
-                setIsSpeaking(data.value);
-            } else if (data.type === 'audio') {
-                const audioData = new Uint8Array(atob(data.audio).split('').map(char => char.charCodeAt(0))).buffer;
-                audioQueue.current.push(audioData);
-                processAudioQueue();
+
+        ws.onmessage = (event) => {
+            if (typeof event.data === 'string') {
+                const message = JSON.parse(event.data);
+                if (message.type === 'transcript') {
+                    setTranscript(prev => [...prev, { speaker: message.speaker, text: message.text }]);
+                } else if (message.type === 'status') {
+                    setAgentStatus(message.status);
+                }
+            } else if (event.data instanceof Blob) {
+                 event.data.arrayBuffer().then(arrayBuffer => {
+                    audioQueue.current.push(arrayBuffer);
+                    processAudioQueue();
+                 });
             }
         };
 
-        const readLoop = async () => {
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-
-                const text = new TextDecoder().decode(value);
-                const lines = text.split('\n\n');
-
-                for (const line of lines) {
-                    if (line.startsWith('data: ')) {
-                        const jsonString = line.substring(6);
-                        try {
-                            const message = JSON.parse(jsonString);
-                            if (message.type === 'transcript') {
-                                setTranscript(prev => [...prev, { speaker: message.speaker, text: message.text }]);
-                            } else if (message.type === 'listening') {
-                                setIsListening(message.value);
-                            } else if (message.type === 'speaking') {
-                                setIsSpeaking(message.value);
-                            }
-                        } catch (e) {
-                             if (value instanceof Uint8Array) {
-                                audioQueue.current.push(value.buffer);
-                                processAudioQueue();
-                             }
-                        }
-                    }
-                }
-            }
-        };
-
-        readLoop();
-
-
-    } catch (err: any) {
-        if (err.name !== 'AbortError') {
-             console.error("Error connecting to agent:", err);
+        ws.onerror = (error) => {
+            console.error("WebSocket error:", error);
             setConnectionState("error");
             toast({ title: "Connection Error", description: "Could not connect to the voice agent.", variant: "destructive"});
-        }
+        };
+
+        ws.onclose = () => {
+            setConnectionState("closed");
+            setAgentStatus(null);
+            mediaRecorderRef.current?.stop();
+            mediaRecorderRef.current?.stream.getTracks().forEach(track => track.stop());
+        };
+
+    } catch (err: any) {
+        console.error("Error setting up connection:", err);
+        setConnectionState("error");
+        toast({ title: "Setup Error", description: "Failed to set up microphone or connection.", variant: "destructive"});
     }
   }, [toast, processAudioQueue]);
 
 
   const disconnectAgent = useCallback(() => {
     setConnectionState("closing");
-    if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
+    if (connectionRef.current) {
+        connectionRef.current.close();
     }
+    mediaRecorderRef.current?.stop();
     mediaRecorderRef.current?.stream.getTracks().forEach(track => track.stop());
-    mediaRecorderRef.current = null;
     audioContextRef.current?.close().then(() => audioContextRef.current = null);
     setConnectionState("closed");
     setTranscript([]);
@@ -206,8 +161,8 @@ export default function DemoPage() {
     switch(connectionState) {
         case 'connecting': return <Badge variant="secondary">Connecting...</Badge>;
         case 'open':
-            if (isSpeaking) return <Badge className="bg-blue-500 text-primary-foreground">AI Speaking...</Badge>;
-            if (isListening) return <Badge className="bg-green-500 text-primary-foreground">Listening...</Badge>;
+            if (agentStatus === 'speaking') return <Badge className="bg-blue-500 text-primary-foreground">AI Speaking...</Badge>;
+            if (agentStatus === 'listening') return <Badge className="bg-green-500 text-primary-foreground">Listening...</Badge>;
             return <Badge variant="default">Connected</Badge>;
         case 'error': return <Badge variant="destructive">Error</Badge>;
         case 'closed':
@@ -268,13 +223,13 @@ export default function DemoPage() {
                {connectionState === 'open' && (
                     <div className="w-full max-w-2xl h-full flex flex-col items-center justify-center">
                         <div className={cn("relative flex items-center justify-center w-48 h-48 rounded-full border-8 transition-all duration-300", 
-                            isListening ? 'border-green-500/50' : 
-                            isSpeaking ? 'border-blue-500/50' : 'border-border'
+                            agentStatus === 'listening' ? 'border-green-500/50' : 
+                            agentStatus === 'speaking' ? 'border-blue-500/50' : 'border-border'
                         )}>
-                            {isListening ? <Mic className="h-20 w-20 text-green-500"/> : <Bot className="w-24 h-24 text-primary" />}
+                            {agentStatus === 'listening' ? <Mic className="h-20 w-20 text-green-500"/> : <Bot className="w-24 h-24 text-primary" />}
                             <div className={cn("absolute inset-0 rounded-full animate-pulse",
-                            isListening ? 'bg-green-500/20' : 
-                            isSpeaking ? 'bg-blue-500/20' : 'bg-transparent'
+                            agentStatus === 'listening' ? 'bg-green-500/20' : 
+                            agentStatus === 'speaking' ? 'bg-blue-500/20' : 'bg-transparent'
                             )}></div>
                         </div>
                         <div className="mt-6">
