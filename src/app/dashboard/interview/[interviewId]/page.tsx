@@ -100,7 +100,7 @@ function InterviewComponent() {
     mediaRecorderRef.current = null;
     
     if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
-      await audioContextRef.current.close();
+      await audioContextRef.current.close().catch(e => console.error("Error closing AudioContext:", e));
     }
     audioContextRef.current = null;
 
@@ -118,7 +118,6 @@ function InterviewComponent() {
     } else if (!save) {
         router.push('/dashboard/arena');
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, interviewId, transcript, topic, role, level, company, router]);
 
   const startInterview = useCallback(async () => {
@@ -234,18 +233,18 @@ function InterviewComponent() {
         setStatus('error');
       }
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, topic, role, level, company, processAudioQueue, stopInterview]);
 
   useEffect(() => {
     if (user) {
-        startInterview();
+      startInterview();
     }
+    
     return () => {
-        stopInterview(false);
+      // This cleanup function will be called when the component unmounts.
+      stopInterview(false);
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+  }, [user, startInterview]);
 
   return (
     <div className="flex h-screen w-full flex-col items-center justify-center bg-background text-foreground p-4">
