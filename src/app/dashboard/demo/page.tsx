@@ -3,16 +3,13 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import {
-  Video,
-  Mic,
   PhoneOff,
   Bot,
   User,
   Loader2,
-  MicOff,
+  Mic,
   AlertTriangle
 } from "lucide-react";
 import { cn } from '@/lib/utils';
@@ -27,24 +24,36 @@ export default function DemoPage() {
   const [transcript, setTranscript] = useState<{ speaker: 'ai' | 'user'; text: string }[]>([]);
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const webSocketRef = useRef<WebSocket | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const audioQueue = useRef<ArrayBuffer[]>([]);
   const isPlaying = useRef(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const { toast } = useToast();
-
+  
   const processAudioQueue = useCallback(async () => {
-    if (isPlaying.current || audioQueue.current.length === 0 || !audioContextRef.current) return;
-
+    if (isPlaying.current || audioQueue.current.length === 0) return;
+    
     isPlaying.current = true;
-    setIsSpeaking(true);
-
+    
+    // Ensure AudioContext is running
+    if (audioContextRef.current && audioContextRef.current.state === 'suspended') {
+      await audioContextRef.current.resume();
+    }
+    
     const audioData = audioQueue.current.shift();
 
     if (audioData && audioContextRef.current) {
         try {
-            const audioBuffer = await audioContextRef.current.decodeAudioData(audioData);
+            const pcmData = new Int16Array(audioData);
+            const floatData = new Float32Array(pcmData.length);
+            for (let i = 0; i < pcmData.length; i++) {
+                floatData[i] = pcmData[i] / 32768.0;
+            }
+
+            const audioBuffer = audioContextRef.current.createBuffer(1, floatData.length, 24000);
+            audioBuffer.getChannelData(0).set(floatData);
+
             const source = audioContextRef.current.createBufferSource();
             source.buffer = audioBuffer;
             source.connect(audioContextRef.current.destination);
@@ -56,21 +65,19 @@ export default function DemoPage() {
         } catch (error) {
             console.error("Error playing audio:", error);
             isPlaying.current = false;
-            setIsSpeaking(false);
         }
     } else {
         isPlaying.current = false;
-        setIsSpeaking(false);
     }
   }, []);
+
 
   const connectToAgent = useCallback(async () => {
     setConnectionState("connecting");
     
-    // Initialize AudioContext
     if (!audioContextRef.current) {
         try {
-            audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+            audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
         } catch (e) {
             console.error("AudioContext not supported", e);
             setConnectionState("error");
@@ -80,63 +87,111 @@ export default function DemoPage() {
     }
     
     try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: { sampleRate: 16000 } });
-        mediaRecorderRef.current = new MediaRecorder(stream, { mimeType: 'audio/webm;codecs=opus' });
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorderRef.current = new MediaRecorder(stream);
+        
+        abortControllerRef.current = new AbortController();
 
-        const wsUrl = new URL('/api/deepgram', window.location.href);
-        wsUrl.protocol = wsUrl.protocol.replace('http', 'ws');
-        webSocketRef.current = new WebSocket(wsUrl.toString());
+        const response = await fetch('/api/deepgram', {
+            method: 'GET',
+            signal: abortControllerRef.current.signal,
+        });
 
-        webSocketRef.current.onopen = () => {
-            setConnectionState("open");
-            mediaRecorderRef.current?.start(500); // Start recording and send data every 500ms
-        };
+        if (!response.body) {
+            throw new Error("Response body is null");
+        }
+
+        const reader = response.body.getReader();
+
+        mediaRecorderRef.current.start(250); // Send data every 250ms
 
         mediaRecorderRef.current.ondataavailable = (event) => {
-            if (event.data.size > 0 && webSocketRef.current?.readyState === WebSocket.OPEN) {
-                webSocketRef.current.send(event.data);
+            if (event.data.size > 0 && dgSocket?.readyState === 1) {
+                dgSocket.send(event.data);
             }
         };
 
-        webSocketRef.current.onmessage = async (event) => {
-            if (typeof event.data === 'string') {
-                const message = JSON.parse(event.data);
-                if (message.type === 'transcript') {
-                    setTranscript(prev => [...prev, { speaker: message.speaker, text: message.text }]);
-                } else if (message.type === 'listening') {
-                    setIsListening(message.value);
-                } else if (message.type === 'speaking') {
-                    setIsSpeaking(message.value);
+        const dgSocket = new WebSocket("wss://api.deepgram.com/v1/agent", [
+            "token",
+            process.env.NEXT_PUBLIC_DEEPGRAM_API_KEY!,
+        ]);
+        
+        dgSocket.onopen = () => {
+            setConnectionState("open");
+            mediaRecorderRef.current?.addEventListener("dataavailable", (event) => {
+                if (event.data.size > 0 && dgSocket.readyState === 1) {
+                    dgSocket.send(event.data);
                 }
-            } else if (event.data instanceof Blob) {
-                const arrayBuffer = await event.data.arrayBuffer();
-                audioQueue.current.push(arrayBuffer);
-                if (!isPlaying.current) {
-                    processAudioQueue();
+            });
+        };
+        
+        dgSocket.onmessage = (event) => {
+             const data = JSON.parse(event.data);
+             if (data.type === 'transcript') {
+                setTranscript(prev => [...prev, { speaker: data.speaker, text: data.text }]);
+            } else if (data.type === 'listening') {
+                setIsListening(data.value);
+            } else if (data.type === 'speaking') {
+                setIsSpeaking(data.value);
+            } else if (data.type === 'audio') {
+                const audioData = new Uint8Array(atob(data.audio).split('').map(char => char.charCodeAt(0))).buffer;
+                audioQueue.current.push(audioData);
+                processAudioQueue();
+            }
+        };
+
+        const readLoop = async () => {
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                const text = new TextDecoder().decode(value);
+                const lines = text.split('\n\n');
+
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        const jsonString = line.substring(6);
+                        try {
+                            const message = JSON.parse(jsonString);
+                            if (message.type === 'transcript') {
+                                setTranscript(prev => [...prev, { speaker: message.speaker, text: message.text }]);
+                            } else if (message.type === 'listening') {
+                                setIsListening(message.value);
+                            } else if (message.type === 'speaking') {
+                                setIsSpeaking(message.value);
+                            }
+                        } catch (e) {
+                             if (value instanceof Uint8Array) {
+                                audioQueue.current.push(value.buffer);
+                                processAudioQueue();
+                             }
+                        }
+                    }
                 }
             }
         };
 
-        webSocketRef.current.onclose = () => setConnectionState("closed");
-        webSocketRef.current.onerror = () => {
+        readLoop();
+
+
+    } catch (err: any) {
+        if (err.name !== 'AbortError') {
+             console.error("Error connecting to agent:", err);
             setConnectionState("error");
-            toast({ title: "Connection Error", description: "Could not connect to the voice agent.", variant: "destructive" });
-        };
-
-    } catch (err) {
-        console.error("Microphone access denied:", err);
-        setConnectionState("error");
-        toast({ title: "Microphone Required", description: "Please grant microphone access to start the interview.", variant: "destructive"});
+            toast({ title: "Connection Error", description: "Could not connect to the voice agent.", variant: "destructive"});
+        }
     }
   }, [toast, processAudioQueue]);
 
+
   const disconnectAgent = useCallback(() => {
-    if (webSocketRef.current) {
-      webSocketRef.current.close();
+    setConnectionState("closing");
+    if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
     }
     mediaRecorderRef.current?.stream.getTracks().forEach(track => track.stop());
     mediaRecorderRef.current = null;
-    webSocketRef.current = null;
+    audioContextRef.current?.close().then(() => audioContextRef.current = null);
     setConnectionState("closed");
     setTranscript([]);
   }, []);
