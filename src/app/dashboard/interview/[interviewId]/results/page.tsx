@@ -15,7 +15,7 @@ import { getActivity, updateActivity, getRetakeCount, addActivity } from '@/lib/
 import { generateInterviewFeedback, GenerateInterviewFeedbackOutput } from '@/ai/flows/generate-interview-feedback';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
-const MAX_RETAKES = 3;
+const MAX_RETAKES = 999; // Increased for unlimited testing
 
 const demoInterviewData: InterviewActivity = {
     id: 'demo',
@@ -331,14 +331,14 @@ export default function InterviewResultsPage() {
                      <TooltipProvider>
                         <Tooltip>
                             <TooltipTrigger asChild>
-                                <Button onClick={handleRetake} size="lg" disabled={chancesLeft <= 0}>
+                                <Button onClick={handleRetake} size="lg">
                                     <RefreshCw className="mr-2 h-4 w-4"/> 
                                     Retake Interview
-                                    <Badge variant="secondary" className="ml-2">{chancesLeft > 0 ? chancesLeft : 0} left</Badge>
+                                    <Badge variant="secondary" className="ml-2">Unlimited</Badge>
                                 </Button>
                             </TooltipTrigger>
                             <TooltipContent>
-                                <p>You have {chancesLeft > 0 ? chancesLeft : 0} of {MAX_RETAKES} retakes left for this topic.</p>
+                                <p>Retakes are unlimited for testing.</p>
                             </TooltipContent>
                         </Tooltip>
                     </TooltipProvider>

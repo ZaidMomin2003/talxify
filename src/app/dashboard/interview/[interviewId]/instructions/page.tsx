@@ -14,7 +14,7 @@ import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { checkAndIncrementUsage, getRetakeCount, incrementRetakeCount } from '@/lib/firebase-service';
 
-const MAX_RETAKES = 3;
+const MAX_RETAKES = 999; // Increased for unlimited testing
 
 function Instructions() {
   const router = useRouter();
@@ -55,10 +55,10 @@ function Instructions() {
       return;
     }
 
-    if(retakeCount >= MAX_RETAKES) {
-        toast({ title: "Retake Limit Reached", description: `You have used all ${MAX_RETAKES} retakes for this topic.`, variant: "destructive" });
-        return;
-    }
+    // if(retakeCount >= MAX_RETAKES) {
+    //     toast({ title: "Retake Limit Reached", description: `You have used all ${MAX_RETAKES} retakes for this topic.`, variant: "destructive" });
+    //     return;
+    // }
 
     setLoading(true);
     setError('');
@@ -150,18 +150,18 @@ function Instructions() {
                 </div>
             </div>
             {error && <p className="text-sm text-destructive">{error}</p>}
-            <Alert variant={chancesLeft > 0 ? "default" : "destructive"}>
+            <Alert variant="default">
                 <RefreshCw className="h-4 w-4" />
                 <AlertTitle>Retake Information</AlertTitle>
                 <AlertDescription>
-                    You have {chancesLeft > 0 ? chancesLeft : 0} of {MAX_RETAKES} retakes left for this topic.
+                    Interview retakes are currently unlimited for testing purposes.
                 </AlertDescription>
             </Alert>
           </CardContent>
         </Card>
 
         <div className="text-center pt-4">
-            <Button onClick={handleStartInterview} size="lg" disabled={loading || (chancesLeft <= 0 && !!topic)}>
+            <Button onClick={handleStartInterview} size="lg" disabled={loading}>
                 {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlayCircle className="mr-2 h-4 w-4" />}
                 Start Interview
             </Button>
