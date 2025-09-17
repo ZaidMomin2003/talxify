@@ -4,7 +4,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { BarChart, Bot, CheckCircle, ChevronLeft, MessageSquare, Mic, Sparkles, User, XCircle, Loader2, Building, RefreshCw, Trophy, Languages, Handshake } from 'lucide-react';
+import { BarChart, Bot, CheckCircle, ChevronLeft, MessageSquare, Mic, Sparkles, User, XCircle, Loader2, Building, RefreshCw, Trophy } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
@@ -13,9 +13,8 @@ import { useAuth } from '@/context/auth-context';
 import type { InterviewActivity } from '@/lib/types';
 import { getActivity, updateActivity, getRetakeCount, addActivity } from '@/lib/firebase-service';
 import { generateInterviewFeedback, GenerateInterviewFeedbackOutput } from '@/ai/flows/generate-interview-feedback';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
-const MAX_RETAKES = 999; // Increased for unlimited testing
+const MAX_RETAKES = 3;
 
 const demoInterviewData: InterviewActivity = {
     id: 'demo',
@@ -213,19 +212,17 @@ export default function InterviewResultsPage() {
                         <ChevronLeft className="mr-2 h-4 w-4" />
                         Back to Dashboard
                     </Button>
-                    <div className="relative rounded-xl shadow-lg p-8 text-center overflow-hidden thermal-gradient-bg after:absolute after:inset-0 after:bg-[url('https://grainy-gradients.vercel.app/noise.svg')] after:opacity-30 after:mix-blend-soft-light">
-                        <div className="relative z-10">
-                            <Sparkles className="mx-auto h-12 w-12 text-white mb-4" />
-                            <h1 className="font-headline text-4xl font-bold text-white">Interview Analysis</h1>
-                            <p className="text-lg text-white/80 mt-2 max-w-2xl mx-auto">
-                                Here's a detailed breakdown of your mock interview for the <span className="font-semibold text-white">{interviewData.details.role}</span> role on the topic of <span className="font-semibold text-white">{interviewData.details.topic}</span>.
-                                {interviewData.details.company && (
-                                    <>
-                                        <br />Tailored for <span className="font-semibold text-white">{interviewData.details.company}</span>.
-                                    </>
-                                )}
-                            </p>
-                        </div>
+                    <div className="relative rounded-xl shadow-lg p-8 text-center overflow-hidden bg-gradient-to-br from-primary via-blue-500 to-purple-600">
+                        <Sparkles className="mx-auto h-12 w-12 text-white mb-4" />
+                        <h1 className="font-headline text-4xl font-bold text-white">Interview Analysis</h1>
+                        <p className="text-lg text-white/80 mt-2 max-w-2xl mx-auto">
+                            Here's a detailed breakdown of your mock interview for the <span className="font-semibold text-white">{interviewData.details.role}</span> role on the topic of <span className="font-semibold text-white">{interviewData.details.topic}</span>.
+                            {interviewData.details.company && (
+                                <>
+                                    <br />Tailored for <span className="font-semibold text-white">{interviewData.details.company}</span>.
+                                </>
+                            )}
+                        </p>
                     </div>
                 </div>
 
@@ -252,14 +249,6 @@ export default function InterviewResultsPage() {
                            <Card>
                                 <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Crack Likelihood</CardTitle></CardHeader>
                                 <CardContent><div className="text-2xl font-bold">{analysis.likelihoodToCrack}%</div></CardContent>
-                           </Card>
-                           <Card>
-                                <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Proficiency</CardTitle></CardHeader>
-                                <CardContent><div className="text-2xl font-bold">{analysis.englishProficiency}%</div></CardContent>
-                           </Card>
-                           <Card>
-                                <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Confidence</CardTitle></CardHeader>
-                                <CardContent><div className="text-2xl font-bold">{analysis.confidenceScore}%</div></CardContent>
                            </Card>
                         </div>
                         <Card>
@@ -328,20 +317,10 @@ export default function InterviewResultsPage() {
                 )}
 
                 <div className="text-center pt-8">
-                     <TooltipProvider>
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <Button onClick={handleRetake} size="lg">
-                                    <RefreshCw className="mr-2 h-4 w-4"/> 
-                                    Retake Interview
-                                    <Badge variant="secondary" className="ml-2">Unlimited</Badge>
-                                </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                                <p>Retakes are unlimited for testing.</p>
-                            </TooltipContent>
-                        </Tooltip>
-                    </TooltipProvider>
+                     <Button onClick={handleRetake} size="lg" disabled={chancesLeft <= 0}>
+                        <RefreshCw className="mr-2 h-4 w-4"/> 
+                        Retake Interview ({chancesLeft > 0 ? chancesLeft : 0} left)
+                    </Button>
                 </div>
             </div>
         </main>
