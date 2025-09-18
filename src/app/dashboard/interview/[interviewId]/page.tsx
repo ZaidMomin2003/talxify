@@ -16,7 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { textToSpeechWithGoogle } from '@/ai/flows/google-tts';
 import { generateInterviewFeedback } from '@/ai/flows/generate-interview-feedback';
-import RecordRTC from 'recordrtc';
+import type RecordRTC from 'recordrtc';
 
 
 type InterviewStatus = 'initializing' | 'generating_questions' | 'ready' | 'listening' | 'speaking' | 'processing' | 'finished' | 'error';
@@ -222,7 +222,8 @@ function InterviewComponent() {
 
     socket.onopen = () => {
       navigator.mediaDevices.getUserMedia({ audio: true })
-        .then((stream) => {
+        .then(async (stream) => {
+          const RecordRTC = (await import('recordrtc')).default;
           recorderRef.current = new RecordRTC(stream, {
             type: 'audio',
             mimeType: 'audio/webm;codecs=pcm',
