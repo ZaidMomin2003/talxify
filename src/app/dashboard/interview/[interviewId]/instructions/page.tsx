@@ -136,7 +136,7 @@ function Instructions() {
                 <RefreshCw className="h-4 w-4" />
                 <AlertTitle>Retake Information</AlertTitle>
                 <AlertDescription>
-                    Retakes are currently unlimited for testing purposes.
+                    Retakes are currently unlimited. Feel free to practice as much as you need.
                 </AlertDescription>
             </Alert>
           </CardContent>

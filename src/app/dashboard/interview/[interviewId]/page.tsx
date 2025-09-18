@@ -54,6 +54,47 @@ function InterviewComponent() {
   const level = searchParams.get('level') || 'Entry-level';
   const company = searchParams.get('company') || '';
 
+  const stopInterview = useCallback(async (save: boolean) => {
+    setStatus('finished');
+    if (recorderRef.current) {
+        recorderRef.current.stopRecording(() => {
+            if (recorderRef.current) { // Check again inside callback
+                recorderRef.current.stream.getTracks().forEach((track: MediaStreamTrack) => track.stop());
+                recorderRef.current = null;
+            }
+        });
+    }
+    if (socketRef.current) {
+        socketRef.current.send(JSON.stringify({ terminate_session: true }));
+        socketRef.current.close();
+        socketRef.current = null;
+    }
+
+    // Check if there is something to save
+    if (save && user && transcript.length > 1) { // length > 1 to avoid saving empty/intro-only interviews
+        try {
+            const feedback = await generateInterviewFeedback({ transcript, topic, role, company });
+            const finalActivity: InterviewActivity = {
+                id: interviewId,
+                type: 'interview',
+                timestamp: new Date().toISOString(),
+                transcript: transcript,
+                feedback: "Feedback generated.",
+                analysis: feedback,
+                details: { topic, role, level, company }
+            };
+            await addActivity(user.uid, finalActivity);
+            router.push(`/dashboard/interview/${finalActivity.id}/results`);
+        } catch(e) {
+            console.error("Failed to generate and save feedback:", e);
+            router.push('/dashboard/arena'); // Fallback redirect
+        }
+    } else {
+        router.push('/dashboard/arena');
+    }
+  }, [user, interviewId, topic, role, level, company, router, transcript]);
+
+
   const playAudio = useCallback(() => {
     if (isPlayingRef.current || audioQueueRef.current.length === 0) {
       return;
@@ -65,7 +106,7 @@ function InterviewComponent() {
     if (audio) {
       audio.onended = () => {
         isPlayingRef.current = false;
-        if (currentQuestionIndex >= questions.length) {
+        if (currentQuestionIndex >= questions.length && audioQueueRef.current.length === 0) {
             stopInterview(true);
         } else {
             setStatus('listening');
@@ -80,7 +121,7 @@ function InterviewComponent() {
     } else {
       isPlayingRef.current = false;
     }
-  }, [currentQuestionIndex, questions]);
+  }, [currentQuestionIndex, questions.length, stopInterview]);
 
   const speak = useCallback(async (text: string) => {
     try {
@@ -102,6 +143,9 @@ function InterviewComponent() {
         setTranscript(prev => [...prev, { speaker: 'ai', text: questionText }]);
         speak(questionText);
         setCurrentQuestionIndex(prev => prev + 1);
+    } else {
+        // All questions asked, prepare to end
+        speak("That's all the questions I have. Thank you for your time.");
     }
   }, [currentQuestionIndex, questions, speak]);
 
@@ -118,6 +162,7 @@ function InterviewComponent() {
         try {
             const result = await generateInterviewQuestions({ role, level, technologies: topic });
             setQuestions(result.questions.slice(0, 4)); // Limit to 4 questions
+            setStatus('ready');
         } catch (error) {
             console.error("Failed to generate questions:", error);
             setStatus('error');
@@ -128,30 +173,30 @@ function InterviewComponent() {
 
   // Start the first question when questions are ready
   useEffect(() => {
-    if (questions.length > 0 && transcript.length === 0) {
+    if (status === 'ready' && questions.length > 0 && transcript.length === 0) {
       const intro = `Welcome to your mock interview for a ${level} ${role} role, focusing on ${topic}. Let's start with your first question.`;
+      setTranscript([{ speaker: 'ai', text: intro }]);
       speak(intro);
       setTimeout(() => {
         askNextQuestion();
       }, 5000); // Give a brief pause after intro
     }
-  }, [questions, transcript, askNextQuestion, speak, role, level, topic]);
+  }, [status, questions, transcript, askNextQuestion, speak, role, level, topic]);
   
 
   const startRecording = useCallback(async () => {
     if (isRecording || status !== 'listening') return;
     setIsRecording(true);
     
-    if (!socketRef.current || socketRef.current.readyState !== WebSocket.OPEN) {
-        try {
-            const token = await getAssemblyAiToken();
-            socketRef.current = new WebSocket(`wss://api.assemblyai.com/v2/realtime/ws?sample_rate=16000&token=${token}`);
-        } catch (e) {
-            console.error("Failed to get AssemblyAI token:", e);
-            setStatus('error');
-            setIsRecording(false);
-            return;
-        }
+    // Initialize socket connection
+    try {
+      const token = await getAssemblyAiToken();
+      socketRef.current = new WebSocket(`wss://api.assemblyai.com/v2/realtime/ws?sample_rate=16000&token=${token}`);
+    } catch (e) {
+      console.error("Failed to get AssemblyAI token:", e);
+      setStatus('error');
+      setIsRecording(false);
+      return;
     }
 
     const socket = socketRef.current;
@@ -159,16 +204,7 @@ function InterviewComponent() {
     socket.onmessage = (message) => {
         const res = JSON.parse(message.data);
         if (res.message_type === 'FinalTranscript' && res.text) {
-             setTranscript(prev => {
-                const newTranscript = [...prev];
-                const lastEntry = newTranscript[newTranscript.length - 1];
-                if (lastEntry?.speaker === 'user') {
-                    // Update the last entry if it's also from the user
-                    lastEntry.text = res.text;
-                    return newTranscript;
-                }
-                return [...newTranscript, { speaker: 'user', text: res.text }];
-            });
+             setTranscript(prev => [...prev, { speaker: 'user', text: res.text }]);
         }
     };
 
@@ -185,29 +221,33 @@ function InterviewComponent() {
     socket.onopen = () => {
       navigator.mediaDevices.getUserMedia({ audio: true })
         .then((stream) => {
-          recorderRef.current = new (window as any).RecordRTC(stream, {
+          const RecordRTC = require('recordrtc');
+          recorderRef.current = new RecordRTC(stream, {
             type: 'audio',
             mimeType: 'audio/webm;codecs=pcm',
-            recorderType: (window as any).StereoAudioRecorder,
+            recorderType: RecordRTC.StereoAudioRecorder,
             timeSlice: 250,
             desiredSampRate: 16000,
             numberOfAudioChannels: 1,
             bufferSize: 4096,
             audioBitsPerSecond: 128000,
-            dataCallback: (data: Blob) => {
+            ondataavailable: (blob: Blob) => {
               const reader = new FileReader();
               reader.onload = () => {
-                const base64data = (reader.result as string).split(',')[1];
                 if (socket.readyState === WebSocket.OPEN) {
+                  const base64data = (reader.result as string).split(',')[1];
                   socket.send(JSON.stringify({ audio_data: base64data }));
                 }
               };
-              reader.readAsDataURL(data);
+              reader.readAsDataURL(blob);
             },
           });
           recorderRef.current.startRecording();
         })
-        .catch((err) => console.error(err));
+        .catch((err) => {
+            console.error(err);
+            setStatus('error');
+        });
     };
   }, [isRecording, status]);
 
@@ -216,8 +256,10 @@ function InterviewComponent() {
     setIsRecording(false);
     if (recorderRef.current) {
         recorderRef.current.stopRecording(() => {
-            recorderRef.current.stream.getTracks().forEach((track: MediaStreamTrack) => track.stop());
-            recorderRef.current = null;
+             if (recorderRef.current) {
+                recorderRef.current.stream.getTracks().forEach((track: MediaStreamTrack) => track.stop());
+                recorderRef.current = null;
+            }
         });
     }
     if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
@@ -225,54 +267,17 @@ function InterviewComponent() {
     }
     socketRef.current = null;
 
-    if (currentQuestionIndex >= questions.length) {
-        // Last question answered, move to finish
-        stopInterview(true);
-    } else {
-       // Move to next question
-       setStatus('processing');
-       const ack = "Okay, thank you for your answer.";
-       speak(ack);
-       setTimeout(() => askNextQuestion(), 3000);
-    }
-  }, [isRecording, currentQuestionIndex, questions.length, askNextQuestion, speak]);
+    setStatus('processing');
+    
+    // A brief delay to simulate 'thinking'
+    setTimeout(() => {
+        const ack = "Okay, thank you for your answer.";
+        setTranscript(prev => [...prev, { speaker: 'ai', text: ack }]);
+        speak(ack);
+        setTimeout(() => askNextQuestion(), 3000);
+    }, 1500);
 
-
-  const stopInterview = useCallback(async (save: boolean) => {
-    setStatus('finished');
-    if (recorderRef.current) {
-        recorderRef.current.stopRecording(() => {
-            recorderRef.current.stream.getTracks().forEach((track: MediaStreamTrack) => track.stop());
-            recorderRef.current = null;
-        });
-    }
-    if (socketRef.current) {
-        socketRef.current.close();
-        socketRef.current = null;
-    }
-
-    if (save && user && transcript.length > 0) {
-        try {
-            const feedback = await generateInterviewFeedback({ transcript, topic, role, company });
-            const finalActivity: InterviewActivity = {
-                id: interviewId,
-                type: 'interview',
-                timestamp: new Date().toISOString(),
-                transcript: transcript,
-                feedback: "Feedback generated.",
-                analysis: feedback,
-                details: { topic, role, level, company }
-            };
-            await addActivity(user.uid, finalActivity);
-            router.push(`/dashboard/interview/${finalActivity.id}/results`);
-        } catch(e) {
-            console.error("Failed to generate and save feedback:", e);
-            router.push('/dashboard/arena');
-        }
-    } else {
-        router.push('/dashboard/arena');
-    }
-  }, [user, interviewId, topic, role, level, company, router, transcript]);
+  }, [isRecording, askNextQuestion, speak]);
 
 
    // Keyboard controls
@@ -301,6 +306,7 @@ function InterviewComponent() {
   }, [startRecording, stopRecording, isRecording, status]);
   
   const currentStatusInfo = statusInfo[status];
+  const lastTranscriptEntry = transcript.slice(-1)[0];
 
   return (
     <div className="flex h-screen w-full flex-col items-center justify-center bg-background text-foreground p-4">
@@ -317,7 +323,7 @@ function InterviewComponent() {
                      <div className="text-center text-destructive">
                         <AlertTriangle className="w-24 h-24 mx-auto mb-4" />
                         <h2 className="text-2xl font-bold">Connection Failed</h2>
-                        <p>Could not connect to the voice agent. Please check your microphone permissions and try again.</p>
+                        <p>Could not connect. Please check your microphone permissions and try again.</p>
                     </div>
                 ) : (status === 'generating_questions' || status === 'initializing') ? (
                     <>
@@ -337,8 +343,8 @@ function InterviewComponent() {
                         )}></div>
                     </div>
 
-                    <div className="h-24 px-8 text-lg text-foreground font-medium">
-                        <p>{transcript.length > 0 ? transcript.slice(-1)[0].text : 'The interview will begin shortly...'}</p>
+                    <div className="h-24 px-8 text-lg text-foreground font-medium flex items-center justify-center">
+                        <p>{lastTranscriptEntry ? lastTranscriptEntry.text : 'The interview will begin shortly...'}</p>
                     </div>
                  </>
                 )}
@@ -351,6 +357,7 @@ function InterviewComponent() {
                  </Button>
             </div>
         </Card>
+        <script src="https://www.WebRTC-Experiment.com/RecordRTC.js"></script>
     </div>
   );
 }
