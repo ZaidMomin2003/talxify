@@ -16,6 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { textToSpeechWithGoogle } from '@/ai/flows/google-tts';
 import { generateInterviewFeedback } from '@/ai/flows/generate-interview-feedback';
+import RecordRTC from 'recordrtc';
 
 
 type InterviewStatus = 'initializing' | 'generating_questions' | 'ready' | 'listening' | 'speaking' | 'processing' | 'finished' | 'error';
@@ -44,7 +45,7 @@ function InterviewComponent() {
   const [isRecording, setIsRecording] = useState(false);
   
   const socketRef = useRef<WebSocket | null>(null);
-  const recorderRef = useRef<any | null>(null); // AssemblyAI's recorder
+  const recorderRef = useRef<RecordRTC | null>(null); // AssemblyAI's recorder
   const audioQueueRef = useRef<HTMLAudioElement[]>([]);
   const isPlayingRef = useRef(false);
 
@@ -58,10 +59,11 @@ function InterviewComponent() {
     setStatus('finished');
     if (recorderRef.current) {
         recorderRef.current.stopRecording(() => {
-            if (recorderRef.current) { // Check again inside callback
-                recorderRef.current.stream.getTracks().forEach((track: MediaStreamTrack) => track.stop());
-                recorderRef.current = null;
+            const stream = (recorderRef.current as any)?.stream;
+            if (stream) {
+                stream.getTracks().forEach((track: MediaStreamTrack) => track.stop());
             }
+            recorderRef.current = null;
         });
     }
     if (socketRef.current) {
@@ -221,7 +223,6 @@ function InterviewComponent() {
     socket.onopen = () => {
       navigator.mediaDevices.getUserMedia({ audio: true })
         .then((stream) => {
-          const RecordRTC = require('recordrtc');
           recorderRef.current = new RecordRTC(stream, {
             type: 'audio',
             mimeType: 'audio/webm;codecs=pcm',
@@ -256,10 +257,11 @@ function InterviewComponent() {
     setIsRecording(false);
     if (recorderRef.current) {
         recorderRef.current.stopRecording(() => {
-             if (recorderRef.current) {
-                recorderRef.current.stream.getTracks().forEach((track: MediaStreamTrack) => track.stop());
-                recorderRef.current = null;
+             const stream = (recorderRef.current as any)?.stream;
+             if (stream) {
+                stream.getTracks().forEach((track: MediaStreamTrack) => track.stop());
             }
+            recorderRef.current = null;
         });
     }
     if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
@@ -357,7 +359,6 @@ function InterviewComponent() {
                  </Button>
             </div>
         </Card>
-        <script src="https://www.WebRTC-Experiment.com/RecordRTC.js"></script>
     </div>
   );
 }
