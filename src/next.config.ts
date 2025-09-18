@@ -31,9 +31,11 @@ const nextConfig: NextConfig = {
   webpack(config) {
     config.externals.push({
       "https/proxy-agent": "https/proxy-agent",
+      "recordrtc": "recordrtc"
     });
     return config;
   }
 };
 
 export default nextConfig;
+

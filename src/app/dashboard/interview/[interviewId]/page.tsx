@@ -16,7 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { textToSpeechWithGoogle } from '@/ai/flows/google-tts';
 import { generateInterviewFeedback } from '@/ai/flows/generate-interview-feedback';
-import type RecordRTC from 'recordrtc';
+import RecordRTC from 'recordrtc';
 
 
 type InterviewStatus = 'initializing' | 'generating_questions' | 'ready' | 'listening' | 'speaking' | 'processing' | 'finished' | 'error';
@@ -45,7 +45,7 @@ function InterviewComponent() {
   const [isRecording, setIsRecording] = useState(false);
   
   const socketRef = useRef<WebSocket | null>(null);
-  const recorderRef = useRef<RecordRTC | null>(null); // AssemblyAI's recorder
+  const recorderRef = useRef<RecordRTC | null>(null);
   const audioQueueRef = useRef<HTMLAudioElement[]>([]);
   const isPlayingRef = useRef(false);
 
@@ -222,8 +222,7 @@ function InterviewComponent() {
 
     socket.onopen = () => {
       navigator.mediaDevices.getUserMedia({ audio: true })
-        .then(async (stream) => {
-          const RecordRTC = (await import('recordrtc')).default;
+        .then((stream) => {
           recorderRef.current = new RecordRTC(stream, {
             type: 'audio',
             mimeType: 'audio/webm;codecs=pcm',
