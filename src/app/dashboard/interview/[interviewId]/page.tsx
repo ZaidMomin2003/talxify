@@ -16,7 +16,6 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { textToSpeechWithGoogle } from '@/ai/flows/google-tts';
 import { generateInterviewFeedback } from '@/ai/flows/generate-interview-feedback';
-import RecordRTC from 'recordrtc';
 
 
 type InterviewStatus = 'initializing' | 'generating_questions' | 'ready' | 'listening' | 'speaking' | 'processing' | 'finished' | 'error';
@@ -45,7 +44,7 @@ function InterviewComponent() {
   const [isRecording, setIsRecording] = useState(false);
   
   const socketRef = useRef<WebSocket | null>(null);
-  const recorderRef = useRef<RecordRTC | null>(null);
+  const recorderRef = useRef<any>(null); // Using 'any' for RecordRTC to avoid type issues on server
   const audioQueueRef = useRef<HTMLAudioElement[]>([]);
   const isPlayingRef = useRef(false);
 
@@ -72,8 +71,7 @@ function InterviewComponent() {
         socketRef.current = null;
     }
 
-    // Check if there is something to save
-    if (save && user && transcript.length > 1) { // length > 1 to avoid saving empty/intro-only interviews
+    if (save && user && transcript.length > 1) {
         try {
             const feedback = await generateInterviewFeedback({ transcript, topic, role, company });
             const finalActivity: InterviewActivity = {
@@ -89,7 +87,7 @@ function InterviewComponent() {
             router.push(`/dashboard/interview/${finalActivity.id}/results`);
         } catch(e) {
             console.error("Failed to generate and save feedback:", e);
-            router.push('/dashboard/arena'); // Fallback redirect
+            router.push('/dashboard/arena');
         }
     } else {
         router.push('/dashboard/arena');
@@ -113,7 +111,7 @@ function InterviewComponent() {
         } else {
             setStatus('listening');
         }
-        playAudio(); // Play next in queue
+        playAudio();
       };
       audio.play().catch(e => {
         console.error("Audio play failed:", e);
@@ -135,7 +133,7 @@ function InterviewComponent() {
       }
     } catch (error) {
       console.error("TTS Error:", error);
-      setStatus('listening'); // Fallback to listening if TTS fails
+      setStatus('listening');
     }
   }, [playAudio]);
 
@@ -146,13 +144,11 @@ function InterviewComponent() {
         speak(questionText);
         setCurrentQuestionIndex(prev => prev + 1);
     } else {
-        // All questions asked, prepare to end
         speak("That's all the questions I have. Thank you for your time.");
     }
   }, [currentQuestionIndex, questions, speak]);
 
 
-  // Initialize and generate questions
   useEffect(() => {
     if (!user) {
         router.push('/login');
@@ -163,7 +159,7 @@ function InterviewComponent() {
         setStatus('generating_questions');
         try {
             const result = await generateInterviewQuestions({ role, level, technologies: topic });
-            setQuestions(result.questions.slice(0, 4)); // Limit to 4 questions
+            setQuestions(result.questions.slice(0, 4));
             setStatus('ready');
         } catch (error) {
             console.error("Failed to generate questions:", error);
@@ -173,7 +169,6 @@ function InterviewComponent() {
     generateQuestions();
   }, [user, router, role, level, topic]);
 
-  // Start the first question when questions are ready
   useEffect(() => {
     if (status === 'ready' && questions.length > 0 && transcript.length === 0) {
       const intro = `Welcome to your mock interview for a ${level} ${role} role, focusing on ${topic}. Let's start with your first question.`;
@@ -181,7 +176,7 @@ function InterviewComponent() {
       speak(intro);
       setTimeout(() => {
         askNextQuestion();
-      }, 5000); // Give a brief pause after intro
+      }, 5000);
     }
   }, [status, questions, transcript, askNextQuestion, speak, role, level, topic]);
   
@@ -190,7 +185,6 @@ function InterviewComponent() {
     if (isRecording || status !== 'listening') return;
     setIsRecording(true);
     
-    // Initialize socket connection
     try {
       const token = await getAssemblyAiToken();
       socketRef.current = new WebSocket(`wss://api.assemblyai.com/v2/realtime/ws?sample_rate=16000&token=${token}`);
@@ -221,34 +215,36 @@ function InterviewComponent() {
     };
 
     socket.onopen = () => {
-      navigator.mediaDevices.getUserMedia({ audio: true })
-        .then((stream) => {
-          recorderRef.current = new RecordRTC(stream, {
-            type: 'audio',
-            mimeType: 'audio/webm;codecs=pcm',
-            recorderType: RecordRTC.StereoAudioRecorder,
-            timeSlice: 250,
-            desiredSampRate: 16000,
-            numberOfAudioChannels: 1,
-            bufferSize: 4096,
-            audioBitsPerSecond: 128000,
-            ondataavailable: (blob: Blob) => {
-              const reader = new FileReader();
-              reader.onload = () => {
-                if (socket.readyState === WebSocket.OPEN) {
-                  const base64data = (reader.result as string).split(',')[1];
-                  socket.send(JSON.stringify({ audio_data: base64data }));
-                }
-              };
-              reader.readAsDataURL(blob);
-            },
-          });
-          recorderRef.current.startRecording();
-        })
-        .catch((err) => {
-            console.error(err);
-            setStatus('error');
-        });
+      import('recordrtc').then(RecordRTC => {
+          navigator.mediaDevices.getUserMedia({ audio: true })
+            .then((stream) => {
+              recorderRef.current = new RecordRTC.default(stream, {
+                type: 'audio',
+                mimeType: 'audio/webm;codecs=pcm',
+                recorderType: RecordRTC.StereoAudioRecorder,
+                timeSlice: 250,
+                desiredSampRate: 16000,
+                numberOfAudioChannels: 1,
+                bufferSize: 4096,
+                audioBitsPerSecond: 128000,
+                ondataavailable: (blob: Blob) => {
+                  const reader = new FileReader();
+                  reader.onload = () => {
+                    if (socket.readyState === WebSocket.OPEN) {
+                      const base64data = (reader.result as string).split(',')[1];
+                      socket.send(JSON.stringify({ audio_data: base64data }));
+                    }
+                  };
+                  reader.readAsDataURL(blob);
+                },
+              });
+              recorderRef.current.startRecording();
+            })
+            .catch((err) => {
+                console.error(err);
+                setStatus('error');
+            });
+      });
     };
   }, [isRecording, status]);
 
@@ -271,7 +267,6 @@ function InterviewComponent() {
 
     setStatus('processing');
     
-    // A brief delay to simulate 'thinking'
     setTimeout(() => {
         const ack = "Okay, thank you for your answer.";
         setTranscript(prev => [...prev, { speaker: 'ai', text: ack }]);
@@ -282,7 +277,6 @@ function InterviewComponent() {
   }, [isRecording, askNextQuestion, speak]);
 
 
-   // Keyboard controls
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.code === 'Space' && !event.repeat && status === 'listening') {
