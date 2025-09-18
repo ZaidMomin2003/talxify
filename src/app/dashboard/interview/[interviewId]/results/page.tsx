@@ -79,7 +79,6 @@ export default function InterviewResultsPage() {
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [interviewData, setInterviewData] = useState<InterviewActivity | null>(null);
     const [analysis, setAnalysis] = useState<GenerateInterviewFeedbackOutput | null>(null);
-    const [retakeCount, setRetakeCount] = useState(0);
 
     const fetchAndAnalyze = useCallback(async () => {
         const interviewId = params.interviewId as string;
@@ -87,7 +86,6 @@ export default function InterviewResultsPage() {
         if (interviewId === 'demo') {
             setInterviewData(demoInterviewData);
             setAnalysis(demoAnalysisData);
-            setRetakeCount(2); // Show some retakes for demo
             setIsLoading(false);
             return;
         }
@@ -119,9 +117,6 @@ export default function InterviewResultsPage() {
                 setIsLoading(false);
                 return;
             }
-            
-            const retakes = await getRetakeCount(user.uid, finalInterviewData.details.topic);
-            setRetakeCount(retakes);
             
             if (finalInterviewData.analysis && Object.keys(finalInterviewData.analysis).length > 0) {
                 setAnalysis(finalInterviewData.analysis);
@@ -200,8 +195,6 @@ export default function InterviewResultsPage() {
             </main>
          )
     }
-    
-    const chancesLeft = MAX_RETAKES - retakeCount;
 
     return (
         <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
@@ -317,9 +310,9 @@ export default function InterviewResultsPage() {
                 )}
 
                 <div className="text-center pt-8">
-                     <Button onClick={handleRetake} size="lg" disabled={chancesLeft <= 0}>
+                     <Button onClick={handleRetake} size="lg">
                         <RefreshCw className="mr-2 h-4 w-4"/> 
-                        Retake Interview ({chancesLeft > 0 ? chancesLeft : 0} left)
+                        Retake Interview
                     </Button>
                 </div>
             </div>

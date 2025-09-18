@@ -14,7 +14,7 @@ import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { checkAndIncrementUsage, getRetakeCount, incrementRetakeCount } from '@/lib/firebase-service';
 
-const MAX_RETAKES = 3;
+const MAX_RETAKES = 3; // This will be bypassed
 
 function Instructions() {
   const router = useRouter();
@@ -32,18 +32,6 @@ function Instructions() {
   const [company, setCompany] = useState(searchParams.get('company') || '');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [retakeCount, setRetakeCount] = useState(0);
-
-  const fetchRetakeCount = useCallback(async () => {
-    if (user && topic) {
-        const count = await getRetakeCount(user.uid, topic);
-        setRetakeCount(count);
-    }
-  }, [user, topic]);
-
-  useEffect(() => {
-    fetchRetakeCount();
-  }, [fetchRetakeCount]);
 
   const handleStartInterview = async () => {
     if (!user) {
@@ -53,11 +41,6 @@ function Instructions() {
     if (!topic || !level || !role) {
       setError('Please fill in all required fields.');
       return;
-    }
-
-    if(retakeCount >= MAX_RETAKES) {
-        toast({ title: "Retake Limit Reached", description: `You have used all ${MAX_RETAKES} retakes for this topic.`, variant: "destructive" });
-        return;
     }
 
     setLoading(true);
@@ -72,7 +55,8 @@ function Instructions() {
             return;
         }
 
-        await incrementRetakeCount(user.uid, topic);
+        // We are no longer incrementing retake count to make it unlimited for now.
+        // await incrementRetakeCount(user.uid, topic);
 
         const queryParams = new URLSearchParams({ topic, level, role });
         if (company) {
@@ -85,8 +69,6 @@ function Instructions() {
         setLoading(false);
     }
   };
-
-  const chancesLeft = MAX_RETAKES - retakeCount;
 
   return (
     <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
@@ -150,11 +132,11 @@ function Instructions() {
                 </div>
             </div>
             {error && <p className="text-sm text-destructive">{error}</p>}
-            <Alert variant={chancesLeft > 0 ? "default" : "destructive"}>
+            <Alert variant="default">
                 <RefreshCw className="h-4 w-4" />
                 <AlertTitle>Retake Information</AlertTitle>
                 <AlertDescription>
-                    You have {chancesLeft > 0 ? chancesLeft : 0} of {MAX_RETAKES} retakes left for this topic.
+                    Retakes are currently unlimited for testing purposes.
                 </AlertDescription>
             </Alert>
           </CardContent>
