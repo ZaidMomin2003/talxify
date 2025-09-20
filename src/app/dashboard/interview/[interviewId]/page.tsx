@@ -9,7 +9,7 @@ import { addActivity } from '@/lib/firebase-service';
 import type { InterviewActivity, TranscriptEntry } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Loader2, Mic, Bot, PhoneOff, AlertTriangle, User, BrainCircuit, MessageSquare, Maximize } from 'lucide-react';
+import { Loader2, Mic, Bot, PhoneOff, AlertTriangle, User, BrainCircuit, MessageSquare, Maximize, Video } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { generateInterviewFeedback } from '@/ai/flows/generate-interview-feedback';
@@ -23,7 +23,7 @@ const statusInfo: { [key in InterviewStatus]: { text: string; showMic?: boolean 
   initializing: { text: "Initializing Session..." },
   generating_questions: { text: "AI is preparing questions..." },
   ready: { text: "Ready to Start. The AI will speak first." },
-  listening: { text: "Hold Spacebar to Talk", showMic: true },
+  listening: { text: "Hold Space to Talk", showMic: true },
   speaking: { text: "AI is Speaking..." },
   processing: { text: "Processing your answer..." },
   finished: { text: "Interview Finished" },
@@ -339,77 +339,61 @@ function InterviewComponent() {
              </Card>
         ) : (
         <div className="w-full h-full flex flex-col">
-            <header className="p-4 border-b flex items-center justify-between">
-                <h1 className="text-lg font-semibold">{topic} Interview</h1>
-                <div className="flex items-center gap-4">
-                     <Badge variant={status === 'error' ? 'destructive' : 'secondary'} className={cn(
-                        'capitalize',
-                        status === 'listening' ? 'bg-green-500/10 text-green-600' : 
-                        status === 'speaking' ? 'bg-blue-500/10 text-blue-600' : 
-                        isRecording ? 'bg-red-500/10 text-red-600' : ''
-                    )}>
-                        {isRecording ? "Recording..." : currentStatusInfo.text}
-                     </Badge>
-                     <Button variant="ghost" size="icon" onClick={toggleFullScreen}>
-                        <Maximize className="h-5 w-5" />
-                    </Button>
-                </div>
-            </header>
-
             <div className="flex-grow grid grid-cols-1 md:grid-cols-4 gap-4 p-4 min-h-0">
-                <div className="md:col-span-3 h-full bg-muted rounded-lg flex items-center justify-center relative overflow-hidden">
-                    {/* Main video area - AI */}
-                     <Image src="/popup.png" alt="AI Interviewer Background" layout="fill" objectFit="cover" className="opacity-50" data-ai-hint="abstract technology" />
-                     <div className="absolute inset-0 bg-black/30"></div>
-                    <div className="z-10 text-center">
+                <div className="md:col-span-3 h-full bg-muted rounded-lg flex flex-col items-center justify-center relative overflow-hidden p-8">
+                     <div className="flex flex-col items-center gap-4 text-center">
                         <div className={cn("relative flex items-center justify-center w-48 h-48 rounded-full border-8 transition-all duration-300", 
                             isRecording ? 'border-red-500/50' :
                             status === 'speaking' ? 'border-blue-500/50' : 'border-border'
                         )}>
-                            <Bot className="w-24 h-24 text-primary" />
-                            <div className={cn("absolute inset-0 rounded-full animate-pulse",
-                            isRecording ? 'bg-red-500/20' : 
-                            status === 'speaking' ? 'bg-blue-500/20' : 'bg-transparent'
+                            <Image src="/robot.png" alt="AI Interviewer" width={192} height={192} className="rounded-full" data-ai-hint="robot face" />
+                             <div className={cn("absolute inset-0 rounded-full animate-pulse",
+                                isRecording ? 'bg-red-500/20' : 
+                                status === 'speaking' ? 'bg-blue-500/20' : 'bg-transparent'
                             )}></div>
                         </div>
+                        <h2 className="text-2xl font-bold font-headline">AI Interviewer</h2>
                     </div>
-                     <div className="absolute bottom-4 left-4 p-2 rounded-lg bg-background/80 backdrop-blur-sm">
-                        <p className="font-semibold text-lg">AI Interviewer</p>
+
+                    <div className="absolute bottom-4 right-4 p-4 border rounded-lg bg-background shadow-lg h-32 w-48 flex flex-col items-center justify-center">
+                        <User className="w-10 h-10 text-muted-foreground" />
+                        <p className="font-semibold mt-2">You</p>
+                    </div>
+
+                    <div className="absolute bottom-4 left-4 p-2 rounded-lg bg-green-900/50 text-green-300 border border-green-700">
+                        <div className="flex items-center gap-2">
+                             <Mic className={cn("transition-colors", isRecording ? "text-red-500" : "text-green-500")} />
+                            <span className="font-semibold text-sm">Hold <Badge variant="secondary">Space</Badge> to Speak</span>
+                        </div>
                     </div>
                 </div>
 
                 <div className="md:col-span-1 h-full flex flex-col gap-4 min-h-0">
-                     <div className="bg-muted rounded-lg flex-shrink-0 aspect-video relative flex items-center justify-center">
-                        <User className="w-16 h-16 text-muted-foreground" />
-                        <div className="absolute bottom-2 left-2 p-2 rounded-lg bg-background/80 backdrop-blur-sm">
-                            <p className="font-semibold">{user?.displayName || 'You'}</p>
-                        </div>
-                     </div>
-                     <div className="flex-grow bg-muted rounded-lg p-4 flex flex-col min-h-0">
-                        <h3 className="font-semibold mb-2 flex items-center gap-2 shrink-0"><MessageSquare className="w-5 h-5"/> Transcript</h3>
-                        <div ref={transcriptContainerRef} className="flex-grow overflow-y-auto pr-2">
-                            <div className="space-y-4 text-sm">
-                                {transcript.map((entry, index) => (
-                                    <div key={index} className={cn("flex flex-col", entry.speaker === 'user' ? 'items-end' : 'items-start')}>
-                                        <div className={cn("max-w-[90%] p-3 rounded-lg", entry.speaker === 'user' ? 'bg-primary text-primary-foreground' : 'bg-background')}>
-                                            <p>{entry.text}</p>
-                                        </div>
+                     <div ref={transcriptContainerRef} className="flex-grow bg-muted rounded-lg p-4 flex flex-col min-h-0">
+                        <h3 className="font-semibold mb-4 flex items-center gap-2 shrink-0"><MessageSquare className="w-5 h-5"/> Transcript</h3>
+                        <div className="flex-grow overflow-y-auto pr-2 space-y-4 text-sm">
+                            {transcript.map((entry, index) => (
+                                <div key={index} className={cn("flex flex-col", entry.speaker === 'user' ? 'items-end' : 'items-start')}>
+                                    <div className={cn("max-w-[90%] p-3 rounded-lg", entry.speaker === 'user' ? 'bg-primary text-primary-foreground' : 'bg-background')}>
+                                        <p className="font-bold mb-1 capitalize">{entry.speaker}</p>
+                                        <p>{entry.text}</p>
                                     </div>
-                                ))}
-                            </div>
+                                </div>
+                            ))}
                         </div>
                      </div>
                 </div>
             </div>
 
             <footer className="p-4 border-t flex items-center justify-center gap-4">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                    <Mic className={cn("transition-colors", isRecording ? "text-red-500" : "text-green-500")} />
-                    <span className="font-semibold">{statusInfo.listening.text}</span>
-                </div>
-                 <Button variant="destructive" size="lg" onClick={() => stopInterview(true)} disabled={status === 'initializing' || status === 'finished'}>
-                    <PhoneOff className="mr-2" />
-                    End Interview
+                 <Button variant="outline" size="icon" className="rounded-full h-14 w-14">
+                    <Mic className="w-6 h-6"/>
+                 </Button>
+                  <Button variant="outline" size="icon" className="rounded-full h-14 w-14">
+                    <Video className="w-6 h-6"/>
+                 </Button>
+                 <Button variant="destructive" size="icon" className="rounded-full h-14 w-14" onClick={() => stopInterview(true)} disabled={status === 'initializing' || status === 'finished'}>
+                    <PhoneOff className="w-6 h-6" />
                  </Button>
             </footer>
         </div>
@@ -425,5 +409,3 @@ export default function InterviewPage() {
         </Suspense>
     )
 }
-
-    
