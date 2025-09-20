@@ -30,13 +30,23 @@ export const textToSpeechWithDeepgramFlow = ai.defineFlow(
       text: input.text,
     };
     
-    // Note: Deepgram's Node SDK currently returns a Readable stream.
-    // For client-side playback, we need the raw data.
+    // Note: Deepgram's Node SDK returns a Readable stream by default.
+    // For simple client-side playback, we need the raw data.
     // We make a direct fetch call to get the audio buffer.
-    const response = await deepgram.speak.request(
-      { url: 'https://api.deepgram.com/v1/speak?model=aura-asteria-en' },
-      payload
-    );
+    const response = await fetch('https://api.deepgram.com/v1/speak?model=aura-asteria-en', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Token ${process.env.DEEPGRAM_API_KEY}`
+        }
+    });
+
+    if (!response.ok) {
+        const errorBody = await response.text();
+        console.error("Deepgram TTS Error:", errorBody);
+        throw new Error(`Deepgram API request failed with status ${response.status}`);
+    }
 
     const blob = await response.blob();
     const buffer = Buffer.from(await blob.arrayBuffer());
