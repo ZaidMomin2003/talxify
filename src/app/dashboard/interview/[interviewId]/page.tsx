@@ -378,23 +378,25 @@ function InterviewComponent() {
                     </div>
                 </div>
 
-                <div className="h-full flex flex-col gap-4">
+                <div className="md:col-span-1 h-full flex flex-col gap-4 min-h-0">
                      <div className="bg-muted rounded-lg flex-shrink-0 aspect-video relative flex items-center justify-center">
                         <User className="w-16 h-16 text-muted-foreground" />
                         <div className="absolute bottom-2 left-2 p-2 rounded-lg bg-background/80 backdrop-blur-sm">
                             <p className="font-semibold">{user?.displayName || 'You'}</p>
                         </div>
                      </div>
-                     <div ref={transcriptContainerRef} className="flex-grow bg-muted rounded-lg p-4 overflow-y-auto min-h-0">
-                        <h3 className="font-semibold mb-2 flex items-center gap-2"><MessageSquare className="w-5 h-5"/> Transcript</h3>
-                        <div className="space-y-4 text-sm">
-                            {transcript.map((entry, index) => (
-                                <div key={index} className={cn("flex flex-col", entry.speaker === 'user' ? 'items-end' : 'items-start')}>
-                                    <div className={cn("max-w-[80%] p-3 rounded-lg", entry.speaker === 'user' ? 'bg-primary text-primary-foreground' : 'bg-background')}>
-                                        <p>{entry.text}</p>
+                     <div className="flex-grow bg-muted rounded-lg p-4 flex flex-col min-h-0">
+                        <h3 className="font-semibold mb-2 flex items-center gap-2 shrink-0"><MessageSquare className="w-5 h-5"/> Transcript</h3>
+                        <div ref={transcriptContainerRef} className="flex-grow overflow-y-auto pr-2">
+                            <div className="space-y-4 text-sm">
+                                {transcript.map((entry, index) => (
+                                    <div key={index} className={cn("flex flex-col", entry.speaker === 'user' ? 'items-end' : 'items-start')}>
+                                        <div className={cn("max-w-[90%] p-3 rounded-lg", entry.speaker === 'user' ? 'bg-primary text-primary-foreground' : 'bg-background')}>
+                                            <p>{entry.text}</p>
+                                        </div>
                                     </div>
-                                </div>
-                            ))}
+                                ))}
+                            </div>
                         </div>
                      </div>
                 </div>
