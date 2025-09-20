@@ -27,15 +27,14 @@ const nextConfig: NextConfig = {
     NEXT_PUBLIC_VIDEOSDK_API_KEY: process.env.VIDEOSDK_API_KEY,
     NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
     NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET: process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET,
-  },
-  webpack(config) {
-    config.externals.push({
-      "https/proxy-agent": "https/proxy-agent",
-      "recordrtc": "recordrtc"
-    });
-    return config;
   }
 };
 
 export default nextConfig;
 
+
+
+
+    
+
+    

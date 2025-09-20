@@ -11,10 +11,8 @@ import { Badge } from '@/components/ui/badge';
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { useAuth } from '@/context/auth-context';
 import type { InterviewActivity } from '@/lib/types';
-import { getActivity, updateActivity, getRetakeCount, addActivity } from '@/lib/firebase-service';
+import { getActivity, updateActivity } from '@/lib/firebase-service';
 import { generateInterviewFeedback, GenerateInterviewFeedbackOutput } from '@/ai/flows/generate-interview-feedback';
-
-const MAX_RETAKES = 3;
 
 const demoInterviewData: InterviewActivity = {
     id: 'demo',
@@ -319,3 +317,5 @@ export default function InterviewResultsPage() {
         </main>
     )
 }
+
+    

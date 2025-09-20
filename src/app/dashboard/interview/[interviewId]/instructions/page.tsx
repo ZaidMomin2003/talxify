@@ -12,9 +12,7 @@ import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import React, { Suspense, useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { checkAndIncrementUsage, getRetakeCount, incrementRetakeCount } from '@/lib/firebase-service';
-
-const MAX_RETAKES = 3; // This will be bypassed
+import { checkAndIncrementUsage } from '@/lib/firebase-service';
 
 function Instructions() {
   const router = useRouter();
@@ -54,9 +52,6 @@ function Instructions() {
             setLoading(false);
             return;
         }
-
-        // We are no longer incrementing retake count to make it unlimited for now.
-        // await incrementRetakeCount(user.uid, topic);
 
         const queryParams = new URLSearchParams({ topic, level, role });
         if (company) {
@@ -161,3 +156,5 @@ export default function InterviewInstructionsPage() {
         </Suspense>
     )
 }
+
+    
