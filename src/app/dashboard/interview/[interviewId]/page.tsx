@@ -390,7 +390,15 @@ function InterviewComponent() {
             </div>
 
             <footer className="p-4 border-t flex items-center justify-center gap-4">
-                 <Button variant="outline" size="icon" className="rounded-full h-14 w-14">
+                 <Button 
+                    variant={isRecording ? "destructive" : "outline"} 
+                    size="icon" 
+                    className={cn("rounded-full h-14 w-14 transition-colors", isRecording && "animate-pulse")}
+                    onMouseDown={startRecording}
+                    onMouseUp={stopRecording}
+                    onTouchStart={startRecording}
+                    onTouchEnd={stopRecording}
+                 >
                     <Mic className="w-6 h-6"/>
                  </Button>
                   <Button variant="outline" size="icon" className="rounded-full h-14 w-14">
@@ -416,5 +424,3 @@ export default function InterviewPage() {
         </Suspense>
     )
 }
-
-    
