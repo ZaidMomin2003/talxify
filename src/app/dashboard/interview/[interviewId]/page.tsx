@@ -4,19 +4,17 @@
 import React, { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import { useSearchParams, useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
-import { getAssemblyAiToken } from '@/app/actions/assemblyai';
 import { generateInterviewQuestions } from '@/ai/flows/generate-interview-questions';
-import { addActivity, updateUserFromIcebreaker } from '@/lib/firebase-service';
-import type { InterviewActivity, TranscriptEntry, IcebreakerData } from '@/lib/types';
-import type RecordRTC from 'recordrtc';
-
+import { addActivity } from '@/lib/firebase-service';
+import type { InterviewActivity, TranscriptEntry } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Loader2, Mic, Bot, PhoneOff, AlertTriangle, User, BrainCircuit, MessageSquare, Maximize } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { textToSpeechWithGoogle } from '@/ai/flows/google-tts';
 import { generateInterviewFeedback } from '@/ai/flows/generate-interview-feedback';
+import { textToSpeechWithDeepgram } from '@/ai/flows/deepgram-tts';
+import { createClient, LiveClient, LiveTranscriptionEvents } from '@deepgram/sdk';
 
 type InterviewStatus = 'initializing' | 'generating_questions' | 'ready' | 'listening' | 'speaking' | 'processing' | 'finished' | 'error';
 
@@ -44,14 +42,14 @@ function InterviewComponent() {
   const [transcript, setTranscript] = useState<TranscriptEntry[]>([]);
   const [isRecording, setIsRecording] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(false);
-  const [icebreakerData, setIcebreakerData] = useState<IcebreakerData>({});
   
-  const socketRef = useRef<WebSocket | null>(null);
-  const recorderRef = useRef<RecordRTC.StereoAudioRecorder | null>(null);
+  const deepgramConnection = useRef<LiveClient | null>(null);
+  const recorder = useRef<MediaRecorder | null>(null);
   const audioQueueRef = useRef<HTMLAudioElement[]>([]);
   const isPlayingRef = useRef(false);
   const transcriptContainerRef = useRef<HTMLDivElement>(null);
   const mainContainerRef = useRef<HTMLDivElement>(null);
+  const finalTranscriptRef = useRef<string>('');
 
   const interviewId = params.interviewId as string;
   const topic = searchParams.get('topic') || 'General Software Engineering';
@@ -69,34 +67,23 @@ function InterviewComponent() {
 
   const stopInterview = useCallback(async (save: boolean) => {
     setStatus('finished');
-    if (recorderRef.current) {
-        recorderRef.current.stopRecording(() => {
-            const stream = recorderRef.current?.getMediaStream();
-            if (stream) {
-                stream.getTracks().forEach((track: MediaStreamTrack) => track.stop());
-            }
-            recorderRef.current = null;
-        });
+    if (recorder.current && recorder.current.state === 'recording') {
+        recorder.current.stop();
     }
-    if (socketRef.current) {
-        socketRef.current.send(JSON.stringify({ terminate_session: true }));
-        socketRef.current.close();
-        socketRef.current = null;
+    if (deepgramConnection.current) {
+        deepgramConnection.current.finish();
+        deepgramConnection.current = null;
     }
 
     if (save && user && transcript.length > 1) {
         try {
-            if (isIcebreaker && Object.keys(icebreakerData).length > 0) {
-               await updateUserFromIcebreaker(user.uid, icebreakerData);
-            }
-            
             const feedback = await generateInterviewFeedback({ transcript, topic, role, company });
             const finalActivity: InterviewActivity = {
                 id: interviewId,
                 type: 'interview',
                 timestamp: new Date().toISOString(),
                 transcript: transcript,
-                feedback: "Feedback generated.",
+                feedback: "Feedback generated.", // This is a placeholder
                 analysis: feedback,
                 details: { topic, role, level, company, score: feedback.overallScore }
             };
@@ -104,12 +91,12 @@ function InterviewComponent() {
             router.push(`/dashboard/interview/${finalActivity.id}/results`);
         } catch(e) {
             console.error("Failed to generate and save feedback:", e);
-            router.push('/dashboard/arena');
+             router.push('/dashboard/arena');
         }
     } else {
         router.push('/dashboard/arena');
     }
-  }, [user, interviewId, topic, role, level, company, router, transcript, isIcebreaker, icebreakerData]);
+  }, [user, interviewId, topic, role, level, company, router, transcript]);
 
 
   const playAudio = useCallback(() => {
@@ -142,7 +129,7 @@ function InterviewComponent() {
 
   const speak = useCallback(async (text: string) => {
     try {
-      const response = await textToSpeechWithGoogle({ text });
+      const response = await textToSpeechWithDeepgram({ text });
       const audio = new Audio(response.audioDataUri);
       audioQueueRef.current.push(audio);
       if (!isPlayingRef.current) {
@@ -209,88 +196,78 @@ function InterviewComponent() {
   const startRecording = useCallback(async () => {
     if (isRecording || status !== 'listening') return;
     setIsRecording(true);
-    
+    finalTranscriptRef.current = '';
+
     try {
-      const token = await getAssemblyAiToken();
-      socketRef.current = new WebSocket(`wss://api.assemblyai.com/v2/realtime/ws?sample_rate=16000&token=${token}`);
-    } catch (e) {
-      console.error("Failed to get AssemblyAI token:", e);
-      setStatus('error');
-      setIsRecording(false);
-      return;
-    }
+        const response = await fetch('/api/auth/deepgram-key', { method: 'POST' });
+        const data = await response.json();
+        if (data.error) throw new Error(data.error);
+        const { key } = data;
 
-    const socket = socketRef.current;
-
-    socket.onmessage = (message) => {
-        const res = JSON.parse(message.data);
-        if (res.message_type === 'FinalTranscript' && res.text) {
-             setTranscript(prev => [...prev, { speaker: 'user', text: res.text }]);
-        }
-    };
-
-    socket.onerror = (event) => {
-      console.error(event);
-      socket.close();
-      setStatus('error');
-    };
-    
-    socket.onclose = () => {
-      socketRef.current = null;
-    };
-
-    socket.onopen = async () => {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        const RecordRTC = (await import('recordrtc')).default;
-        recorderRef.current = new RecordRTC.StereoAudioRecorder(stream, {
-            type: 'audio',
-            mimeType: 'audio/webm;codecs=pcm',
-            recorderType: RecordRTC.StereoAudioRecorder,
-            timeSlice: 250,
-            desiredSampRate: 16000,
-            numberOfAudioChannels: 1,
-            bufferSize: 4096,
-            audioBitsPerSecond: 128000,
-            ondataavailable: (blob: Blob) => {
-              const reader = new FileReader();
-              reader.onload = () => {
-                if (socket.readyState === WebSocket.OPEN) {
-                  const base64data = (reader.result as string).split(',')[1];
-                  socket.send(JSON.stringify({ audio_data: base64data }));
-                }
-              };
-              reader.readAsDataURL(blob);
-            },
+        const deepgram = createClient(key);
+        const connection = deepgram.listen.live({
+            model: "nova-2",
+            interim_results: true,
+            smart_format: true,
         });
-        recorderRef.current.record();
-      } catch (err) {
-        console.error(err);
+
+        connection.on(LiveTranscriptionEvents.Open, async () => {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            recorder.current = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+            
+            recorder.current.ondataavailable = (event) => {
+                if (event.data.size > 0 && connection.getReadyState() === 1) {
+                    connection.send(event.data);
+                }
+            };
+            
+            recorder.current.start(250); // Start recording and send data every 250ms
+        });
+        
+        connection.on(LiveTranscriptionEvents.Transcript, (data) => {
+            if (data.is_final && data.channel.alternatives[0].transcript) {
+                 finalTranscriptRef.current += data.channel.alternatives[0].transcript + ' ';
+            }
+        });
+
+        connection.on(LiveTranscriptionEvents.Close, () => {
+            console.log("Deepgram connection closed.");
+        });
+
+        connection.on(LiveTranscriptionEvents.Error, (err) => {
+            console.error(err);
+            setStatus('error');
+        });
+
+        deepgramConnection.current = connection;
+    } catch(e) {
+        console.error("Failed to start Deepgram:", e);
         setStatus('error');
-      }
-    };
+        setIsRecording(false);
+    }
   }, [isRecording, status]);
 
   const stopRecording = useCallback(async () => {
     if (!isRecording) return;
     setIsRecording(false);
-    if (recorderRef.current) {
-        recorderRef.current.stopRecording(() => {
-             const stream = recorderRef.current?.getMediaStream();
-             if (stream) {
-                stream.getTracks().forEach((track: MediaStreamTrack) => track.stop());
-            }
-            recorderRef.current = null;
-        });
+
+    if (recorder.current && recorder.current.state === 'recording') {
+        recorder.current.stop();
+        recorder.current = null;
     }
-    if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
-        socketRef.current.send(JSON.stringify({ terminate_session: true }));
+    if (deepgramConnection.current) {
+        deepgramConnection.current.finish();
+        deepgramConnection.current = null;
     }
-    socketRef.current = null;
 
     setStatus('processing');
-    
+
+    // Wait a moment for the final transcript to come in
     setTimeout(() => {
+        if (finalTranscriptRef.current.trim()) {
+            setTranscript(prev => [...prev, { speaker: 'user', text: finalTranscriptRef.current.trim() }]);
+        }
+        
         const ack = "Okay, thank you.";
         setTranscript(prev => [...prev, { speaker: 'ai', text: ack }]);
         speak(ack);
@@ -321,6 +298,9 @@ function InterviewComponent() {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
+      // Cleanup connections on component unmount
+      if (recorder.current && recorder.current.state === 'recording') recorder.current.stop();
+      if (deepgramConnection.current) deepgramConnection.current.finish();
     };
   }, [startRecording, stopRecording, isRecording, status]);
 
