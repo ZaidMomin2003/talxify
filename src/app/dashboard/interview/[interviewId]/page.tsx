@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef, Suspense } from 'react';
@@ -345,8 +346,7 @@ function InterviewComponent() {
         ) : (
         <div className="w-full h-full flex flex-col">
             <div className="flex-grow grid grid-cols-1 md:grid-cols-4 gap-4 p-4 min-h-0">
-                <div className="md:col-span-3 h-full bg-muted rounded-lg flex flex-col items-center justify-center relative overflow-hidden p-8 bg-[url('/popup.png')] bg-cover">
-                     <div className="absolute inset-0 bg-black/50"></div>
+                <div className="md:col-span-3 h-full bg-muted rounded-lg flex flex-col items-center justify-center relative overflow-hidden p-8">
                      <div className="relative flex flex-col items-center gap-4 text-center z-10">
                         <div className={cn("relative flex items-center justify-center w-48 h-48 rounded-full border-8 transition-all duration-300", 
                             isRecording ? 'border-red-500/50' :
@@ -416,3 +416,5 @@ export default function InterviewPage() {
         </Suspense>
     )
 }
+
+    
