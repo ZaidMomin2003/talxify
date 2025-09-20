@@ -15,6 +15,7 @@ import { cn } from '@/lib/utils';
 import { generateInterviewFeedback } from '@/ai/flows/generate-interview-feedback';
 import { textToSpeechWithDeepgram } from '@/ai/flows/deepgram-tts';
 import { createClient, LiveClient, LiveTranscriptionEvents } from '@deepgram/sdk';
+import Image from 'next/image';
 
 type InterviewStatus = 'initializing' | 'generating_questions' | 'ready' | 'listening' | 'speaking' | 'processing' | 'finished' | 'error';
 
@@ -358,9 +359,8 @@ function InterviewComponent() {
             <div className="flex-grow grid grid-cols-1 md:grid-cols-4 gap-4 p-4 min-h-0">
                 <div className="md:col-span-3 h-full bg-muted rounded-lg flex items-center justify-center relative overflow-hidden">
                     {/* Main video area - AI */}
-                     <div className="absolute inset-0 flex items-center justify-center">
-                        <BrainCircuit className="w-1/3 h-1/3 text-primary/10 animate-pulse" />
-                     </div>
+                     <Image src="/popup.png" alt="AI Interviewer Background" layout="fill" objectFit="cover" className="opacity-50" data-ai-hint="abstract technology" />
+                     <div className="absolute inset-0 bg-black/30"></div>
                     <div className="z-10 text-center">
                         <div className={cn("relative flex items-center justify-center w-48 h-48 rounded-full border-8 transition-all duration-300", 
                             isRecording ? 'border-red-500/50' :
@@ -425,3 +425,5 @@ export default function InterviewPage() {
         </Suspense>
     )
 }
+
+    
