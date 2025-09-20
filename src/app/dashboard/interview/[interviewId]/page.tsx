@@ -226,8 +226,9 @@ function InterviewComponent() {
         });
         
         connection.on(LiveTranscriptionEvents.Transcript, (data) => {
-            if (data.is_final && data.channel.alternatives[0].transcript) {
-                 finalTranscriptRef.current += data.channel.alternatives[0].transcript + ' ';
+            const text = data.channel.alternatives[0].transcript;
+            if (data.is_final && text) {
+                 finalTranscriptRef.current += text + ' ';
             }
         });
 
@@ -352,7 +353,7 @@ function InterviewComponent() {
                             isRecording ? 'border-red-500/50' :
                             status === 'speaking' ? 'border-blue-500/50' : 'border-border'
                         )}>
-                            <Image src="/robot.png" alt="AI Interviewer" width={192} height={192} className="rounded-full" data-ai-hint="robot face" />
+                            <Image src="/robot.png" alt="Kathy" width={192} height={192} className="rounded-full" data-ai-hint="robot face" />
                              <div className={cn("absolute inset-0 rounded-full animate-pulse",
                                 isRecording ? 'bg-red-500/20' : 
                                 status === 'speaking' ? 'bg-blue-500/20' : 'bg-transparent'
@@ -374,17 +375,19 @@ function InterviewComponent() {
                     </div>
                 </div>
 
-                <div ref={transcriptContainerRef} className="md:col-span-1 h-full flex flex-col gap-4 min-h-0 bg-muted rounded-lg p-4">
-                    <h3 className="font-semibold mb-2 flex items-center gap-2 shrink-0"><MessageSquare className="w-5 h-5"/> Transcript</h3>
-                    <div className="flex-grow overflow-y-auto pr-2 space-y-4 text-sm">
-                        {transcript.map((entry, index) => (
-                            <div key={index} className={cn("flex flex-col", entry.speaker === 'user' ? 'items-end' : 'items-start')}>
-                                <div className={cn("max-w-[90%] p-3 rounded-lg", entry.speaker === 'user' ? 'bg-primary text-primary-foreground' : 'bg-background')}>
-                                    <p className="font-bold mb-1 capitalize">{entry.speaker === 'ai' ? 'Kathy' : 'You'}</p>
-                                    <p>{entry.text}</p>
+                <div className="md:col-span-1 h-full flex flex-col gap-4 min-h-0">
+                     <h3 className="font-semibold mb-2 flex items-center gap-2 shrink-0"><MessageSquare className="w-5 h-5"/> Transcript</h3>
+                    <div ref={transcriptContainerRef} className="flex-grow bg-muted rounded-lg p-4 overflow-y-auto min-h-0">
+                        <div className="space-y-4 text-sm">
+                            {transcript.map((entry, index) => (
+                                <div key={index} className={cn("flex flex-col", entry.speaker === 'user' ? 'items-end' : 'items-start')}>
+                                    <div className={cn("max-w-[90%] p-3 rounded-lg", entry.speaker === 'user' ? 'bg-primary text-primary-foreground' : 'bg-background')}>
+                                        <p className="font-bold mb-1 capitalize">{entry.speaker === 'ai' ? 'Kathy' : 'You'}</p>
+                                        <p>{entry.text}</p>
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
+                            ))}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -424,3 +427,5 @@ export default function InterviewPage() {
         </Suspense>
     )
 }
+
+    
