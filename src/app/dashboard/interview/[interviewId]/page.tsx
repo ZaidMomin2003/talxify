@@ -16,6 +16,8 @@ import { generateInterviewFeedback } from '@/ai/flows/generate-interview-feedbac
 import { textToSpeechWithDeepgram } from '@/ai/flows/deepgram-tts';
 import { createClient, LiveClient, LiveTranscriptionEvents } from '@deepgram/sdk';
 import Image from 'next/image';
+import { useToast } from '@/hooks/use-toast';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 type InterviewStatus = 'initializing' | 'generating_questions' | 'ready' | 'listening' | 'speaking' | 'processing' | 'finished' | 'error';
 
@@ -36,6 +38,7 @@ function InterviewComponent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const params = useParams();
+  const { toast } = useToast();
 
   const [status, setStatus] = useState<InterviewStatus>('initializing');
   const [questions, setQuestions] = useState<string[]>([]);
@@ -43,6 +46,7 @@ function InterviewComponent() {
   const [transcript, setTranscript] = useState<TranscriptEntry[]>([]);
   const [isRecording, setIsRecording] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(false);
+  const [hasCameraPermission, setHasCameraPermission] = useState(false);
   
   const deepgramConnection = useRef<LiveClient | null>(null);
   const recorder = useRef<MediaRecorder | null>(null);
@@ -51,6 +55,7 @@ function InterviewComponent() {
   const transcriptContainerRef = useRef<HTMLDivElement>(null);
   const mainContainerRef = useRef<HTMLDivElement>(null);
   const finalTranscriptRef = useRef<string>('');
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   const interviewId = params.interviewId as string;
   const topic = searchParams.get('topic') || 'General Software Engineering';
@@ -74,6 +79,11 @@ function InterviewComponent() {
     if (deepgramConnection.current) {
         deepgramConnection.current.finish();
         deepgramConnection.current = null;
+    }
+     // Stop camera stream
+    if (videoRef.current && videoRef.current.srcObject) {
+        const stream = videoRef.current.srcObject as MediaStream;
+        stream.getTracks().forEach(track => track.stop());
     }
 
     if (save && user && transcript.length > 1) {
@@ -299,7 +309,28 @@ function InterviewComponent() {
         stopRecording();
       }
     };
+    
+    // Camera Permissions
+    const getCameraPermission = async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({video: true});
+        setHasCameraPermission(true);
 
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
+      } catch (error) {
+        console.error('Error accessing camera:', error);
+        setHasCameraPermission(false);
+        toast({
+          variant: 'destructive',
+          title: 'Camera Access Denied',
+          description: 'Please enable camera permissions in your browser settings to use this app.',
+        });
+      }
+    };
+
+    getCameraPermission();
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
 
@@ -309,8 +340,13 @@ function InterviewComponent() {
       // Cleanup connections on component unmount
       if (recorder.current && recorder.current.state === 'recording') recorder.current.stop();
       if (deepgramConnection.current) deepgramConnection.current.finish();
+       // Stop camera stream on cleanup
+        if (videoRef.current && videoRef.current.srcObject) {
+            const stream = videoRef.current.srcObject as MediaStream;
+            stream.getTracks().forEach(track => track.stop());
+        }
     };
-  }, [startRecording, stopRecording, isRecording, status]);
+  }, [startRecording, stopRecording, isRecording, status, toast]);
 
   const toggleFullScreen = () => {
     if (!mainContainerRef.current) return;
@@ -362,9 +398,14 @@ function InterviewComponent() {
                         <h2 className="text-2xl font-bold font-headline">Kathy</h2>
                     </div>
 
-                    <div className="absolute bottom-4 right-4 p-4 border rounded-lg bg-background shadow-lg h-32 w-48 flex flex-col items-center justify-center">
-                        <User className="w-10 h-10 text-muted-foreground" />
-                        <p className="font-semibold mt-2">You</p>
+                    <div className="absolute bottom-4 right-4 border rounded-lg bg-background shadow-lg h-32 w-48 overflow-hidden">
+                        <video ref={videoRef} className="w-full h-full object-cover" autoPlay muted />
+                        { !hasCameraPermission && (
+                            <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center p-2 text-center text-white">
+                                <AlertTriangle className="w-6 h-6 mb-2"/>
+                                <p className="text-xs">Enable camera permissions to see yourself.</p>
+                            </div>
+                        )}
                     </div>
 
                     <div className="absolute bottom-4 left-4 p-2 rounded-lg bg-green-900/50 text-green-300 border border-green-700">
@@ -427,5 +468,3 @@ export default function InterviewPage() {
         </Suspense>
     )
 }
-
-    
