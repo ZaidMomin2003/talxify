@@ -306,14 +306,23 @@ export default function ArenaPage() {
                                             <p className="font-semibold text-foreground">{day.day === 1 ? "Icebreaker Interview" : isFinalDay ? "Final Comprehensive Interview" : "Take a Mock Interview"}</p>
                                             <p className="text-xs text-muted-foreground">{day.day === 1 ? "A friendly chat to get to know you." : (isFinalDay ? "A 20-minute interview on all learned concepts." : "Practice your interview skills.")}</p>
                                         </div>
-                                         <Button size="sm" onClick={() => handleStartChallenge(day.day, 'interview')} disabled={!isUnlocked}>
-                                            {dayStatus.isInterviewInProgress 
-                                                ? <><History className="mr-2 h-4 w-4"/>Resume</>
-                                                : dayStatus.interview 
-                                                    ? <><RefreshCw className="mr-2 h-4 w-4"/>Retake</>
-                                                    : isUnlocked ? 'Start' : <Lock className="h-4 w-4" />
-                                            }
-                                        </Button>
+                                        <div className="flex flex-col sm:flex-row gap-2">
+                                             {dayStatus.interview && (
+                                                <Button asChild size="sm" variant="outline">
+                                                    <Link href={`/dashboard/interview/${dayStatus.interviewId}/results`}>
+                                                        <BarChart className="mr-2 h-4 w-4"/>Result
+                                                    </Link>
+                                                </Button>
+                                             )}
+                                             <Button size="sm" onClick={() => handleStartChallenge(day.day, 'interview')} disabled={!isUnlocked}>
+                                                {dayStatus.isInterviewInProgress 
+                                                    ? <><History className="mr-2 h-4 w-4"/>Resume</>
+                                                    : dayStatus.interview 
+                                                        ? <><RefreshCw className="mr-2 h-4 w-4"/>Retake</>
+                                                        : isUnlocked ? 'Start' : <Lock className="h-4 w-4" />
+                                                }
+                                            </Button>
+                                        </div>
                                     </div>
                                     )}
                                 </div>
