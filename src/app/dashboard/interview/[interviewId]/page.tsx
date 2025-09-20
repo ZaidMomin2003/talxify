@@ -340,8 +340,9 @@ function InterviewComponent() {
         ) : (
         <div className="w-full h-full flex flex-col">
             <div className="flex-grow grid grid-cols-1 md:grid-cols-4 gap-4 p-4 min-h-0">
-                <div className="md:col-span-3 h-full bg-muted rounded-lg flex flex-col items-center justify-center relative overflow-hidden p-8">
-                     <div className="flex flex-col items-center gap-4 text-center">
+                <div className="md:col-span-3 h-full bg-muted rounded-lg flex flex-col items-center justify-center relative overflow-hidden p-8 bg-[url('/popup.png')] bg-cover">
+                     <div className="absolute inset-0 bg-black/50"></div>
+                     <div className="relative flex flex-col items-center gap-4 text-center z-10">
                         <div className={cn("relative flex items-center justify-center w-48 h-48 rounded-full border-8 transition-all duration-300", 
                             isRecording ? 'border-red-500/50' :
                             status === 'speaking' ? 'border-blue-500/50' : 'border-border'
@@ -368,20 +369,18 @@ function InterviewComponent() {
                     </div>
                 </div>
 
-                <div className="md:col-span-1 h-full flex flex-col gap-4 min-h-0">
-                     <div ref={transcriptContainerRef} className="flex-grow bg-muted rounded-lg p-4 flex flex-col min-h-0">
-                        <h3 className="font-semibold mb-4 flex items-center gap-2 shrink-0"><MessageSquare className="w-5 h-5"/> Transcript</h3>
-                        <div className="flex-grow overflow-y-auto pr-2 space-y-4 text-sm">
-                            {transcript.map((entry, index) => (
-                                <div key={index} className={cn("flex flex-col", entry.speaker === 'user' ? 'items-end' : 'items-start')}>
-                                    <div className={cn("max-w-[90%] p-3 rounded-lg", entry.speaker === 'user' ? 'bg-primary text-primary-foreground' : 'bg-background')}>
-                                        <p className="font-bold mb-1 capitalize">{entry.speaker}</p>
-                                        <p>{entry.text}</p>
-                                    </div>
+                <div ref={transcriptContainerRef} className="md:col-span-1 h-full flex flex-col gap-4 min-h-0 bg-muted rounded-lg p-4">
+                    <h3 className="font-semibold mb-2 flex items-center gap-2 shrink-0"><MessageSquare className="w-5 h-5"/> Transcript</h3>
+                    <div className="flex-grow overflow-y-auto pr-2 space-y-4 text-sm">
+                        {transcript.map((entry, index) => (
+                            <div key={index} className={cn("flex flex-col", entry.speaker === 'user' ? 'items-end' : 'items-start')}>
+                                <div className={cn("max-w-[90%] p-3 rounded-lg", entry.speaker === 'user' ? 'bg-primary text-primary-foreground' : 'bg-background')}>
+                                    <p className="font-bold mb-1 capitalize">{entry.speaker}</p>
+                                    <p>{entry.text}</p>
                                 </div>
-                            ))}
-                        </div>
-                     </div>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             </div>
 
@@ -394,6 +393,9 @@ function InterviewComponent() {
                  </Button>
                  <Button variant="destructive" size="icon" className="rounded-full h-14 w-14" onClick={() => stopInterview(true)} disabled={status === 'initializing' || status === 'finished'}>
                     <PhoneOff className="w-6 h-6" />
+                 </Button>
+                 <Button variant="outline" size="icon" className="rounded-full h-14 w-14" onClick={toggleFullScreen}>
+                    <Maximize className="w-6 h-6"/>
                  </Button>
             </footer>
         </div>
@@ -409,3 +411,5 @@ export default function InterviewPage() {
         </Suspense>
     )
 }
+
+    
