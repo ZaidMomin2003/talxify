@@ -443,5 +443,3 @@ export default function InterviewPage() {
         </Suspense>
     )
 }
-
-    
