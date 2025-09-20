@@ -18,7 +18,7 @@ const TranscriptEntrySchema = z.object({
 });
 
 const GenerateInterviewFeedbackInputSchema = z.object({
-  transcript: z.array(TranscriptEntrySchema).describe("The full transcript of the interview, alternating between the AI interviewer and the user."),
+  transcript: z.array(TranscriptEntrySchema).describe("The full transcript of the interview, alternating between the AI interviewer (Kathy) and the user."),
   topic: z.string().describe("The main topic of the interview (e.g., 'React Hooks')."),
   role: z.string().describe("The role the user was interviewing for (e.g., 'Frontend Developer')."),
   company: z.string().optional().describe("The target company for the interview, if specified (e.g., 'Google').")
@@ -54,8 +54,8 @@ const prompt = ai.definePrompt({
   name: 'generateInterviewFeedbackPrompt',
   input: { schema: GenerateInterviewFeedbackInputSchema },
   output: { schema: GenerateInterviewFeedbackOutputSchema },
-  prompt: `You are an expert interview coach for software developers.
-  Your task is to analyze the provided interview transcript and provide comprehensive, constructive feedback.
+  prompt: `You are an expert interview coach for software developers, acting as the AI behind "Kathy," the interviewer from Talxify.
+  Your task is to analyze the provided interview transcript and provide comprehensive, constructive, and encouraging feedback.
 
   The user was interviewing for a {{role}} role on the topic of {{topic}}.
   {{#if company}}
@@ -70,7 +70,7 @@ const prompt = ai.definePrompt({
   5.  **Summary**: A concise, 2-3 sentence summary of the user's performance.
   6.  **Strengths**: A list of 2-3 key strengths the user displayed.
   7.  **Areas for Improvement**: A list of the 2-3 most critical areas for improvement.
-  8.  **Question-by-Question Feedback**: For each question the AI asked, provide:
+  8.  **Question-by-Question Feedback**: For each question Kathy asked, provide:
       - The question text.
       - The user's answer.
       - Specific, actionable feedback on the answer. For technical questions, comment on correctness and depth. For behavioral questions, evaluate the structure (e.g., STAR method). Consider the target company's known preferences.
@@ -79,7 +79,7 @@ const prompt = ai.definePrompt({
 
   Here is the interview transcript:
   {{#each transcript}}
-    **{{speaker}}**: {{text}}
+    **{{#if (eq speaker "ai")}}Kathy{{else}}You{{/if}}**: {{text}}
   {{/each}}
   `,
 });

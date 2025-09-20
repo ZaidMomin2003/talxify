@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef, Suspense } from 'react';
@@ -21,10 +20,10 @@ type InterviewStatus = 'initializing' | 'generating_questions' | 'ready' | 'list
 
 const statusInfo: { [key in InterviewStatus]: { text: string; showMic?: boolean } } = {
   initializing: { text: "Initializing Session..." },
-  generating_questions: { text: "AI is preparing questions..." },
-  ready: { text: "Ready to Start. The AI will speak first." },
+  generating_questions: { text: "Kathy is preparing your questions..." },
+  ready: { text: "Ready to Start. Kathy will speak first." },
   listening: { text: "Hold Space to Talk", showMic: true },
-  speaking: { text: "AI is Speaking..." },
+  speaking: { text: "Kathy is Speaking..." },
   processing: { text: "Processing your answer..." },
   finished: { text: "Interview Finished" },
   error: { text: "Connection Error" },
@@ -149,7 +148,7 @@ function InterviewComponent() {
         speak(questionText);
         setCurrentQuestionIndex(prev => prev + 1);
     } else {
-        speak("That's all the questions I have. Thank you for your time.");
+        speak("That's all the questions I have for now. Thank you for your time.");
     }
   }, [currentQuestionIndex, questions, speak]);
 
@@ -177,8 +176,8 @@ function InterviewComponent() {
   useEffect(() => {
     if (status === 'ready' && questions.length > 0 && transcript.length === 0) {
       const intro = isIcebreaker 
-        ? "Hello, welcome to Talxify. Let's start with a quick icebreaker. Can you please tell me about yourself?"
-        : `Welcome to your mock interview for a ${level} ${role} role, focusing on ${topic}. Let's start with your first question.`;
+        ? "Hello, I'm Kathy from Talxify. Let's start with a quick icebreaker. Can you please tell me a bit about yourself?"
+        : `Hello, I'm Kathy, your interviewer today. We'll be discussing ${topic} for a ${level} ${role} role. Let's begin with your first question.`;
       
       setTranscript([{ speaker: 'ai', text: intro }]);
       speak(intro);
@@ -254,26 +253,32 @@ function InterviewComponent() {
 
     if (recorder.current && recorder.current.state === 'recording') {
         recorder.current.stop();
+        // Detach the ondataavailable listener to stop sending data
+        recorder.current.ondataavailable = null;
         recorder.current = null;
     }
-    if (deepgramConnection.current) {
-        deepgramConnection.current.finish();
-        deepgramConnection.current = null;
-    }
-
-    setStatus('processing');
-
-    // Wait a moment for the final transcript to come in
+    
+    // Give a very short delay to ensure the last audio packet is sent
     setTimeout(() => {
-        if (finalTranscriptRef.current.trim()) {
-            setTranscript(prev => [...prev, { speaker: 'user', text: finalTranscriptRef.current.trim() }]);
+        if (deepgramConnection.current) {
+            deepgramConnection.current.finish();
+            deepgramConnection.current = null;
         }
-        
-        const ack = "Okay, thank you.";
-        setTranscript(prev => [...prev, { speaker: 'ai', text: ack }]);
-        speak(ack);
-        setTimeout(() => askNextQuestion(), 3000);
-    }, 1500);
+
+        setStatus('processing');
+
+        // Wait a moment for the final transcript to come in
+        setTimeout(() => {
+            if (finalTranscriptRef.current.trim()) {
+                setTranscript(prev => [...prev, { speaker: 'user', text: finalTranscriptRef.current.trim() }]);
+            }
+            
+            const ack = "Okay, thank you for sharing that.";
+            setTranscript(prev => [...prev, { speaker: 'ai', text: ack }]);
+            speak(ack);
+            setTimeout(() => askNextQuestion(), 3000);
+        }, 1500);
+    }, 250);
 
   }, [isRecording, askNextQuestion, speak]);
 
@@ -353,7 +358,7 @@ function InterviewComponent() {
                                 status === 'speaking' ? 'bg-blue-500/20' : 'bg-transparent'
                             )}></div>
                         </div>
-                        <h2 className="text-2xl font-bold font-headline">AI Interviewer</h2>
+                        <h2 className="text-2xl font-bold font-headline">Kathy</h2>
                     </div>
 
                     <div className="absolute bottom-4 right-4 p-4 border rounded-lg bg-background shadow-lg h-32 w-48 flex flex-col items-center justify-center">
@@ -375,7 +380,7 @@ function InterviewComponent() {
                         {transcript.map((entry, index) => (
                             <div key={index} className={cn("flex flex-col", entry.speaker === 'user' ? 'items-end' : 'items-start')}>
                                 <div className={cn("max-w-[90%] p-3 rounded-lg", entry.speaker === 'user' ? 'bg-primary text-primary-foreground' : 'bg-background')}>
-                                    <p className="font-bold mb-1 capitalize">{entry.speaker}</p>
+                                    <p className="font-bold mb-1 capitalize">{entry.speaker === 'ai' ? 'Kathy' : 'You'}</p>
                                     <p>{entry.text}</p>
                                 </div>
                             </div>
@@ -411,5 +416,3 @@ export default function InterviewPage() {
         </Suspense>
     )
 }
-
-    
