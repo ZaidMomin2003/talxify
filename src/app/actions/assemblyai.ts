@@ -19,5 +19,3 @@ export async function getAssemblyAiToken() {
   const token = await client.realtime.createTemporaryToken({ expires_in: 3600 }); // Token valid for 1 hour
   return token;
 }
-
-    

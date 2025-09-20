@@ -8,6 +8,7 @@ import { getAssemblyAiToken } from '@/app/actions/assemblyai';
 import { generateInterviewQuestions } from '@/ai/flows/generate-interview-questions';
 import { addActivity } from '@/lib/firebase-service';
 import type { InterviewActivity, TranscriptEntry } from '@/lib/types';
+import type RecordRTC from 'recordrtc';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -44,7 +45,7 @@ function InterviewComponent() {
   const [isRecording, setIsRecording] = useState(false);
   
   const socketRef = useRef<WebSocket | null>(null);
-  const recorderRef = useRef<any>(null); // Using 'any' for RecordRTC to avoid type issues on server
+  const recorderRef = useRef<RecordRTC | null>(null);
   const audioQueueRef = useRef<HTMLAudioElement[]>([]);
   const isPlayingRef = useRef(false);
 
@@ -58,7 +59,7 @@ function InterviewComponent() {
     setStatus('finished');
     if (recorderRef.current) {
         recorderRef.current.stopRecording(() => {
-            const stream = (recorderRef.current as any)?.stream;
+            const stream = recorderRef.current?.getMediaStream();
             if (stream) {
                 stream.getTracks().forEach((track: MediaStreamTrack) => track.stop());
             }
@@ -214,37 +215,35 @@ function InterviewComponent() {
       socketRef.current = null;
     };
 
-    socket.onopen = () => {
-      import('recordrtc').then(RecordRTC => {
-          navigator.mediaDevices.getUserMedia({ audio: true })
-            .then((stream) => {
-              recorderRef.current = new RecordRTC.default(stream, {
-                type: 'audio',
-                mimeType: 'audio/webm;codecs=pcm',
-                recorderType: RecordRTC.StereoAudioRecorder,
-                timeSlice: 250,
-                desiredSampRate: 16000,
-                numberOfAudioChannels: 1,
-                bufferSize: 4096,
-                audioBitsPerSecond: 128000,
-                ondataavailable: (blob: Blob) => {
-                  const reader = new FileReader();
-                  reader.onload = () => {
-                    if (socket.readyState === WebSocket.OPEN) {
-                      const base64data = (reader.result as string).split(',')[1];
-                      socket.send(JSON.stringify({ audio_data: base64data }));
-                    }
-                  };
-                  reader.readAsDataURL(blob);
-                },
-              });
-              recorderRef.current.startRecording();
-            })
-            .catch((err) => {
-                console.error(err);
-                setStatus('error');
-            });
-      });
+    socket.onopen = async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const RecordRTC = (await import('recordrtc')).default;
+        recorderRef.current = new RecordRTC(stream, {
+            type: 'audio',
+            mimeType: 'audio/webm;codecs=pcm',
+            recorderType: RecordRTC.StereoAudioRecorder,
+            timeSlice: 250,
+            desiredSampRate: 16000,
+            numberOfAudioChannels: 1,
+            bufferSize: 4096,
+            audioBitsPerSecond: 128000,
+            ondataavailable: (blob: Blob) => {
+              const reader = new FileReader();
+              reader.onload = () => {
+                if (socket.readyState === WebSocket.OPEN) {
+                  const base64data = (reader.result as string).split(',')[1];
+                  socket.send(JSON.stringify({ audio_data: base64data }));
+                }
+              };
+              reader.readAsDataURL(blob);
+            },
+        });
+        recorderRef.current.startRecording();
+      } catch (err) {
+        console.error(err);
+        setStatus('error');
+      }
     };
   }, [isRecording, status]);
 
@@ -253,7 +252,7 @@ function InterviewComponent() {
     setIsRecording(false);
     if (recorderRef.current) {
         recorderRef.current.stopRecording(() => {
-             const stream = (recorderRef.current as any)?.stream;
+             const stream = recorderRef.current?.getMediaStream();
              if (stream) {
                 stream.getTracks().forEach((track: MediaStreamTrack) => track.stop());
             }
@@ -364,5 +363,3 @@ export default function InterviewPage() {
         </Suspense>
     )
 }
-
-    

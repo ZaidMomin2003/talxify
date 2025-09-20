@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Briefcase, PlayCircle, Loader2, Building, RefreshCw } from 'lucide-react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
-import React, { Suspense, useState, useEffect, useCallback } from 'react';
+import React, { Suspense, useState } from 'react';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { checkAndIncrementUsage } from '@/lib/firebase-service';
@@ -156,5 +156,3 @@ export default function InterviewInstructionsPage() {
         </Suspense>
     )
 }
-
-    
