@@ -19,17 +19,16 @@ import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
-type InterviewStatus = 'permissions' | 'initializing' | 'generating_questions' | 'ready' | 'listening' | 'speaking' | 'processing' | 'finished' | 'error';
+type InterviewStatus = 'initializing' | 'generating_questions' | 'ready' | 'listening' | 'speaking' | 'processing' | 'finished' | 'error';
 
 const statusInfo: { [key in InterviewStatus]: { text: string; showMic?: boolean } } = {
-  permissions: { text: "Waiting for camera & microphone permissions..." },
   initializing: { text: "Initializing Session..." },
   generating_questions: { text: "Preparing your questions..." },
   ready: { text: "Ready to Start. The AI will speak first." },
   listening: { text: "Hold Space to Talk", showMic: true },
   speaking: { text: "AI is Speaking..." },
   processing: { text: "Processing your answer..." },
-  finished: { text: "Interview Finished. Generating your feedback..." },
+  finished: { text: "Interview Finished." },
   error: { text: "Connection Error" },
 };
 
@@ -41,13 +40,13 @@ function InterviewComponent() {
   const params = useParams();
   const { toast } = useToast();
 
-  const [status, setStatus] = useState<InterviewStatus>('permissions');
+  const [status, setStatus] = useState<InterviewStatus>('initializing');
   const [questions, setQuestions] = useState<string[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [transcript, setTranscript] = useState<TranscriptEntry[]>([]);
   const [isRecording, setIsRecording] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(false);
-  const [mediaPermissions, setMediaPermissions] = useState({ video: false, audio: false });
+  const [hasCameraPermission, setHasCameraPermission] = useState(false);
   
   const deepgramConnection = useRef<LiveClient | null>(null);
   const recorder = useRef<MediaRecorder | null>(null);
@@ -73,7 +72,6 @@ function InterviewComponent() {
 
 
   const stopInterview = useCallback(async (save: boolean) => {
-    setStatus('finished');
     if (recorder.current && recorder.current.state === 'recording') {
         recorder.current.stop();
     }
@@ -81,35 +79,34 @@ function InterviewComponent() {
         deepgramConnection.current.finish();
         deepgramConnection.current = null;
     }
-     // Stop camera stream
+    setStatus('finished');
+
+    if (save && user && transcript.length > 1) {
+        const interviewActivity: InterviewActivity = {
+            id: interviewId,
+            type: 'interview',
+            timestamp: new Date().toISOString(),
+            transcript: transcript,
+            feedback: 'Feedback will be generated on the results page.',
+            details: {
+                topic: topic,
+                role: role,
+                level: level,
+                company: company,
+            },
+        };
+        await addActivity(user.uid, interviewActivity);
+    }
+    
+    // Stop camera stream
     if (videoRef.current && videoRef.current.srcObject) {
         const stream = videoRef.current.srcObject as MediaStream;
         stream.getTracks().forEach(track => track.stop());
     }
 
-    if (save && user && transcript.length > 1) {
-        try {
-            const feedback = await generateInterviewFeedback({ transcript, topic, role, company });
-            const finalActivity: InterviewActivity = {
-                id: interviewId,
-                type: 'interview',
-                timestamp: new Date().toISOString(),
-                transcript: transcript,
-                feedback: "Feedback generated.",
-                analysis: feedback,
-                details: { topic, role, level, company, score: feedback.overallScore }
-            };
-            await addActivity(user.uid, finalActivity);
-            router.push(`/dashboard/interview/${finalActivity.id}/results`);
-        } catch(e) {
-            console.error("Failed to generate and save feedback:", e);
-            toast({ title: "Feedback Error", description: "Could not generate feedback for this interview.", variant: "destructive"});
-             router.push('/dashboard/arena');
-        }
-    } else {
-        router.push('/dashboard/arena');
-    }
-  }, [user, interviewId, topic, role, level, company, router, transcript, toast]);
+    router.push('/dashboard/arena');
+
+  }, [user, interviewId, transcript, router, topic, role, level, company]);
 
 
   const playAudio = useCallback(() => {
@@ -180,11 +177,10 @@ function InterviewComponent() {
             if (videoRef.current) {
               videoRef.current.srcObject = stream;
             }
-            setMediaPermissions({ video: true, audio: true });
-            setStatus('initializing');
+            setHasCameraPermission(true);
         } catch (error) {
             console.error('Error accessing media devices:', error);
-            setMediaPermissions({ video: false, audio: false });
+            setHasCameraPermission(false);
             setStatus('error');
             toast({
               variant: 'destructive',
@@ -243,7 +239,7 @@ function InterviewComponent() {
   
 
   const startRecording = useCallback(async () => {
-    if (isRecording || status !== 'listening' || !mediaPermissions.audio) return;
+    if (isRecording || status !== 'listening' || !hasCameraPermission) return;
     
     finalTranscriptRef.current = '';
     setStatus('processing'); // Give immediate feedback that something is happening
@@ -259,13 +255,13 @@ function InterviewComponent() {
             model: "nova-2",
             interim_results: true,
             smart_format: true,
-            puncuate: true,
+            punctuate: true,
         });
 
         connection.on(LiveTranscriptionEvents.Open, async () => {
              // Ensure recorder is only created after connection is open
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            const mediaRecorder = new MediaRecorder(stream);
+            const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
             
             mediaRecorder.ondataavailable = (event) => {
                 if (event.data.size > 0 && connection.getReadyState() === 1) {
@@ -301,7 +297,7 @@ function InterviewComponent() {
         setStatus('error');
         setIsRecording(false);
     }
-  }, [isRecording, status, mediaPermissions.audio]);
+  }, [isRecording, status, hasCameraPermission]);
 
   const stopRecording = useCallback(async () => {
     if (!isRecording) return;
@@ -316,23 +312,21 @@ function InterviewComponent() {
         recorder.current = null;
     }
     
-    setTimeout(() => {
-        if (deepgramConnection.current) {
-            deepgramConnection.current.finish();
-            deepgramConnection.current = null;
-        }
+    if (deepgramConnection.current) {
+        deepgramConnection.current.finish();
+        deepgramConnection.current = null;
+    }
 
-        setTimeout(() => {
-            if (finalTranscriptRef.current.trim()) {
-                setTranscript(prev => [...prev, { speaker: 'user', text: finalTranscriptRef.current.trim() }]);
-            }
-            
-            const ack = "Okay, thank you for sharing that.";
-            setTranscript(prev => [...prev, { speaker: 'ai', text: ack }]);
-            speak(ack);
-            setTimeout(() => askNextQuestion(), 3000);
-        }, 500);
-    }, 250);
+    setTimeout(() => {
+        if (finalTranscriptRef.current.trim()) {
+            setTranscript(prev => [...prev, { speaker: 'user', text: finalTranscriptRef.current.trim() }]);
+        }
+        
+        const ack = "Okay, thank you for sharing that.";
+        setTranscript(prev => [...prev, { speaker: 'ai', text: ack }]);
+        speak(ack);
+        setTimeout(() => askNextQuestion(), 3000);
+    }, 500);
 
   }, [isRecording, askNextQuestion, speak]);
 
@@ -378,7 +372,7 @@ function InterviewComponent() {
 
   return (
     <div ref={mainContainerRef} className="flex h-screen w-full flex-col items-center justify-center bg-background text-foreground p-4">
-        {status === 'error' || status === 'generating_questions' || status === 'initializing' || status === 'finished' || status === 'permissions' ? (
+        {status === 'error' || status === 'generating_questions' || status === 'initializing' || status === 'finished' ? (
              <Card className="w-full max-w-lg text-center p-8">
                 {status === 'error' ? (
                      <div className="text-destructive">
@@ -412,7 +406,7 @@ function InterviewComponent() {
 
                     <div className="absolute bottom-4 right-4 border rounded-lg bg-background shadow-lg h-32 w-48 overflow-hidden">
                         <video ref={videoRef} className="w-full h-full object-cover" autoPlay muted />
-                        { !mediaPermissions.video && (
+                        { !hasCameraPermission && (
                             <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center p-2 text-center text-white">
                                 <AlertTriangle className="w-6 h-6 mb-2"/>
                                 <p className="text-xs">Enable camera permissions to see yourself.</p>
