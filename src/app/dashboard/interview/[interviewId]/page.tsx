@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef, Suspense } from 'react';
@@ -28,7 +29,7 @@ const statusInfo: { [key in InterviewStatus]: { text: string; showMic?: boolean 
   listening: { text: "Hold Space to Talk", showMic: true },
   speaking: { text: "Kathy is Speaking..." },
   processing: { text: "Processing your answer..." },
-  finished: { text: "Interview Finished" },
+  finished: { text: "Interview Finished. Generating your feedback..." },
   error: { text: "Connection Error" },
 };
 
@@ -102,12 +103,13 @@ function InterviewComponent() {
             router.push(`/dashboard/interview/${finalActivity.id}/results`);
         } catch(e) {
             console.error("Failed to generate and save feedback:", e);
+            toast({ title: "Feedback Error", description: "Could not generate feedback for this interview.", variant: "destructive"});
              router.push('/dashboard/arena');
         }
-    } else {
+    } else if (!save) {
         router.push('/dashboard/arena');
     }
-  }, [user, interviewId, topic, role, level, company, router, transcript]);
+  }, [user, interviewId, topic, role, level, company, router, transcript, toast]);
 
 
   const playAudio = useCallback(() => {
@@ -206,8 +208,8 @@ function InterviewComponent() {
 
   const startRecording = useCallback(async () => {
     if (isRecording || status !== 'listening') return;
-    setIsRecording(true);
     finalTranscriptRef.current = '';
+    setIsRecording(true);
 
     try {
         const response = await fetch('/api/auth/deepgram-key', { method: 'POST' });
@@ -365,7 +367,7 @@ function InterviewComponent() {
 
   return (
     <div ref={mainContainerRef} className="flex h-screen w-full flex-col items-center justify-center bg-background text-foreground p-4">
-        {status === 'error' || status === 'generating_questions' || status === 'initializing' ? (
+        {status === 'error' || status === 'generating_questions' || status === 'initializing' || status === 'finished' ? (
              <Card className="w-full max-w-lg text-center p-8">
                 {status === 'error' ? (
                      <div className="text-destructive">
@@ -448,7 +450,7 @@ function InterviewComponent() {
                   <Button variant="outline" size="icon" className="rounded-full h-14 w-14">
                     <Video className="w-6 h-6"/>
                  </Button>
-                 <Button variant="destructive" size="icon" className="rounded-full h-14 w-14" onClick={() => stopInterview(true)} disabled={status === 'initializing' || status === 'finished'}>
+                 <Button variant="destructive" size="icon" className="rounded-full h-14 w-14" onClick={() => stopInterview(false)} disabled={status === 'initializing' || status === 'finished'}>
                     <PhoneOff className="w-6 h-6" />
                  </Button>
                  <Button variant="outline" size="icon" className="rounded-full h-14 w-14" onClick={toggleFullScreen}>
@@ -468,5 +470,7 @@ export default function InterviewPage() {
         </Suspense>
     )
 }
+
+    
 
     
