@@ -143,10 +143,10 @@ export default function CodingQuizAnalysisPage() {
             <AccordionItem value={`item-${index}`} key={index}>
               <AccordionTrigger className="text-lg text-left hover:no-underline">
                 <div className="flex justify-between items-center w-full pr-4">
-                    <span className="truncate">Question {index + 1}: {state.question.questionText}</span>
+                    <span className="truncate flex-1" dangerouslySetInnerHTML={{ __html: `Question ${index + 1}: ${state.question.questionText}` }} />
                     {analysis[index].isCorrect ? 
-                        <CheckCircle className="h-6 w-6 text-green-500 shrink-0" /> : 
-                        <XCircle className="h-6 w-6 text-red-500 shrink-0" />
+                        <CheckCircle className="h-6 w-6 text-green-500 shrink-0 ml-4" /> : 
+                        <XCircle className="h-6 w-6 text-red-500 shrink-0 ml-4" />
                     }
                 </div>
               </AccordionTrigger>
