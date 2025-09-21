@@ -439,7 +439,7 @@ function InterviewComponent() {
                  <Button 
                     variant={isRecording ? "destructive" : "outline"} 
                     size="icon" 
-                    className={cn("rounded-full h-14 w-14 transition-colors", isRecording && "animate-pulse")}
+                    className={cn("rounded-full h-14 w-14 transition-all", isRecording && "animate-pulse ring-4 ring-destructive/50")}
                     onMouseDown={startRecording}
                     onMouseUp={stopRecording}
                     onTouchStart={startRecording}
