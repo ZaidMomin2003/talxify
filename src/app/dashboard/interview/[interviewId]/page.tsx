@@ -397,7 +397,6 @@ function InterviewComponent() {
                                 status === 'speaking' ? 'bg-blue-500/20' : 'bg-transparent'
                             )}></div>
                         </div>
-                        <h2 className="text-2xl font-bold font-headline">Kathy</h2>
                     </div>
 
                     <div className="absolute bottom-4 right-4 border rounded-lg bg-background shadow-lg h-32 w-48 overflow-hidden">
