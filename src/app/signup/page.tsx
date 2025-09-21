@@ -79,7 +79,7 @@ export default function SignupPage() {
     try {
       await signInWithGitHub();
       router.push('/dashboard');
-    } catch (error: any)
+    } catch (error: any) {
       console.error(error);
       toast({
         title: "GitHub sign-up failed",
