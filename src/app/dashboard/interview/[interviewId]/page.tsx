@@ -392,7 +392,7 @@ function InterviewComponent() {
                             isRecording ? 'border-red-500/50' :
                             status === 'speaking' ? 'border-blue-500/50' : 'border-border'
                         )}>
-                            <Image src="/robot.png" alt="Kathy" width={192} height={192} className="rounded-full" data-ai-hint="robot face" />
+                            <Image src="/popup.png" alt="AI Interviewer" width={192} height={192} className="rounded-full object-cover" data-ai-hint="abstract illustration" />
                              <div className={cn("absolute inset-0 rounded-full animate-pulse",
                                 isRecording ? 'bg-red-500/20' : 
                                 status === 'speaking' ? 'bg-blue-500/20' : 'bg-transparent'
@@ -470,8 +470,3 @@ export default function InterviewPage() {
         </Suspense>
     )
 }
-
-    
-
-    
-
