@@ -208,6 +208,7 @@ function InterviewComponent() {
 
   const startRecording = useCallback(async () => {
     if (isRecording || status !== 'listening') return;
+    
     finalTranscriptRef.current = '';
     setIsRecording(true);
 
@@ -473,3 +474,4 @@ export default function InterviewPage() {
     
 
     
+
