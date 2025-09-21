@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef, Suspense } from 'react';
@@ -25,9 +24,9 @@ type InterviewStatus = 'initializing' | 'generating_questions' | 'ready' | 'list
 const statusInfo: { [key in InterviewStatus]: { text: string; showMic?: boolean } } = {
   initializing: { text: "Initializing Session..." },
   generating_questions: { text: "Kathy is preparing your questions..." },
-  ready: { text: "Ready to Start. Kathy will speak first." },
+  ready: { text: "Ready to Start. The AI will speak first." },
   listening: { text: "Hold Space to Talk", showMic: true },
-  speaking: { text: "Kathy is Speaking..." },
+  speaking: { text: "AI is Speaking..." },
   processing: { text: "Processing your answer..." },
   finished: { text: "Interview Finished. Generating your feedback..." },
   error: { text: "Connection Error" },
@@ -189,8 +188,8 @@ function InterviewComponent() {
   useEffect(() => {
     if (status === 'ready' && questions.length > 0 && transcript.length === 0) {
       const intro = isIcebreaker 
-        ? "Hello, I'm Kathy from Talxify. Let's start with a quick icebreaker. Can you please tell me a bit about yourself?"
-        : `Hello, I'm Kathy, your interviewer today. We'll be discussing ${topic} for a ${level} ${role} role. Let's begin with your first question.`;
+        ? "Hello, I'm from Talxify. Let's start with a quick icebreaker. Can you please tell me a bit about yourself?"
+        : `Hello, I'm your interviewer today. We'll be discussing ${topic} for a ${level} ${role} role. Let's begin with your first question.`;
       
       setTranscript([{ speaker: 'ai', text: intro }]);
       speak(intro);
@@ -227,7 +226,7 @@ function InterviewComponent() {
 
         connection.on(LiveTranscriptionEvents.Open, async () => {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            recorder.current = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+            recorder.current = new MediaRecorder(stream);
             
             recorder.current.ondataavailable = (event) => {
                 if (event.data.size > 0 && connection.getReadyState() === 1) {
@@ -425,7 +424,7 @@ function InterviewComponent() {
                             {transcript.map((entry, index) => (
                                 <div key={index} className={cn("flex flex-col", entry.speaker === 'user' ? 'items-end' : 'items-start')}>
                                     <div className={cn("max-w-[90%] p-3 rounded-lg", entry.speaker === 'user' ? 'bg-background text-foreground' : 'bg-orange-500/20 text-orange-900 dark:text-orange-200')}>
-                                        <p className="font-bold mb-1 capitalize">{entry.speaker === 'ai' ? 'Kathy' : 'You'}</p>
+                                        <p className="font-bold mb-1 capitalize">{entry.speaker === 'ai' ? 'AI' : 'You'}</p>
                                         <p>{entry.text}</p>
                                     </div>
                                 </div>
@@ -471,3 +470,5 @@ export default function InterviewPage() {
     )
 }
 
+
+    
