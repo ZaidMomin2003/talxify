@@ -90,9 +90,10 @@ function InterviewComponent() {
             },
         };
         await addActivity(user.uid, interviewActivity);
+        router.push(`/dashboard/interview/${interviewId}/results`);
+    } else {
+        router.push('/dashboard/arena');
     }
-
-    router.push('/dashboard/arena');
 
   }, [user, interviewId, transcript, router, topic, role, level, company]);
 
@@ -146,7 +147,8 @@ function InterviewComponent() {
         speak(questionText);
         setCurrentQuestionIndex(prev => prev + 1);
     } else {
-        const closingStatement = "That's all the questions I have for now. Thank you for your time. We'll be in touch.";
+        const closingStatement = "That's all the questions I have for now. Thank you for your time. Your results will be available shortly.";
+        setTranscript(prev => [...prev, { speaker: 'ai', text: closingStatement }]);
         speak(closingStatement);
     }
   }, [currentQuestionIndex, questions, speak]);
@@ -161,7 +163,11 @@ function InterviewComponent() {
         setStatus('generating_questions');
         try {
             const result = await generateInterviewQuestions({ role, level, technologies: topic });
-            setQuestions(result.questions.slice(0, isIcebreaker ? 2 : 4));
+            const intro = isIcebreaker 
+                ? "Hello, I'm Kathy from Talxify. Let's start with a quick icebreaker. Can you please tell me a bit about yourself?"
+                : `Hello, I'm Kathy, your interviewer today. We'll be discussing ${topic} for a ${level} ${role} role. Let's begin with your first question.`;
+            
+            setQuestions([intro, ...result.questions.slice(0, isIcebreaker ? 2 : 4)]);
             setStatus('ready');
         } catch (error) {
             console.error("Failed to generate questions:", error);
@@ -174,22 +180,9 @@ function InterviewComponent() {
 
   useEffect(() => {
     if (status === 'ready' && questions.length > 0 && transcript.length === 0) {
-      const intro = isIcebreaker 
-        ? "Hello, I'm from Talxify. Let's start with a quick icebreaker. Can you please tell me a bit about yourself?"
-        : `Hello, I'm your interviewer today. We'll be discussing ${topic} for a ${level} ${role} role. Let's begin with your first question.`;
-      
-      setTranscript([{ speaker: 'ai', text: intro }]);
-      speak(intro);
-      
-      setTimeout(() => {
-        if(!isIcebreaker) {
-            askNextQuestion();
-        } else {
-            setStatus('listening');
-        }
-      }, isIcebreaker ? 4000 : 5000);
+        askNextQuestion();
     }
-  }, [status, questions, transcript, askNextQuestion, speak, role, level, topic, isIcebreaker]);
+  }, [status, questions, transcript, askNextQuestion]);
   
 
   const startRecording = useCallback(async () => {
@@ -199,11 +192,13 @@ function InterviewComponent() {
     
     try {
         const response = await fetch('/api/auth/deepgram-key', { method: 'POST' });
+        if (!response.ok) {
+            throw new Error(`Failed to get Deepgram key: ${response.statusText}`);
+        }
         const data = await response.json();
         if (data.error) throw new Error(data.error);
-        const { key } = data;
 
-        const deepgram = createClient(key);
+        const deepgram = createClient(data.key);
         const connection = deepgram.listen.live({
             model: "nova-2",
             interim_results: true,
@@ -213,17 +208,21 @@ function InterviewComponent() {
         deepgramConnection.current = connection;
 
         connection.on(LiveTranscriptionEvents.Open, async () => {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm;codecs=opus' });
-            
-            mediaRecorder.ondataavailable = (event) => {
-                if (event.data.size > 0 && connection.getReadyState() === 1) {
-                    connection.send(event.data);
-                }
-            };
-            
-            mediaRecorder.start(250);
-            recorder.current = mediaRecorder;
+             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+             if (connection.getReadyState() === 1 /* OPEN */) {
+                const mediaRecorder = new MediaRecorder(stream);
+                
+                mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0 && connection.getReadyState() === 1) {
+                        connection.send(event.data);
+                    }
+                };
+                
+                mediaRecorder.start(250);
+                recorder.current = mediaRecorder;
+                setIsRecording(true);
+                setStatus('listening');
+             }
         });
         
         connection.on(LiveTranscriptionEvents.Transcript, (data) => {
@@ -242,9 +241,6 @@ function InterviewComponent() {
             setStatus('error');
         });
 
-        setIsRecording(true);
-        setStatus('listening');
-
     } catch(e) {
         console.error("Failed to start Deepgram:", e);
         setStatus('error');
@@ -258,7 +254,6 @@ function InterviewComponent() {
 
     if (recorder.current && recorder.current.state === 'recording') {
         recorder.current.stop();
-        // Stop all tracks on the stream to release the microphone
         const stream = recorder.current.stream;
         stream.getTracks().forEach(track => track.stop());
     }
@@ -271,14 +266,10 @@ function InterviewComponent() {
         if (finalTranscriptRef.current.trim()) {
             setTranscript(prev => [...prev, { speaker: 'user', text: finalTranscriptRef.current.trim() }]);
         }
-        
-        const ack = "Okay, thank you for sharing that.";
-        setTranscript(prev => [...prev, { speaker: 'ai', text: ack }]);
-        speak(ack);
-        setTimeout(() => askNextQuestion(), 3000);
+        askNextQuestion();
     }, 500);
 
-  }, [isRecording, askNextQuestion, speak]);
+  }, [isRecording, askNextQuestion]);
 
 
   useEffect(() => {
@@ -415,3 +406,5 @@ export default function InterviewPage() {
         </Suspense>
     )
 }
+
+    
