@@ -19,7 +19,7 @@ import Image from "next/image";
 
 export default function LandingPage() {
   return (
-    <div className="flex flex-col min-h-screen bg-black overflow-x-hidden relative text-white">
+    <div className="dark flex flex-col min-h-screen bg-black overflow-x-hidden relative text-white">
        <div className="absolute inset-0 z-0 h-full w-full rotate-180 items-center px-5 py-24 opacity-80 [background:radial-gradient(125%_125%_at_50%_10%,#000_40%,#e63946_100%)]"></div>
        <svg
         id="noice"
