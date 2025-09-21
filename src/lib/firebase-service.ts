@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { doc, getDoc, setDoc, updateDoc, arrayUnion, collection, getDocs, addDoc, serverTimestamp, runTransaction, deleteDoc, increment } from 'firebase/firestore';
@@ -6,7 +7,7 @@ import { db } from './firebase';
 import type { UserData, Portfolio, StoredActivity, OnboardingData, SurveySubmission, IcebreakerData } from './types';
 import { initialPortfolioData } from './initial-data';
 import type { SyllabusDay } from '@/ai/flows/generate-syllabus';
-import { format } from 'date-fns';
+import { format, differenceInHours } from 'date-fns';
 
 // --- User Data ---
 
@@ -210,8 +211,30 @@ export const checkAndIncrementResumeExports = async (userId: string): Promise<{ 
 // --- Portfolio ---
 
 export const getPortfolio = async (userId: string): Promise<Portfolio | null> => {
-  const userData = await getUserData(userId);
-  return userData?.portfolio ?? null;
+  const userDoc = await getUserData(userId);
+  if (!userDoc) return null;
+
+  const isFreePlan = !userDoc.subscription?.plan || userDoc.subscription.plan === 'free';
+  const creationDate = userDoc.id ? (await getDoc(doc(db, 'users', userDoc.id))).data()?.portfolio.personalInfo.email ? new Date((await getDoc(doc(db, 'users', userDoc.id))).data()?.timestamp.seconds * 1000) : new Date() : new Date();
+  
+  let hoursSinceCreation = 0;
+  if(userDoc.id){
+      const docSnap = await getDoc(doc(db, 'users', userDoc.id));
+      if(docSnap.exists()){
+          const data = docSnap.data();
+          if(data.timestamp){
+              hoursSinceCreation = differenceInHours(new Date(), new Date(data.timestamp.seconds * 1000));
+          }
+      }
+  }
+  
+  const trialExpired = hoursSinceCreation > 24;
+
+  if (isFreePlan && trialExpired) {
+    return null; // Don't return portfolio for free users after 24h
+  }
+
+  return userDoc.portfolio ?? null;
 };
 
 

@@ -1,26 +1,26 @@
 
+
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Loader2, AlertTriangle, LogIn, Bot, BadgeHelp, Download } from 'lucide-react';
 import { getSurveySubmissions } from '@/app/zaidmin/actions';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import type { SurveySubmission } from '@/lib/types';
+import { useAuth } from '@/context/auth-context';
+import { useRouter } from 'next/navigation';
 
 export default function SurveySubmissionsPage() {
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const [password, setPassword] = useState('');
-    const [error, setError] = useState('');
-    const [isLoggingIn, setIsLoggingIn] = useState(false);
+    const { user, loading } = useAuth();
+    const router = useRouter();
     
     const [submissions, setSubmissions] = useState<SurveySubmission[]>([]);
     const [isLoadingData, setIsLoadingData] = useState(false);
+    const [error, setError] = useState('');
 
     const fetchSubmissions = useCallback(async () => {
         setIsLoadingData(true);
@@ -36,29 +36,12 @@ export default function SurveySubmissionsPage() {
     }, []);
 
     useEffect(() => {
-        if (sessionStorage.getItem('isAdminAuthenticated') === 'true') {
-            setIsAuthenticated(true);
-            fetchSubmissions();
+        if (!loading) {
+            if (user && user.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL) {
+                fetchSubmissions();
+            }
         }
-    }, [fetchSubmissions]);
-
-    const handleLogin = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setIsLoggingIn(true);
-        setError('');
-
-        // Simulate a small delay for better UX
-        await new Promise(resolve => setTimeout(resolve, 500));
-
-        if (password === 'Zaid@226194') {
-            sessionStorage.setItem('isAdminAuthenticated', 'true');
-            setIsAuthenticated(true);
-            await fetchSubmissions(); // Fetch data right after successful login
-        } else {
-            setError('Invalid password.');
-        }
-        setIsLoggingIn(false);
-    };
+    }, [user, loading, fetchSubmissions]);
 
     const exportToCSV = () => {
         if (submissions.length === 0) return;
@@ -101,36 +84,25 @@ export default function SurveySubmissionsPage() {
         document.body.removeChild(link);
     };
 
-    if (!isAuthenticated) {
+    if (loading) {
+        return <div className="flex h-screen items-center justify-center"><Loader2 className="w-16 h-16 animate-spin text-primary" /></div>;
+    }
+
+    if (!user || user.email !== process.env.NEXT_PUBLIC_ADMIN_EMAIL) {
         return (
-            <div className="flex items-center justify-center min-h-screen bg-muted/40">
-                <Card className="w-full max-w-sm shadow-2xl">
-                    <CardHeader className="text-center">
+             <div className="flex items-center justify-center min-h-screen bg-muted/40">
+                <Card className="w-full max-w-sm shadow-2xl text-center">
+                    <CardHeader>
                         <div className="flex justify-center mb-4">
-                            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                                <Bot size={32} />
-                            </div>
+                             <AlertTriangle className="h-14 w-14 text-destructive" />
                         </div>
-                        <CardTitle className="text-2xl font-bold font-headline">Admin Access</CardTitle>
-                        <CardDescription>Enter password to view survey submissions.</CardDescription>
+                        <CardTitle className="text-2xl font-bold font-headline">Access Denied</CardTitle>
+                        <CardDescription>You do not have permission to view this page.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <form onSubmit={handleLogin} className="space-y-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="password">Password</Label>
-                                <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-                            </div>
-                            {error && (
-                                <div className="flex items-center gap-2 text-sm font-medium text-destructive">
-                                    <AlertTriangle className="h-4 w-4" />
-                                    {error}
-                                </div>
-                            )}
-                            <Button type="submit" className="w-full" disabled={isLoggingIn}>
-                                {isLoggingIn ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <LogIn className="mr-2 h-4 w-4" />}
-                                View Submissions
-                            </Button>
-                        </form>
+                        <Button onClick={() => router.push('/dashboard')}>
+                            Go to Dashboard
+                        </Button>
                     </CardContent>
                 </Card>
             </div>
@@ -228,5 +200,3 @@ export default function SurveySubmissionsPage() {
         </main>
     )
 }
-
-    

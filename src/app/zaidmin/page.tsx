@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useEffect, useState, useMemo, useCallback } from 'react';
@@ -13,6 +14,8 @@ import { Bot, DollarSign, Users, ShoppingCart, Loader2, LogIn, AlertTriangle } f
 import type { UserData } from '@/lib/types';
 import { getAllUsersAdmin } from './actions';
 import { format, subDays, eachDayOfInterval } from 'date-fns';
+import { useAuth } from '@/context/auth-context';
+import { useRouter } from 'next/navigation';
 
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
@@ -230,61 +233,34 @@ const AdminDashboard = () => {
 
 
 export default function AdminPage() {
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const [username, setUsername] = useState('');
-    const [password, setPassword] = useState('');
-    const [error, setError] = useState('');
-    const [isLoggingIn, setIsLoggingIn] = useState(false);
+    const { user, loading } = useAuth();
+    const router = useRouter();
 
-    const handleLogin = (e: React.FormEvent) => {
-        e.preventDefault();
-        setIsLoggingIn(true);
-        setError('');
-
-        setTimeout(() => {
-            if (username === 'zaid' && password === 'admin') {
-                setIsAuthenticated(true);
-            } else {
-                setError('Invalid username or password.');
-            }
-            setIsLoggingIn(false);
-        }, 1000);
-    };
-
-    if (!isAuthenticated) {
+    if (loading) {
         return (
+            <div className="flex h-screen items-center justify-center">
+                <Loader2 className="h-12 w-12 animate-spin text-primary" />
+            </div>
+        );
+    }
+    
+    const isAdmin = user && user.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+
+    if (!isAdmin) {
+         return (
             <div className="flex items-center justify-center min-h-screen bg-muted/40">
-                <Card className="w-full max-w-sm shadow-2xl">
-                    <CardHeader className="text-center">
+                <Card className="w-full max-w-sm shadow-2xl text-center">
+                    <CardHeader>
                         <div className="flex justify-center mb-4">
-                            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                                <Bot size={32} />
-                            </div>
+                             <AlertTriangle className="h-14 w-14 text-destructive" />
                         </div>
-                        <CardTitle className="text-2xl font-bold font-headline">Admin Access</CardTitle>
-                        <CardDescription>Enter your credentials to access the dashboard.</CardDescription>
+                        <CardTitle className="text-2xl font-bold font-headline">Access Denied</CardTitle>
+                        <CardDescription>You do not have permission to view this page.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <form onSubmit={handleLogin} className="space-y-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="username">Username</Label>
-                                <Input id="username" value={username} onChange={(e) => setUsername(e.target.value)} required />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="password">Password</Label>
-                                <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-                            </div>
-                            {error && (
-                                <div className="flex items-center gap-2 text-sm font-medium text-destructive">
-                                    <AlertTriangle className="h-4 w-4" />
-                                    {error}
-                                </div>
-                            )}
-                            <Button type="submit" className="w-full" disabled={isLoggingIn}>
-                                {isLoggingIn ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <LogIn className="mr-2 h-4 w-4" />}
-                                Sign In
-                            </Button>
-                        </form>
+                        <Button onClick={() => router.push('/dashboard')}>
+                            Go to Dashboard
+                        </Button>
                     </CardContent>
                 </Card>
             </div>

@@ -1,5 +1,6 @@
 
 
+
 "use client"
 
 import { Button } from "@/components/ui/button";
@@ -12,12 +13,11 @@ import { PlusCircle, Trash2, Loader2, Lock, Gem, ExternalLink, Link as LinkIcon,
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/auth-context";
-import { getPortfolio, updatePortfolio, getUserData } from "@/lib/firebase-service";
-import type { Portfolio, Project, Certificate, Achievement, Testimonial, FAQ, Skill, WorkExperience, Education, UserData } from "@/lib/types";
+import { getPortfolio, updatePortfolio } from "@/lib/firebase-service";
+import type { Portfolio, Project, Certificate, Achievement, Testimonial, FAQ, Skill, WorkExperience, Education } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { initialPortfolioData } from "@/lib/initial-data";
 import { Slider } from "@/components/ui/slider";
-import { differenceInHours } from 'date-fns';
 import Image from "next/image";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger, DialogClose } from "@/components/ui/dialog";
 import Script from "next/script";
@@ -149,7 +149,6 @@ export default function PortfolioPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [portfolio, setPortfolio] = useState<Portfolio | null>(null);
-  const [userData, setUserData] = useState<UserData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   
@@ -161,16 +160,18 @@ export default function PortfolioPage() {
   const fetchPortfolio = useCallback(async () => {
     if (!user) return;
     setIsLoading(true);
-    const [portfolioData, allUserData] = await Promise.all([
-        getPortfolio(user.uid),
-        getUserData(user.uid)
-    ]);
-    const currentPortfolio = portfolioData ?? initialPortfolioData.portfolio;
-    if (!currentPortfolio.displayOptions) {
-        currentPortfolio.displayOptions = initialPortfolioData.portfolio.displayOptions;
+    const portfolioData = await getPortfolio(user.uid);
+    if (portfolioData) {
+        const currentPortfolio = portfolioData ?? initialPortfolioData.portfolio;
+        if (!currentPortfolio.displayOptions) {
+            currentPortfolio.displayOptions = initialPortfolioData.portfolio.displayOptions;
+        }
+        setPortfolio(currentPortfolio);
+    } else {
+        // If getPortfolio returns null (e.g., free user trial expired), we keep portfolio as null
+        setPortfolio(null);
     }
-    setPortfolio(currentPortfolio);
-    setUserData(allUserData);
+    
     setIsLoading(false);
   }, [user]);
 
@@ -297,22 +298,18 @@ export default function PortfolioPage() {
   };
 
 
-  if (isLoading || !portfolio || !userData || !user) {
+  if (isLoading) {
     return (
       <div className="flex h-full w-full items-center justify-center">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
       </div>
     );
   }
-
-  const isFreePlan = !userData.subscription?.plan || userData.subscription.plan === 'free';
-  const creationDate = user.metadata.creationTime ? new Date(user.metadata.creationTime) : new Date();
-  const hoursSinceCreation = differenceInHours(new Date(), creationDate);
-  const trialExpired = hoursSinceCreation > 24;
-
-  if (isFreePlan && trialExpired) {
-      return <LockedFeature />;
+  
+  if (!portfolio) {
+    return <LockedFeature />;
   }
+
 
   return (
     <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
