@@ -27,6 +27,7 @@ export const createUserDocument = async (userId: string, email: string, name: st
       onboardingCompleted: false,
       syllabus: [],
       retakeCounts: {},
+      timestamp: serverTimestamp(),
     };
     initialData.portfolio.personalInfo.email = email;
     initialData.portfolio.personalInfo.name = name;
@@ -211,30 +212,14 @@ export const checkAndIncrementResumeExports = async (userId: string): Promise<{ 
 // --- Portfolio ---
 
 export const getPortfolio = async (userId: string): Promise<Portfolio | null> => {
-  const userDoc = await getUserData(userId);
-  if (!userDoc) return null;
+    const userDocData = await getUserData(userId);
+    if (!userDocData) {
+        return null;
+    }
 
-  const isFreePlan = !userDoc.subscription?.plan || userDoc.subscription.plan === 'free';
-  const creationDate = userDoc.id ? (await getDoc(doc(db, 'users', userDoc.id))).data()?.portfolio.personalInfo.email ? new Date((await getDoc(doc(db, 'users', userDoc.id))).data()?.timestamp.seconds * 1000) : new Date() : new Date();
-  
-  let hoursSinceCreation = 0;
-  if(userDoc.id){
-      const docSnap = await getDoc(doc(db, 'users', userDoc.id));
-      if(docSnap.exists()){
-          const data = docSnap.data();
-          if(data.timestamp){
-              hoursSinceCreation = differenceInHours(new Date(), new Date(data.timestamp.seconds * 1000));
-          }
-      }
-  }
-  
-  const trialExpired = hoursSinceCreation > 24;
-
-  if (isFreePlan && trialExpired) {
-    return null; // Don't return portfolio for free users after 24h
-  }
-
-  return userDoc.portfolio ?? null;
+    // The resume builder is a free feature, so we don't need to check for subscription status.
+    // The portfolio builder (public page) access is handled on its own page based on plan.
+    return userDocData.portfolio ?? null;
 };
 
 

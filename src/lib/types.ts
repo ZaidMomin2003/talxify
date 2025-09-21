@@ -1,9 +1,11 @@
 
+
 import type { AnswerAnalysis } from "@/ai/flows/analyze-coding-answers";
 import type { GenerateInterviewFeedbackOutput } from "@/ai/flows/generate-interview-feedback";
 import type { QuizState } from "@/app/dashboard/coding-quiz/quiz/page";
 import type { SyllabusDay } from "@/ai/flows/generate-syllabus";
 import { z } from 'genkit';
+import { type serverTimestamp } from "firebase/firestore";
 
 // A generic type for any activity stored in the user's document
 export type StoredActivity = QuizResult | InterviewActivity | NoteGenerationActivity;
@@ -85,6 +87,7 @@ export interface UserData {
     onboardingCompleted: boolean;
     syllabus: SyllabusDay[];
     retakeCounts?: { [topic: string]: number };
+    timestamp?: any;
 }
 
 // --- Auth ---

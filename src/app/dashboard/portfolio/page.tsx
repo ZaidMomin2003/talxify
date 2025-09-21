@@ -13,8 +13,8 @@ import { PlusCircle, Trash2, Loader2, Lock, Gem, ExternalLink, Link as LinkIcon,
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/auth-context";
-import { getPortfolio, updatePortfolio } from "@/lib/firebase-service";
-import type { Portfolio, Project, Certificate, Achievement, Testimonial, FAQ, Skill, WorkExperience, Education } from "@/lib/types";
+import { getPortfolio, updatePortfolio, getUserData as fetchUserData } from "@/lib/firebase-service";
+import type { Portfolio, Project, Certificate, Achievement, Testimonial, FAQ, Skill, WorkExperience, Education, UserData } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { initialPortfolioData } from "@/lib/initial-data";
 import { Slider } from "@/components/ui/slider";
@@ -148,6 +148,7 @@ const colorOptions = [
 export default function PortfolioPage() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const [userData, setUserData] = useState<UserData | null>(null);
   const [portfolio, setPortfolio] = useState<Portfolio | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -157,27 +158,29 @@ export default function PortfolioPage() {
   const [slugMessage, setSlugMessage] = useState('');
 
 
-  const fetchPortfolio = useCallback(async () => {
+  const fetchInitialData = useCallback(async () => {
     if (!user) return;
     setIsLoading(true);
-    const portfolioData = await getPortfolio(user.uid);
-    if (portfolioData) {
-        const currentPortfolio = portfolioData ?? initialPortfolioData.portfolio;
+    
+    const data = await fetchUserData(user.uid);
+    setUserData(data);
+
+    if (data?.portfolio) {
+        const currentPortfolio = data.portfolio ?? initialPortfolioData.portfolio;
         if (!currentPortfolio.displayOptions) {
             currentPortfolio.displayOptions = initialPortfolioData.portfolio.displayOptions;
         }
         setPortfolio(currentPortfolio);
     } else {
-        // If getPortfolio returns null (e.g., free user trial expired), we keep portfolio as null
-        setPortfolio(null);
+        setPortfolio(initialPortfolioData.portfolio);
     }
     
     setIsLoading(false);
   }, [user]);
 
   useEffect(() => {
-    fetchPortfolio();
-  }, [fetchPortfolio]);
+    fetchInitialData();
+  }, [fetchInitialData]);
 
   const handleSave = async () => {
     if (!user || !portfolio) return;
@@ -297,6 +300,9 @@ export default function PortfolioPage() {
     });
   };
 
+  const isFreePlan = !userData?.subscription?.plan || userData?.subscription?.plan === 'free';
+  const isPortfolioLocked = isFreePlan && (!userData?.subscription.endDate || new Date() > new Date(userData.subscription.endDate));
+
 
   if (isLoading) {
     return (
@@ -306,8 +312,21 @@ export default function PortfolioPage() {
     );
   }
   
-  if (!portfolio) {
+  if (isPortfolioLocked && isFreePlan) {
     return <LockedFeature />;
+  }
+
+  if (!portfolio) {
+      return (
+        <div className="flex h-full w-full items-center justify-center">
+             <Card className="max-w-md w-full text-center shadow-lg">
+                 <CardHeader>
+                    <CardTitle>Error</CardTitle>
+                    <CardDescription>Could not load portfolio data.</CardDescription>
+                </CardHeader>
+             </Card>
+        </div>
+      )
   }
 
 
