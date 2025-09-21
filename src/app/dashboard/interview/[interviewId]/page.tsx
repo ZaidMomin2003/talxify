@@ -9,7 +9,7 @@ import { addActivity } from '@/lib/firebase-service';
 import type { InterviewActivity, TranscriptEntry } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Loader2, Mic, Bot, PhoneOff, AlertTriangle, User, BrainCircuit, MessageSquare, Maximize, Video } from 'lucide-react';
+import { Loader2, Mic, Bot, PhoneOff, AlertTriangle, User, BrainCircuit, MessageSquare, Maximize, Video, MicOff } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { generateInterviewFeedback } from '@/ai/flows/generate-interview-feedback';
@@ -19,11 +19,12 @@ import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
-type InterviewStatus = 'initializing' | 'generating_questions' | 'ready' | 'listening' | 'speaking' | 'processing' | 'finished' | 'error';
+type InterviewStatus = 'permissions' | 'initializing' | 'generating_questions' | 'ready' | 'listening' | 'speaking' | 'processing' | 'finished' | 'error';
 
 const statusInfo: { [key in InterviewStatus]: { text: string; showMic?: boolean } } = {
+  permissions: { text: "Waiting for camera & microphone permissions..." },
   initializing: { text: "Initializing Session..." },
-  generating_questions: { text: "Kathy is preparing your questions..." },
+  generating_questions: { text: "Preparing your questions..." },
   ready: { text: "Ready to Start. The AI will speak first." },
   listening: { text: "Hold Space to Talk", showMic: true },
   speaking: { text: "AI is Speaking..." },
@@ -40,13 +41,13 @@ function InterviewComponent() {
   const params = useParams();
   const { toast } = useToast();
 
-  const [status, setStatus] = useState<InterviewStatus>('initializing');
+  const [status, setStatus] = useState<InterviewStatus>('permissions');
   const [questions, setQuestions] = useState<string[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [transcript, setTranscript] = useState<TranscriptEntry[]>([]);
   const [isRecording, setIsRecording] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(false);
-  const [hasCameraPermission, setHasCameraPermission] = useState(false);
+  const [mediaPermissions, setMediaPermissions] = useState({ video: false, audio: false });
   
   const deepgramConnection = useRef<LiveClient | null>(null);
   const recorder = useRef<MediaRecorder | null>(null);
@@ -94,7 +95,7 @@ function InterviewComponent() {
                 type: 'interview',
                 timestamp: new Date().toISOString(),
                 transcript: transcript,
-                feedback: "Feedback generated.", // This is a placeholder
+                feedback: "Feedback generated.",
                 analysis: feedback,
                 details: { topic, role, level, company, score: feedback.overallScore }
             };
@@ -105,7 +106,7 @@ function InterviewComponent() {
             toast({ title: "Feedback Error", description: "Could not generate feedback for this interview.", variant: "destructive"});
              router.push('/dashboard/arena');
         }
-    } else if (!save) {
+    } else {
         router.push('/dashboard/arena');
     }
   }, [user, interviewId, topic, role, level, company, router, transcript, toast]);
@@ -160,7 +161,8 @@ function InterviewComponent() {
         speak(questionText);
         setCurrentQuestionIndex(prev => prev + 1);
     } else {
-        speak("That's all the questions I have for now. Thank you for your time.");
+        const closingStatement = "That's all the questions I have for now. Thank you for your time. We'll be in touch.";
+        speak(closingStatement);
     }
   }, [currentQuestionIndex, questions, speak]);
 
@@ -170,8 +172,29 @@ function InterviewComponent() {
         router.push('/login');
         return;
     }
+    
+    async function initialize() {
+        // Step 1: Get media permissions
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            if (videoRef.current) {
+              videoRef.current.srcObject = stream;
+            }
+            setMediaPermissions({ video: true, audio: true });
+            setStatus('initializing');
+        } catch (error) {
+            console.error('Error accessing media devices:', error);
+            setMediaPermissions({ video: false, audio: false });
+            setStatus('error');
+            toast({
+              variant: 'destructive',
+              title: 'Media Access Denied',
+              description: 'Please enable camera and microphone permissions in your browser settings to continue.',
+            });
+            return;
+        }
 
-    const generateQuestions = async () => {
+        // Step 2: Generate questions (can happen in parallel)
         setStatus('generating_questions');
         try {
             const result = await generateInterviewQuestions({ role, level, technologies: topic });
@@ -181,8 +204,22 @@ function InterviewComponent() {
             console.error("Failed to generate questions:", error);
             setStatus('error');
         }
-    };
-    generateQuestions();
+    }
+    
+    initialize();
+
+    return () => {
+        // Cleanup connections on component unmount
+        if (recorder.current && recorder.current.state === 'recording') recorder.current.stop();
+        if (deepgramConnection.current) deepgramConnection.current.finish();
+         // Stop camera stream on cleanup
+          if (videoRef.current && videoRef.current.srcObject) {
+              const stream = videoRef.current.srcObject as MediaStream;
+              stream.getTracks().forEach(track => track.stop());
+          }
+      };
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, router, role, level, topic, isIcebreaker]);
 
   useEffect(() => {
@@ -206,10 +243,10 @@ function InterviewComponent() {
   
 
   const startRecording = useCallback(async () => {
-    if (isRecording || status !== 'listening') return;
+    if (isRecording || status !== 'listening' || !mediaPermissions.audio) return;
     
     finalTranscriptRef.current = '';
-    setIsRecording(true);
+    setStatus('processing'); // Give immediate feedback that something is happening
 
     try {
         const response = await fetch('/api/auth/deepgram-key', { method: 'POST' });
@@ -222,19 +259,24 @@ function InterviewComponent() {
             model: "nova-2",
             interim_results: true,
             smart_format: true,
+            puncuate: true,
         });
 
         connection.on(LiveTranscriptionEvents.Open, async () => {
+             // Ensure recorder is only created after connection is open
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            recorder.current = new MediaRecorder(stream);
+            const mediaRecorder = new MediaRecorder(stream);
             
-            recorder.current.ondataavailable = (event) => {
+            mediaRecorder.ondataavailable = (event) => {
                 if (event.data.size > 0 && connection.getReadyState() === 1) {
                     connection.send(event.data);
                 }
             };
             
-            recorder.current.start(250); // Start recording and send data every 250ms
+            mediaRecorder.start(250);
+            recorder.current = mediaRecorder;
+            setIsRecording(true);
+            setStatus('listening'); // Now we are truly listening
         });
         
         connection.on(LiveTranscriptionEvents.Transcript, (data) => {
@@ -249,7 +291,7 @@ function InterviewComponent() {
         });
 
         connection.on(LiveTranscriptionEvents.Error, (err) => {
-            console.error(err);
+            console.error("Deepgram Error:", err);
             setStatus('error');
         });
 
@@ -259,29 +301,27 @@ function InterviewComponent() {
         setStatus('error');
         setIsRecording(false);
     }
-  }, [isRecording, status]);
+  }, [isRecording, status, mediaPermissions.audio]);
 
   const stopRecording = useCallback(async () => {
     if (!isRecording) return;
     setIsRecording(false);
+    setStatus('processing');
 
     if (recorder.current && recorder.current.state === 'recording') {
         recorder.current.stop();
-        // Detach the ondataavailable listener to stop sending data
-        recorder.current.ondataavailable = null;
+        // Stop all tracks on the stream to release the microphone
+        const stream = recorder.current.stream;
+        stream.getTracks().forEach(track => track.stop());
         recorder.current = null;
     }
     
-    // Give a very short delay to ensure the last audio packet is sent
     setTimeout(() => {
         if (deepgramConnection.current) {
             deepgramConnection.current.finish();
             deepgramConnection.current = null;
         }
 
-        setStatus('processing');
-
-        // Wait a moment for the final transcript to come in
         setTimeout(() => {
             if (finalTranscriptRef.current.trim()) {
                 setTranscript(prev => [...prev, { speaker: 'user', text: finalTranscriptRef.current.trim() }]);
@@ -291,7 +331,7 @@ function InterviewComponent() {
             setTranscript(prev => [...prev, { speaker: 'ai', text: ack }]);
             speak(ack);
             setTimeout(() => askNextQuestion(), 3000);
-        }, 1500);
+        }, 500);
     }, 250);
 
   }, [isRecording, askNextQuestion, speak]);
@@ -311,44 +351,15 @@ function InterviewComponent() {
         stopRecording();
       }
     };
-    
-    // Camera Permissions
-    const getCameraPermission = async () => {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({video: true});
-        setHasCameraPermission(true);
 
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-        }
-      } catch (error) {
-        console.error('Error accessing camera:', error);
-        setHasCameraPermission(false);
-        toast({
-          variant: 'destructive',
-          title: 'Camera Access Denied',
-          description: 'Please enable camera permissions in your browser settings to use this app.',
-        });
-      }
-    };
-
-    getCameraPermission();
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
 
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
-      // Cleanup connections on component unmount
-      if (recorder.current && recorder.current.state === 'recording') recorder.current.stop();
-      if (deepgramConnection.current) deepgramConnection.current.finish();
-       // Stop camera stream on cleanup
-        if (videoRef.current && videoRef.current.srcObject) {
-            const stream = videoRef.current.srcObject as MediaStream;
-            stream.getTracks().forEach(track => track.stop());
-        }
     };
-  }, [startRecording, stopRecording, isRecording, status, toast]);
+  }, [startRecording, stopRecording, isRecording, status]);
 
   const toggleFullScreen = () => {
     if (!mainContainerRef.current) return;
@@ -367,13 +378,13 @@ function InterviewComponent() {
 
   return (
     <div ref={mainContainerRef} className="flex h-screen w-full flex-col items-center justify-center bg-background text-foreground p-4">
-        {status === 'error' || status === 'generating_questions' || status === 'initializing' || status === 'finished' ? (
+        {status === 'error' || status === 'generating_questions' || status === 'initializing' || status === 'finished' || status === 'permissions' ? (
              <Card className="w-full max-w-lg text-center p-8">
                 {status === 'error' ? (
                      <div className="text-destructive">
                         <AlertTriangle className="w-16 h-16 mx-auto mb-4" />
                         <h2 className="text-xl font-bold">Connection Failed</h2>
-                        <p>Could not connect. Please check microphone permissions and try again.</p>
+                        <p>Could not connect. Please check microphone/camera permissions and try again.</p>
                     </div>
                 ) : (
                     <>
@@ -401,7 +412,7 @@ function InterviewComponent() {
 
                     <div className="absolute bottom-4 right-4 border rounded-lg bg-background shadow-lg h-32 w-48 overflow-hidden">
                         <video ref={videoRef} className="w-full h-full object-cover" autoPlay muted />
-                        { !hasCameraPermission && (
+                        { !mediaPermissions.video && (
                             <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center p-2 text-center text-white">
                                 <AlertTriangle className="w-6 h-6 mb-2"/>
                                 <p className="text-xs">Enable camera permissions to see yourself.</p>
@@ -443,6 +454,7 @@ function InterviewComponent() {
                     onMouseUp={stopRecording}
                     onTouchStart={startRecording}
                     onTouchEnd={stopRecording}
+                    disabled={status !== 'listening' && !isRecording}
                  >
                     <Mic className="w-6 h-6"/>
                  </Button>
@@ -469,6 +481,5 @@ export default function InterviewPage() {
         </Suspense>
     )
 }
-
 
     
