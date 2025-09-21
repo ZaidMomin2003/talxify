@@ -198,7 +198,7 @@ export default function LandingFaq() {
             Can't find what you're looking for?
           </p>
           <a
-            href="#"
+            href="/#contact"
             className="border-primary text-foreground hover:bg-primary hover:text-primary-foreground inline-flex items-center justify-center rounded-lg border-2 px-6 py-3 font-medium transition-colors"
           >
             Contact Support
