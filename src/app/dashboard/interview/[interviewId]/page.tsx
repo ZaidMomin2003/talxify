@@ -424,7 +424,7 @@ function InterviewComponent() {
                         <div className="space-y-4 text-sm">
                             {transcript.map((entry, index) => (
                                 <div key={index} className={cn("flex flex-col", entry.speaker === 'user' ? 'items-end' : 'items-start')}>
-                                    <div className={cn("max-w-[90%] p-3 rounded-lg", entry.speaker === 'user' ? 'bg-primary text-primary-foreground' : 'bg-background')}>
+                                    <div className={cn("max-w-[90%] p-3 rounded-lg", entry.speaker === 'user' ? 'bg-background text-foreground' : 'bg-orange-500/20 text-orange-900 dark:text-orange-200')}>
                                         <p className="font-bold mb-1 capitalize">{entry.speaker === 'ai' ? 'Kathy' : 'You'}</p>
                                         <p>{entry.text}</p>
                                     </div>
@@ -470,3 +470,4 @@ export default function InterviewPage() {
         </Suspense>
     )
 }
+
