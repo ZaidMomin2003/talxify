@@ -42,7 +42,7 @@ import {
   SidebarGroup,
   SidebarGroupLabel,
 } from "@/components/ui/sidebar";
-import { Bot, Code, LayoutGrid, MessageSquare, BarChart, Settings, History, Search, User, LogOut, Gem, LifeBuoy, Sun, Moon, Briefcase, CalendarDays, BrainCircuit, PlayCircle, X, CheckCircle, Circle, Swords, BookOpen, AlertTriangle, FileText, FlaskConical, Rocket } from "lucide-react";
+import { Bot, Code, LayoutGrid, MessageSquare, BarChart, Settings, History, Search, User, LogOut, Gem, LifeBuoy, Sun, Moon, Briefcase, CalendarDays, BrainCircuit, PlayCircle, X, CheckCircle, Circle, Swords, BookOpen, AlertTriangle, FileText, FlaskConical, Rocket, ListChecks } from "lucide-react";
 import type { StoredActivity, QuizResult, UserData, InterviewActivity, NoteGenerationActivity } from "@/lib/types";
 import { formatDistanceToNow, format } from 'date-fns';
 import { useAuth } from "@/context/auth-context";
@@ -52,7 +52,63 @@ import { Switch } from "@/components/ui/switch";
 import { getActivity, getUserData } from "@/lib/firebase-service";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Card } from "@/components/ui/card";
 
+
+function TodoListPopup() {
+    // This is a mock todo list for UI purposes.
+    // It can be made dynamic later.
+    const todoItems = [
+        { id: '1', text: 'Complete Day 2 Arena Challenge', completed: true },
+        { id: '2', text: 'Practice "Two Pointers" coding problems', completed: true },
+        { id: '3', text: 'Retake React Hooks mock interview', completed: false },
+        { id: '4', text: 'Update portfolio with new project', completed: false },
+        { id: '5', text: 'Generate study notes for System Design', completed: false },
+    ];
+
+    return (
+        <Dialog>
+            <DialogTrigger asChild>
+                <div className="group cursor-pointer rounded-lg border-2 border-dashed border-border p-4 text-center hover:border-primary hover:bg-primary/5 transition-all">
+                    <div className="flex justify-center mb-2">
+                        <div className="rounded-full bg-primary/10 p-3 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+                            <ListChecks className="h-6 w-6" />
+                        </div>
+                    </div>
+                    <p className="font-semibold text-foreground">My To-Do List</p>
+                    <p className="text-xs text-muted-foreground">Stay on track with your prep</p>
+                </div>
+            </DialogTrigger>
+            <DialogContent className="max-w-md">
+                <DialogHeader>
+                    <DialogTitle className="text-2xl font-bold flex items-center gap-3">
+                        <ListChecks className="w-6 h-6 text-primary"/>
+                        My Prep To-Do List
+                    </DialogTitle>
+                    <DialogDescription>
+                        Stay organized and focused on your interview preparation goals.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="my-6 space-y-3">
+                    {todoItems.map(item => (
+                        <Card key={item.id} className="p-3">
+                            <div className="flex items-center gap-3">
+                                <Checkbox id={`todo-${item.id}`} checked={item.completed} />
+                                <label
+                                    htmlFor={`todo-${item.id}`}
+                                    className={`flex-1 text-sm font-medium ${item.completed ? 'text-muted-foreground line-through' : 'text-foreground'}`}
+                                >
+                                    {item.text}
+                                </label>
+                            </div>
+                        </Card>
+                    ))}
+                </div>
+            </DialogContent>
+        </Dialog>
+    )
+}
 
 function GettingStartedList({ activity }: { activity: StoredActivity[] }) {
     const { user } = useAuth();
@@ -80,7 +136,7 @@ function GettingStartedList({ activity }: { activity: StoredActivity[] }) {
     }
 
     if (allCompleted) {
-        return null;
+        return <TodoListPopup />;
     }
 
     return (
@@ -374,9 +430,9 @@ function DashboardLayoutContent({
             ))}
           </SidebarMenu>
           <SidebarSeparator />
-           <SidebarGroup>
-                 <GettingStartedList activity={userData.activity || []} />
-            </SidebarGroup>
+          <SidebarGroup>
+                <GettingStartedList activity={userData.activity || []} />
+          </SidebarGroup>
         </SidebarContent>
         <SidebarFooter>
            <div className="p-2 space-y-2">
