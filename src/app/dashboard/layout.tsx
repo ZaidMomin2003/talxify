@@ -55,6 +55,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 
 function TodoListPopup() {
@@ -69,6 +70,7 @@ function TodoListPopup() {
     const [todoItems, setTodoItems] = useState(initialTodoItems);
     const [newTaskText, setNewTaskText] = useState('');
     const [isAdding, setIsAdding] = useState(false);
+    const [activeTab, setActiveTab] = useState('incomplete');
 
     const handleToggle = (id: string) => {
         setTodoItems(items =>
@@ -85,11 +87,15 @@ function TodoListPopup() {
                 text: newTaskText.trim(),
                 completed: false,
             };
-            setTodoItems(items => [...items, newTask]);
+            setTodoItems(items => [newTask, ...items]);
             setNewTaskText('');
             setIsAdding(false);
+            setActiveTab('incomplete'); // Switch to incomplete tab when adding a new task
         }
     };
+    
+    const incompleteTasks = todoItems.filter(item => !item.completed);
+    const completedTasks = todoItems.filter(item => item.completed);
 
 
     return (
@@ -117,22 +123,59 @@ function TodoListPopup() {
                         Stay organized and focused on your interview preparation goals.
                     </DialogDescription>
                 </DialogHeader>
-                <div className="my-6 space-y-3 h-[400px] overflow-y-auto pr-2">
-                    {todoItems.map(item => (
-                        <Card key={item.id} className="p-3">
-                            <div className="flex items-center gap-3">
-                                <Checkbox id={`todo-${item.id}`} checked={item.completed} onCheckedChange={() => handleToggle(item.id)} />
-                                <label
-                                    htmlFor={`todo-${item.id}`}
-                                    className={`flex-1 text-sm font-medium cursor-pointer ${item.completed ? 'text-muted-foreground line-through' : 'text-foreground'}`}
-                                >
-                                    {item.text}
-                                </label>
-                            </div>
-                        </Card>
-                    ))}
-                </div>
-                 <DialogFooter>
+
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                    <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="incomplete">Incomplete</TabsTrigger>
+                        <TabsTrigger value="completed">Completed</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="incomplete">
+                        <div className="h-[400px] overflow-y-auto pr-2 space-y-3 mt-4">
+                            {incompleteTasks.map(item => (
+                                <Card key={item.id} className="p-3">
+                                    <div className="flex items-center gap-3">
+                                        <Checkbox id={`todo-${item.id}`} checked={item.completed} onCheckedChange={() => handleToggle(item.id)} />
+                                        <label
+                                            htmlFor={`todo-${item.id}`}
+                                            className="flex-1 text-sm font-medium cursor-pointer"
+                                        >
+                                            {item.text}
+                                        </label>
+                                    </div>
+                                </Card>
+                            ))}
+                            {incompleteTasks.length === 0 && (
+                                <div className="text-center text-muted-foreground pt-16">
+                                    <p>No pending tasks. Great job!</p>
+                                </div>
+                            )}
+                        </div>
+                    </TabsContent>
+                    <TabsContent value="completed">
+                         <div className="h-[400px] overflow-y-auto pr-2 space-y-3 mt-4">
+                            {completedTasks.map(item => (
+                                <Card key={item.id} className="p-3 bg-muted/50">
+                                    <div className="flex items-center gap-3">
+                                        <Checkbox id={`todo-${item.id}`} checked={item.completed} onCheckedChange={() => handleToggle(item.id)} />
+                                        <label
+                                            htmlFor={`todo-${item.id}`}
+                                            className="flex-1 text-sm font-medium cursor-pointer text-muted-foreground line-through"
+                                        >
+                                            {item.text}
+                                        </label>
+                                    </div>
+                                </Card>
+                            ))}
+                             {completedTasks.length === 0 && (
+                                <div className="text-center text-muted-foreground pt-16">
+                                    <p>No tasks completed yet.</p>
+                                </div>
+                            )}
+                        </div>
+                    </TabsContent>
+                </Tabs>
+                
+                 <DialogFooter className="pt-4">
                     {isAdding ? (
                         <div className="flex w-full gap-2">
                             <Input 
