@@ -70,14 +70,16 @@ function TodoListPopup() {
     return (
         <Dialog>
             <DialogTrigger asChild>
-                <div className="group cursor-pointer rounded-lg border-2 border-dashed border-border p-4 text-center hover:border-primary hover:bg-primary/5 transition-all">
-                    <div className="flex justify-center mb-2">
-                        <div className="rounded-full bg-primary/10 p-3 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+                <div className="group cursor-pointer rounded-lg bg-gradient-to-br from-primary/10 to-background border border-primary/20 p-4 text-left hover:border-primary transition-all">
+                     <div className="flex items-start gap-4">
+                         <div className="rounded-lg bg-primary/10 p-3 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
                             <ListChecks className="h-6 w-6" />
                         </div>
+                        <div>
+                            <p className="font-semibold text-foreground">My To-Do List</p>
+                            <p className="text-xs text-muted-foreground">Stay on track with your prep</p>
+                        </div>
                     </div>
-                    <p className="font-semibold text-foreground">My To-Do List</p>
-                    <p className="text-xs text-muted-foreground">Stay on track with your prep</p>
                 </div>
             </DialogTrigger>
             <DialogContent className="max-w-md">
