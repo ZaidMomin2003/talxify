@@ -375,9 +375,6 @@ function DashboardLayoutContent({
           </SidebarMenu>
           <SidebarSeparator />
            <SidebarGroup>
-                <SidebarGroupLabel className="flex items-center">
-                    <span className="flex-1">Getting Started</span>
-                </SidebarGroupLabel>
                  <GettingStartedList activity={userData.activity || []} />
             </SidebarGroup>
         </SidebarContent>
