@@ -2,9 +2,9 @@
 
 'use client';
 
-import { doc, getDoc, setDoc, updateDoc, arrayUnion, collection, getDocs, addDoc, serverTimestamp, runTransaction, deleteDoc, increment } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, arrayUnion, collection, getDocs, addDoc, serverTimestamp, runTransaction, deleteDoc, increment, arrayRemove } from 'firebase/firestore';
 import { db } from './firebase';
-import type { UserData, Portfolio, StoredActivity, OnboardingData, SurveySubmission, IcebreakerData } from './types';
+import type { UserData, Portfolio, StoredActivity, OnboardingData, SurveySubmission, IcebreakerData, TodoItem } from './types';
 import { initialPortfolioData } from './initial-data';
 import type { SyllabusDay } from '@/ai/flows/generate-syllabus';
 import { format, differenceInHours } from 'date-fns';
@@ -28,6 +28,7 @@ export const createUserDocument = async (userId: string, email: string, name: st
       syllabus: [],
       retakeCounts: {},
       timestamp: serverTimestamp(),
+      todos: [],
     };
     initialData.portfolio.personalInfo.email = email;
     initialData.portfolio.personalInfo.name = name;
@@ -213,13 +214,7 @@ export const checkAndIncrementResumeExports = async (userId: string): Promise<{ 
 
 export const getPortfolio = async (userId: string): Promise<Portfolio | null> => {
     const userDocData = await getUserData(userId);
-    if (!userDocData) {
-        return null;
-    }
-
-    // The resume builder is a free feature, so we don't need to check for subscription status.
-    // The portfolio builder (public page) access is handled on its own page based on plan.
-    return userDocData.portfolio ?? null;
+    return userDocData?.portfolio ?? null;
 };
 
 
@@ -270,6 +265,47 @@ export const incrementRetakeCount = async (userId: string, topic: string) => {
 export const getRetakeCount = async (userId: string, topic: string): Promise<number> => {
     const userData = await getUserData(userId);
     return userData?.retakeCounts?.[topic] || 0;
+};
+
+
+// --- To-Do List ---
+export const addTodo = async (userId: string, taskText: string): Promise<void> => {
+    const userRef = doc(db, 'users', userId);
+    const newTodo: TodoItem = {
+        id: doc(collection(db, 'users')).id, // Generate a unique ID
+        text: taskText,
+        completed: false,
+        createdAt: serverTimestamp(),
+    };
+    await updateDoc(userRef, {
+        todos: arrayUnion(newTodo)
+    });
+};
+
+export const updateTodo = async (userId: string, todoId: string, updates: Partial<Omit<TodoItem, 'id'>>): Promise<void> => {
+    const userRef = doc(db, 'users', userId);
+    const userData = await getUserData(userId);
+    if (!userData || !userData.todos) return;
+
+    const todoIndex = userData.todos.findIndex(t => t.id === todoId);
+    if (todoIndex > -1) {
+        const newTodos = [...userData.todos];
+        newTodos[todoIndex] = { ...newTodos[todoIndex], ...updates };
+        await updateDoc(userRef, { todos: newTodos });
+    }
+};
+
+export const deleteTodo = async (userId: string, todoId: string): Promise<void> => {
+    const userRef = doc(db, 'users', userId);
+    const userData = await getUserData(userId);
+    if (!userData || !userData.todos) return;
+
+    const todoToDelete = userData.todos.find(t => t.id === todoId);
+    if (todoToDelete) {
+        await updateDoc(userRef, {
+            todos: arrayRemove(todoToDelete)
+        });
+    }
 };
 
 

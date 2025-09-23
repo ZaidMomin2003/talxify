@@ -44,58 +44,62 @@ import {
   SidebarGroupLabel,
 } from "@/components/ui/sidebar";
 import { Bot, Code, LayoutGrid, MessageSquare, BarChart, Settings, History, Search, User, LogOut, Gem, LifeBuoy, Sun, Moon, Briefcase, CalendarDays, BrainCircuit, PlayCircle, X, CheckCircle, Circle, Swords, BookOpen, AlertTriangle, FileText, FlaskConical, Rocket, ListChecks, Plus } from "lucide-react";
-import type { StoredActivity, QuizResult, UserData, InterviewActivity, NoteGenerationActivity } from "@/lib/types";
+import type { StoredActivity, QuizResult, UserData, InterviewActivity, NoteGenerationActivity, TodoItem } from "@/lib/types";
 import { formatDistanceToNow, format } from 'date-fns';
 import { useAuth } from "@/context/auth-context";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import { Switch } from "@/components/ui/switch";
-import { getActivity, getUserData } from "@/lib/firebase-service";
+import { getActivity, getUserData, addTodo, updateTodo } from "@/lib/firebase-service";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
 
 
-function TodoListPopup() {
-    const initialTodoItems = [
-        { id: '1', text: 'Complete Day 2 Arena Challenge', completed: true },
-        { id: '2', text: 'Practice "Two Pointers" coding problems', completed: true },
-        { id: '3', text: 'Retake React Hooks mock interview', completed: false },
-        { id: '4', text: 'Update portfolio with new project', completed: false },
-        { id: '5', text: 'Generate study notes for System Design', completed: false },
-    ];
-    
-    const [todoItems, setTodoItems] = useState(initialTodoItems);
+function TodoListPopup({ todos, userId, onDataRefresh }: { todos: TodoItem[], userId: string, onDataRefresh: () => void }) {
+    const { toast } = useToast();
     const [newTaskText, setNewTaskText] = useState('');
     const [isAdding, setIsAdding] = useState(false);
     const [activeTab, setActiveTab] = useState('incomplete');
-
-    const handleToggle = (id: string) => {
-        setTodoItems(items =>
-            items.map(item =>
-                item.id === id ? { ...item, completed: !item.completed } : item
-            )
-        );
-    };
     
-    const handleAddTask = () => {
-        if (newTaskText.trim()) {
-            const newTask = {
-                id: String(Date.now()),
-                text: newTaskText.trim(),
-                completed: false,
-            };
-            setTodoItems(items => [newTask, ...items]);
-            setNewTaskText('');
-            setIsAdding(false);
-            setActiveTab('incomplete'); // Switch to incomplete tab when adding a new task
+    const handleToggle = async (id: string, currentStatus: boolean) => {
+        try {
+            await updateTodo(userId, id, { completed: !currentStatus });
+            onDataRefresh();
+        } catch (error) {
+            console.error("Failed to update to-do:", error);
+            toast({ title: "Error", description: "Could not update task.", variant: "destructive" });
         }
     };
     
-    const incompleteTasks = todoItems.filter(item => !item.completed);
-    const completedTasks = todoItems.filter(item => item.completed);
+    const handleAddTask = async () => {
+        if (newTaskText.trim()) {
+             try {
+                await addTodo(userId, newTaskText.trim());
+                onDataRefresh();
+                setNewTaskText('');
+                setIsAdding(false);
+                setActiveTab('incomplete'); 
+            } catch (error) {
+                console.error("Failed to add to-do:", error);
+                toast({ title: "Error", description: "Could not add task.", variant: "destructive" });
+            }
+        }
+    };
+    
+    const sortedTodos = useMemo(() => {
+        return (todos || []).sort((a, b) => {
+            const timeA = a.createdAt?.seconds || 0;
+            const timeB = b.createdAt?.seconds || 0;
+            return timeB - timeA; // Sort descending
+        });
+    }, [todos]);
+
+    const incompleteTasks = sortedTodos.filter(item => !item.completed);
+    const completedTasks = sortedTodos.filter(item => item.completed);
 
 
     return (
@@ -134,7 +138,7 @@ function TodoListPopup() {
                             {incompleteTasks.map(item => (
                                 <Card key={item.id} className="p-3">
                                     <div className="flex items-center gap-3">
-                                        <Checkbox id={`todo-${item.id}`} checked={item.completed} onCheckedChange={() => handleToggle(item.id)} />
+                                        <Checkbox id={`todo-${item.id}`} checked={item.completed} onCheckedChange={() => handleToggle(item.id, item.completed)} />
                                         <label
                                             htmlFor={`todo-${item.id}`}
                                             className="flex-1 text-sm font-medium cursor-pointer"
@@ -156,7 +160,7 @@ function TodoListPopup() {
                             {completedTasks.map(item => (
                                 <Card key={item.id} className="p-3 bg-muted/50">
                                     <div className="flex items-center gap-3">
-                                        <Checkbox id={`todo-${item.id}`} checked={item.completed} onCheckedChange={() => handleToggle(item.id)} />
+                                        <Checkbox id={`todo-${item.id}`} checked={item.completed} onCheckedChange={() => handleToggle(item.id, item.completed)} />
                                         <label
                                             htmlFor={`todo-${item.id}`}
                                             className="flex-1 text-sm font-medium cursor-pointer text-muted-foreground line-through"
@@ -199,7 +203,7 @@ function TodoListPopup() {
     )
 }
 
-function GettingStartedList({ activity }: { activity: StoredActivity[] }) {
+function GettingStartedList({ activity, onDataRefresh }: { activity: StoredActivity[], onDataRefresh: () => void }) {
     const { user } = useAuth();
     const router = useRouter();
 
@@ -223,10 +227,12 @@ function GettingStartedList({ activity }: { activity: StoredActivity[] }) {
         const params = new URLSearchParams({ topic: 'General', role: 'Software Engineer', level: 'entry-level' });
         router.push(`/dashboard/interview/${meetingId}/instructions?${params.toString()}`);
     }
-
+    
     if (allCompleted) {
-        return <TodoListPopup />;
+        // The user data will be passed from the main layout component.
+        return <TodoListPopup todos={[]} userId={user?.uid || ''} onDataRefresh={onDataRefresh} />;
     }
+
 
     return (
         <SidebarMenu>
@@ -455,6 +461,16 @@ function DashboardLayoutContent({
     'Free Plan';
 
   const isFreePlan = !userData.subscription || userData.subscription.plan === 'free';
+  
+  const allGettingStartedCompleted = useMemo(() => {
+    if (!userData.activity) return false;
+    const hasGeneratedNotes = userData.activity.some(a => a.type === 'note-generation');
+    const hasTakenInterview = userData.activity.some(a => a.type === 'interview');
+    const hasTakenQuiz = userData.activity.some(a => a.type === 'quiz');
+    const canDeployPortfolio = hasTakenInterview && hasTakenQuiz && hasGeneratedNotes;
+    return hasGeneratedNotes && hasTakenInterview && hasTakenQuiz && canDeployPortfolio;
+  }, [userData.activity]);
+
 
   return (
     <SidebarProvider>
@@ -520,7 +536,11 @@ function DashboardLayoutContent({
           </SidebarMenu>
           <SidebarSeparator />
           <SidebarGroup>
-                <GettingStartedList activity={userData.activity || []} />
+            {allGettingStartedCompleted ? (
+                 <TodoListPopup todos={userData.todos || []} userId={user.uid} onDataRefresh={fetchUserData} />
+            ) : (
+                 <GettingStartedList activity={userData.activity || []} onDataRefresh={fetchUserData} />
+            )}
           </SidebarGroup>
         </SidebarContent>
         <SidebarFooter>

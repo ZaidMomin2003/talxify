@@ -78,6 +78,14 @@ export interface IcebreakerData {
     hobbies?: string[];
 }
 
+export interface TodoItem {
+    id: string;
+    text: string;
+    completed: boolean;
+    createdAt: any;
+}
+
+
 // All data stored under a user's document in Firestore
 export interface UserData {
     id: string;
@@ -88,6 +96,7 @@ export interface UserData {
     syllabus: SyllabusDay[];
     retakeCounts?: { [topic: string]: number };
     timestamp?: any;
+    todos?: TodoItem[];
 }
 
 // --- Auth ---
