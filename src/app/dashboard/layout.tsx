@@ -62,6 +62,15 @@ function GettingStartedList({ activity }: { activity: StoredActivity[] }) {
     const hasTakenInterview = useMemo(() => activity.some(a => a.type === 'interview'), [activity]);
     const hasTakenQuiz = useMemo(() => activity.some(a => a.type === 'quiz'), [activity]);
     const canDeployPortfolio = hasTakenInterview && hasTakenQuiz && hasGeneratedNotes;
+    
+    const allCompleted = hasGeneratedNotes && hasTakenInterview && hasTakenQuiz && canDeployPortfolio;
+
+    const checklistItems = [
+        { name: "Generate Study Notes", completed: hasGeneratedNotes, href: "/dashboard/arena" },
+        { name: "Take an Interview", completed: hasTakenInterview, action: () => handleStartInterview() },
+        { name: "Take a Coding Quiz", completed: hasTakenQuiz, href: "/dashboard/coding-gym" },
+        { name: "Deploy your Portfolio", completed: canDeployPortfolio, href: "/dashboard/portfolio" }
+    ];
 
     const handleStartInterview = () => {
         if (!user) return;
@@ -70,12 +79,9 @@ function GettingStartedList({ activity }: { activity: StoredActivity[] }) {
         router.push(`/dashboard/interview/${meetingId}/instructions?${params.toString()}`);
     }
 
-    const checklistItems = [
-        { name: "Generate Study Notes", completed: hasGeneratedNotes, href: "/dashboard/arena" },
-        { name: "Take an Interview", completed: hasTakenInterview, action: handleStartInterview },
-        { name: "Take a Coding Quiz", completed: hasTakenQuiz, href: "/dashboard/coding-gym" },
-        { name: "Deploy your Portfolio", completed: canDeployPortfolio, href: "/dashboard/portfolio" }
-    ];
+    if (allCompleted) {
+        return null;
+    }
 
     return (
         <SidebarMenu>
