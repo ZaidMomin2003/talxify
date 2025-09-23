@@ -212,7 +212,6 @@ function GettingStartedList({ activity, onDataRefresh }: { activity: StoredActiv
     const hasTakenQuiz = useMemo(() => activity.some(a => a.type === 'quiz'), [activity]);
     const canDeployPortfolio = hasTakenInterview && hasTakenQuiz && hasGeneratedNotes;
     
-    const allCompleted = hasGeneratedNotes && hasTakenInterview && hasTakenQuiz && canDeployPortfolio;
 
     const checklistItems = [
         { name: "Generate Study Notes", completed: hasGeneratedNotes, href: "/dashboard/arena" },
@@ -226,11 +225,6 @@ function GettingStartedList({ activity, onDataRefresh }: { activity: StoredActiv
         const meetingId = user.uid + "_" + Date.now();
         const params = new URLSearchParams({ topic: 'General', role: 'Software Engineer', level: 'entry-level' });
         router.push(`/dashboard/interview/${meetingId}/instructions?${params.toString()}`);
-    }
-    
-    if (allCompleted) {
-        // The user data will be passed from the main layout component.
-        return <TodoListPopup todos={[]} userId={user?.uid || ''} onDataRefresh={onDataRefresh} />;
     }
 
 
@@ -447,6 +441,16 @@ function DashboardLayoutContent({
         
   }, [userData]);
 
+  const allGettingStartedCompleted = useMemo(() => {
+    if (!userData || !userData.activity) return false;
+    const activity = userData.activity;
+    const hasGeneratedNotes = activity.some(a => a.type === 'note-generation');
+    const hasTakenInterview = activity.some(a => a.type === 'interview');
+    const hasTakenQuiz = activity.some(a => a.type === 'quiz');
+    const canDeployPortfolio = hasTakenInterview && hasTakenQuiz && hasGeneratedNotes;
+    return hasGeneratedNotes && hasTakenInterview && hasTakenQuiz && canDeployPortfolio;
+  }, [userData]);
+
 
   if (loading || !user || !userData) {
     return (
@@ -462,16 +466,7 @@ function DashboardLayoutContent({
 
   const isFreePlan = !userData.subscription || userData.subscription.plan === 'free';
   
-  const allGettingStartedCompleted = useMemo(() => {
-    if (!userData.activity) return false;
-    const hasGeneratedNotes = userData.activity.some(a => a.type === 'note-generation');
-    const hasTakenInterview = userData.activity.some(a => a.type === 'interview');
-    const hasTakenQuiz = userData.activity.some(a => a.type === 'quiz');
-    const canDeployPortfolio = hasTakenInterview && hasTakenQuiz && hasGeneratedNotes;
-    return hasGeneratedNotes && hasTakenInterview && hasTakenQuiz && canDeployPortfolio;
-  }, [userData.activity]);
-
-
+  
   return (
     <SidebarProvider>
       <Sidebar>
