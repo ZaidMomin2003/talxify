@@ -14,6 +14,7 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import {
   DropdownMenu,
@@ -42,7 +43,7 @@ import {
   SidebarGroup,
   SidebarGroupLabel,
 } from "@/components/ui/sidebar";
-import { Bot, Code, LayoutGrid, MessageSquare, BarChart, Settings, History, Search, User, LogOut, Gem, LifeBuoy, Sun, Moon, Briefcase, CalendarDays, BrainCircuit, PlayCircle, X, CheckCircle, Circle, Swords, BookOpen, AlertTriangle, FileText, FlaskConical, Rocket, ListChecks } from "lucide-react";
+import { Bot, Code, LayoutGrid, MessageSquare, BarChart, Settings, History, Search, User, LogOut, Gem, LifeBuoy, Sun, Moon, Briefcase, CalendarDays, BrainCircuit, PlayCircle, X, CheckCircle, Circle, Swords, BookOpen, AlertTriangle, FileText, FlaskConical, Rocket, ListChecks, Plus } from "lucide-react";
 import type { StoredActivity, QuizResult, UserData, InterviewActivity, NoteGenerationActivity } from "@/lib/types";
 import { formatDistanceToNow, format } from 'date-fns';
 import { useAuth } from "@/context/auth-context";
@@ -57,15 +58,39 @@ import { Card } from "@/components/ui/card";
 
 
 function TodoListPopup() {
-    // This is a mock todo list for UI purposes.
-    // It can be made dynamic later.
-    const todoItems = [
+    const initialTodoItems = [
         { id: '1', text: 'Complete Day 2 Arena Challenge', completed: true },
         { id: '2', text: 'Practice "Two Pointers" coding problems', completed: true },
         { id: '3', text: 'Retake React Hooks mock interview', completed: false },
         { id: '4', text: 'Update portfolio with new project', completed: false },
         { id: '5', text: 'Generate study notes for System Design', completed: false },
     ];
+    
+    const [todoItems, setTodoItems] = useState(initialTodoItems);
+    const [newTaskText, setNewTaskText] = useState('');
+    const [isAdding, setIsAdding] = useState(false);
+
+    const handleToggle = (id: string) => {
+        setTodoItems(items =>
+            items.map(item =>
+                item.id === id ? { ...item, completed: !item.completed } : item
+            )
+        );
+    };
+    
+    const handleAddTask = () => {
+        if (newTaskText.trim()) {
+            const newTask = {
+                id: String(Date.now()),
+                text: newTaskText.trim(),
+                completed: false,
+            };
+            setTodoItems(items => [...items, newTask]);
+            setNewTaskText('');
+            setIsAdding(false);
+        }
+    };
+
 
     return (
         <Dialog>
@@ -92,14 +117,14 @@ function TodoListPopup() {
                         Stay organized and focused on your interview preparation goals.
                     </DialogDescription>
                 </DialogHeader>
-                <div className="my-6 space-y-3">
+                <div className="my-6 space-y-3 max-h-[400px] overflow-y-auto pr-2">
                     {todoItems.map(item => (
                         <Card key={item.id} className="p-3">
                             <div className="flex items-center gap-3">
-                                <Checkbox id={`todo-${item.id}`} checked={item.completed} />
+                                <Checkbox id={`todo-${item.id}`} checked={item.completed} onCheckedChange={() => handleToggle(item.id)} />
                                 <label
                                     htmlFor={`todo-${item.id}`}
-                                    className={`flex-1 text-sm font-medium ${item.completed ? 'text-muted-foreground line-through' : 'text-foreground'}`}
+                                    className={`flex-1 text-sm font-medium cursor-pointer ${item.completed ? 'text-muted-foreground line-through' : 'text-foreground'}`}
                                 >
                                     {item.text}
                                 </label>
@@ -107,6 +132,25 @@ function TodoListPopup() {
                         </Card>
                     ))}
                 </div>
+                 <DialogFooter>
+                    {isAdding ? (
+                        <div className="flex w-full gap-2">
+                            <Input 
+                                placeholder="Add a new task..." 
+                                value={newTaskText} 
+                                onChange={(e) => setNewTaskText(e.target.value)}
+                                onKeyDown={(e) => { if(e.key === 'Enter') handleAddTask() }}
+                                autoFocus
+                            />
+                            <Button onClick={handleAddTask}>Add</Button>
+                            <Button variant="ghost" size="icon" onClick={() => setIsAdding(false)}><X className="h-4 w-4"/></Button>
+                        </div>
+                    ) : (
+                        <Button variant="outline" className="w-full" onClick={() => setIsAdding(true)}>
+                            <Plus className="mr-2 h-4 w-4" /> Add New Task
+                        </Button>
+                    )}
+                </DialogFooter>
             </DialogContent>
         </Dialog>
     )
