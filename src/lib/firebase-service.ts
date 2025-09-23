@@ -272,14 +272,14 @@ export const getRetakeCount = async (userId: string, topic: string): Promise<num
 export const addTodo = async (userId: string, taskText: string): Promise<void> => {
     const userRef = doc(db, 'users', userId);
     const newTodo: TodoItem = {
-        id: doc(collection(db, 'users')).id, // Generate a unique ID
+        id: doc(collection(db, 'temp')).id, // Generate a unique ID
         text: taskText,
         completed: false,
         createdAt: serverTimestamp(),
     };
-    await updateDoc(userRef, {
+    await setDoc(userRef, {
         todos: arrayUnion(newTodo)
-    });
+    }, { merge: true });
 };
 
 export const updateTodo = async (userId: string, todoId: string, updates: Partial<Omit<TodoItem, 'id'>>): Promise<void> => {
@@ -336,3 +336,5 @@ export const saveWaitlistSubmission = async (submission: {name: string, email: s
         throw error;
     }
 }
+
+    
