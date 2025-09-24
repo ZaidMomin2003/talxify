@@ -271,15 +271,37 @@ export const getRetakeCount = async (userId: string, topic: string): Promise<num
 // --- To-Do List ---
 export const addTodo = async (userId: string, taskText: string): Promise<void> => {
     const userRef = doc(db, 'users', userId);
-    const newTodo: TodoItem = {
-        id: doc(collection(db, 'temp')).id, // Generate a unique ID
-        text: taskText,
-        completed: false,
-        createdAt: serverTimestamp(),
-    };
-    await setDoc(userRef, {
-        todos: arrayUnion(newTodo)
-    }, { merge: true });
+    try {
+        await runTransaction(db, async (transaction) => {
+            const userDoc = await transaction.get(userRef);
+            if (!userDoc.exists()) {
+                throw "User document does not exist!";
+            }
+            const userData = userDoc.data();
+            const currentTodos = userData.todos || [];
+
+            const newTodo: TodoItem = {
+                id: doc(collection(db, 'temp')).id, // Firestore-like offline ID generation
+                text: taskText,
+                completed: false,
+                createdAt: new Date().toISOString(), // Use client-side timestamp for immediate consistency
+            };
+
+            const newTodosArray = [...currentTodos, newTodo];
+            transaction.update(userRef, { todos: newTodosArray });
+        });
+    } catch (e) {
+        console.error("Add to-do transaction failed: ", e);
+        // If the transaction fails, it might be because the 'todos' field doesn't exist.
+        // As a fallback, we can try to create it with setDoc and merge.
+        const newTodo: TodoItem = {
+            id: doc(collection(db, 'temp')).id,
+            text: taskText,
+            completed: false,
+            createdAt: new Date().toISOString(),
+        };
+        await setDoc(userRef, { todos: arrayUnion(newTodo) }, { merge: true });
+    }
 };
 
 export const updateTodo = async (userId: string, todoId: string, updates: Partial<Omit<TodoItem, 'id'>>): Promise<void> => {
@@ -336,5 +358,3 @@ export const saveWaitlistSubmission = async (submission: {name: string, email: s
         throw error;
     }
 }
-
-    

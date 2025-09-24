@@ -82,7 +82,7 @@ export interface TodoItem {
     id: string;
     text: string;
     completed: boolean;
-    createdAt: any;
+    createdAt: any; // Can be serverTimestamp or string
 }
 
 
@@ -96,7 +96,7 @@ export interface UserData {
     syllabus: SyllabusDay[];
     retakeCounts?: { [topic: string]: number };
     timestamp?: any;
-    todos?: TodoItem[];
+    todos: TodoItem[];
 }
 
 // --- Auth ---
