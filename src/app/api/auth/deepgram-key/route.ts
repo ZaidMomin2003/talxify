@@ -7,6 +7,7 @@ export async function POST() {
   const deepgramProjectId = process.env.DEEPGRAM_PROJECT_ID;
 
   if (!deepgramApiKey || !deepgramProjectId) {
+    console.error("Deepgram API key or Project ID not configured.");
     return NextResponse.json({ error: 'Deepgram API key or Project ID not configured on the server.' }, { status: 500 });
   }
   
@@ -15,9 +16,9 @@ export async function POST() {
   try {
     const { key, error } = await deepgram.keys.create(
       deepgramProjectId,
-      'Temporary key for Talxify user', // Comment
-      ['member'], // Permissions
-      { timeToLive: 2 * 60 } // TTL in seconds (e.g., 2 minutes)
+      'Temporary key for Talxify interview user',
+      ['member'],
+      { timeToLive: 60 * 2 } // 2 minutes
     );
 
     if (error) {
@@ -28,7 +29,7 @@ export async function POST() {
     return NextResponse.json({ key });
 
   } catch (e) {
-    console.error("Deepgram key creation exception:", e);
-    return NextResponse.json({ error: 'An exception occurred while creating Deepgram key.' }, { status: 500 });
+    console.error("Exception creating Deepgram key:", e);
+    return NextResponse.json({ error: 'An exception occurred while creating the Deepgram key.' }, { status: 500 });
   }
 }
