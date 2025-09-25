@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef, Suspense } from 'react';
@@ -186,6 +187,7 @@ function InterviewComponent() {
         connection.on(LiveTranscriptionEvents.Transcript, (data) => {
             const text = data.channel.alternatives[0].transcript;
             if (text && data.is_final) {
+                setTranscript(prev => [...prev, { speaker: 'user', text: text }]);
                 // When user speaks, send transcript to the Genkit flow
                 stream({ type: 'userTranscript', transcript: text });
             }
