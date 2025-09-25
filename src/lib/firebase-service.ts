@@ -129,8 +129,16 @@ export const checkAndIncrementUsage = async (userId: string): Promise<{ success:
             }
 
             const userData = userDoc.data() as UserData;
-            const { plan, usage } = userData.subscription;
+            const { plan, usage, endDate } = userData.subscription;
             const today = format(new Date(), 'yyyy-MM-dd');
+            
+            const isExpired = endDate ? new Date() > new Date(endDate) : false;
+
+            if (isExpired) {
+                usageAllowed = false;
+                message = "Your subscription has expired. Please renew your plan to continue.";
+                return;
+            }
             
             const dailyLimit = 20; // Daily limit for Pro users
 

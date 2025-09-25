@@ -460,11 +460,11 @@ function DashboardLayoutContent({
     );
   }
 
-  const subscriptionStatus = userData?.subscription?.plan ? 
-    `${userData.subscription.plan.charAt(0).toUpperCase() + userData.subscription.plan.slice(1)} Plan` :
-    'Free Plan';
+  const { plan, endDate } = userData.subscription || {};
+  const isExpired = endDate ? new Date() > new Date(endDate) : false;
+  const isFreePlan = !plan || plan === 'free' || isExpired;
 
-  const isFreePlan = !userData.subscription || userData.subscription.plan === 'free';
+  const subscriptionStatus = isExpired ? 'Expired' : (plan ? `${plan.charAt(0).toUpperCase() + plan.slice(1)} Plan` : 'Free Plan');
   
   
   return (

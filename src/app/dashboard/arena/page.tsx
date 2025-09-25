@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -21,9 +22,9 @@ function UpgradeCard() {
                 <div className="mx-auto bg-primary/10 text-primary rounded-full p-3 w-fit mb-2">
                     <Gem className="h-8 w-8" />
                 </div>
-                <CardTitle className="text-2xl font-bold">You've Completed Your Free Trial!</CardTitle>
+                <CardTitle className="text-2xl font-bold">Your Plan Has Expired or Needs an Upgrade</CardTitle>
                 <CardDescription>
-                    Congratulations on finishing Day 1. Upgrade to Pro to unlock the full 30-day Arena, the Resume Builder, and more powerful features.
+                    To unlock the full 30-day Arena, the Resume Builder, and other powerful features, please upgrade or renew your Pro plan.
                 </CardDescription>
             </CardHeader>
             <CardContent>
@@ -205,7 +206,9 @@ export default function ArenaPage() {
         );
     }
     
-    const isFreePlan = !userData?.subscription?.plan || userData.subscription.plan === 'free';
+    const { plan, endDate } = userData?.subscription || {};
+    const isExpired = endDate ? new Date() > new Date(endDate) : false;
+    const isFreePlan = !plan || plan === 'free' || isExpired;
     const trialExpired = isFreePlan && completedDays >= 1;
 
   return (

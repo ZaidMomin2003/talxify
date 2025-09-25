@@ -1,6 +1,7 @@
 
 
 
+
 "use client"
 
 import { Button } from "@/components/ui/button";
@@ -120,7 +121,7 @@ function LockedFeature() {
                     </div>
                     <CardTitle className="text-2xl font-bold">Feature Locked</CardTitle>
                     <CardDescription>
-                        The Portfolio Editor is a Pro feature. Please upgrade your plan to customize and share your professional portfolio.
+                        The Portfolio Editor is a Pro feature. Please upgrade or renew your plan to customize and share your professional portfolio.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -300,8 +301,9 @@ export default function PortfolioPage() {
     });
   };
 
-  const isFreePlan = !userData?.subscription?.plan || userData?.subscription?.plan === 'free';
-  const isPortfolioLocked = isFreePlan && (!userData?.subscription.endDate || new Date() > new Date(userData.subscription.endDate));
+  const { plan, endDate } = userData?.subscription || {};
+  const isExpired = endDate ? new Date() > new Date(endDate) : false;
+  const isFreePlan = !plan || plan === 'free' || isExpired;
 
 
   if (isLoading) {
@@ -312,7 +314,7 @@ export default function PortfolioPage() {
     );
   }
   
-  if (isPortfolioLocked && isFreePlan) {
+  if (isFreePlan) {
     return <LockedFeature />;
   }
 
