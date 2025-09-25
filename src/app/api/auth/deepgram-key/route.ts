@@ -29,6 +29,7 @@ export async function POST() {
     return NextResponse.json({ key });
 
   } catch (e) {
+    // Log the specific exception from Deepgram for better debugging
     console.error("Exception creating Deepgram key:", e);
     return NextResponse.json({ error: 'An exception occurred while creating the Deepgram key.' }, { status: 500 });
   }
