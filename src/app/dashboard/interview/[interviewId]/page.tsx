@@ -8,14 +8,11 @@ import { addActivity } from '@/lib/firebase-service';
 import type { InterviewActivity, TranscriptEntry } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Loader2, Mic, Bot, PhoneOff, AlertTriangle, User, BrainCircuit, MessageSquare, Maximize, Video } from 'lucide-react';
+import { Loader2, Mic, Bot, PhoneOff, AlertTriangle, User, BrainCircuit, Maximize, Video, MessageSquare } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
-import { createClient, LiveTranscriptionEvents, LiveClient } from '@deepgram/sdk';
-import { useFlow } from '@genkit-ai/next/client';
-import { interviewAgent } from '@/ai/flows/interview-agent';
 
 type AgentStatus = 'idle' | 'listening' | 'thinking' | 'speaking' | 'finished' | 'error';
 
@@ -42,12 +39,9 @@ function InterviewComponent() {
   const [hasCameraPermission, setHasCameraPermission] = useState(false);
   
   const mediaRecorder = useRef<MediaRecorder | null>(null);
-  const deepgramConnection = useRef<LiveClient | null>(null);
+  const connection = useRef<WebSocket | null>(null);
   const mainContainerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const audioPlayer = useRef<HTMLAudioElement | null>(null);
-  const audioQueueRef = useRef<string[]>([]);
-  const isPlayingRef = useRef(false);
 
   const interviewId = params.interviewId as string;
   const topic = searchParams.get('topic') || 'General Software Engineering';
@@ -55,19 +49,19 @@ function InterviewComponent() {
   const level = searchParams.get('level') || 'Entry-level';
   const company = searchParams.get('company') || '';
 
-  const { start, output, stream } = useFlow(interviewAgent);
-
   const stopInterview = useCallback(async (save: boolean) => {
     if (status === 'finished') return;
     setStatus('finished');
+    
+    if (connection.current) {
+        connection.current.close();
+        connection.current = null;
+    }
 
     if (mediaRecorder.current && mediaRecorder.current.state === 'recording') {
       mediaRecorder.current.stop();
     }
-    if (deepgramConnection.current) {
-        deepgramConnection.current.close();
-        deepgramConnection.current = null;
-    }
+    
     if (videoRef.current && videoRef.current.srcObject) {
       const stream = videoRef.current.srcObject as MediaStream;
       stream.getTracks().forEach(track => track.stop());
@@ -90,120 +84,76 @@ function InterviewComponent() {
     }
   }, [status, user, transcript, interviewId, topic, role, level, company, router, toast]);
 
-  const playNextAudio = useCallback(() => {
-    if (isPlayingRef.current || audioQueueRef.current.length === 0) {
-      return;
-    }
-    
-    isPlayingRef.current = true;
-    setStatus('speaking');
-    const audioData = audioQueueRef.current.shift();
-    
-    if (audioData && audioPlayer.current) {
-      const audioBlob = new Blob([Buffer.from(audioData, 'base64')], { type: 'audio/mp3' });
-      const audioUrl = URL.createObjectURL(audioBlob);
-      audioPlayer.current.src = audioUrl;
-      audioPlayer.current.play().catch(e => {
-        console.error("Audio play failed:", e);
-        isPlayingRef.current = false;
-        playNextAudio(); // Try next in queue
-      });
-    } else {
-      isPlayingRef.current = false;
-    }
-  }, []);
+  const startInterview = useCallback(async () => {
+    try {
+      const response = await fetch('/api/auth/deepgram-key', { method: 'POST' });
+      if (!response.ok) throw new Error('Failed to get temporary API key.');
+      const { key } = await response.json();
+      
+      const ws = new WebSocket(
+        `wss://api.deepgram.com/v1/listen?model=nova-2-general&smart_format=true&encoding=webm&talk=true&interim_results=false`,
+        ['token', key]
+      );
 
-   useEffect(() => {
-    // This effect handles the output from the Genkit flow
-    if (output) {
-      if (output.type === 'agentResponse') {
-        setTranscript(prev => [...prev, { speaker: 'ai', text: output.text }]);
-        audioQueueRef.current.push(output.audio);
-        playNextAudio();
-      } else if (output.type === 'agentState') {
-        setStatus(output.state);
-      } else if (output.type === 'interviewComplete') {
-        setTranscript(prev => [...prev, { speaker: 'ai', text: output.text }]);
-        audioQueueRef.current.push(output.audio);
-        playNextAudio();
-        // The stopInterview will be triggered by the audio 'onended' event
-      } else if (output.type === 'error') {
-        setStatus('error');
-        toast({ title: 'Agent Error', description: output.message, variant: 'destructive' });
-      }
-    }
-  }, [output, toast, playNextAudio]);
-
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      audioPlayer.current = new Audio();
-      audioPlayer.current.onended = () => {
-        isPlayingRef.current = false;
-        if (audioQueueRef.current.length > 0) {
-            playNextAudio();
-        } else {
-            // If the interview is finished and the last audio clip has played, stop everything.
-            if (status === 'finished' || transcript.some(t => t.text.includes("feedback report will be generated shortly"))) {
-                 stopInterview(true);
-            } else {
-                setStatus('listening');
+      ws.onopen = async () => {
+        setStatus('listening');
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder.current = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+        mediaRecorder.current.ondataavailable = (event) => {
+            if (event.data.size > 0 && ws.readyState === 1) {
+                ws.send(event.data);
             }
+        };
+        mediaRecorder.current.start(250);
+        
+        // Send a message to Deepgram's Talk endpoint to start the conversation
+        ws.send(JSON.stringify({
+            type: "Talk",
+            text: `Hello, I'm Kathy, your interviewer from Talxify. We'll be discussing ${topic} for a ${level} ${role} position. Let's begin.`
+        }));
+      };
+
+      ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        if (data.type === 'TalkStarted') {
+            setStatus('speaking');
+        } else if (data.type === 'TalkEnded') {
+            setStatus('listening');
+             if (data.transcript && data.transcript.includes("feedback report will be generated shortly")) {
+                stopInterview(true);
+            }
+        } else if (data.type === 'Results') {
+             const text = data.channel.alternatives[0].transcript;
+             if (text) {
+                 setTranscript(prev => [...prev, { speaker: 'user', text }]);
+             }
+        } else if (data.type === 'Metadata') {
+            const text = data.request_id; // Using request_id as a placeholder for AI text for now.
+            // In a real scenario, you'd get this from a different source.
+            // This is a limitation of the current simplified approach.
         }
       };
-    }
-  }, [playNextAudio, status, stopInterview, transcript]);
 
-  const startRecording = useCallback(async () => {
-    try {
-        const response = await fetch('/api/auth/deepgram-key', { method: 'POST' });
-        if (!response.ok) {
-            throw new Error(`Failed to get Deepgram key: ${response.statusText}`);
+      ws.onclose = () => {
+        console.log('WebSocket connection closed.');
+        if (status !== 'finished') {
+           setStatus('finished');
         }
-        const { key } = await response.json();
-        const deepgram = createClient(key);
-        
-        const connection = deepgram.listen.live({
-            model: 'nova-2-general',
-            interim_results: false, // We only care about the final transcript
-            smart_format: true,
-            endpointing: 300, // Ms of silence to determine end of speech
-            utterance_end_ms: 1000, // Ms of silence to consider utterance ended
-        });
-        deepgramConnection.current = connection;
+      };
+      
+      ws.onerror = (error) => {
+        console.error('WebSocket error:', error);
+        setStatus('error');
+      };
 
-        connection.on(LiveTranscriptionEvents.Open, async () => {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            mediaRecorder.current = new MediaRecorder(stream, { mimeType: 'audio/webm' });
-            mediaRecorder.current.ondataavailable = (event) => {
-                if (event.data.size > 0 && connection.getReadyState() === 1) {
-                    connection.send(event.data);
-                }
-            };
-            mediaRecorder.current.start(250);
-            // We wait for the first agent message before setting status to listening
-        });
-
-        connection.on(LiveTranscriptionEvents.Transcript, (data) => {
-            const text = data.channel.alternatives[0].transcript;
-            if (text && data.is_final) {
-                setTranscript(prev => [...prev, { speaker: 'user', text: text }]);
-                // When user speaks, send transcript to the Genkit flow
-                stream({ type: 'userTranscript', transcript: text });
-            }
-        });
-        
-        connection.on(LiveTranscriptionEvents.Close, () => console.log('Deepgram connection closed.'));
-        connection.on(LiveTranscriptionEvents.Error, (err) => {
-            console.error('Deepgram error:', err);
-            setStatus('error');
-        });
+      connection.current = ws;
 
     } catch (error) {
-        console.error("Failed to start Deepgram connection:", error);
-        setStatus('error');
+      console.error("Failed to start interview:", error);
+      setStatus('error');
+      toast({ title: 'Connection Failed', description: (error as Error).message, variant: 'destructive' });
     }
-  }, [stream]);
+  }, [topic, level, role, status, stopInterview, toast]);
 
   useEffect(() => {
     if (!user) {
@@ -211,10 +161,8 @@ function InterviewComponent() {
       return;
     }
     
-    // Start the Genkit flow
-    start({ topic, role, level, company });
+    startInterview();
     
-    // Setup camera
     const getCameraPermission = async () => {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: true });
@@ -228,7 +176,6 @@ function InterviewComponent() {
       }
     };
     getCameraPermission();
-    startRecording();
 
     return () => {
       stopInterview(false);
@@ -302,7 +249,7 @@ function InterviewComponent() {
                       </div>
                     </div>
                   ))}
-                   {(status === 'thinking' || (status === 'speaking' && isPlayingRef.current)) && (
+                   {(status === 'thinking' || status === 'speaking') && (
                      <div className="flex flex-col items-start">
                          <div className="max-w-[90%] p-3 rounded-lg bg-background">
                             <p className="font-bold mb-1 capitalize">Kathy</p>

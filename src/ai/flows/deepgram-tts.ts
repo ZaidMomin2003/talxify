@@ -3,11 +3,12 @@
 
 /**
  * @fileOverview A flow to convert text to speech using Deepgram's Text-to-Speech API.
+ * This is used for generating audio for the AI interviewer's voice.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import { createClient, SpeakSchema } from '@deepgram/sdk';
+import { SpeakSchema } from '@deepgram/sdk';
 
 if (!process.env.DEEPGRAM_API_KEY) {
     console.warn("DEEPGRAM_API_KEY environment variable not set. Deepgram TTS may not work.");
@@ -21,6 +22,7 @@ export const textToSpeechWithDeepgramFlow = ai.defineFlow(
     }),
     outputSchema: z.object({
       audio: z.instanceof(Buffer).describe("The raw audio buffer in MP3 format."),
+      contentType: z.string().describe("The content type of the audio, e.g., 'audio/mp3'"),
     }),
   },
   async (input) => {
@@ -49,6 +51,7 @@ export const textToSpeechWithDeepgramFlow = ai.defineFlow(
     
     return {
       audio: buffer,
+      contentType: response.headers.get('content-type') || 'audio/mp3',
     };
   }
 );
