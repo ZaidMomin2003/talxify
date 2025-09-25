@@ -13,14 +13,16 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
-import { interviewAgent, InterviewState } from '@/ai/flows/interview-agent';
+import { createClient, LiveTranscriptionEvents, LiveClient } from '@deepgram/sdk';
+import { useFlow } from '@genkit-ai/next/client';
+import { interviewAgent } from '@/ai/flows/interview-agent';
 
 type AgentStatus = 'idle' | 'listening' | 'thinking' | 'speaking' | 'finished' | 'error';
 
 const statusInfo: { [key in AgentStatus]: { text: string; showMic?: boolean } } = {
   idle: { text: "Connecting to agent..." },
   listening: { text: "Listening...", showMic: true },
-  thinking: { text: "Thinking..." },
+  thinking: { text: "Kathy is Thinking..." },
   speaking: { text: "Kathy is Speaking..." },
   finished: { text: "Interview Finished" },
   error: { text: "Connection Error" },
@@ -40,12 +42,12 @@ function InterviewComponent() {
   const [hasCameraPermission, setHasCameraPermission] = useState(false);
   
   const mediaRecorder = useRef<MediaRecorder | null>(null);
-  const connection = useRef<WebSocket | null>(null);
-  const audioQueueRef = useRef<string[]>([]);
-  const isPlayingRef = useRef(false);
+  const deepgramConnection = useRef<LiveClient | null>(null);
   const mainContainerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const audioPlayer = useRef<HTMLAudioElement | null>(null);
+  const audioQueueRef = useRef<string[]>([]);
+  const isPlayingRef = useRef(false);
 
   const interviewId = params.interviewId as string;
   const topic = searchParams.get('topic') || 'General Software Engineering';
@@ -53,12 +55,40 @@ function InterviewComponent() {
   const level = searchParams.get('level') || 'Entry-level';
   const company = searchParams.get('company') || '';
 
-  useEffect(() => {
-    const transcriptContainer = document.getElementById('transcript-container');
-    if (transcriptContainer) {
-      transcriptContainer.scrollTop = transcriptContainer.scrollHeight;
+  const { start, output, stream } = useFlow(interviewAgent);
+
+  const stopInterview = useCallback(async (save: boolean) => {
+    if (status === 'finished') return;
+    setStatus('finished');
+
+    if (mediaRecorder.current && mediaRecorder.current.state === 'recording') {
+      mediaRecorder.current.stop();
     }
-  }, [transcript]);
+    if (deepgramConnection.current) {
+        deepgramConnection.current.close();
+        deepgramConnection.current = null;
+    }
+    if (videoRef.current && videoRef.current.srcObject) {
+      const stream = videoRef.current.srcObject as MediaStream;
+      stream.getTracks().forEach(track => track.stop());
+    }
+
+    if (save && user && transcript.length > 1) {
+        toast({ title: "Interview Complete", description: "Generating your feedback report..." });
+        const finalActivity: InterviewActivity = {
+            id: interviewId,
+            type: 'interview',
+            timestamp: new Date().toISOString(),
+            transcript: transcript,
+            feedback: "Feedback will be generated on the results page.",
+            details: { topic, role, level, company }
+        };
+        await addActivity(user.uid, finalActivity);
+        router.push(`/dashboard/interview/${finalActivity.id}/results`);
+    } else {
+        router.push('/dashboard/arena');
+    }
+  }, [status, user, transcript, interviewId, topic, role, level, company, router, toast]);
 
   const playNextAudio = useCallback(() => {
     if (isPlayingRef.current || audioQueueRef.current.length === 0) {
@@ -76,63 +106,103 @@ function InterviewComponent() {
       audioPlayer.current.play().catch(e => {
         console.error("Audio play failed:", e);
         isPlayingRef.current = false;
-        setStatus('listening');
+        playNextAudio(); // Try next in queue
       });
     } else {
       isPlayingRef.current = false;
-      setStatus('listening');
     }
   }, []);
+
+   useEffect(() => {
+    // This effect handles the output from the Genkit flow
+    if (output) {
+      if (output.type === 'agentResponse') {
+        setTranscript(prev => [...prev, { speaker: 'ai', text: output.text }]);
+        // Here you would call your text-to-speech service and queue the audio
+      } else if (output.type === 'agentState') {
+        setStatus(output.state);
+      } else if (output.type === 'interviewComplete') {
+        setTranscript(prev => [...prev, { speaker: 'ai', text: output.text }]);
+        // Here you would call TTS for the final message
+        stopInterview(true);
+      } else if (output.type === 'error') {
+        setStatus('error');
+        toast({ title: 'Agent Error', description: output.message, variant: 'destructive' });
+      }
+    }
+  }, [output, stopInterview, toast]);
+
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
       audioPlayer.current = new Audio();
       audioPlayer.current.onended = () => {
         isPlayingRef.current = false;
-        setStatus('listening');
-        playNextAudio();
+        if (audioQueueRef.current.length === 0) {
+            setStatus('listening');
+        } else {
+            playNextAudio();
+        }
       };
     }
-  }, []);
+  }, [playNextAudio]);
 
+  const startRecording = useCallback(async () => {
+    try {
+        const response = await fetch('/api/auth/deepgram-key', { method: 'POST' });
+        const { key } = await response.json();
+        const deepgram = createClient(key);
+        
+        const connection = deepgram.listen.live({
+            model: 'nova-2-general',
+            interim_results: true,
+            smart_format: true,
+            endpointing: 300,
+            utterance_end_ms: 1000
+        });
+        deepgramConnection.current = connection;
 
-  const stopInterview = useCallback(async (save: boolean, finalTranscript: TranscriptEntry[]) => {
-    setStatus('finished');
-    if (mediaRecorder.current && mediaRecorder.current.state === 'recording') {
-      mediaRecorder.current.stop();
-    }
-    if (connection.current) {
-      connection.current.close();
-      connection.current = null;
-    }
-    if (videoRef.current && videoRef.current.srcObject) {
-      const stream = videoRef.current.srcObject as MediaStream;
-      stream.getTracks().forEach(track => track.stop());
-    }
+        connection.on(LiveTranscriptionEvents.Open, async () => {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder.current = new MediaRecorder(stream);
+            mediaRecorder.current.ondataavailable = (event) => {
+                if (event.data.size > 0 && connection.getReadyState() === 1) {
+                    connection.send(event.data);
+                }
+            };
+            mediaRecorder.current.start(250);
+            setStatus('listening');
+        });
 
-    if (save && user && finalTranscript.length > 1) {
-        toast({ title: "Interview Complete", description: "Generating your feedback report..." });
-        const finalActivity: InterviewActivity = {
-            id: interviewId,
-            type: 'interview',
-            timestamp: new Date().toISOString(),
-            transcript: finalTranscript,
-            feedback: "Feedback will be generated on the results page.",
-            details: { topic, role, level, company }
-        };
-        await addActivity(user.uid, finalActivity);
-        router.push(`/dashboard/interview/${finalActivity.id}/results`);
-    } else {
-        router.push('/dashboard/arena');
+        connection.on(LiveTranscriptionEvents.Transcript, (data) => {
+            const text = data.channel.alternatives[0].transcript;
+            if (text && data.is_final) {
+                stream({ type: 'userTranscript', transcript: text });
+            }
+        });
+        
+        connection.on(LiveTranscriptionEvents.Close, () => console.log('Deepgram connection closed.'));
+        connection.on(LiveTranscriptionEvents.Error, (err) => {
+            console.error('Deepgram error:', err);
+            setStatus('error');
+        });
+
+    } catch (error) {
+        console.error("Failed to start Deepgram connection:", error);
+        setStatus('error');
     }
-  }, [user, interviewId, topic, role, level, company, router, toast]);
+  }, [stream]);
 
   useEffect(() => {
     if (!user) {
       router.push('/login');
       return;
     }
-
+    
+    // Start the Genkit flow
+    start({ topic, role, level, company });
+    
+    // Setup camera
     const getCameraPermission = async () => {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: true });
@@ -143,84 +213,13 @@ function InterviewComponent() {
       } catch (error) {
         console.error('Error accessing camera:', error);
         setHasCameraPermission(false);
-        toast({
-          variant: 'destructive',
-          title: 'Camera Access Denied',
-          description: 'Please enable camera permissions to see yourself.',
-        });
       }
     };
-
     getCameraPermission();
-    
-    // Start the agent connection
-    const connectAgent = async () => {
-      try {
-        const { port, flowId } = await interviewAgent({ topic, role, level, company });
-        const ws = new WebSocket(`ws://localhost:${port}/${flowId}`);
-        connection.current = ws;
-
-        ws.onopen = async () => {
-          console.log("WebSocket connected!");
-          setStatus('listening');
-          // Start recording
-          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-          mediaRecorder.current = new MediaRecorder(stream);
-          mediaRecorder.current.ondataavailable = (event) => {
-            if (event.data.size > 0 && ws.readyState === WebSocket.OPEN) {
-              ws.send(event.data);
-            }
-          };
-          mediaRecorder.current.start(250);
-        };
-
-        ws.onmessage = (event) => {
-          const data = JSON.parse(event.data);
-
-          if (data.type === 'transcript') {
-            setTranscript(prev => {
-                const newTranscript = [...prev];
-                const lastEntry = newTranscript[newTranscript.length - 1];
-                if(lastEntry && lastEntry.speaker === 'user') {
-                    lastEntry.text = data.text;
-                    return newTranscript;
-                }
-                return [...prev, { speaker: 'user', text: data.text }];
-            });
-          } else if (data.type === 'agentResponse') {
-             setTranscript(prev => [...prev, { speaker: 'ai', text: data.text }]);
-          } else if (data.type === 'audio') {
-            audioQueueRef.current.push(data.audio);
-            playNextAudio();
-          } else if (data.type === 'agentState') {
-             setStatus(data.state);
-          } else if (data.type === 'interviewComplete') {
-            setTranscript(prev => [...prev, { speaker: 'ai', text: data.text }]);
-            stopInterview(true, [...transcript, { speaker: 'ai', text: data.text }]);
-          }
-        };
-
-        ws.onclose = () => console.log("WebSocket disconnected.");
-        ws.onerror = (err) => {
-          console.error("WebSocket error:", err);
-          setStatus('error');
-        };
-
-      } catch (error) {
-        console.error("Failed to initialize interview agent:", error);
-        setStatus('error');
-      }
-    };
-
-    connectAgent();
+    startRecording();
 
     return () => {
-      if (mediaRecorder.current && mediaRecorder.current.state === 'recording') mediaRecorder.current.stop();
-      if (connection.current) connection.current.close();
-      if (videoRef.current && videoRef.current.srcObject) {
-        const stream = videoRef.current.srcObject as MediaStream;
-        stream.getTracks().forEach(track => track.stop());
-      }
+      stopInterview(false);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
@@ -246,6 +245,7 @@ function InterviewComponent() {
             <AlertTriangle className="w-16 h-16 mx-auto mb-4" />
             <h2 className="text-xl font-bold">Connection Failed</h2>
             <p>Could not connect. Please check microphone permissions and try again.</p>
+             <Button onClick={() => window.location.reload()} className="mt-4">Try Again</Button>
           </div>
         </Card>
       ) : (
@@ -268,7 +268,7 @@ function InterviewComponent() {
               </div>
 
               <div className="absolute bottom-4 right-4 border rounded-lg bg-background shadow-lg h-32 w-48 overflow-hidden">
-                <video ref={videoRef} className="w-full h-full object-cover" autoPlay muted />
+                <video ref={videoRef} className="w-full h-full object-cover" autoPlay muted playsInline />
                 {!hasCameraPermission && (
                   <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center p-2 text-center text-white">
                     <AlertTriangle className="w-6 h-6 mb-2" />
@@ -290,7 +290,7 @@ function InterviewComponent() {
                       </div>
                     </div>
                   ))}
-                   {status === 'thinking' && (
+                   {(status === 'thinking' || status === 'speaking' || status === 'idle') && (
                      <div className="flex flex-col items-start">
                          <div className="max-w-[90%] p-3 rounded-lg bg-background">
                             <p className="font-bold mb-1 capitalize">Kathy</p>
@@ -304,7 +304,7 @@ function InterviewComponent() {
           </div>
 
           <footer className="p-4 border-t flex items-center justify-center gap-4">
-            <Button variant="destructive" size="icon" className="rounded-full h-14 w-14" onClick={() => stopInterview(true, transcript)} disabled={status === 'finished'}>
+            <Button variant="destructive" size="icon" className="rounded-full h-14 w-14" onClick={() => stopInterview(true)} disabled={status === 'finished'}>
               <PhoneOff className="w-6 h-6" />
             </Button>
             <Button variant="outline" size="icon" className="rounded-full h-14 w-14" onClick={toggleFullScreen}>
