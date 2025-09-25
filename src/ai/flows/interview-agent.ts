@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview A conversational AI agent for conducting mock interviews.
@@ -13,7 +12,7 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { run } from 'genkit';
-import { onFlow } from '@genkit-ai/next';
+import { onFlow } from '@genkit-ai/next/server';
 import { textToSpeechWithDeepgramFlow } from './deepgram-tts';
 import { generateInterviewQuestions } from './generate-interview-questions';
 
@@ -74,7 +73,7 @@ export const interviewAgent = onFlow(
       level: z.string(),
       company: z.string().optional(),
     }),
-    outputSchema: z.void(),
+    outputSchema: z.any(),
     authPolicy: (auth, input) => {
       // In a real app, you would enforce authentication here.
     },
@@ -101,10 +100,13 @@ export const interviewAgent = onFlow(
 
       // 3. Greet the user and ask the first question
       const greeting = `Hello, I'm Kathy, your interviewer today. We'll be discussing ${state.topic} for a ${state.level} ${state.role} role. Let's begin with your first question.`;
-      yield { type: 'agentResponse', text: greeting };
-
+      
+      const greetingAudio = await run("tts-greeting", () => textToSpeechWithDeepgramFlow({ text: greeting }));
+      yield { type: 'agentResponse', text: greeting, audio: greetingAudio.audio.toString('base64') };
+      
       const firstQuestion = state.questions[0];
-      yield { type: 'agentResponse', text: firstQuestion };
+      const firstQuestionAudio = await run("tts-question-1", () => textToSpeechWithDeepgramFlow({ text: firstQuestion }));
+      yield { type: 'agentResponse', text: firstQuestion, audio: firstQuestionAudio.audio.toString('base64') };
       
       state.turn = 'user';
       yield { type: 'agentState', state: 'listening' };
@@ -123,7 +125,8 @@ export const interviewAgent = onFlow(
                   // End of interview
                   state.isFinished = true;
                   const farewell = "That's all the questions I have for now. Thank you for your time. Your feedback report will be generated shortly.";
-                  yield { type: 'interviewComplete', text: farewell };
+                  const farewellAudio = await run("tts-farewell", () => textToSpeechWithDeepgramFlow({ text: farewell }));
+                  yield { type: 'interviewComplete', text: farewell, audio: farewellAudio.audio.toString('base64') };
                   break; // Exit loop
               } else {
                   // Acknowledge and ask the next question
@@ -134,8 +137,10 @@ export const interviewAgent = onFlow(
                       nextQuestion: state.questions[state.currentQuestionIndex],
                   })).text);
 
+                  const llmAudio = await run("tts-response", () => textToSpeechWithDeepgramFlow({ text: llmResponse }));
+
                   state.history.push({ role: 'model', parts: [{ text: llmResponse }] });
-                  yield { type: 'agentResponse', text: llmResponse };
+                  yield { type: 'agentResponse', text: llmResponse, audio: llmAudio.audio.toString('base64') };
                   state.turn = 'user';
                   yield { type: 'agentState', state: 'listening' };
               }

@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef, Suspense } from 'react';
@@ -118,19 +117,21 @@ function InterviewComponent() {
     if (output) {
       if (output.type === 'agentResponse') {
         setTranscript(prev => [...prev, { speaker: 'ai', text: output.text }]);
-        // Here you would call your text-to-speech service and queue the audio
+        audioQueueRef.current.push(output.audio);
+        playNextAudio();
       } else if (output.type === 'agentState') {
         setStatus(output.state);
       } else if (output.type === 'interviewComplete') {
         setTranscript(prev => [...prev, { speaker: 'ai', text: output.text }]);
-        // Here you would call TTS for the final message
-        stopInterview(true);
+        audioQueueRef.current.push(output.audio);
+        playNextAudio();
+        // The stopInterview will be triggered by the audio 'onended' event
       } else if (output.type === 'error') {
         setStatus('error');
         toast({ title: 'Agent Error', description: output.message, variant: 'destructive' });
       }
     }
-  }, [output, stopInterview, toast]);
+  }, [output, toast, playNextAudio]);
 
 
   useEffect(() => {
@@ -138,45 +139,54 @@ function InterviewComponent() {
       audioPlayer.current = new Audio();
       audioPlayer.current.onended = () => {
         isPlayingRef.current = false;
-        if (audioQueueRef.current.length === 0) {
-            setStatus('listening');
-        } else {
+        if (audioQueueRef.current.length > 0) {
             playNextAudio();
+        } else {
+            // If the interview is finished and the last audio clip has played, stop everything.
+            if (status === 'finished' || transcript.some(t => t.text.includes("feedback report will be generated shortly"))) {
+                 stopInterview(true);
+            } else {
+                setStatus('listening');
+            }
         }
       };
     }
-  }, [playNextAudio]);
+  }, [playNextAudio, status, stopInterview, transcript]);
 
   const startRecording = useCallback(async () => {
     try {
         const response = await fetch('/api/auth/deepgram-key', { method: 'POST' });
+        if (!response.ok) {
+            throw new Error(`Failed to get Deepgram key: ${response.statusText}`);
+        }
         const { key } = await response.json();
         const deepgram = createClient(key);
         
         const connection = deepgram.listen.live({
             model: 'nova-2-general',
-            interim_results: true,
+            interim_results: false, // We only care about the final transcript
             smart_format: true,
-            endpointing: 300,
-            utterance_end_ms: 1000
+            endpointing: 300, // Ms of silence to determine end of speech
+            utterance_end_ms: 1000, // Ms of silence to consider utterance ended
         });
         deepgramConnection.current = connection;
 
         connection.on(LiveTranscriptionEvents.Open, async () => {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            mediaRecorder.current = new MediaRecorder(stream);
+            mediaRecorder.current = new MediaRecorder(stream, { mimeType: 'audio/webm' });
             mediaRecorder.current.ondataavailable = (event) => {
                 if (event.data.size > 0 && connection.getReadyState() === 1) {
                     connection.send(event.data);
                 }
             };
             mediaRecorder.current.start(250);
-            setStatus('listening');
+            // We wait for the first agent message before setting status to listening
         });
 
         connection.on(LiveTranscriptionEvents.Transcript, (data) => {
             const text = data.channel.alternatives[0].transcript;
             if (text && data.is_final) {
+                // When user speaks, send transcript to the Genkit flow
                 stream({ type: 'userTranscript', transcript: text });
             }
         });
@@ -290,7 +300,7 @@ function InterviewComponent() {
                       </div>
                     </div>
                   ))}
-                   {(status === 'thinking' || status === 'speaking' || status === 'idle') && (
+                   {(status === 'thinking' || (status === 'speaking' && isPlayingRef.current)) && (
                      <div className="flex flex-col items-start">
                          <div className="max-w-[90%] p-3 rounded-lg bg-background">
                             <p className="font-bold mb-1 capitalize">Kathy</p>
