@@ -13,8 +13,6 @@ if (!process.env.DEEPGRAM_API_KEY) {
     console.warn("DEEPGRAM_API_KEY environment variable not set. Deepgram TTS may not work.");
 }
 
-const deepgram = createClient(process.env.DEEPGRAM_API_KEY || '');
-
 export const textToSpeechWithDeepgramFlow = ai.defineFlow(
   {
     name: 'textToSpeechWithDeepgramFlow',
@@ -22,7 +20,7 @@ export const textToSpeechWithDeepgramFlow = ai.defineFlow(
       text: z.string().describe('The text to be converted to speech.'),
     }),
     outputSchema: z.object({
-      audioDataUri: z.string().describe("The generated audio as a data URI in MP3 format."),
+      audio: z.instanceof(Buffer).describe("The raw audio buffer in MP3 format."),
     }),
   },
   async (input) => {
@@ -30,9 +28,7 @@ export const textToSpeechWithDeepgramFlow = ai.defineFlow(
       text: input.text,
     };
     
-    // Note: Deepgram's Node SDK returns a Readable stream by default.
-    // For simple client-side playback, we need the raw data.
-    // We make a direct fetch call to get the audio buffer.
+    // Use aura-asteria-en for a higher quality, more natural voice.
     const response = await fetch('https://api.deepgram.com/v1/speak?model=aura-asteria-en', {
         method: 'POST',
         body: JSON.stringify(payload),
@@ -50,14 +46,9 @@ export const textToSpeechWithDeepgramFlow = ai.defineFlow(
 
     const blob = await response.blob();
     const buffer = Buffer.from(await blob.arrayBuffer());
-    const base64Audio = buffer.toString('base64');
     
     return {
-      audioDataUri: `data:audio/mp3;base64,${base64Audio}`,
+      audio: buffer,
     };
   }
 );
-
-export async function textToSpeechWithDeepgram(input: z.infer<typeof textToSpeechWithDeepgramFlow.inputSchema>): Promise<z.infer<typeof textToSpeechWithDeepgramFlow.outputSchema>> {
-    return textToSpeechWithDeepgramFlow(input);
-}
