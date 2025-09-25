@@ -4,16 +4,15 @@
 import React, { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import { useSearchParams, useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
-import { addActivity, updateActivity } from '@/lib/firebase-service';
+import { addActivity } from '@/lib/firebase-service';
 import type { InterviewActivity, TranscriptEntry } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Loader2, Mic, Bot, PhoneOff, AlertTriangle, User, BrainCircuit, Maximize, Video, MessageSquare } from 'lucide-react';
+import { Loader2, Mic, Bot, PhoneOff, AlertTriangle, User, Maximize, MessageSquare } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
-import { createClient, LiveTranscriptionEvents, LiveClient } from '@deepgram/sdk';
 
 type AgentStatus = 'idle' | 'listening' | 'thinking' | 'speaking' | 'finished' | 'error';
 
@@ -37,14 +36,16 @@ function InterviewComponent() {
   const [status, setStatus] = useState<AgentStatus>('idle');
   const [transcript, setTranscript] = useState<TranscriptEntry[]>([]);
   const [isFullScreen, setIsFullScreen] = useState(false);
-  const [hasCameraPermission, setHasCameraPermission] = useState(false);
   
   const mediaRecorder = useRef<MediaRecorder | null>(null);
-  const connection = useRef<LiveClient | null>(null);
+  const socket = useRef<WebSocket | null>(null);
   const mainContainerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const audioQueue = useRef<Blob[]>([]);
   const isPlaying = useRef(false);
+  const [isConnecting, setIsConnecting] = useState(true);
+  const [isConnected, setIsConnected] = useState(false);
+
 
   const interviewId = params.interviewId as string;
   const topic = searchParams.get('topic') || 'General Software Engineering';
@@ -79,100 +80,74 @@ function InterviewComponent() {
     audio.play();
   }, []);
 
-  const connectToDeepgram = useCallback(async () => {
-    if (connection.current) return;
-    setStatus('idle');
-    try {
-        const response = await fetch('/api/auth/deepgram-key', { method: 'POST' });
-        const { key, error } = await response.json();
-        if (error) throw new Error(error);
-
-        const deepgram = createClient(key);
-        const newConnection = deepgram.listen.live({
-            model: "nova-2-general",
-            smart_format: true,
-            interim_results: false,
-            utterance_end_ms: 1000,
-            vad_events: true,
-            talk: {
-                provider: 'deepgram',
-                model: 'aura-asteria-en'
-            }
-        });
-
-        newConnection.on(LiveTranscriptionEvents.Open, async () => {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            mediaRecorder.current = new MediaRecorder(stream, { mimeType: 'audio/webm' });
-            mediaRecorder.current.ondataavailable = (e) => {
-                if (e.data.size > 0 && newConnection.getReadyState() === 1) {
-                    newConnection.send(e.data);
-                }
-            };
-            mediaRecorder.current.start(250);
-            setStatus('listening');
-
-            const initialMessage = `Hello, I'm Kathy, your interviewer from Talxify. We'll be discussing ${topic} for a ${level} ${role} position. Let's begin.`;
-            newConnection.send(JSON.stringify({ type: 'Talk', text: initialMessage }));
-        });
-
-        newConnection.on(LiveTranscriptionEvents.Transcript, (data) => {
-            const text = data.channel.alternatives[0].transcript;
-            if (text) {
-                setTranscript(prev => [...prev, { speaker: 'user', text }]);
-            }
-        });
-        
-        newConnection.on(LiveTranscriptionEvents.UtteranceEnd, (data) => {
-             const text = data.channel.alternatives[0].transcript;
-             if (text) {
-                newConnection.send(JSON.stringify({ type: 'Talk', text: ' ' })); // Keep connection alive while LLM thinks
-                setStatus('thinking');
-             }
-        })
-        
-        newConnection.on(LiveTranscriptionEvents.Audio, (audioData) => {
-            audioQueue.current.push(new Blob([audioData], { type: 'audio/mp3' }));
-            processAudioQueue();
-        });
-
-        newConnection.on(LiveTranscriptionEvents.Close, () => {
-            if (status !== 'finished') {
-                stopInterview(true);
-            }
-        });
-
-        newConnection.on(LiveTranscriptionEvents.Error, (err) => {
-            console.error(err);
-            setStatus('error');
-        });
-
-        connection.current = newConnection;
-
-    } catch (e) {
-        console.error("Deepgram connection failed", e);
-        setStatus('error');
-        toast({ title: 'Connection Failed', description: (e as Error).message, variant: 'destructive' });
+  const disconnect = useCallback(() => {
+    if (socket.current) {
+        socket.current.close();
+        socket.current = null;
     }
-  }, [topic, level, role, processAudioQueue, toast]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (mediaRecorder.current && mediaRecorder.current.state === 'recording') {
+        mediaRecorder.current.stop();
+    }
+    setIsConnected(false);
+  }, []);
+
+  const connect = useCallback(async () => {
+    setIsConnecting(true);
+
+    const newSocket = new WebSocket('/api/socket');
+    
+    newSocket.onopen = async () => {
+        setIsConnecting(false);
+        setIsConnected(true);
+        setStatus('listening');
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder.current = new MediaRecorder(stream);
+
+        mediaRecorder.current.ondataavailable = (event) => {
+            if (event.data.size > 0 && newSocket.readyState === 1) {
+                newSocket.send(event.data);
+            }
+        };
+        mediaRecorder.current.start(500); // Send data every 500ms
+    };
+
+    newSocket.onmessage = (event) => {
+        if (typeof event.data === "string") {
+            const message = JSON.parse(event.data);
+            if (message.type === 'transcript') {
+                setTranscript(prev => [...prev, { speaker: message.speaker, text: message.text }]);
+            } else if (message.type === 'status') {
+                setStatus(message.status);
+            }
+        } else if (event.data instanceof Blob) {
+            audioQueue.current.push(event.data);
+            processAudioQueue();
+        }
+    };
+
+    newSocket.onerror = (error) => {
+        console.error("WebSocket error:", error);
+        setStatus('error');
+        disconnect();
+    };
+
+    newSocket.onclose = () => {
+        console.log("WebSocket closed");
+        setIsConnected(false);
+        if(status !== 'finished') {
+            setStatus('error');
+        }
+    };
+
+    socket.current = newSocket;
+  }, [disconnect, processAudioQueue, status]);
 
 
   const stopInterview = useCallback(async (save: boolean) => {
       if (status === 'finished') return;
       console.log('Stopping interview...');
       setStatus('finished');
-
-      if (connection.current) {
-          connection.current.finish();
-          connection.current = null;
-      }
-      if (mediaRecorder.current) {
-          mediaRecorder.current.stop();
-          mediaRecorder.current = null;
-      }
-      if (videoRef.current && videoRef.current.srcObject) {
-          (videoRef.current.srcObject as MediaStream).getTracks().forEach(track => track.stop());
-          videoRef.current.srcObject = null;
-      }
+      disconnect();
       
       if (save && user && transcript.length > 0) {
         try {
@@ -184,7 +159,6 @@ function InterviewComponent() {
                 feedback: "Feedback will be generated on the results page.",
                 details: { topic, role, level, company }
             };
-            // Use setDoc or updateDoc to ensure the activity is saved
             await addActivity(user.uid, finalActivity);
             toast({ title: "Interview Complete", description: "Generating your feedback report..." });
             router.push(`/dashboard/interview/${finalActivity.id}/results`);
@@ -195,7 +169,7 @@ function InterviewComponent() {
     } else if (!save) {
         router.push('/dashboard/arena');
     }
-  }, [user, transcript, interviewId, topic, role, level, company, router, toast, status]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [user, transcript, interviewId, topic, role, level, company, router, toast, status, disconnect]);
 
 
   useEffect(() => {
@@ -204,26 +178,12 @@ function InterviewComponent() {
       return;
     }
     
-    const getCameraPermission = async () => {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-        setHasCameraPermission(true);
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-        }
-      } catch (error) {
-        console.error('Error accessing camera:', error);
-        setHasCameraPermission(false);
-      }
-    };
-
-    getCameraPermission();
-    connectToDeepgram();
+    connect();
 
     return () => {
         stopInterview(false);
     };
-  }, [user, connectToDeepgram]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [user, connect]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const toggleFullScreen = () => {
     if (!mainContainerRef.current) return;
@@ -270,12 +230,7 @@ function InterviewComponent() {
 
               <div className="absolute bottom-4 right-4 border rounded-lg bg-background shadow-lg h-32 w-48 overflow-hidden">
                 <video ref={videoRef} className="w-full h-full object-cover" autoPlay muted playsInline />
-                {!hasCameraPermission && (
-                  <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center p-2 text-center text-white">
-                    <AlertTriangle className="w-6 h-6 mb-2" />
-                    <p className="text-xs">Enable camera permissions to see yourself.</p>
-                  </div>
-                )}
+                
               </div>
             </div>
 
@@ -291,7 +246,7 @@ function InterviewComponent() {
                       </div>
                     </div>
                   ))}
-                   {(status === 'thinking' || status === 'speaking') && (
+                   {(status === 'thinking' || status === 'speaking' || isConnecting) && (
                      <div className="flex flex-col items-start">
                          <div className="max-w-[90%] p-3 rounded-lg bg-background">
                             <p className="font-bold mb-1 capitalize">Kathy</p>
