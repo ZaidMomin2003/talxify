@@ -4,15 +4,17 @@ import { createClient } from '@deepgram/sdk';
 
 export async function POST() {
   const deepgramApiKey = process.env.DEEPGRAM_API_KEY;
+  const deepgramProjectId = process.env.DEEPGRAM_PROJECT_ID;
 
-  if (!deepgramApiKey) {
-    return NextResponse.json({ error: 'Deepgram API key not configured on the server.' }, { status: 500 });
+  if (!deepgramApiKey || !deepgramProjectId) {
+    return NextResponse.json({ error: 'Deepgram API key or Project ID not configured on the server.' }, { status: 500 });
   }
   
   const deepgram = createClient(deepgramApiKey);
 
   try {
     const { key, error } = await deepgram.keys.create(
+      deepgramProjectId,
       'Temporary key for Talxify user', // Comment
       ['member'], // Permissions
       { timeToLive: 2 * 60 } // TTL in seconds (e.g., 2 minutes)
