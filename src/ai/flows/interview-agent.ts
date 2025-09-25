@@ -10,10 +10,10 @@
  * - InterviewState - The Zod schema defining the agent's conversational state.
  */
 
-import { ai, genkit } from '@/ai/genkit';
+import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import { defineFlow, run, startFlow } from 'genkit';
-import { onFlow } from 'genkit/next';
+import { run, startFlow } from 'genkit';
+import { onFlow } from '@genkit-ai/next';
 import { createClient, LiveTranscriptionEvents } from '@deepgram/sdk';
 import { textToSpeechWithDeepgramFlow } from './deepgram-tts';
 import { generateInterviewQuestions } from './generate-interview-questions';
