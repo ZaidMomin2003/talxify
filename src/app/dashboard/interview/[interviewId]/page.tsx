@@ -18,7 +18,7 @@ type AgentStatus = 'idle' | 'listening' | 'thinking' | 'speaking' | 'finished' |
 
 const statusInfo: { [key in AgentStatus]: { text: string; showMic?: boolean } } = {
   idle: { text: "Connecting..." },
-  listening: { text: "Listening...", showMic: true },
+  listening: { text: "Hold to Speak" },
   thinking: { text: "Kathy is Thinking..." },
   speaking: { text: "Kathy is Speaking..." },
   finished: { text: "Interview Finished" },
@@ -36,6 +36,7 @@ function InterviewComponent() {
   const [status, setStatus] = useState<AgentStatus>('idle');
   const [transcript, setTranscript] = useState<TranscriptEntry[]>([]);
   const [isFullScreen, setIsFullScreen] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
   
   const mediaRecorder = useRef<MediaRecorder | null>(null);
   const socket = useRef<WebSocket | null>(null);
@@ -91,56 +92,53 @@ function InterviewComponent() {
     setIsConnected(false);
   }, []);
 
-  const connect = useCallback(async () => {
-    setIsConnecting(true);
+   const connect = useCallback(async () => {
+        setIsConnecting(true);
 
-    const newSocket = new WebSocket('/api/socket');
-    
-    newSocket.onopen = async () => {
-        setIsConnecting(false);
-        setIsConnected(true);
-        setStatus('listening');
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        mediaRecorder.current = new MediaRecorder(stream);
+        try {
+            const newSocket = new WebSocket('/api/socket');
 
-        mediaRecorder.current.ondataavailable = (event) => {
-            if (event.data.size > 0 && newSocket.readyState === 1) {
-                newSocket.send(event.data);
-            }
-        };
-        mediaRecorder.current.start(500); // Send data every 500ms
-    };
+            newSocket.onopen = async () => {
+                setIsConnecting(false);
+                setIsConnected(true);
+                setStatus('listening');
+            };
 
-    newSocket.onmessage = (event) => {
-        if (typeof event.data === "string") {
-            const message = JSON.parse(event.data);
-            if (message.type === 'transcript') {
-                setTranscript(prev => [...prev, { speaker: message.speaker, text: message.text }]);
-            } else if (message.type === 'status') {
-                setStatus(message.status);
-            }
-        } else if (event.data instanceof Blob) {
-            audioQueue.current.push(event.data);
-            processAudioQueue();
-        }
-    };
+            newSocket.onmessage = (event) => {
+                if (typeof event.data === "string") {
+                    const message = JSON.parse(event.data);
+                    if (message.type === 'transcript') {
+                        setTranscript(prev => [...prev, { speaker: message.speaker, text: message.text }]);
+                    } else if (message.type === 'status') {
+                        setStatus(message.status);
+                    }
+                } else if (event.data instanceof Blob) {
+                    audioQueue.current.push(event.data);
+                    processAudioQueue();
+                }
+            };
 
-    newSocket.onerror = (error) => {
-        console.error("WebSocket error:", error);
-        setStatus('error');
-        disconnect();
-    };
+            newSocket.onerror = (error) => {
+                console.error("WebSocket error:", error);
+                setStatus('error');
+                disconnect();
+            };
 
-    newSocket.onclose = () => {
-        console.log("WebSocket closed");
-        setIsConnected(false);
-        if(status !== 'finished') {
+            newSocket.onclose = () => {
+                console.log("WebSocket closed");
+                setIsConnected(false);
+                if (status !== 'finished') {
+                    setStatus('error');
+                }
+            };
+
+            socket.current = newSocket;
+        } catch (error) {
+            console.error('Failed to create WebSocket:', error);
             setStatus('error');
+            setIsConnecting(false);
         }
-    };
-
-    socket.current = newSocket;
-  }, [disconnect, processAudioQueue, status]);
+    }, [disconnect, processAudioQueue, status]);
 
 
   const stopInterview = useCallback(async (save: boolean) => {
@@ -184,6 +182,39 @@ function InterviewComponent() {
         stopInterview(false);
     };
   }, [user, connect]); // eslint-disable-line react-hooks/exhaustive-deps
+  
+  const startRecording = async () => {
+      if (mediaRecorder.current && mediaRecorder.current.state === 'recording' || !socket.current) return;
+      
+      try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          if(videoRef.current) videoRef.current.srcObject = stream;
+          
+          mediaRecorder.current = new MediaRecorder(stream);
+
+          mediaRecorder.current.ondataavailable = (event) => {
+              if (event.data.size > 0 && socket.current && socket.current.readyState === 1) {
+                  socket.current.send(event.data);
+              }
+          };
+          mediaRecorder.current.start(500); // Send data every 500ms
+          setIsRecording(true);
+      } catch (error) {
+          console.error("Microphone access denied:", error);
+          toast({ title: "Microphone Error", description: "Could not access microphone.", variant: "destructive" });
+      }
+  };
+
+  const stopRecording = () => {
+      if (mediaRecorder.current && mediaRecorder.current.state === 'recording') {
+          mediaRecorder.current.stop();
+          // Stop all tracks on the stream to turn off mic indicator
+          const stream = mediaRecorder.current.stream;
+          stream.getTracks().forEach(track => track.stop());
+      }
+      setIsRecording(false);
+  };
+
 
   const toggleFullScreen = () => {
     if (!mainContainerRef.current) return;
@@ -215,22 +246,21 @@ function InterviewComponent() {
             <div className="md:col-span-3 h-full bg-muted rounded-lg flex flex-col items-center justify-center relative overflow-hidden p-8">
               <div className="relative flex flex-col items-center gap-4 text-center z-10">
                 <div className={cn("relative flex items-center justify-center w-48 h-48 rounded-full border-8 transition-all duration-300",
-                  status === 'listening' ? 'border-red-500/50' :
+                  isRecording ? 'border-red-500/50' :
                   status === 'speaking' ? 'border-blue-500/50' : 'border-border'
                 )}>
                   <Image src="/robot.png" alt="Kathy" width={192} height={192} className="rounded-full" data-ai-hint="robot face" />
                   <div className={cn("absolute inset-0 rounded-full animate-pulse",
-                    status === 'listening' ? 'bg-red-500/20' :
+                    isRecording ? 'bg-red-500/20' :
                     status === 'speaking' ? 'bg-blue-500/20' : 'bg-transparent'
                   )}></div>
                 </div>
                 <h2 className="text-2xl font-bold font-headline">Kathy</h2>
-                <Badge variant={status === 'listening' ? 'destructive' : 'secondary'} className="capitalize">{currentStatusInfo.text}</Badge>
+                <Badge variant={isRecording ? 'destructive' : 'secondary'} className="capitalize">{isRecording ? "Listening..." : currentStatusInfo.text}</Badge>
               </div>
 
               <div className="absolute bottom-4 right-4 border rounded-lg bg-background shadow-lg h-32 w-48 overflow-hidden">
                 <video ref={videoRef} className="w-full h-full object-cover" autoPlay muted playsInline />
-                
               </div>
             </div>
 
@@ -260,6 +290,22 @@ function InterviewComponent() {
           </div>
 
           <footer className="p-4 border-t flex items-center justify-center gap-4">
+             <Button 
+                variant="outline"
+                size="icon" 
+                className={cn(
+                    "rounded-full h-16 w-16 transition-all duration-200 transform",
+                    isRecording ? "bg-red-500/20 text-red-500 scale-110" : "bg-background",
+                    "disabled:opacity-50"
+                )}
+                onMouseDown={startRecording}
+                onMouseUp={stopRecording}
+                onTouchStart={startRecording}
+                onTouchEnd={stopRecording}
+                disabled={status !== 'listening'}
+            >
+              <Mic className="w-7 h-7" />
+            </Button>
             <Button variant="destructive" size="icon" className="rounded-full h-14 w-14" onClick={() => stopInterview(true)} disabled={status === 'finished'}>
               <PhoneOff className="w-6 h-6" />
             </Button>
@@ -280,3 +326,5 @@ export default function InterviewPage() {
     </Suspense>
   )
 }
+
+    
