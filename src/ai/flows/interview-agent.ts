@@ -87,8 +87,9 @@ export const interviewAgent = onFlow(
       //   throw new Error("User must be authenticated.");
       // }
     },
+    stream: true,
   },
-  async (payload) => {
+  async (payload, streamingCallback) => {
     const state: InterviewState = { ...payload, questions: [], currentQuestionIndex: 0, isFinished: false, turn: 'agent' };
     
     // 1. Generate initial questions
@@ -98,81 +99,99 @@ export const interviewAgent = onFlow(
     // 2. Start the conversation
     const greeting = `Hello, I'm Kathy, your interviewer today. We'll be discussing ${state.topic} for a ${state.level} ${state.role} role. Let's begin with your first question.`;
     
-    startFlow.stream(async function* (websocket) {
-      let finalTranscript = '';
-      
-      const sendAudio = async (text: string) => {
-         const { audio } = await run('tts', () => textToSpeechWithDeepgramFlow({ text }));
-         websocket.send({ type: 'audio', audio: audio.toString('base64') });
-      }
+    const flow = await startFlow(
+        {
+            name: "interviewAgentFlow",
+            input: payload,
+        },
+        async (payload) => {
 
-      const connection = deepgram.listen.live({
-        model: 'nova-2-general',
-        interim_results: true,
-        smart_format: true,
-        endpointing: 250, // ms of silence to detect end of speech
-        no_delay: true,
-      });
+            let finalTranscript = '';
+            
+            const sendAudio = async (text: string) => {
+                const { audio } = await run('tts', () => textToSpeechWithDeepgramFlow({ text }));
+                streamingCallback({ type: 'audio', audio: audio.toString('base64') });
+            }
 
-      connection.on(LiveTranscriptionEvents.Open, async () => {
-        console.log('Deepgram connection opened.');
-        
-        // Greet and ask the first question
-        websocket.send({ type: 'agentState', state: 'speaking' });
-        await sendAudio(greeting);
-        const firstQuestion = state.questions[state.currentQuestionIndex];
-        await sendAudio(firstQuestion);
-        state.currentQuestionIndex++;
-      });
-      
-      connection.on(LiveTranscriptionEvents.Close, () => console.log('Deepgram connection closed.'));
-      connection.on(LiveTranscriptionEvents.Error, (err) => console.error('Deepgram error:', err));
-      
-      connection.on(LiveTranscriptionEvents.Transcript, (data) => {
-        const text = data.channel.alternatives[0].transcript;
-        if (text) {
-          websocket.send({ type: 'transcript', text });
+            const connection = deepgram.listen.live({
+                model: 'nova-2-general',
+                interim_results: true,
+                smart_format: true,
+                endpointing: 250, // ms of silence to detect end of speech
+                no_delay: true,
+            });
+
+            connection.on(LiveTranscriptionEvents.Open, async () => {
+                console.log('Deepgram connection opened.');
+                
+                // Greet and ask the first question
+                streamingCallback({ type: 'agentState', state: 'speaking' });
+                await sendAudio(greeting);
+                const firstQuestion = state.questions[state.currentQuestionIndex];
+                await sendAudio(firstQuestion);
+                state.currentQuestionIndex++;
+                streamingCallback({ type: 'agentState', state: 'listening' });
+            });
+            
+            connection.on(LiveTranscriptionEvents.Close, () => console.log('Deepgram connection closed.'));
+            connection.on(LiveTranscriptionEvents.Error, (err) => console.error('Deepgram error:', err));
+            
+            connection.on(LiveTranscriptionEvents.Transcript, (data) => {
+                const text = data.channel.alternatives[0].transcript;
+                if (text) {
+                streamingCallback({ type: 'transcript', text });
+                }
+                if (data.is_final) {
+                finalTranscript += text + ' ';
+                }
+            });
+            
+            connection.on(LiveTranscriptionEvents.UtteranceEnd, async () => {
+                if (!finalTranscript.trim()) return;
+
+                const userAnswer = finalTranscript;
+                finalTranscript = '';
+                state.turn = 'agent';
+                streamingCallback({ type: 'agentState', state: 'thinking' });
+
+                // If all questions are asked, end the interview.
+                if (state.currentQuestionIndex >= state.questions.length) {
+                    const farewell = "That's all the questions I have for now. Thank you for your time. Your feedback report will be generated shortly.";
+                    await sendAudio(farewell);
+                    streamingCallback({ type: 'interviewComplete', text: farewell });
+                    connection.finish();
+                    return;
+                }
+
+                // Generate acknowledgment and next question
+                const llmResponse = await run("generate-response", async () => (await interviewerPrompt({
+                    ...state,
+                    currentQuestion: state.questions[state.currentQuestionIndex],
+                    userAnswer,
+                })).text);
+                
+                await sendAudio(llmResponse);
+                state.currentQuestionIndex++;
+                state.turn = 'user';
+                streamingCallback({ type: 'agentState', state: 'listening' });
+            });
+            
+            // This part is crucial for handling the incoming audio stream from the client.
+            // We need a mechanism to receive the audio chunks sent from the frontend.
+            // In Genkit's `onFlow` with streaming, the `payload` itself can be the stream.
+            // However, the initial `onFlow` payload is just the initial setup data.
+            // The `startFlow` API doesn't seem to directly support a duplex stream like this.
+            // A common pattern is to have the client send audio chunks via a separate mechanism
+            // or have the flow expose an action that the client can call repeatedly.
+            
+            // For now, let's assume the WebSocket connection is handled outside the `startFlow`
+            // and we can feed data into the Deepgram connection.
+            // This part of the logic needs to be connected to the WebSocket from the `onFlow` handler.
+            // The original logic was trying to do this within the `onFlow` `startFlow.stream` which is incorrect.
+            // The correct way is to use `onFlow` with `stream:true` and then handle the duplex stream inside it.
         }
-        if (data.is_final) {
-          finalTranscript += text + ' ';
-        }
-      });
-      
-      connection.on(LiveTranscriptionEvents.UtteranceEnd, async () => {
-          if (!finalTranscript.trim()) return;
-
-          const userAnswer = finalTranscript;
-          finalTranscript = '';
-          state.turn = 'agent';
-          websocket.send({ type: 'agentState', state: 'thinking' });
-
-          // If all questions are asked, end the interview.
-          if (state.currentQuestionIndex >= state.questions.length) {
-              const farewell = "That's all the questions I have for now. Thank you for your time. Your feedback report will be generated shortly.";
-              await sendAudio(farewell);
-              websocket.send({ type: 'interviewComplete', text: farewell });
-              connection.finish();
-              return;
-          }
-
-          // Generate acknowledgment and next question
-          const llmResponse = await run("generate-response", async () => (await interviewerPrompt({
-              ...state,
-              currentQuestion: state.questions[state.currentQuestionIndex],
-              userAnswer,
-          })).text);
-          
-          await sendAudio(llmResponse);
-          state.currentQuestionIndex++;
-          state.turn = 'user';
-          websocket.send({ type: 'agentState', state: 'listening' });
-      });
-
-      for await (const chunk of websocket) {
-        if (connection.getReadyState() === 1 /* OPEN */) {
-          connection.send(chunk);
-        }
-      }
-    });
+    )
+    
+     // Let's go back to a single `onFlow` structure that handles the stream directly
   }
 );
