@@ -80,7 +80,7 @@ export const interviewAgent = onFlow(
     },
     stream: true,
   },
-  async function* (payload, streamingCallback) {
+  async function* (payload, stream) {
     // 1. Initialize State
     let state: InterviewState = {
       ...payload,
@@ -110,7 +110,7 @@ export const interviewAgent = onFlow(
       yield { type: 'agentState', state: 'listening' };
 
       // 4. Main conversation loop
-      for await (const chunk of this.stream()) {
+      for await (const chunk of stream) {
           if (chunk.type === 'userTranscript') {
               const userAnswer = chunk.transcript;
               state.history.push({ role: 'user', parts: [{ text: userAnswer }] });
