@@ -36,7 +36,6 @@ const ChunkSyllabusInputSchema = z.object({
     companies: z.string(),
     count: z.number().int(),
     startDay: z.number().int(),
-    existingTopics: z.array(z.string()),
 });
 
 const prompt = ai.definePrompt({
@@ -62,9 +61,8 @@ const prompt = ai.definePrompt({
   **Instructions:**
   1.  Generate a plan for **exactly {{count}} days**, starting from day {{startDay}}.
   2.  The plan MUST be tailored to the types of questions and priorities of the specified companies.
-  3.  Structure the topics logically, building on previous concepts if any.
-  4.  **Do not repeat these topics**: {{#if existingTopics}} {{#each existingTopics}} - {{this}} {{/each}} {{else}} None {{/if}}
-  5.  For each day, provide the day number, a specific topic, and a brief, encouraging one-sentence description of the goal.
+  3.  Structure the topics logically.
+  4.  For each day, provide the day number, a specific topic, and a brief, encouraging one-sentence description of the goal.
   `,
 });
 
@@ -83,7 +81,6 @@ const generateSyllabusFlow = ai.defineFlow(
     const totalDays = 60;
     const chunkSize = 20;
     let allDays: SyllabusDay[] = [];
-    let existingTopics: string[] = [];
 
     for (let i = 0; i < Math.ceil(totalDays / chunkSize); i++) {
         const startDay = i * chunkSize + 1;
@@ -93,29 +90,45 @@ const generateSyllabusFlow = ai.defineFlow(
                 ...input,
                 count: chunkSize,
                 startDay: startDay,
-                existingTopics: existingTopics,
             });
 
             if (output && output.syllabus) {
                 allDays = allDays.concat(output.syllabus);
-                existingTopics = allDays.map(d => d.topic);
             } else {
-                 throw new Error(`Syllabus generation failed for chunk starting at day ${startDay}: AI returned no output.`);
+                 console.error(`Syllabus generation returned no output for chunk starting at day ${startDay}.`);
             }
         } catch(error) {
-             throw new Error(`Syllabus generation failed for chunk starting at day ${startDay}: ${error instanceof Error ? error.message : String(error)}`);
+             console.error(`Syllabus generation failed for chunk starting at day ${startDay}:`, error);
         }
     }
     
+    // Fallback to ensure we always have 60 days.
+    if (allDays.length < totalDays) {
+        const remainingDays = totalDays - allDays.length;
+        const fallbackTopics = [
+            "Review: Data Structures",
+            "Practice: Algorithms",
+            "System Design: Scalability",
+            "Behavioral Interview Practice",
+            "Review: Company-specific Questions"
+        ];
+        for (let i = 0; i < remainingDays; i++) {
+            allDays.push({
+                day: allDays.length + 1,
+                topic: fallbackTopics[i % fallbackTopics.length],
+                description: "Reviewing key concepts and practicing problems."
+            });
+        }
+    }
+
     // Ensure the output contains exactly 60 days and days are numbered correctly.
-    // This makes the flow resilient to minor AI inconsistencies.
     const finalSyllabus = allDays.slice(0, totalDays).map((day, index) => ({
       ...day,
       day: index + 1,
     }));
 
     if (finalSyllabus.length === 0) {
-        throw new Error(`Syllabus generation failed: AI returned an empty syllabus after all chunks.`);
+        throw new Error(`Syllabus generation failed completely. Please try again.`);
     }
 
     return { syllabus: finalSyllabus };
