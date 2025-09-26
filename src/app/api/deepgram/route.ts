@@ -18,6 +18,8 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // Note: This POST handler is not currently used by the "hold-to-speak" client,
+  // but is kept for potential future use or alternative connection methods.
   const deepgram = createClient(process.env.DEEPGRAM_API_KEY!);
   const { key } = await deepgram.keys.create(
     process.env.DEEPGRAM_PROJECT_ID!,
@@ -30,75 +32,82 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
-  const url = new URL(request.url);
-  const { searchParams } = url;
-  const role = searchParams.get('role');
-  const level = searchParams.get('level');
-  const topic = searchParams.get('topic');
-
-  if (!role || !level || !topic) {
-    return NextResponse.json(
-      { error: 'role, level, and topic are required' },
-      { status: 400 }
-    );
-  }
-
   const deepgram = createClient(process.env.DEEPGRAM_API_KEY!);
   let connection: LiveClient;
+  let text = '';
 
-  const { stream, status } = await new Promise<{
-    stream: ReadableStream;
-    status: number;
-  }>(async (resolve, reject) => {
-    const readable = new ReadableStream({
-      start(controller) {
-        connection = deepgram.listen.live({
-          model: 'nova-2',
-          language: 'en-US',
-          smart_format: true,
-          interim_results: true,
-          utterance_end_ms: 1000,
-          endpointing: 250,
+  const { searchParams } = new URL(request.url);
+  const role = searchParams.get('role') || 'Software Engineer';
+  const topic = searchParams.get('topic') || 'General';
+  const level = searchParams.get('level') || 'Entry-level';
+
+  const stream = new ReadableStream({
+    async start(controller) {
+      connection = deepgram.listen.live({
+        model: 'nova-2',
+        language: 'en-US',
+        smart_format: true,
+        interim_results: true,
+        utterance_end_ms: 1000,
+        endpointing: 250,
+      });
+
+      connection.on(LiveTranscriptionEvents.Open, async () => {
+        console.log('Deepgram connection established');
+        const { stream } = await runInterviewAgent({
+          text: '',
+          role,
+          topic,
+          level,
         });
 
-        connection.on(LiveTranscriptionEvents.Open, () => {
-          console.log('connection established');
-        });
+        for await (const chunk of stream) {
+          controller.enqueue(chunk);
+        }
+      });
 
-        connection.on(LiveTranscriptionEvents.Close, () => {
-          console.log('connection closed');
-          controller.close();
-        });
+      connection.on(LiveTranscriptionEvents.Transcript, async (data) => {
+        text = data.channel.alternatives[0].transcript ?? '';
+        if (data.is_final && text.trim()) {
+          console.log('User transcript:', text);
+          const { stream } = await runInterviewAgent({
+            text,
+            role,
+            topic,
+            level,
+          });
 
-        connection.on(LiveTranscriptionEvents.Error, (e) => {
-          console.error(e);
-        });
-
-        connection.on(LiveTranscriptionEvents.Transcript, (data) => {
-          const text = data.channel.alternatives[0].transcript;
-          if (data.is_final && text.trim()) {
-            console.log('received', text);
+          for await (const chunk of stream) {
+            controller.enqueue(chunk);
           }
-        });
-      },
-      async pull(controller) {
-        // Handle pulling data if necessary, for now we let events drive it
-      },
-      cancel() {
-        console.log('stream cancelled');
-        connection.finish();
-      },
-    });
+        }
+      });
 
-    resolve({ stream: readable, status: 200 });
+      connection.on(LiveTranscriptionEvents.Close, () => {
+        console.log('Deepgram connection closed');
+        controller.close();
+      });
+
+      connection.on(LiveTranscriptionEvents.Error, (err) => {
+        console.error('Deepgram error:', err);
+        controller.error(err);
+      });
+    },
+    async pull(controller) {
+      // This is handled by the event listeners
+    },
+    cancel() {
+      console.log('Stream cancelled');
+      if (connection) {
+        connection.finish();
+      }
+    },
   });
 
+  // This is the crucial part: return a Response object with the stream
   return new Response(stream, {
     headers: {
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
-      Connection: 'keep-alive',
+      'Content-Type': 'application/octet-stream',
     },
-    status,
   });
 }
