@@ -74,20 +74,24 @@ const features = [
 
 const faqs = [
     {
-        question: "How does institutional pricing work?",
-        answer: "We offer flexible and affordable bulk licensing plans based on the number of student seats you require. Pricing is significantly discounted compared to individual plans. Please contact us for a custom quote."
+        question: "How do institutional discounts work?",
+        answer: "We provide special discount codes for your students, making our Pro plans more accessible. We can work with you to create a custom arrangement that best suits your students' needs. Please contact us to discuss the options."
     },
     {
-        question: "Can we integrate Talxify with our Learning Management System (LMS)?",
-        answer: "While we don't offer direct LMS integration at this moment, we provide simple onboarding for students and dedicated support for faculty to make the process as smooth as possible. We are exploring integrations for future releases."
+        question: "Can Talxify integrate with our Learning Management System (LMS)?",
+        answer: "Currently, we do not offer direct LMS integration. However, our platform is web-based and easily accessible to all students. Onboarding is a straightforward process, and we provide dedicated support to help your faculty and students get started quickly."
     },
     {
-        question: "What kind of data and analytics can we access?",
-        answer: "Institutions get access to an admin dashboard with anonymized, aggregate data on student activity, quiz performance by topic, common areas of weakness, and overall progress through the prep syllabus."
+        question: "What kind of data and analytics can our institution access?",
+        answer: "Institutions can be provided with an admin dashboard showing anonymized, aggregate data. This includes metrics on student activity, overall performance on quizzes by topic, and common areas of weakness, helping you gain valuable insights into your cohort's job-readiness."
     },
     {
-        question: "How do you protect student privacy?",
-        answer: "Student privacy is our top priority. All performance data is handled securely. The institutional dashboard only shows aggregated and anonymized data to ensure individual student privacy is maintained."
+        question: "How does the AI personalize the experience for each student?",
+        answer: "Personalization is at our core. The journey begins with a custom 60-day prep syllabus based on the student's target roles and companies. The 'Code Izanami' quizzes adapt in difficulty based on performance, and the AI interviewer can tailor questions based on the specified job role and level."
+    },
+    {
+        question: "What kind of support do students receive?",
+        answer: "All users have access to our support resources. Students on the Pro plan receive priority support to ensure any questions or issues are addressed promptly, allowing them to focus on their preparation."
     }
 ];
 
