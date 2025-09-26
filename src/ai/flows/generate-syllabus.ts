@@ -14,7 +14,7 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const SyllabusDaySchema = z.object({
-  day: z.number().int().describe('The day number, from 1 to 60.'),
+  day: z.number().int().describe('The day number.'),
   topic: z.string().describe('The main technical topic for the day (e.g., "Arrays and Strings", "Dynamic Programming", "System Design Basics").'),
   description: z.string().describe('A brief, one-sentence description of the goal for the day.'),
 });
@@ -31,13 +31,17 @@ const GenerateSyllabusOutputSchema = z.object({
 });
 export type GenerateSyllabusOutput = z.infer<typeof GenerateSyllabusOutputSchema>;
 
-export async function generateSyllabus(input: GenerateSyllabusInput): Promise<GenerateSyllabusOutput> {
-  return generateSyllabusFlow(input);
-}
+const ChunkSyllabusInputSchema = z.object({
+    roles: z.string(),
+    companies: z.string(),
+    count: z.number().int(),
+    startDay: z.number().int(),
+    existingTopics: z.array(z.string()),
+});
 
 const prompt = ai.definePrompt({
   name: 'generateSyllabusPrompt',
-  input: {schema: GenerateSyllabusInputSchema},
+  input: {schema: ChunkSyllabusInputSchema},
   output: {schema: GenerateSyllabusOutputSchema},
   config: {
     model: 'googleai/gemini-1.5-pro-latest',
@@ -49,19 +53,25 @@ const prompt = ai.definePrompt({
     ],
   },
   prompt: `You are an expert career coach and technical interviewer who has worked at FAANG companies.
-  Your task is to generate a personalized, structured 60-day interview preparation syllabus for a candidate.
+  Your task is to generate a portion of a structured interview preparation syllabus for a candidate.
 
   **Candidate Profile:**
   - Roles: {{roles}}
   - Target Companies: {{companies}}
 
   **Instructions:**
-  1.  Create a plan for **exactly 60 days**.
-  2.  The plan MUST be tailored to the types of questions and priorities of the specified companies. (e.g., Google -> more algorithms; Netflix -> more system design).
-  3.  Structure the topics logically, starting from fundamentals and progressing to advanced concepts.
-  4.  For each day, provide the day number, a specific topic, and a brief, encouraging one-sentence description of the goal.
+  1.  Generate a plan for **exactly {{count}} days**, starting from day {{startDay}}.
+  2.  The plan MUST be tailored to the types of questions and priorities of the specified companies.
+  3.  Structure the topics logically, building on previous concepts if any.
+  4.  **Do not repeat these topics**: {{#if existingTopics}} {{#each existingTopics}} - {{this}} {{/each}} {{else}} None {{/if}}
+  5.  For each day, provide the day number, a specific topic, and a brief, encouraging one-sentence description of the goal.
   `,
 });
+
+export async function generateSyllabus(input: GenerateSyllabusInput): Promise<GenerateSyllabusOutput> {
+  return generateSyllabusFlow(input);
+}
+
 
 const generateSyllabusFlow = ai.defineFlow(
   {
@@ -70,21 +80,42 @@ const generateSyllabusFlow = ai.defineFlow(
     outputSchema: GenerateSyllabusOutputSchema,
   },
   async (input) => {
-    const {output} = await prompt(input);
+    const totalDays = 60;
+    const chunkSize = 20;
+    let allDays: SyllabusDay[] = [];
+    let existingTopics: string[] = [];
 
-    if (!output || !output.syllabus || output.syllabus.length === 0) {
-        throw new Error('Syllabus generation failed: AI returned no output.');
+    for (let i = 0; i < Math.ceil(totalDays / chunkSize); i++) {
+        const startDay = i * chunkSize + 1;
+        
+        try {
+            const { output } = await prompt({
+                ...input,
+                count: chunkSize,
+                startDay: startDay,
+                existingTopics: existingTopics,
+            });
+
+            if (output && output.syllabus) {
+                allDays = allDays.concat(output.syllabus);
+                existingTopics = allDays.map(d => d.topic);
+            } else {
+                 throw new Error(`Syllabus generation failed for chunk starting at day ${startDay}: AI returned no output.`);
+            }
+        } catch(error) {
+             throw new Error(`Syllabus generation failed for chunk starting at day ${startDay}: ${error instanceof Error ? error.message : String(error)}`);
+        }
     }
     
     // Ensure the output contains exactly 60 days and days are numbered correctly.
     // This makes the flow resilient to minor AI inconsistencies.
-    const finalSyllabus = output.syllabus.slice(0, 60).map((day, index) => ({
+    const finalSyllabus = allDays.slice(0, totalDays).map((day, index) => ({
       ...day,
       day: index + 1,
     }));
 
     if (finalSyllabus.length === 0) {
-        throw new Error(`Syllabus generation failed: AI returned an empty syllabus.`);
+        throw new Error(`Syllabus generation failed: AI returned an empty syllabus after all chunks.`);
     }
 
     return { syllabus: finalSyllabus };
