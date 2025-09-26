@@ -5,10 +5,12 @@ import React from 'react';
 import LandingHeader from '../landing-header';
 import LandingFooter from '../landing-footer';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, BarChart, BookOpen, Bot, Briefcase, CheckCircle, ChevronDown, Code, FileText, Globe, GraduationCap, Users, Swords, ShieldQuestion, ListChecks } from 'lucide-react';
+import { ArrowRight, BarChart, BookOpen, Bot, Briefcase, CheckCircle, ChevronDown, Code, FileText, Globe, GraduationCap, Users, Swords, ShieldQuestion, ListChecks, CalendarDays, MessageSquare, Sparkles } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import Link from 'next/link';
+import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 
 const benefits = [
     {
@@ -30,47 +32,126 @@ const benefits = [
 
 const features = [
     {
-        title: 'AI Mock Interviews',
-        description: 'Students practice with a human-like AI that asks relevant technical and behavioral questions, providing instant feedback on answers, clarity, and confidence.',
-        icon: Bot,
-    },
-    {
-        title: '60-Day Prep Arena',
-        description: 'A personalized, day-by-day syllabus that guides students through crucial topics, ensuring structured and comprehensive preparation.',
-        icon: Swords,
-    },
-    {
-        title: 'Code Izanami',
-        description: 'Adaptive coding quizzes that get harder as students succeed, with instant AI analysis of their solutions for correctness, style, and efficiency.',
-        icon: ShieldQuestion,
+        title: 'Your Personalized 60-Day Prep Plan',
+        description: 'Start with a plan tailored to your target roles and companies. Our AI generates a comprehensive, 60-day syllabus covering everything from data structures to system design, ensuring students learn what matters most.',
+        icon: CalendarDays,
+        prototype: (
+            <Card className="w-full max-w-lg mx-auto bg-card/80 backdrop-blur-sm p-6 shadow-xl border border-border/50">
+                <CardHeader className="p-0 mb-4 flex flex-row items-center gap-3">
+                    <div className="flex-shrink-0 bg-primary/10 text-primary p-2 rounded-lg"><CalendarDays className="w-6 h-6"/></div>
+                    <CardTitle className="text-xl m-0">Your 60-Day Arena</CardTitle>
+                </CardHeader>
+                <CardContent className="p-0 space-y-3">
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-muted border border-green-500/50">
+                        <div className="flex items-center gap-3"><CheckCircle className="w-5 h-5 text-green-500" /> <span className="font-medium">Day 1: Arrays & Strings</span></div>
+                        <Badge variant="default" className="bg-green-600/80">Done</Badge>
+                    </div>
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-primary/10 border border-primary/50 ring-2 ring-primary/30">
+                        <div className="flex items-center gap-3"><ArrowRight className="w-5 h-5 text-primary" /> <span className="font-medium">Day 2: Linked Lists</span></div>
+                        <Button size="sm">Start</Button>
+                    </div>
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 opacity-60">
+                        <div className="flex items-center gap-3"><CheckCircle className="w-5 h-5" /> <span className="font-medium">Day 3: Hash Tables</span></div>
+                        <Badge variant="secondary">Locked</Badge>
+                    </div>
+                </CardContent>
+            </Card>
+        )
     },
     {
         title: 'AI-Generated Study Notes',
-        description: 'Students can generate in-depth study guides on any technical topic, complete with core concepts, code examples, and interview questions.',
+        description: "Don't just memorize—understand. Select any topic from the syllabus, and our AI will generate a detailed, easy-to-digest study guide, complete with core concepts, key terminology, and practical code examples.",
         icon: BookOpen,
+        prototype: (
+             <Card className="w-full max-w-lg mx-auto bg-card/80 backdrop-blur-sm p-6 shadow-xl border border-border/50 overflow-hidden">
+                <CardHeader className="p-0 mb-4 flex-row items-center gap-3">
+                     <div className="p-2 bg-primary/10 rounded-lg text-primary"><BookOpen className="w-6 h-6" /></div>
+                    <CardTitle className="text-xl m-0">React Hooks</CardTitle>
+                </CardHeader>
+                <CardContent className="p-0 space-y-3">
+                    <p className="text-sm text-muted-foreground">An introduction to the core concepts of React Hooks, including useState, useEffect, and custom hooks for managing component state and side effects.</p>
+                    <div className="p-3 rounded-lg bg-muted border">
+                        <p className="font-semibold text-sm">Core Concept: useState</p>
+                        <p className="text-xs text-muted-foreground mt-1">The `useState` hook allows you to add state to functional components...</p>
+                    </div>
+                     <div className="p-3 rounded-lg bg-muted border opacity-70">
+                        <p className="font-semibold text-sm">Core Concept: useEffect</p>
+                    </div>
+                </CardContent>
+            </Card>
+        )
     },
     {
-        title: 'Professional Resume Builder',
-        description: 'An intuitive tool, powered by AI enhancement, to help students craft professional resumes that stand out to recruiters.',
-        icon: FileText,
+        title: 'Interactive Coding Quizzes (Code Izanami)',
+        description: 'Test knowledge with AI-generated coding challenges. Write solutions in our editor and get instant, in-depth feedback on correctness, efficiency, and code style, along with an optimal solution.',
+        icon: ShieldQuestion,
+        prototype: (
+             <Card className="w-full max-w-lg mx-auto bg-card/80 backdrop-blur-sm p-6 shadow-xl border border-border/50">
+                <CardHeader className="p-0 mb-4">
+                    <CardTitle className="text-lg">Question 1: Reverse a String</CardTitle>
+                </CardHeader>
+                <CardContent className="p-0 space-y-3">
+                    <div className="h-32 bg-muted rounded-md p-3 font-mono text-sm border">
+                        <span className="text-primary">function</span> <span className="text-foreground">reverseString</span>(<span className="text-yellow-400">str</span>) {"{"} <br/>
+                        &nbsp;&nbsp;<span className="text-gray-500">// Your code here...</span><br/>
+                        {"}"}
+                    </div>
+                    <div className="flex justify-end gap-2">
+                        <Button variant="secondary">Get Hint</Button>
+                        <Button>Submit</Button>
+                    </div>
+                </CardContent>
+            </Card>
+        )
     },
     {
-        title: 'Dynamic Portfolio Builder',
-        description: 'A personal portfolio page that automatically showcases completed challenges, quiz scores, and projects to impress employers.',
-        icon: Users,
+        title: 'Human-Like AI Interviews',
+        description: "Experience a realistic, voice-based mock interview. Our conversational AI asks relevant technical and behavioral questions, listens to your answers, and responds dynamically, just like a real interviewer.",
+        icon: MessageSquare,
+        prototype: (
+             <Card className="w-full max-w-lg mx-auto bg-card/80 backdrop-blur-sm p-4 shadow-xl border border-border/50">
+                <div className="aspect-video bg-muted rounded-lg relative flex items-center justify-center border">
+                    <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                         <Users className="w-24 h-24 text-white/20" />
+                    </div>
+                    <div className="absolute top-2 right-2 p-2 rounded-lg bg-black/50 text-white text-xs flex items-center gap-1.5"><Users className="w-3 h-3"/> You</div>
+                    
+                    <div className="absolute bottom-4 left-4 w-1/3 aspect-[4/3] bg-black/50 border border-primary/50 rounded-lg flex flex-col items-center justify-center p-2 backdrop-blur-sm">
+                        <BrainCircuit className="w-8 h-8 text-primary animate-pulse" />
+                        <div className="text-white text-xs mt-1">AI Interviewer</div>
+                    </div>
+
+                    <div className="absolute bottom-4 right-4 flex items-center gap-2">
+                        <Button size="icon" variant="secondary" className="rounded-full h-10 w-10"><span className="text-xl">🎤</span></Button>
+                        <Button size="icon" variant="secondary" className="rounded-full h-10 w-10"><span className="text-xl">📹</span></Button>
+                        <Button size="icon" variant="destructive" className="rounded-full h-10 w-10"><span className="text-xl">📞</span></Button>
+                    </div>
+                </div>
+            </Card>
+        )
     },
     {
-        title: 'Detailed Performance Analytics',
-        description: 'Visual dashboards that help students track their progress, identify weak concepts, and focus their study efforts effectively.',
+        title: 'In-Depth Performance Analytics',
+        description: 'Track progress with a comprehensive dashboard. Analyze quiz scores, identify weak concepts, and review interview transcripts to pinpoint areas for improvement.',
         icon: BarChart,
-    },
-    {
-        title: 'Prep To-Do List',
-        description: 'A simple, integrated to-do list to help students stay organized, manage their tasks, and remain on track with their preparation goals.',
-        icon: ListChecks,
+        prototype: (
+            <Card className="w-full max-w-lg mx-auto bg-card/80 backdrop-blur-sm p-6 shadow-xl border border-border/50">
+                 <CardHeader className="p-0 mb-4">
+                    <CardTitle className="text-xl">Performance Analysis</CardTitle>
+                </CardHeader>
+                <CardContent className="p-0 space-y-3">
+                    <div className="h-28 w-full rounded-md bg-muted/50 border flex items-end p-2 gap-2">
+                        <div className="w-1/4 h-1/2 bg-primary/30 rounded-t-sm animate-pulse" style={{animationDelay: '0.1s'}}></div>
+                        <div className="w-1/4 h-3/4 bg-primary/50 rounded-t-sm animate-pulse" style={{animationDelay: '0.2s'}}></div>
+                        <div className="w-1/4 h-2/3 bg-primary/40 rounded-t-sm animate-pulse" style={{animationDelay: '0.3s'}}></div>
+                        <div className="w-1/4 h-full bg-primary/60 rounded-t-sm animate-pulse" style={{animationDelay: '0.4s'}}></div>
+                    </div>
+                    <div className="text-sm text-muted-foreground">Your average score is up <span className="font-semibold text-green-500">12%</span> this week.</div>
+                </CardContent>
+            </Card>
+        )
     },
 ];
-
 
 const faqs = [
     {
@@ -119,7 +200,7 @@ export default function InstituteColabPage() {
                 </div>
             </section>
 
-            <main className="container mx-auto max-w-5xl p-4 md:p-6 lg:p-8 space-y-24">
+            <main className="container mx-auto max-w-6xl p-4 md:p-6 lg:p-8 space-y-24">
 
                 {/* Benefits Section */}
                 <section>
@@ -152,29 +233,35 @@ export default function InstituteColabPage() {
                         ></iframe>
                     </div>
                 </section>
-
-                {/* Features Section */}
+                
+                 {/* Features Section */}
                 <section id="features">
                     <div className="text-center mb-12">
                         <h2 className="text-4xl font-bold font-headline">The Ultimate Student Toolkit</h2>
                         <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">A suite of powerful AI features designed to build skills, confidence, and job-readiness.</p>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        {features.map((feature) => (
-                            <Card key={feature.title} className="bg-card/50 border-border/50 hover:border-primary/50 hover:-translate-y-1 transition-all duration-300">
-                                <CardHeader className="flex-row gap-4 items-center">
-                                    <div className="bg-primary/10 text-primary rounded-lg p-3">
-                                        <feature.icon className="w-6 h-6" />
+                     <div className="space-y-24">
+                        {features.map((feature, index) => (
+                            <div key={feature.title} className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                                <div className={cn("prose prose-lg dark:prose-invert", index % 2 === 1 && "lg:order-2")}>
+                                     <div className="flex items-center gap-4 mb-4">
+                                        <div className="bg-primary/10 text-primary p-3 rounded-full">
+                                            <feature.icon className="w-6 h-6"/>
+                                        </div>
+                                        <h3 className="m-0 font-headline text-3xl font-bold">{feature.title}</h3>
+                                     </div>
+                                     <p className="text-muted-foreground">{feature.description}</p>
+                                </div>
+                                <div className={cn("flex items-center justify-center", index % 2 === 1 && "lg:order-1")}>
+                                    <div className="bg-card/50 rounded-xl border p-4 shadow-lg w-full">
+                                        {feature.prototype}
                                     </div>
-                                    <CardTitle className="m-0 text-xl">{feature.title}</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <p className="text-muted-foreground">{feature.description}</p>
-                                </CardContent>
-                            </Card>
+                                </div>
+                            </div>
                         ))}
                     </div>
                 </section>
+
 
                 {/* FAQ Section */}
                 <section id="faq">
@@ -234,3 +321,4 @@ const dotPatternStyle = `
 // For now, let's just make a note it's needed. I'll add a comment in the code to reflect this.
 
     
+
