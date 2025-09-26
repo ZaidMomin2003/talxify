@@ -161,14 +161,16 @@ export default function InstituteColabPage() {
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         {features.map((feature) => (
-                            <Card key={feature.title} className="p-6 flex items-start gap-6 hover:border-primary/50 hover:bg-card/80 transition-all">
-                                <div className="bg-primary/10 text-primary rounded-lg p-3 mt-1">
-                                    <feature.icon className="w-6 h-6" />
-                                </div>
-                                <div>
-                                    <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
+                            <Card key={feature.title} className="bg-card/50 border-border/50 hover:border-primary/50 hover:-translate-y-1 transition-all duration-300">
+                                <CardHeader className="flex-row gap-4 items-center">
+                                    <div className="bg-primary/10 text-primary rounded-lg p-3">
+                                        <feature.icon className="w-6 h-6" />
+                                    </div>
+                                    <CardTitle className="m-0 text-xl">{feature.title}</CardTitle>
+                                </CardHeader>
+                                <CardContent>
                                     <p className="text-muted-foreground">{feature.description}</p>
-                                </div>
+                                </CardContent>
                             </Card>
                         ))}
                     </div>
@@ -230,3 +232,5 @@ const dotPatternStyle = `
 // For this example, I'll assume it's added to globals.css.
 // In a real scenario, you'd add this class to your tailwind config or a css file.
 // For now, let's just make a note it's needed. I'll add a comment in the code to reflect this.
+
+    
