@@ -14,7 +14,7 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const SyllabusDaySchema = z.object({
-  day: z.number().int().describe('The day number.'),
+  day: z.number().int().describe('The day number, from 1 to 60.'),
   topic: z.string().describe('The main technical topic for the day (e.g., "Arrays and Strings", "Dynamic Programming", "System Design Basics").'),
   description: z.string().describe('A brief, one-sentence description of the goal for the day.'),
 });
@@ -31,26 +31,14 @@ const GenerateSyllabusOutputSchema = z.object({
 });
 export type GenerateSyllabusOutput = z.infer<typeof GenerateSyllabusOutputSchema>;
 
-// Input for the weekly prompt
-const WeeklySyllabusInputSchema = GenerateSyllabusInputSchema.extend({
-    week: z.number().int(),
-    startDay: z.number().int(),
-});
-
-// Output for the weekly prompt
-const WeeklySyllabusOutputSchema = z.object({
-  weekSyllabus: z.array(SyllabusDaySchema).describe('An array of 7 daily learning topics for the specified week.')
-});
-
-
 export async function generateSyllabus(input: GenerateSyllabusInput): Promise<GenerateSyllabusOutput> {
   return generateSyllabusFlow(input);
 }
 
-const weeklyPrompt = ai.definePrompt({
-  name: 'generateWeeklySyllabusPrompt',
-  input: {schema: WeeklySyllabusInputSchema},
-  output: {schema: WeeklySyllabusOutputSchema},
+const prompt = ai.definePrompt({
+  name: 'generateSyllabusPrompt',
+  input: {schema: GenerateSyllabusInputSchema},
+  output: {schema: GenerateSyllabusOutputSchema},
   config: {
     safetySettings: [
         {
@@ -59,20 +47,19 @@ const weeklyPrompt = ai.definePrompt({
         },
     ],
   },
-  prompt: `You are an expert career coach and technical interviewer who has worked at FAANG companies. Your task is to generate a personalized 7-day interview preparation syllabus for a candidate for a specific week.
+  prompt: `You are an expert career coach and technical interviewer who has worked at FAANG companies.
+  Your task is to generate a personalized, structured 60-day interview preparation syllabus for a candidate.
 
-The candidate is targeting the following roles: {{roles}}
-And is interested in these specific companies: {{companies}}
+  **Candidate Profile:**
+  - Roles: {{roles}}
+  - Target Companies: {{companies}}
 
-This is for **Week {{week}}** of their preparation plan, starting on **Day {{startDay}}**.
-
-Create a structured, 7-day plan that covers essential topics for this week. The plan MUST be tailored to the types of questions and priorities of the specified companies. For example, if they list Google, focus more on algorithms and data structures. If they list Netflix, include system design.
-
-For each day, provide:
-- day: The correct day number, from {{startDay}} to {{startDay}}+6.
-- topic: The specific topic to focus on.
-- description: A short, encouraging sentence about the day's goal.
-`,
+  **Instructions:**
+  1.  Create a plan for **exactly 60 days**.
+  2.  The plan MUST be tailored to the types of questions and priorities of the specified companies. (e.g., Google -> more algorithms; Netflix -> more system design).
+  3.  Structure the topics logically, starting from fundamentals and progressing to advanced concepts.
+  4.  For each day, provide the day number, a specific topic, and a brief, encouraging one-sentence description of the goal.
+  `,
 });
 
 const generateSyllabusFlow = ai.defineFlow(
@@ -82,37 +69,22 @@ const generateSyllabusFlow = ai.defineFlow(
     outputSchema: GenerateSyllabusOutputSchema,
   },
   async (input) => {
-    const totalDays = 60;
-    const weeks = Math.ceil(totalDays / 7);
-    let fullSyllabus: SyllabusDay[] = [];
+    const {output} = await prompt(input);
 
-    for (let i = 0; i < weeks; i++) {
-        const startDay = i * 7 + 1;
-        const weeklyInput = {
-            ...input,
-            week: i + 1,
-            startDay,
-        };
-
-        const { output } = await weeklyPrompt(weeklyInput);
-        if (output?.weekSyllabus) {
-            fullSyllabus = fullSyllabus.concat(output.weekSyllabus);
-        } else {
-            // Handle the case where a week fails, maybe retry or throw an error
-            throw new Error(`Failed to generate syllabus for week ${i + 1}`);
-        }
+    if (!output || !output.syllabus) {
+        throw new Error('Syllabus generation failed: AI returned no output.');
     }
-
-    // Ensure we only return the required number of days
-    const finalSyllabus = fullSyllabus.slice(0, totalDays);
     
-    // Re-assign day numbers to ensure they are sequential from 1 to 60
-    const correctlyNumberedSyllabus = finalSyllabus.map((day, index) => ({
+    // Ensure the output contains exactly 60 days and days are numbered correctly.
+    const finalSyllabus = output.syllabus.slice(0, 60).map((day, index) => ({
       ...day,
       day: index + 1,
     }));
 
+    if (finalSyllabus.length < 60) {
+        throw new Error(`Syllabus generation failed: AI returned only ${finalSyllabus.length} days.`);
+    }
 
-    return { syllabus: correctlyNumberedSyllabus };
+    return { syllabus: finalSyllabus };
   }
 );
