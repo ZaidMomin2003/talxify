@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -101,6 +102,10 @@
             radial-gradient(at 10% 90%, hsla(340, 85%, 60%, 0.6) 0px, transparent 50%);
         background-size: 200% 200%;
         animation: move-gradient 20s ease-in-out infinite;
+    }
+    .bg-dot-pattern {
+        background-image: radial-gradient(circle, currentColor 1px, transparent 1px);
+        background-size: 1.5rem 1.5rem;
     }
 }
 

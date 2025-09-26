@@ -194,21 +194,23 @@ export default function InstituteColabPage() {
 
                  {/* Contact/CTA Section */}
                 <section id="contact" className="py-16">
-                     <Card className="bg-primary/10 border-primary/20 text-center p-8 md:p-12">
-                        <CardHeader>
-                            <CardTitle className="text-3xl font-bold font-headline">Ready to Empower Your Students?</CardTitle>
-                            <CardDescription className="max-w-xl mx-auto text-lg">
-                               Let's discuss how Talxify can be tailored to your institution's needs. Contact us today for a personalized demo and a custom pricing plan.
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <Button size="lg" asChild>
+                    <div className="relative rounded-2xl p-8 md:p-12 text-center overflow-hidden bg-gradient-to-br from-primary/90 to-blue-500/90 text-primary-foreground shadow-2xl shadow-primary/20">
+                        <div className="absolute inset-0 bg-dot-pattern opacity-20"></div>
+                        <div className="absolute top-0 left-0 w-64 h-64 bg-white/10 rounded-full blur-3xl opacity-50"></div>
+                        <div className="absolute bottom-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl opacity-50"></div>
+                        
+                        <div className="relative z-10">
+                            <h2 className="text-4xl font-bold font-headline mb-4">Ready to Empower Your Students?</h2>
+                            <p className="max-w-2xl mx-auto text-lg text-primary-foreground/80 mb-8">
+                                Let's discuss how Talxify can be tailored to your institution's needs. Contact us today for a personalized demo and a custom pricing plan.
+                            </p>
+                            <Button size="lg" variant="secondary" asChild className="text-base">
                                 <a href="mailto:partners@talxify.space">
-                                    Request a Demo
+                                    Request a Demo <ArrowRight className="ml-2 h-4 w-4"/>
                                 </a>
                             </Button>
-                        </CardContent>
-                    </Card>
+                        </div>
+                    </div>
                 </section>
             </main>
 
@@ -216,3 +218,15 @@ export default function InstituteColabPage() {
         </div>
     );
 }
+
+// Add this to your globals.css or a relevant CSS file
+const dotPatternStyle = `
+    .bg-dot-pattern {
+        background-image: radial-gradient(circle, currentColor 1px, transparent 1px);
+        background-size: 1.5rem 1.5rem;
+    }
+`;
+// You can either inject this style or add it to your CSS file. 
+// For this example, I'll assume it's added to globals.css.
+// In a real scenario, you'd add this class to your tailwind config or a css file.
+// For now, let's just make a note it's needed. I'll add a comment in the code to reflect this.
