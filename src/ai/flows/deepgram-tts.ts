@@ -1,11 +1,6 @@
 
 'use server';
 
-/**
- * @fileOverview A flow to convert text to speech using Deepgram's Text-to-Speech API.
- * This is used for generating audio for the AI interviewer's voice.
- */
-
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { SpeakSchema } from '@deepgram/sdk';
@@ -21,7 +16,7 @@ export const textToSpeechWithDeepgramFlow = ai.defineFlow(
       text: z.string().describe('The text to be converted to speech.'),
     }),
     outputSchema: z.object({
-      audioDataUri: z.string().describe("The audio data URI in MP3 format."),
+      audioBuffer: z.any().describe("The audio buffer in MP3 format."),
     }),
   },
   async (input) => {
@@ -29,7 +24,6 @@ export const textToSpeechWithDeepgramFlow = ai.defineFlow(
       text: input.text,
     };
     
-    // Use aura-asteria-en for a higher quality, more natural voice.
     const response = await fetch('https://api.deepgram.com/v1/speak?model=aura-asteria-en', {
         method: 'POST',
         body: JSON.stringify(payload),
@@ -47,10 +41,9 @@ export const textToSpeechWithDeepgramFlow = ai.defineFlow(
 
     const blob = await response.blob();
     const buffer = Buffer.from(await blob.arrayBuffer());
-    const audioDataUri = `data:audio/mp3;base64,${buffer.toString('base64')}`;
     
     return {
-      audioDataUri: audioDataUri,
+      audioBuffer: buffer,
     };
   }
 );
