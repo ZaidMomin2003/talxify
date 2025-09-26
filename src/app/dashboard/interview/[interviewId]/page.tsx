@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef, Suspense } from 'react';
@@ -13,7 +12,7 @@ import { Loader2, Mic, Bot, PhoneOff, AlertTriangle, User, BrainCircuit, Message
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { generateInterviewFeedback } from '@/ai/flows/generate-interview-feedback';
-import { textToSpeechWithDeepgram } from '@/ai/flows/deepgram-tts';
+import { textToSpeechWithDeepgramFlow } from '@/ai/flows/deepgram-tts';
 import { createClient, LiveClient, LiveTranscriptionEvents } from '@deepgram/sdk';
 import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
@@ -140,7 +139,7 @@ function InterviewComponent() {
 
   const speak = useCallback(async (text: string) => {
     try {
-      const response = await textToSpeechWithDeepgram({ text });
+      const response = await textToSpeechWithDeepgramFlow({ text });
       const audio = new Audio(response.audioDataUri);
       audioQueueRef.current.push(audio);
       if (!isPlayingRef.current) {
