@@ -32,7 +32,6 @@ import {
   LiveTranscriptionEvents,
   createClient,
 } from '@deepgram/sdk';
-import { useQueue } from '@uidotdev/usehooks';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
@@ -47,16 +46,15 @@ function InterviewComponent() {
   const [transcript, setTranscript] = useState<TranscriptEntry[]>([]);
   const [isRecording, setIsRecording] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(false);
-  const { add, remove, first, size, queue } = useQueue<any>([]);
   
   const [connection, setConnection] = useState<LiveClient | null>();
   const [isConnecting, setIsConnecting] = useState(true);
-  const [isProcessing, setIsProcessing] = useState(false);
   const [micOpen, setMicOpen] = useState(false);
   
   const mainContainerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const recorder = useRef<MediaRecorder | null>();
+  const audioPlayer = useRef(new Audio());
 
   const interviewId = params.interviewId as string;
   const topic = searchParams.get('topic') || 'General Software Engineering';
@@ -72,6 +70,7 @@ function InterviewComponent() {
     setConnection(undefined);
     recorder.current?.stop();
     recorder.current = undefined;
+    audioPlayer.current.pause();
 
     if (videoRef.current && videoRef.current.srcObject) {
         const stream = videoRef.current.srcObject as MediaStream;
@@ -162,26 +161,6 @@ function InterviewComponent() {
       window.removeEventListener('keyup', handleKeyUp);
     };
   }, [startRecording, stopRecording]);
-
-  const processQueue = useCallback(async () => {
-    if (size > 0 && !isProcessing) {
-      setIsProcessing(true);
-      const data = first;
-      
-      const audioBlob = new Blob([data.audio], { type: 'audio/mp3' });
-      const audioUrl = URL.createObjectURL(audioBlob);
-      const audioElement = new Audio(audioUrl);
-      audioElement.play();
-      
-      addTranscript({ speaker: 'ai', text: data.text });
-      
-      audioElement.onended = () => {
-        remove();
-        setIsProcessing(false);
-        setMicOpen(true);
-      };
-    }
-  }, [size, isProcessing, first, remove]);
   
   const getAgentResponse = async (text: string) => {
       const response = await fetch('/api/deepgram-agent', {
@@ -191,7 +170,13 @@ function InterviewComponent() {
       });
       const data = await response.json();
       const audioBuffer = Buffer.from(data.audio, 'base64');
-      add({ text: data.text, audio: audioBuffer });
+      const audioBlob = new Blob([audioBuffer], { type: 'audio/mp3' });
+      const audioUrl = URL.createObjectURL(audioBlob);
+
+      addTranscript({ speaker: 'ai', text: data.text });
+      audioPlayer.current.src = audioUrl;
+      audioPlayer.current.play();
+      setMicOpen(true);
   };
   
   useEffect(() => {
@@ -233,12 +218,6 @@ function InterviewComponent() {
     }
   }, [connection]);
 
-  useEffect(() => {
-    if (!isProcessing) {
-      processQueue();
-    }
-  }, [processQueue, isProcessing]);
-
   const toggleFullScreen = () => {
     if (!mainContainerRef.current) return;
     if (!document.fullscreenElement) {
@@ -266,13 +245,11 @@ function InterviewComponent() {
               <div className="md:col-span-3 h-full bg-muted rounded-lg flex flex-col items-center justify-center relative overflow-hidden p-8">
                    <div className="relative flex flex-col items-center gap-4 text-center z-10">
                       <div className={cn("relative flex items-center justify-center w-48 h-48 rounded-full border-8 transition-all duration-300", 
-                          isRecording ? 'border-red-500/50' :
-                          isProcessing ? 'border-blue-500/50' : 'border-border'
+                          isRecording ? 'border-red-500/50' : 'border-border'
                       )}>
                           <Image src="/robot.png" alt="Kathy" width={192} height={192} className="rounded-full" data-ai-hint="robot face" />
                            <div className={cn("absolute inset-0 rounded-full animate-pulse",
-                              isRecording ? 'bg-red-500/20' : 
-                              isProcessing ? 'bg-blue-500/20' : 'bg-transparent'
+                              isRecording ? 'bg-red-500/20' : 'bg-transparent'
                           )}></div>
                       </div>
                       <h2 className="text-2xl font-bold font-headline">Kathy</h2>
@@ -306,7 +283,7 @@ function InterviewComponent() {
                                   </div>
                               </div>
                           ))}
-                           {isProcessing && (
+                           {audioPlayer.current.seeking && (
                                <div className="flex items-start">
                                     <div className="p-3 rounded-lg bg-background flex items-center gap-2">
                                         <Loader2 className="w-4 h-4 animate-spin"/>
@@ -328,7 +305,7 @@ function InterviewComponent() {
                   onMouseUp={stopRecording}
                   onTouchStart={startRecording}
                   onTouchEnd={stopRecording}
-                  disabled={isProcessing || !micOpen}
+                  disabled={audioPlayer.current.seeking || !micOpen}
                 >
                   <Mic className="w-6 h-6"/>
                 </Button>
@@ -356,5 +333,7 @@ export default function InterviewPage() {
         </Suspense>
     )
 }
+
+    
 
     
