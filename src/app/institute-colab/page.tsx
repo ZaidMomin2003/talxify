@@ -296,7 +296,7 @@ export default function InstituteColabPage() {
                             <Button size="lg" variant="secondary" asChild className="text-base">
                                 <a href="mailto:partners@talxify.space">
                                     Request a Demo <ArrowRight className="ml-2 h-4 w-4"/>
-                                a>
+                                </a>
                             </Button>
                         </div>
                     </div>
@@ -307,19 +307,3 @@ export default function InstituteColabPage() {
         </div>
     );
 }
-
-// Add this to your globals.css or a relevant CSS file
-const dotPatternStyle = `
-    .bg-dot-pattern {
-        background-image: radial-gradient(circle, currentColor 1px, transparent 1px);
-        background-size: 1.5rem 1.5rem;
-    }
-`;
-// You can either inject this style or add it to your CSS file. 
-// For this example, I'll assume it's added to globals.css.
-// In a real scenario, you'd add this class to your tailwind config or a css file.
-// For now, let's just make a note it's needed. I'll add a comment in the code to reflect this.
-
-    
-
-    
