@@ -203,19 +203,16 @@ function InterviewComponent() {
     searchParams.set('level', level);
     
     const connect = async () => {
-        const response = await fetch('/api/deepgram', {
-            method: 'POST',
-            body: JSON.stringify({ role, topic, level }),
-        });
-        const data = await response.json();
-        const newConnection = createClient(data.key).listen.live({
-            model: 'nova-2',
-            language: 'en-US',
-            puncutate: true,
-            smart_format: true,
-            endpointing: 250,
-            utterance_end_ms: 1000,
-        });
+      const response = await fetch(`/api/deepgram?${searchParams.toString()}`);
+      const newConnection = createClient(process.env.NEXT_PUBLIC_DEEPGRAM_API_KEY!).listen.live({
+        model: 'nova-2',
+        language: 'en-US',
+        punctuate: true,
+        smart_format: true,
+        endpointing: 250,
+        utterance_end_ms: 1000,
+      });
+
       newConnection.on(LiveTranscriptionEvents.Open, async () => {
         console.log('connection established');
         setIsReady(true);
@@ -382,3 +379,5 @@ export default function InterviewPage() {
         </Suspense>
     )
 }
+
+    
