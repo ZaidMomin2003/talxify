@@ -5,7 +5,7 @@ import React from 'react';
 import LandingHeader from '../landing-header';
 import LandingFooter from '../landing-footer';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, BarChart, BookOpen, Bot, Briefcase, CheckCircle, ChevronDown, Code, FileText, Globe, GraduationCap, Users } from 'lucide-react';
+import { ArrowRight, BarChart, BookOpen, Bot, Briefcase, CheckCircle, ChevronDown, Code, FileText, Globe, GraduationCap, Users, Swords, ShieldQuestion, ListChecks } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import Link from 'next/link';
@@ -30,26 +30,47 @@ const benefits = [
 
 const features = [
     {
-        title: 'Institutional Dashboard',
-        description: 'Track engagement, monitor student progress, and view aggregate performance analytics across cohorts to understand strengths and weaknesses at a macro level.',
-        icon: BarChart,
+        title: 'AI Mock Interviews',
+        description: 'Students practice with a human-like AI that asks relevant technical and behavioral questions, providing instant feedback on answers, clarity, and confidence.',
+        icon: Bot,
     },
     {
-        title: 'Customizable Prep Tracks',
-        description: 'Tailor the 60-day syllabus and interview modules to align perfectly with your curriculum, specific courses, or partner company requirements.',
+        title: '60-Day Prep Arena',
+        description: 'A personalized, day-by-day syllabus that guides students through crucial topics, ensuring structured and comprehensive preparation.',
+        icon: Swords,
+    },
+    {
+        title: 'Code Izanami',
+        description: 'Adaptive coding quizzes that get harder as students succeed, with instant AI analysis of their solutions for correctness, style, and efficiency.',
+        icon: ShieldQuestion,
+    },
+    {
+        title: 'AI-Generated Study Notes',
+        description: 'Students can generate in-depth study guides on any technical topic, complete with core concepts, code examples, and interview questions.',
+        icon: BookOpen,
+    },
+    {
+        title: 'Professional Resume Builder',
+        description: 'An intuitive tool, powered by AI enhancement, to help students craft professional resumes that stand out to recruiters.',
         icon: FileText,
     },
     {
-        title: 'Bulk Student Licensing',
-        description: 'Provide access to Talxify Pro for entire classes, departments, or your entire institution with simple, scalable, and affordable licensing.',
+        title: 'Dynamic Portfolio Builder',
+        description: 'A personal portfolio page that automatically showcases completed challenges, quiz scores, and projects to impress employers.',
         icon: Users,
     },
     {
-        title: 'Co-Branded Platform',
-        description: 'Offer our cutting-edge AI prep tools under your institution’s brand, providing a seamless experience for your students.',
-        icon: Globe,
+        title: 'Detailed Performance Analytics',
+        description: 'Visual dashboards that help students track their progress, identify weak concepts, and focus their study efforts effectively.',
+        icon: BarChart,
+    },
+    {
+        title: 'Prep To-Do List',
+        description: 'A simple, integrated to-do list to help students stay organized, manage their tasks, and remain on track with their preparation goals.',
+        icon: ListChecks,
     },
 ];
+
 
 const faqs = [
     {
@@ -114,8 +135,8 @@ export default function InstituteColabPage() {
                 {/* Features Section */}
                 <section id="features">
                     <div className="text-center mb-12">
-                        <h2 className="text-4xl font-bold font-headline">Built for Educational Institutions</h2>
-                        <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">Powerful features designed to integrate with your curriculum and enhance student success.</p>
+                        <h2 className="text-4xl font-bold font-headline">The Ultimate Student Toolkit</h2>
+                        <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">A suite of powerful AI features designed to build skills, confidence, and job-readiness.</p>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         {features.map((feature) => (
