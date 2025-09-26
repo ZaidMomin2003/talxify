@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { doc, getDoc, setDoc, updateDoc, arrayUnion, collection, getDocs, addDoc, serverTimestamp, runTransaction, deleteDoc, increment, arrayRemove } from 'firebase/firestore';
@@ -95,15 +94,13 @@ export const deleteUserDocument = async (userId: string): Promise<void> => {
 
 // --- Subscription & Usage ---
 
-export const updateSubscription = async (userId: string, plan: 'monthly' | 'yearly'): Promise<void> => {
+export const updateSubscription = async (userId: string, plan: 'pro-60d'): Promise<void> => {
   const userRef = doc(db, 'users', userId);
   const currentDate = new Date();
   const endDate = new Date(currentDate);
 
-  if (plan === 'monthly') {
-    endDate.setMonth(currentDate.getMonth() + 1);
-  } else if (plan === 'yearly') {
-    endDate.setFullYear(currentDate.getFullYear() + 1);
+  if (plan === 'pro-60d') {
+    endDate.setDate(currentDate.getDate() + 60);
   }
 
   const subscriptionData = {
@@ -151,7 +148,7 @@ export const checkAndIncrementUsage = async (userId: string): Promise<{ success:
                     usageAllowed = false;
                     message = "You have reached the usage limit for the free plan. Please upgrade to Pro.";
                 }
-            } else { // Pro plans ('monthly', 'yearly')
+            } else { // Pro plans
                 if (usage && usage.date === today) {
                     if (usage.count < dailyLimit) {
                         transaction.update(userRef, { 'subscription.usage.count': usage.count + 1 });

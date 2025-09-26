@@ -21,7 +21,7 @@ const freePlan = {
     name: 'Free',
     price: 0,
     features: [
-        'First Day of 30-Day Arena',
+        'First Day of 60-Day Arena',
         'AI-Powered Mock Interview',
         'AI-Analyzed Coding Quiz',
         'AI-Generated Study Notes',
@@ -29,29 +29,21 @@ const freePlan = {
     ],
 };
 
-const proPlans = {
-    monthly: {
-        name: 'Monthly',
-        price: 1699,
-        originalPrice: null,
-        discountedPrice: 1299,
-    },
-    yearly: {
-        name: 'Yearly',
-        price: 16990,
-        originalPrice: null,
-        discountedPrice: 12990,
-    }
+const proPlan = {
+    name: 'Pro',
+    price: 4999,
+    discountedPrice: 3999, // Price after applying FIRST1000 coupon
 };
 
 const proFeatures = [
-    'Full 30-Day Arena Access',
+    'Full 60-Day Arena Access',
     'AI-Powered Mock Interviews',
     'Unlimited Coding Questions',
     'Unlimited Study Notes',
     'Professional Resume Builder',
     'Full Portfolio Customization',
     'Detailed Performance Analytics',
+    'Prep To-Do List',
     'Priority Support',
 ];
 
@@ -61,19 +53,17 @@ export default function PricingPage() {
     const { toast } = useToast();
     const router = useRouter();
     const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
-    const [isYearly, setIsYearly] = useState(false);
     const [couponCode, setCouponCode] = useState('');
     const [isCouponApplied, setIsCouponApplied] = useState(false);
 
-    const activeProPlan = isYearly ? proPlans.yearly : proPlans.monthly;
-    const finalPrice = isCouponApplied ? activeProPlan.discountedPrice : activeProPlan.price;
+    const finalPrice = isCouponApplied ? proPlan.discountedPrice : proPlan.price;
 
     const handleApplyCoupon = () => {
         if (couponCode.toUpperCase() === 'FIRST1000') {
             setIsCouponApplied(true);
             toast({
                 title: "Coupon Applied!",
-                description: "The discount has been applied to your plan.",
+                description: "The ₹1000 discount has been applied.",
             });
         } else {
             toast({
@@ -91,7 +81,7 @@ export default function PricingPage() {
             return;
         }
 
-        setLoadingPlan(activeProPlan.name);
+        setLoadingPlan(proPlan.name);
 
         try {
             const order = await createOrder(finalPrice);
@@ -101,7 +91,7 @@ export default function PricingPage() {
                 amount: order.amount,
                 currency: order.currency,
                 name: 'Talxify',
-                description: `Subscription - ${activeProPlan.name} Plan`,
+                description: `Pro Plan - 60 Days Access`,
                 order_id: order.id,
                 handler: async function (response: any) {
                     const { razorpay_payment_id, razorpay_order_id, razorpay_signature } = response;
@@ -109,11 +99,10 @@ export default function PricingPage() {
                     const { isAuthentic } = await verifyPayment(razorpay_order_id, razorpay_payment_id, razorpay_signature);
 
                     if (isAuthentic) {
-                        const planType = isYearly ? 'yearly' : 'monthly';
-                        await updateSubscription(user.uid, planType);
+                        await updateSubscription(user.uid, 'pro-60d');
                         toast({
                             title: "Payment Successful!",
-                            description: `Your ${activeProPlan.name} subscription is now active.`,
+                            description: `Your Pro subscription is now active.`,
                         });
                         router.push('/dashboard');
                     } else {
@@ -129,7 +118,7 @@ export default function PricingPage() {
                     email: user.email || '',
                 },
                 theme: {
-                    color: '#8A2BE2'
+                    color: '#3F51B5'
                 }
             };
 
@@ -159,22 +148,6 @@ export default function PricingPage() {
                         Simple, transparent pricing. Pick the plan that's right for you and start preparing today.
                     </p>
                 </div>
-
-
-                <div className="flex justify-center items-center gap-4 mb-10">
-                    <Label htmlFor="billing-cycle" className={cn("font-medium", !isYearly && "text-primary")}>Monthly</Label>
-                    <Switch
-                        id="billing-cycle"
-                        checked={isYearly}
-                        onCheckedChange={setIsYearly}
-                        aria-label="Switch between monthly and yearly billing"
-                    />
-                    <Label htmlFor="billing-cycle" className={cn("font-medium relative", isYearly && "text-primary")}>
-                        Yearly
-                        <span className="absolute -top-4 -right-12 text-xs bg-destructive text-destructive-foreground font-bold px-2 py-0.5 rounded-full rotate-12">Save 17%</span>
-                    </Label>
-                </div>
-
 
                 <div className="grid gap-8 md:grid-cols-2 max-w-4xl mx-auto">
                      {/* Free Plan */}
@@ -212,13 +185,13 @@ export default function PricingPage() {
                              <div className="flex items-baseline justify-center gap-2">
                                 {isCouponApplied ? (
                                     <>
-                                        <span className="text-3xl font-medium text-muted-foreground line-through">₹{activeProPlan.price}</span>
-                                        <span className="text-5xl font-bold tracking-tighter">₹{activeProPlan.discountedPrice}</span>
+                                        <span className="text-3xl font-medium text-muted-foreground line-through">₹{proPlan.price}</span>
+                                        <span className="text-5xl font-bold tracking-tighter">₹{proPlan.discountedPrice}</span>
                                     </>
                                 ) : (
-                                    <span className="text-5xl font-bold tracking-tighter">₹{activeProPlan.price}</span>
+                                    <span className="text-5xl font-bold tracking-tighter">₹{proPlan.price}</span>
                                 )}
-                                <span className="text-muted-foreground text-lg">/{isYearly ? 'year' : 'month'}</span>
+                                <span className="text-muted-foreground text-lg">/60 days</span>
                             </div>
                             <CardDescription>Unlock your full potential and land your dream job.</CardDescription>
                         </CardHeader>
@@ -254,9 +227,9 @@ export default function PricingPage() {
                                 className="w-full"
                                 size="lg"
                                 onClick={handlePayment}
-                                disabled={loadingPlan === activeProPlan.name}
+                                disabled={loadingPlan === proPlan.name}
                             >
-                                {loadingPlan === activeProPlan.name ? (
+                                {loadingPlan === proPlan.name ? (
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                 ) : (
                                     'Upgrade to Pro'

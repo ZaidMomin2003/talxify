@@ -16,7 +16,7 @@ const freePlan = {
     name: 'Free',
     price: '₹0',
     features: [
-        'First Day of 30-Day Arena',
+        'First Day of 60-Day Arena',
         'AI-Powered Mock Interview',
         'AI-Analyzed Coding Quiz',
         'AI-Generated Study Notes',
@@ -24,34 +24,26 @@ const freePlan = {
     ],
 };
 
-const proPlans = {
-    monthly: {
-        name: 'Monthly',
-        price: '₹1699',
-        period: '/month',
-    },
-    yearly: {
-        name: 'Yearly',
-        price: '₹16990',
-        period: '/year',
-    }
+const proPlan = {
+    name: 'Pro',
+    price: '₹4999',
+    period: '/60 days',
 };
 
 const proFeatures = [
-    'Full 30-Day Arena Access',
+    'Full 60-Day Arena Access',
     'AI-Powered Mock Interviews',
     'Unlimited Coding Questions',
     'Unlimited Study Notes',
     'Professional Resume Builder',
     'Full Portfolio Customization',
     'Detailed Performance Analytics',
+    'Prep To-Do List',
     'Priority Support',
 ];
 
 
 export default function LandingPricing() {
-  const [isYearly, setIsYearly] = useState(false);
-  const activeProPlan = isYearly ? proPlans.yearly : proPlans.monthly;
 
   return (
     <section className="bg-transparent text-foreground py-20 pb-8" id="pricing">
@@ -65,20 +57,6 @@ export default function LandingPricing() {
           <p className="mt-4 max-w-2xl mx-auto text-lg text-muted-foreground">
             Simple, transparent pricing. Pick the plan that's right for you and start preparing today.
           </p>
-        </div>
-
-        <div className="flex justify-center items-center gap-4 mb-10 relative z-10">
-            <Label htmlFor="billing-cycle-landing" className={cn("font-medium", !isYearly && "text-primary")}>Monthly</Label>
-            <Switch
-                id="billing-cycle-landing"
-                checked={isYearly}
-                onCheckedChange={setIsYearly}
-                aria-label="Switch between monthly and yearly billing"
-            />
-            <Label htmlFor="billing-cycle-landing" className={cn("font-medium relative", isYearly && "text-primary")}>
-                Yearly
-                <span className="absolute -top-4 -right-12 text-xs bg-destructive text-destructive-foreground font-bold px-2 py-0.5 rounded-full rotate-12">Save 17%</span>
-            </Label>
         </div>
 
         <div className="grid gap-y-10 md:gap-x-8 md:grid-cols-2 max-w-4xl mx-auto relative z-10">
@@ -116,8 +94,8 @@ export default function LandingPricing() {
                   <Sparkles className="h-10 w-10 mx-auto text-primary mb-2" />
                   <CardTitle className="text-3xl font-bold font-headline">Pro</CardTitle>
                   <div className="flex items-baseline justify-center gap-1">
-                      <span className="text-5xl font-bold tracking-tighter">{activeProPlan.price}</span>
-                      <span className="text-muted-foreground text-lg">{activeProPlan.period}</span>
+                      <span className="text-5xl font-bold tracking-tighter">{proPlan.price}</span>
+                      <span className="text-muted-foreground text-lg">{proPlan.period}</span>
                   </div>
                   <CardDescription>Unlock your full potential and land your dream job.</CardDescription>
               </CardHeader>

@@ -113,7 +113,7 @@ export interface SignInForm {
 
 // --- Subscription ---
 export interface Subscription {
-    plan: 'free' | 'monthly' | 'yearly';
+    plan: 'free' | 'pro-60d';
     status: 'active' | 'inactive' | 'cancelled';
     startDate?: string;
     endDate: string | null;
