@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef, Suspense } from 'react';
@@ -12,7 +13,7 @@ import { Loader2, Mic, Bot, PhoneOff, AlertTriangle, User, BrainCircuit, Message
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { generateInterviewFeedback } from '@/ai/flows/generate-interview-feedback';
-import { textToSpeechWithDeepgramFlow as textToSpeechWithDeepgram } from '@/ai/flows/deepgram-tts';
+import { textToSpeechWithDeepgram } from '@/ai/flows/deepgram-tts';
 import { createClient, LiveClient, LiveTranscriptionEvents } from '@deepgram/sdk';
 import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
@@ -205,15 +206,21 @@ function InterviewComponent() {
 
   const startRecording = useCallback(async () => {
     if (isRecording || status !== 'listening') return;
+    
     setIsRecording(true);
     finalTranscriptRef.current = '';
 
     try {
+        // 1. Get microphone access first
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+        // 2. Then, get the temporary key
         const response = await fetch('/api/auth/deepgram-key', { method: 'POST' });
         const data = await response.json();
         if (data.error) throw new Error(data.error);
         const { key } = data;
 
+        // 3. Finally, connect to Deepgram
         const deepgram = createClient(key);
         const connection = deepgram.listen.live({
             model: "nova-2",
@@ -221,8 +228,7 @@ function InterviewComponent() {
             smart_format: true,
         });
 
-        connection.on(LiveTranscriptionEvents.Open, async () => {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        connection.on(LiveTranscriptionEvents.Open, () => {
             recorder.current = new MediaRecorder(stream, { mimeType: 'audio/webm' });
             
             recorder.current.ondataavailable = (event) => {
@@ -231,7 +237,7 @@ function InterviewComponent() {
                 }
             };
             
-            recorder.current.start(250); // Start recording and send data every 250ms
+            recorder.current.start(250);
         });
         
         connection.on(LiveTranscriptionEvents.Transcript, (data) => {
@@ -252,7 +258,7 @@ function InterviewComponent() {
 
         deepgramConnection.current = connection;
     } catch(e) {
-        console.error("Failed to start Deepgram:", e);
+        console.error("Failed to start recording flow:", e);
         setStatus('error');
         setIsRecording(false);
     }
@@ -264,32 +270,28 @@ function InterviewComponent() {
 
     if (recorder.current && recorder.current.state === 'recording') {
         recorder.current.stop();
-        // Detach the ondataavailable listener to stop sending data
-        recorder.current.ondataavailable = null;
+        recorder.current.stream.getTracks().forEach(track => track.stop()); // Stop microphone stream
         recorder.current = null;
     }
     
-    // Give a very short delay to ensure the last audio packet is sent
+    if (deepgramConnection.current) {
+        deepgramConnection.current.finish();
+        deepgramConnection.current = null;
+    }
+    
+    setStatus('processing');
+    
+    // Wait a moment for the final transcript to come in
     setTimeout(() => {
-        if (deepgramConnection.current) {
-            deepgramConnection.current.finish();
-            deepgramConnection.current = null;
+        if (finalTranscriptRef.current.trim()) {
+            setTranscript(prev => [...prev, { speaker: 'user', text: finalTranscriptRef.current.trim() }]);
         }
-
-        setStatus('processing');
-
-        // Wait a moment for the final transcript to come in
-        setTimeout(() => {
-            if (finalTranscriptRef.current.trim()) {
-                setTranscript(prev => [...prev, { speaker: 'user', text: finalTranscriptRef.current.trim() }]);
-            }
-            
-            const ack = "Okay, thank you for sharing that.";
-            setTranscript(prev => [...prev, { speaker: 'ai', text: ack }]);
-            speak(ack);
-            setTimeout(() => askNextQuestion(), 3000);
-        }, 1500);
-    }, 250);
+        
+        const ack = "Okay, thank you for sharing that.";
+        setTranscript(prev => [...prev, { speaker: 'ai', text: ack }]);
+        speak(ack);
+        setTimeout(() => askNextQuestion(), 3000);
+    }, 1500);
 
   }, [isRecording, askNextQuestion, speak]);
 
