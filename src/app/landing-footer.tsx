@@ -45,7 +45,7 @@ export default function LandingFooter() {
               </h3>
               <ul className="space-y-3">
                  <li><Link href="/about" className="text-muted-foreground hover:text-primary">About Us</Link></li>
-                 <li><Link href="/institute-colab" className="text-muted-foreground hover:text-primary">For Institutes</Link></li>
+                 <li><Link href="/institutepartnership" className="text-muted-foreground hover:text-primary">For Institutes</Link></li>
                  <li><Link href="/#contact" className="text-muted-foreground hover:text-primary">Contact Us</Link></li>
               </ul>
             </div>

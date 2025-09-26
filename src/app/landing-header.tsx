@@ -19,7 +19,7 @@ const navItems: NavItem[] = [
   { name: 'Pricing', href: '/#pricing' },
   { name: 'FAQ', href: '/#faq' },
   { name: 'About', href: '/about' },
-  { name: 'For Institutes', href: '/institute-colab' },
+  { name: 'For Institutes', href: '/institutepartnership' },
 ];
 
 export default function LandingHeader() {
