@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -40,6 +41,16 @@ export default function LandingFooter() {
             </div>
              <div>
               <h3 className="mb-4 font-semibold tracking-wider uppercase text-foreground">
+                Company
+              </h3>
+              <ul className="space-y-3">
+                 <li><Link href="/about" className="text-muted-foreground hover:text-primary">About Us</Link></li>
+                 <li><Link href="/institute-colab" className="text-muted-foreground hover:text-primary">For Institutes</Link></li>
+                 <li><Link href="/#contact" className="text-muted-foreground hover:text-primary">Contact Us</Link></li>
+              </ul>
+            </div>
+             <div>
+              <h3 className="mb-4 font-semibold tracking-wider uppercase text-foreground">
                 Legal
               </h3>
               <ul className="space-y-3">
@@ -57,7 +68,6 @@ export default function LandingFooter() {
                 <li><Link href="/login" className="text-muted-foreground hover:text-primary">Login</Link></li>
                 <li><Link href="/signup" className="text-muted-foreground hover:text-primary">Sign Up</Link></li>
                 <li><Link href="/login" className="text-muted-foreground hover:text-primary">Forgot Password</Link></li>
-                 <li><Link href="/about" className="text-muted-foreground hover:text-primary">About Us</Link></li>
               </ul>
             </div>
           </div>
