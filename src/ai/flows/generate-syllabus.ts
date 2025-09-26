@@ -2,7 +2,7 @@
 'use server';
 
 /**
- * @fileOverview An AI agent to generate a personalized 30-day interview prep syllabus.
+ * @fileOverview An AI agent to generate a personalized 60-day interview prep syllabus.
  *
  * - generateSyllabus - A function that generates the syllabus.
  * - GenerateSyllabusInput - The input type.
@@ -14,7 +14,7 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const SyllabusDaySchema = z.object({
-  day: z.number().int().describe('The day number (1-30).'),
+  day: z.number().int().describe('The day number (1-60).'),
   topic: z.string().describe('The main technical topic for the day (e.g., "Arrays and Strings", "Dynamic Programming", "System Design Basics").'),
   description: z.string().describe('A brief, one-sentence description of the goal for the day.'),
 });
@@ -27,7 +27,7 @@ const GenerateSyllabusInputSchema = z.object({
 export type GenerateSyllabusInput = z.infer<typeof GenerateSyllabusInputSchema>;
 
 const GenerateSyllabusOutputSchema = z.object({
-  syllabus: z.array(SyllabusDaySchema).describe('An array of daily learning topics for a 30-day period.'),
+  syllabus: z.array(SyllabusDaySchema).describe('An array of daily learning topics for a 60-day period.'),
 });
 export type GenerateSyllabusOutput = z.infer<typeof GenerateSyllabusOutputSchema>;
 
@@ -39,16 +39,16 @@ const prompt = ai.definePrompt({
   name: 'generateSyllabusPrompt',
   input: {schema: GenerateSyllabusInputSchema},
   output: {schema: GenerateSyllabusOutputSchema},
-  prompt: `You are an expert career coach and technical interviewer who has worked at FAANG companies. Your task is to generate a personalized 30-day interview preparation syllabus for a candidate.
+  prompt: `You are an expert career coach and technical interviewer who has worked at FAANG companies. Your task is to generate a personalized 60-day interview preparation syllabus for a candidate.
 
 The candidate is targeting the following roles: {{roles}}
 And is interested in these specific companies: {{companies}}
 
-Create a structured, 30-day plan that covers essential topics. The plan MUST be tailored to the types of questions and priorities of the specified companies. For example, if they list Google, focus more on algorithms and data structures. If they list Netflix, include system design and cultural fit questions.
+Create a structured, 60-day plan that covers essential topics. The plan MUST be tailored to the types of questions and priorities of the specified companies. For example, if they list Google, focus more on algorithms and data structures. If they list Netflix, include system design and cultural fit questions.
 
 Start with fundamentals and gradually move to more advanced concepts. Include a mix of data structures, algorithms, system design, and role-specific topics relevant to the target companies.
 
-Generate a plan for exactly 30 days. For each day, provide:
+Generate a plan for exactly 60 days. For each day, provide:
 - day: The day number.
 - topic: The specific topic to focus on.
 - description: A short, encouraging sentence about the day's goal.
@@ -68,4 +68,3 @@ const generateSyllabusFlow = ai.defineFlow(
     return output!;
   }
 );
-

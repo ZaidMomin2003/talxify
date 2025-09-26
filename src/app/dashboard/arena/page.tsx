@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -24,7 +23,7 @@ function UpgradeCard() {
                 </div>
                 <CardTitle className="text-2xl font-bold">Your Plan Has Expired or Needs an Upgrade</CardTitle>
                 <CardDescription>
-                    To unlock the full 30-day Arena, the Resume Builder, and other powerful features, please upgrade or renew your Pro plan.
+                    To unlock the full 60-day Arena, the Resume Builder, and other powerful features, please upgrade or renew your Pro plan.
                 </CardDescription>
             </CardHeader>
             <CardContent>
@@ -159,9 +158,10 @@ export default function ArenaPage() {
             const dayStatus = status[i];
             if (!dayStatus) continue;
 
-            const isDay30 = i === 30;
-            const learnRequired = !isDay30;
-            const interviewRequired = isDay30 || (i % 2 !== 0);
+            const isFinalDay = i === 60;
+            const learnRequired = !isFinalDay;
+            // Interview on day 1, then day 4, 7, 10, ... (every 3 days)
+            const interviewRequired = isFinalDay || ((i - 1) % 3 === 0);
             
             const isDayComplete = dayStatus.quiz && (!learnRequired || dayStatus.learn) && (!interviewRequired || dayStatus.interview);
 
@@ -178,16 +178,16 @@ export default function ArenaPage() {
 
     const handleStartChallenge = (day: number, type: 'learn' | 'quiz' | 'interview') => {
         const topic = syllabus.find(d => d.day === day)?.topic || 'JavaScript';
-        const isDay30 = day === 30;
+        const isFinalDay = day === 60;
 
         if (type === 'learn') {
             router.push(`/dashboard/arena/notes?topic=${encodeURIComponent(topic)}`);
         } else if (type === 'quiz') {
-            const quizTopic = isDay30 ? syllabus.slice(0, 29).map(d => d.topic).join(', ') : topic;
+            const quizTopic = isFinalDay ? syllabus.slice(0, 59).map(d => d.topic).join(', ') : topic;
             router.push(`/dashboard/coding-gym?topic=${encodeURIComponent(quizTopic)}`);
         } else if (type === 'interview') {
             const isDay1 = day === 1;
-            const interviewTopic = isDay1 ? 'Icebreaker Introduction' : (isDay30 ? 'Final Comprehensive Review' : topic);
+            const interviewTopic = isDay1 ? 'Icebreaker Introduction' : (isFinalDay ? 'Final Comprehensive Review' : topic);
             const meetingId = user!.uid + "_" + Date.now();
             const params = new URLSearchParams({ topic: interviewTopic });
             router.push(`/dashboard/interview/${meetingId}/instructions?${params.toString()}`);
@@ -200,7 +200,7 @@ export default function ArenaPage() {
             <div className="flex flex-col items-center gap-4 text-center">
                 <Loader2 className="h-16 w-16 animate-spin text-primary" />
                 <h2 className="text-2xl font-semibold">Loading Your Arena</h2>
-                <p className="max-w-md text-muted-foreground">Preparing your personalized 30-day challenge...</p>
+                <p className="max-w-md text-muted-foreground">Preparing your personalized 60-day challenge...</p>
             </div>
           </div>
         );
@@ -217,7 +217,7 @@ export default function ArenaPage() {
         <Card className="mb-8">
           <CardHeader>
             <CardTitle className="flex items-center gap-3 text-3xl font-headline">
-              <Swords className="h-8 w-8" /> 30-Day Interview Prep Arena
+              <Swords className="h-8 w-8" /> 60-Day Interview Prep Arena
             </CardTitle>
             <CardDescription>
               Complete daily tasks based on your personalized syllabus to sharpen your skills. Complete one day to unlock the next.
@@ -233,7 +233,8 @@ export default function ArenaPage() {
                     const isUnlocked = day.day <= completedDays + 1;
                     const isCompleted = day.day <= completedDays;
                     const dayStatus = dailyTaskStatus[day.day] || { learn: false, quiz: false, interview: false };
-                    const isFinalDay = day.day === 30;
+                    const isFinalDay = day.day === 60;
+                    const interviewIsScheduled = isFinalDay || (day.day - 1) % 3 === 0;
 
                     return (
                         <Dialog key={day.day}>
@@ -302,7 +303,7 @@ export default function ArenaPage() {
                                         </div>
                                         <QuizStartDialog day={day.day} topic={day.topic} isFinalDay={isFinalDay} onStart={() => handleStartChallenge(day.day, 'quiz')} />
                                     </Dialog>
-                                    {(day.day % 2 !== 0 || isFinalDay) && (
+                                    {interviewIsScheduled && (
                                     <div className="flex items-center gap-4 p-3 rounded-lg bg-muted/50">
                                         {dayStatus.interview ? <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" /> : <Briefcase className="h-5 w-5 text-green-500 flex-shrink-0" />}
                                         <div className="flex-1">

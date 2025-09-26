@@ -127,10 +127,11 @@ export default function DashboardPage() {
     let lastCompletedDay = 0;
     for (let i = 1; i <= syllabus.length; i++) {
         const dayStatus = status[i];
-        const isDay30 = i === 30;
-        const interviewRequired = isDay30 || (i % 2 !== 0);
-        const learnRequired = !isDay30;
-        const isDayComplete = dayStatus && dayStatus.quiz && (learnRequired ? dayStatus.learn : true) && (interviewRequired ? dayStatus.interview : true);
+        if (!dayStatus) continue;
+        const isFinalDay = i === 60;
+        const interviewRequired = isFinalDay || ((i - 1) % 3 === 0);
+        const learnRequired = !isFinalDay;
+        const isDayComplete = dayStatus.quiz && (learnRequired ? dayStatus.learn : true) && (interviewRequired ? dayStatus.interview : true);
 
         if (isDayComplete) {
             lastCompletedDay = i;
@@ -189,7 +190,8 @@ export default function DashboardPage() {
   const currentDayNumber = completedDays + 1;
   const currentDayData = userData?.syllabus?.find(d => d.day === currentDayNumber);
   const currentDayStatus = dailyTaskStatus[currentDayNumber] || { learn: false, quiz: false, interview: false };
-  const isFinalDay = currentDayNumber === 30;
+  const isFinalDay = currentDayNumber === 60;
+  const interviewIsScheduled = currentDayNumber === 1 || isFinalDay || (currentDayNumber - 1) % 3 === 0;
 
   return (
     <main className="flex-1 overflow-auto p-4 sm:p-6">
@@ -307,7 +309,7 @@ export default function DashboardPage() {
                         <>
                            {!isFinalDay && <FocusChecklistItem icon={BookOpen} text="Study Core Concepts" isCompleted={currentDayStatus.learn} />}
                            <FocusChecklistItem icon={Code} text="Take Code Izanami" isCompleted={currentDayStatus.quiz} />
-                           {(currentDayNumber % 2 !== 0 || isFinalDay) && (
+                           {interviewIsScheduled && (
                                 <FocusChecklistItem icon={Briefcase} text="Mock Interview" isCompleted={currentDayStatus.interview} />
                            )}
                         </>

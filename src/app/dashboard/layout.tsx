@@ -266,7 +266,7 @@ const guideSteps = [
     {
         icon: Swords,
         title: "1. Complete Daily Arena Challenges",
-        description: "Go to the Arena to follow your personalized 30-day plan. Complete daily learning, quizzes, and mock interviews to unlock the next day's content."
+        description: "Go to the Arena to follow your personalized 60-day plan. Complete daily learning, quizzes, and mock interviews to unlock the next day's content."
     },
     {
         icon: FileText,
