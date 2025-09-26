@@ -23,7 +23,7 @@ import React, {
 } from 'react';
 import { useSearchParams, useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
-import { addActivity } from '@/lib/firebase-service';
+import { addActivity, updateActivity } from '@/lib/firebase-service';
 import type { InterviewActivity, TranscriptEntry } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import {
@@ -37,18 +37,6 @@ import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 
-type InterviewStatus = 'initializing' | 'generating_questions' | 'ready' | 'listening' | 'speaking' | 'processing' | 'finished' | 'error';
-
-const statusInfo: { [key in InterviewStatus]: { text: string; showMic?: boolean } } = {
-  initializing: { text: "Initializing Session..." },
-  generating_questions: { text: "Kathy is preparing your questions..." },
-  ready: { text: "Ready to Start. Kathy will speak first." },
-  listening: { text: "Hold Space to Talk", showMic: true },
-  speaking: { text: "Kathy is Speaking..." },
-  processing: { text: "Processing your answer..." },
-  finished: { text: "Interview Finished" },
-  error: { text: "Connection Error" },
-};
 
 function InterviewComponent() {
   const { user } = useAuth();
@@ -59,16 +47,15 @@ function InterviewComponent() {
   const [transcript, setTranscript] = useState<TranscriptEntry[]>([]);
   const [isRecording, setIsRecording] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(false);
-  
   const { add, remove, first, size, queue } = useQueue<any>([]);
+  
   const [connection, setConnection] = useState<LiveClient | null>();
-  const [isReady, setIsReady] = useState(false);
   const [isConnecting, setIsConnecting] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [micOpen, setMicOpen] = useState(false);
   
   const mainContainerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [hasCameraPermission, setHasCameraPermission] = useState(false);
   const recorder = useRef<MediaRecorder | null>();
 
   const interviewId = params.interviewId as string;
@@ -86,31 +73,22 @@ function InterviewComponent() {
     recorder.current?.stop();
     recorder.current = undefined;
 
-    // Stop camera stream
     if (videoRef.current && videoRef.current.srcObject) {
         const stream = videoRef.current.srcObject as MediaStream;
         stream.getTracks().forEach(track => track.stop());
     }
 
     if (save && user && transcript.length > 1) {
-        try {
-            const { generateInterviewFeedback } = await import('@/ai/flows/generate-interview-feedback');
-            const feedback = await generateInterviewFeedback({ transcript, topic, role, company });
-            const finalActivity: InterviewActivity = {
-                id: interviewId,
-                type: 'interview',
-                timestamp: new Date().toISOString(),
-                transcript: transcript,
-                feedback: "Feedback generated.",
-                analysis: feedback,
-                details: { topic, role, level, company, score: feedback.overallScore }
-            };
-            await addActivity(user.uid, finalActivity);
-            router.push(`/dashboard/interview/${finalActivity.id}/results`);
-        } catch(e) {
-            console.error("Failed to generate and save feedback:", e);
-             router.push('/dashboard/arena');
-        }
+        const interviewActivity: InterviewActivity = {
+            id: interviewId,
+            type: 'interview',
+            timestamp: new Date().toISOString(),
+            transcript: transcript,
+            feedback: "Feedback will be generated on the results page.",
+            details: { topic, role, level, company }
+        };
+        await addActivity(user.uid, interviewActivity);
+        router.push(`/dashboard/interview/${interviewActivity.id}/results`);
     } else {
         router.push('/dashboard/arena');
     }
@@ -118,38 +96,46 @@ function InterviewComponent() {
 
 
   const startRecording = useCallback(async () => {
-    if (isRecording) return;
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    if (isRecording || !connection) return;
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const newRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
 
-    const newRecorder = new MediaRecorder(stream);
-    newRecorder.ondataavailable = async (event) => {
-      if (event.data.size > 0 && connection?.getReadyState() === 1) {
-        connection.send(event.data);
-      }
-    };
-    newRecorder.start(250);
-    recorder.current = newRecorder;
-    setIsRecording(true);
+        newRecorder.ondataavailable = async (event) => {
+            if (event.data.size > 0 && connection.getReadyState() === ConnectionState.OPEN) {
+                connection.send(event.data);
+            }
+        };
+
+        newRecorder.onstart = () => {
+            setIsRecording(true);
+        };
+
+        newRecorder.onstop = () => {
+            setIsRecording(false);
+        };
+        
+        newRecorder.start(250);
+        recorder.current = newRecorder;
+    } catch(err) {
+        console.error("Mic error:", err);
+    }
   }, [connection, isRecording]);
 
   const stopRecording = useCallback(() => {
     if (!isRecording) return;
     recorder.current?.stop();
-    recorder.current = undefined;
-    setIsRecording(false);
   }, [isRecording]);
 
   useEffect(() => {
     const getCameraPermission = async () => {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({video: true});
-        setHasCameraPermission(true);
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
         }
       } catch (error) {
         console.error('Error accessing camera:', error);
-        setHasCameraPermission(false);
       }
     };
     getCameraPermission();
@@ -182,83 +168,70 @@ function InterviewComponent() {
       setIsProcessing(true);
       const data = first;
       
-      addTranscript({ speaker: 'ai', text: data.text });
-      
-      const audioBlob = new Blob([data.audio], { type: 'audio/mpeg' });
+      const audioBlob = new Blob([data.audio], { type: 'audio/mp3' });
       const audioUrl = URL.createObjectURL(audioBlob);
       const audioElement = new Audio(audioUrl);
       audioElement.play();
+      
+      addTranscript({ speaker: 'ai', text: data.text });
+      
       audioElement.onended = () => {
         remove();
         setIsProcessing(false);
+        setMicOpen(true);
       };
     }
   }, [size, isProcessing, first, remove]);
-
+  
+  const getAgentResponse = async (text: string) => {
+      const response = await fetch('/api/deepgram-agent', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text, role, topic, level }),
+      });
+      const data = await response.json();
+      const audioBuffer = Buffer.from(data.audio, 'base64');
+      add({ text: data.text, audio: audioBuffer });
+  };
+  
   useEffect(() => {
-    const url = new URL(window.location.href);
-    const searchParams = new URLSearchParams(url.search);
-    
-    const connect = async () => {
-      const response = await fetch(`/api/deepgram?${searchParams.toString()}`);
-      const newConnection = createClient(process.env.NEXT_PUBLIC_DEEPGRAM_API_KEY!).listen.live({
-        model: 'nova-2',
-        language: 'en-US',
-        punctuate: true,
-        smart_format: true,
-        endpointing: 250,
-        utterance_end_ms: 1000,
-      });
-
-      newConnection.on(LiveTranscriptionEvents.Open, async () => {
-        console.log('connection established');
-        setIsReady(true);
-        setIsConnecting(false);
-        const { runInterviewAgent } = await import('@/ai/flows/interview-agent');
-        const { stream } = await runInterviewAgent({
-          text: '',
-          role, topic, level
-        });
-        for await (const chunk of stream) {
-          add(chunk);
-        }
-      });
-
-      newConnection.on(
-        LiveTranscriptionEvents.Transcript,
-        async (transcription) => {
-          const text = transcription.channel.alternatives[0].transcript;
-          if (transcription.is_final && text.trim()) {
-            addTranscript({ speaker: 'user', text });
-            const { runInterviewAgent } = await import('@/ai/flows/interview-agent');
-            const { stream } = await runInterviewAgent({
-              text,
-              role, topic, level
-            });
-            for await (const chunk of stream) {
-              add(chunk);
-            }
-          }
-        }
-      );
-
-      newConnection.on(LiveTranscriptionEvents.Close, () => {
-        console.log('connection closed');
-        setIsReady(false);
-        setIsConnecting(false);
-        setConnection(undefined);
-      });
-
-      newConnection.on(LiveTranscriptionEvents.Error, (e) => {
-        console.error(e);
-      });
-      setConnection(newConnection);
-    };
-
     if (!connection) {
-      connect();
+        const newConnection = createClient(process.env.NEXT_PUBLIC_DEEPGRAM_API_KEY!).listen.live({
+            model: 'nova-2',
+            language: 'en-US',
+            smart_format: true,
+            interim_results: false, // Important: only process final transcripts
+            utterance_end_ms: 1000,
+            endpointing: 250,
+            punctuate: true,
+        });
+
+        newConnection.on(LiveTranscriptionEvents.Open, async () => {
+            setIsConnecting(false);
+            // Get initial greeting from AI
+            await getAgentResponse(''); 
+        });
+
+        newConnection.on(LiveTranscriptionEvents.Transcript, async (transcription) => {
+            const text = transcription.channel.alternatives[0].transcript;
+            if (transcription.is_final && text.trim()) {
+                addTranscript({ speaker: 'user', text });
+                await getAgentResponse(text);
+            }
+        });
+
+        newConnection.on(LiveTranscriptionEvents.Close, () => {
+            setIsConnecting(false);
+            setConnection(null);
+        });
+
+        newConnection.on(LiveTranscriptionEvents.Error, (e) => {
+            console.error(e);
+        });
+
+        setConnection(newConnection);
     }
-  }, [add, connection, level, role, topic]);
+  }, [connection]);
 
   useEffect(() => {
     if (!isProcessing) {
@@ -306,13 +279,11 @@ function InterviewComponent() {
                   </div>
 
                   <div className="absolute bottom-4 right-4 border rounded-lg bg-background shadow-lg h-32 w-48 overflow-hidden">
-                      <video ref={videoRef} className="w-full h-full object-cover" autoPlay muted />
-                      { !hasCameraPermission && (
-                          <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center p-2 text-center text-white">
-                              <AlertTriangle className="w-6 h-6 mb-2"/>
-                              <p className="text-xs">Enable camera permissions to see yourself.</p>
-                          </div>
-                      )}
+                      <video ref={videoRef} className="w-full h-full object-cover" autoPlay muted playsInline />
+                       <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center p-2 text-center text-white">
+                            <AlertTriangle className="w-6 h-6 mb-2"/>
+                            <p className="text-xs">Camera is optional and only for you.</p>
+                        </div>
                   </div>
 
                   <div className="absolute bottom-4 left-4 p-2 rounded-lg bg-green-900/50 text-green-300 border border-green-700">
@@ -335,6 +306,14 @@ function InterviewComponent() {
                                   </div>
                               </div>
                           ))}
+                           {isProcessing && (
+                               <div className="flex items-start">
+                                    <div className="p-3 rounded-lg bg-background flex items-center gap-2">
+                                        <Loader2 className="w-4 h-4 animate-spin"/>
+                                        <span className="text-muted-foreground italic text-sm">Kathy is thinking...</span>
+                                    </div>
+                               </div>
+                           )}
                       </div>
                   </div>
               </div>
@@ -349,6 +328,7 @@ function InterviewComponent() {
                   onMouseUp={stopRecording}
                   onTouchStart={startRecording}
                   onTouchEnd={stopRecording}
+                  disabled={isProcessing || !micOpen}
                 >
                   <Mic className="w-6 h-6"/>
                 </Button>
