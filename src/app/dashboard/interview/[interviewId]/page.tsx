@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -25,7 +26,6 @@ import { useAuth } from '@/context/auth-context';
 import { addActivity } from '@/lib/firebase-service';
 import type { InterviewActivity, TranscriptEntry } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { generateInterviewFeedback } from '@/ai/flows/generate-interview-feedback';
 import {
   ConnectionState,
   LiveClient,
@@ -36,7 +36,6 @@ import { useQueue } from '@uidotdev/usehooks';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
-import { runInterviewAgent } from '@/ai/flows/interview-agent';
 
 type InterviewStatus = 'initializing' | 'generating_questions' | 'ready' | 'listening' | 'speaking' | 'processing' | 'finished' | 'error';
 
@@ -98,6 +97,7 @@ function InterviewComponent() {
     if (save && user && transcript.length > 1) {
         try {
             setStatus('finished');
+            const { generateInterviewFeedback } = await import('@/ai/flows/generate-interview-feedback');
             const feedback = await generateInterviewFeedback({ transcript, topic, role, company });
             const finalActivity: InterviewActivity = {
                 id: interviewId,
@@ -203,21 +203,24 @@ function InterviewComponent() {
     searchParams.set('level', level);
     
     const connect = async () => {
-      const newConnection = createClient(
-        process.env.NEXT_PUBLIC_DEEPGRAM_API_KEY!
-      ).listen.live({
-        model: 'nova-2',
-        language: 'en-US',
-        puncutate: true,
-        smart_format: true,
-        endpointing: 250,
-        utterance_end_ms: 1000,
-        encoding: 'webm',
-      });
+        const response = await fetch('/api/deepgram', {
+            method: 'POST',
+            body: JSON.stringify({ role, topic, level }),
+        });
+        const data = await response.json();
+        const newConnection = createClient(data.key).listen.live({
+            model: 'nova-2',
+            language: 'en-US',
+            puncutate: true,
+            smart_format: true,
+            endpointing: 250,
+            utterance_end_ms: 1000,
+        });
       newConnection.on(LiveTranscriptionEvents.Open, async () => {
         console.log('connection established');
         setIsReady(true);
         setIsConnecting(false);
+        const { runInterviewAgent } = await import('@/ai/flows/interview-agent');
         const { stream } = await runInterviewAgent({
           text: '',
           role, topic, level
@@ -233,6 +236,7 @@ function InterviewComponent() {
           const text = transcription.channel.alternatives[0].transcript;
           if (transcription.is_final && text.trim()) {
             addTranscript({ speaker: 'user', text });
+            const { runInterviewAgent } = await import('@/ai/flows/interview-agent');
             const { stream } = await runInterviewAgent({
               text,
               role, topic, level

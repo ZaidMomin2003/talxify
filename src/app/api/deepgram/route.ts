@@ -5,6 +5,29 @@ import {
   LiveTranscriptionEvents,
 } from '@deepgram/sdk';
 import { NextResponse, NextRequest } from 'next/server';
+import { runInterviewAgent } from '@/ai/flows/interview-agent';
+
+export async function POST(request: NextRequest) {
+  const req = await request.json();
+  const { role, topic, level } = req;
+
+  if (!role || !topic || !level) {
+    return NextResponse.json(
+      { error: 'role, topic, and level are required' },
+      { status: 400 }
+    );
+  }
+
+  const deepgram = createClient(process.env.DEEPGRAM_API_KEY!);
+  const { key } = await deepgram.keys.create(
+    process.env.DEEPGRAM_PROJECT_ID!,
+    'Temporary key',
+    ['member'],
+    { timeToLiveInSeconds: 10 }
+  );
+
+  return NextResponse.json({ key });
+}
 
 export async function GET(request: NextRequest) {
   const url = new URL(request.url);
