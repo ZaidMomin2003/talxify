@@ -136,6 +136,23 @@ export default function InstituteColabPage() {
                     </div>
                 </section>
                 
+                {/* Video Section */}
+                <section>
+                    <div className="text-center mb-12">
+                        <h2 className="text-4xl font-bold font-headline">See Talxify in Action</h2>
+                        <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">A quick overview of the platform and how it empowers students.</p>
+                    </div>
+                    <div className="aspect-video w-full max-w-4xl mx-auto rounded-xl overflow-hidden shadow-2xl border">
+                         <iframe
+                            className="w-full h-full"
+                            src="https://www.youtube.com/embed/Tn6-PIqc4UM"
+                            title="YouTube video player"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                        ></iframe>
+                    </div>
+                </section>
+
                 {/* Features Section */}
                 <section id="features">
                     <div className="text-center mb-12">
