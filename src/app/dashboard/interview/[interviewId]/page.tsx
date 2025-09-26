@@ -54,7 +54,7 @@ function InterviewComponent() {
   const mainContainerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const recorder = useRef<MediaRecorder | null>();
-  const audioPlayer = useRef(new Audio());
+  const audioPlayer = useRef<HTMLAudioElement | null>(null);
 
   const interviewId = params.interviewId as string;
   const topic = searchParams.get('topic') || 'General Software Engineering';
@@ -67,10 +67,13 @@ function InterviewComponent() {
   };
 
   const stopInterview = useCallback(async (save: boolean) => {
+    connection?.finish();
     setConnection(undefined);
     recorder.current?.stop();
     recorder.current = undefined;
-    audioPlayer.current.pause();
+    if (audioPlayer.current) {
+        audioPlayer.current.pause();
+    }
 
     if (videoRef.current && videoRef.current.srcObject) {
         const stream = videoRef.current.srcObject as MediaStream;
@@ -91,7 +94,7 @@ function InterviewComponent() {
     } else {
         router.push('/dashboard/arena');
     }
-  }, [user, interviewId, topic, role, level, company, router, transcript]);
+  }, [user, interviewId, topic, role, level, company, router, transcript, connection]);
 
 
   const startRecording = useCallback(async () => {
@@ -169,54 +172,65 @@ function InterviewComponent() {
           body: JSON.stringify({ text, role, topic, level }),
       });
       const data = await response.json();
+      
+      addTranscript({ speaker: 'ai', text: data.text });
+      
       const audioBuffer = Buffer.from(data.audio, 'base64');
       const audioBlob = new Blob([audioBuffer], { type: 'audio/mp3' });
       const audioUrl = URL.createObjectURL(audioBlob);
 
-      addTranscript({ speaker: 'ai', text: data.text });
-      audioPlayer.current.src = audioUrl;
-      audioPlayer.current.play();
-      setMicOpen(true);
+      if (audioPlayer.current) {
+         audioPlayer.current.src = audioUrl;
+         audioPlayer.current.play();
+         setMicOpen(true);
+      }
   };
   
   useEffect(() => {
-    if (!connection) {
-        const newConnection = createClient(process.env.NEXT_PUBLIC_DEEPGRAM_API_KEY!).listen.live({
-            model: 'nova-2',
-            language: 'en-US',
-            smart_format: true,
-            interim_results: false, // Important: only process final transcripts
-            utterance_end_ms: 1000,
-            endpointing: 250,
-            punctuate: true,
-        });
+    const newConnection = createClient(process.env.NEXT_PUBLIC_DEEPGRAM_API_KEY!).listen.live({
+        model: 'nova-2',
+        language: 'en-US',
+        smart_format: true,
+        interim_results: false,
+        utterance_end_ms: 1000,
+        endpointing: 250,
+        punctuate: true,
+    });
 
-        newConnection.on(LiveTranscriptionEvents.Open, async () => {
-            setIsConnecting(false);
-            // Get initial greeting from AI
-            await getAgentResponse(''); 
-        });
+    newConnection.on(LiveTranscriptionEvents.Open, async () => {
+        setIsConnecting(false);
+        await getAgentResponse(''); 
+    });
 
-        newConnection.on(LiveTranscriptionEvents.Transcript, async (transcription) => {
-            const text = transcription.channel.alternatives[0].transcript;
-            if (transcription.is_final && text.trim()) {
-                addTranscript({ speaker: 'user', text });
-                await getAgentResponse(text);
-            }
-        });
+    newConnection.on(LiveTranscriptionEvents.Transcript, async (transcription) => {
+        const text = transcription.channel.alternatives[0].transcript;
+        if (transcription.is_final && text.trim()) {
+            addTranscript({ speaker: 'user', text });
+            await getAgentResponse(text);
+        }
+    });
 
-        newConnection.on(LiveTranscriptionEvents.Close, () => {
-            setIsConnecting(false);
-            setConnection(null);
-        });
+    newConnection.on(LiveTranscriptionEvents.Close, () => {
+        setIsConnecting(false);
+        setConnection(null);
+    });
 
-        newConnection.on(LiveTranscriptionEvents.Error, (e) => {
-            console.error(e);
-        });
+    newConnection.on(LiveTranscriptionEvents.Error, (e) => {
+        console.error(e);
+    });
 
-        setConnection(newConnection);
+    setConnection(newConnection);
+
+    // Initialize the audio player
+    if (!audioPlayer.current) {
+        audioPlayer.current = new Audio();
     }
-  }, [connection]);
+
+    return () => {
+        newConnection.finish();
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const toggleFullScreen = () => {
     if (!mainContainerRef.current) return;
@@ -283,7 +297,7 @@ function InterviewComponent() {
                                   </div>
                               </div>
                           ))}
-                           {audioPlayer.current.seeking && (
+                           {audioPlayer.current?.seeking && (
                                <div className="flex items-start">
                                     <div className="p-3 rounded-lg bg-background flex items-center gap-2">
                                         <Loader2 className="w-4 h-4 animate-spin"/>
@@ -305,7 +319,7 @@ function InterviewComponent() {
                   onMouseUp={stopRecording}
                   onTouchStart={startRecording}
                   onTouchEnd={stopRecording}
-                  disabled={audioPlayer.current.seeking || !micOpen}
+                  disabled={!micOpen || (audioPlayer.current && !audioPlayer.current.paused)}
                 >
                   <Mic className="w-6 h-6"/>
                 </Button>
@@ -333,7 +347,3 @@ export default function InterviewPage() {
         </Suspense>
     )
 }
-
-    
-
-    
