@@ -39,6 +39,14 @@ const prompt = ai.definePrompt({
   name: 'generateSyllabusPrompt',
   input: {schema: GenerateSyllabusInputSchema},
   output: {schema: GenerateSyllabusOutputSchema},
+  config: {
+    safetySettings: [
+        {
+            category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+            threshold: 'BLOCK_NONE',
+        },
+    ],
+  },
   prompt: `You are an expert career coach and technical interviewer who has worked at FAANG companies. Your task is to generate a personalized 60-day interview preparation syllabus for a candidate.
 
 The candidate is targeting the following roles: {{roles}}
