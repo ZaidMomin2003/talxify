@@ -21,8 +21,7 @@ export const textToSpeechWithDeepgramFlow = ai.defineFlow(
       text: z.string().describe('The text to be converted to speech.'),
     }),
     outputSchema: z.object({
-      audio: z.instanceof(Buffer).describe("The raw audio buffer in MP3 format."),
-      contentType: z.string().describe("The content type of the audio, e.g., 'audio/mp3'"),
+      audioDataUri: z.string().describe("The audio data URI in MP3 format."),
     }),
   },
   async (input) => {
@@ -48,10 +47,10 @@ export const textToSpeechWithDeepgramFlow = ai.defineFlow(
 
     const blob = await response.blob();
     const buffer = Buffer.from(await blob.arrayBuffer());
+    const audioDataUri = `data:audio/mp3;base64,${buffer.toString('base64')}`;
     
     return {
-      audio: buffer,
-      contentType: response.headers.get('content-type') || 'audio/mp3',
+      audioDataUri: audioDataUri,
     };
   }
 );
