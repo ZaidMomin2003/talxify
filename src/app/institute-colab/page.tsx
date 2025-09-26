@@ -5,7 +5,7 @@ import React from 'react';
 import LandingHeader from '../landing-header';
 import LandingFooter from '../landing-footer';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, BarChart, BookOpen, Bot, Briefcase, CheckCircle, ChevronDown, Code, FileText, Globe, GraduationCap, Users, Swords, ShieldQuestion, ListChecks, CalendarDays, MessageSquare, Sparkles } from 'lucide-react';
+import { ArrowRight, BarChart, BookOpen, Bot, Briefcase, CheckCircle, ChevronDown, Code, FileText, Globe, GraduationCap, Users, Swords, ShieldQuestion, ListChecks, CalendarDays, MessageSquare, Sparkles, BrainCircuit } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import Link from 'next/link';
@@ -296,7 +296,7 @@ export default function InstituteColabPage() {
                             <Button size="lg" variant="secondary" asChild className="text-base">
                                 <a href="mailto:partners@talxify.space">
                                     Request a Demo <ArrowRight className="ml-2 h-4 w-4"/>
-                                </a>
+                                a>
                             </Button>
                         </div>
                     </div>
@@ -322,3 +322,4 @@ const dotPatternStyle = `
 
     
 
+    
