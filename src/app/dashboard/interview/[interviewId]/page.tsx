@@ -27,7 +27,7 @@ import { addActivity, updateActivity } from '@/lib/firebase-service';
 import type { InterviewActivity, TranscriptEntry } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import {
-  ConnectionState,
+  LiveConnectionState,
   LiveClient,
   LiveTranscriptionEvents,
   createClient,
@@ -102,7 +102,7 @@ function InterviewComponent() {
         const newRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
 
         newRecorder.ondataavailable = async (event) => {
-            if (event.data.size > 0 && connection.getReadyState() === ConnectionState.OPEN) {
+            if (event.data.size > 0 && connection.getReadyState() === LiveConnectionState.OPEN) {
                 connection.send(event.data);
             }
         };
@@ -356,3 +356,5 @@ export default function InterviewPage() {
         </Suspense>
     )
 }
+
+    
