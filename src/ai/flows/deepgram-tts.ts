@@ -24,7 +24,8 @@ export const textToSpeechWithDeepgramFlow = ai.defineFlow(
       text: input.text,
     };
     
-    const response = await fetch('https://api.deepgram.com/v1/speak?model=aura-asteria-en', {
+    // Request MP3 format for better compatibility
+    const response = await fetch('https://api.deepgram.com/v1/speak?model=aura-asteria-en&encoding=mp3', {
         method: 'POST',
         body: JSON.stringify(payload),
         headers: {

@@ -63,21 +63,26 @@ export const runInterviewAgent = ai.defineFlow(
         },
       });
 
-      const response = llmResponse.text;
+      const responseText = llmResponse.text;
       state = {
         ...state,
         history: [
           ...state.history,
           { role: 'user', content: [{ text: prompt.text }] },
-          { role: 'model', content: [{ text: response }] },
+          { role: 'model', content: [{ text: responseText }] },
         ],
       };
 
       const ttsResponse = await textToSpeechWithDeepgramFlow({
-        text: llmResponse.text,
+        text: responseText,
       });
+      
+      const response = {
+        audio: ttsResponse.audioBuffer,
+        text: responseText,
+      }
 
-      stream.yield(ttsResponse.audioBuffer);
+      stream.yield(response);
     });
   }
 );

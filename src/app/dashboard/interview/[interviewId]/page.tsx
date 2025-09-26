@@ -56,7 +56,6 @@ function InterviewComponent() {
   const searchParams = useSearchParams();
   const params = useParams();
 
-  const [status, setStatus] = useState<InterviewStatus>('initializing');
   const [transcript, setTranscript] = useState<TranscriptEntry[]>([]);
   const [isRecording, setIsRecording] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(false);
@@ -65,7 +64,6 @@ function InterviewComponent() {
   const [connection, setConnection] = useState<LiveClient | null>();
   const [isReady, setIsReady] = useState(false);
   const [isConnecting, setIsConnecting] = useState(true);
-  const [isListening, setIsListening] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   
   const mainContainerRef = useRef<HTMLDivElement>(null);
@@ -96,7 +94,6 @@ function InterviewComponent() {
 
     if (save && user && transcript.length > 1) {
         try {
-            setStatus('finished');
             const { generateInterviewFeedback } = await import('@/ai/flows/generate-interview-feedback');
             const feedback = await generateInterviewFeedback({ transcript, topic, role, company });
             const finalActivity: InterviewActivity = {
@@ -183,8 +180,11 @@ function InterviewComponent() {
   const processQueue = useCallback(async () => {
     if (size > 0 && !isProcessing) {
       setIsProcessing(true);
-      const audio = first;
-      const audioBlob = new Blob([audio], { type: 'audio/webm' });
+      const data = first;
+      
+      addTranscript({ speaker: 'ai', text: data.text });
+      
+      const audioBlob = new Blob([data.audio], { type: 'audio/mpeg' });
       const audioUrl = URL.createObjectURL(audioBlob);
       const audioElement = new Audio(audioUrl);
       audioElement.play();
@@ -198,9 +198,6 @@ function InterviewComponent() {
   useEffect(() => {
     const url = new URL(window.location.href);
     const searchParams = new URLSearchParams(url.search);
-    searchParams.set('role', role);
-    searchParams.set('topic', topic);
-    searchParams.set('level', level);
     
     const connect = async () => {
       const response = await fetch(`/api/deepgram?${searchParams.toString()}`);
@@ -379,5 +376,3 @@ export default function InterviewPage() {
         </Suspense>
     )
 }
-
-    
