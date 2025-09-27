@@ -22,6 +22,7 @@ export default function CodingQuizAnalysisPage() {
   const [analysis, setAnalysis] = useState<AnswerAnalysis[] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [quizState, setQuizState] = useState<QuizState | null>(null);
+  const [isIzanami, setIsIzanami] = useState(false);
 
   const getAnalysis = useCallback(async () => {
     const quizId = searchParams.get('id');
@@ -40,6 +41,8 @@ export default function CodingQuizAnalysisPage() {
             router.replace('/dashboard');
             return;
         }
+
+        setIsIzanami(currentQuizResult.details.difficulty === 'Izanami Mode');
 
         // If analysis is already present, just display it
         if (currentQuizResult.analysis.length > 0) {
@@ -153,18 +156,18 @@ export default function CodingQuizAnalysisPage() {
               <AccordionContent className="text-base text-muted-foreground space-y-4 p-4 bg-muted/50 rounded-b-lg">
                 <div>
                     <h3 className="font-semibold text-foreground mb-2">Your Answer (Score: {Math.round(analysis[index].score * 100)}%)</h3>
-                    <pre className="p-4 bg-background rounded-md overflow-x-auto text-sm"><code>{state.userAnswer || "// No answer provided"}</code></pre>
+                    <pre className="p-4 bg-background rounded-md overflow-x-auto text-sm font-mono"><code>{state.userAnswer || "// No answer provided"}</code></pre>
                 </div>
                 <div>
                     <h3 className="font-semibold text-foreground mb-2">AI Feedback:</h3>
-                    <div className="p-4 bg-background rounded-md">
-                        <p>{analysis[index].feedback}</p>
+                    <div className="p-4 bg-background rounded-md prose prose-sm dark:prose-invert max-w-none">
+                       <p>{analysis[index].feedback}</p>
                     </div>
                 </div>
                 {!analysis[index].isCorrect && (
                     <div>
                         <h3 className="font-semibold text-foreground mb-2">Correct Solution:</h3>
-                        <pre className="p-4 bg-background rounded-md overflow-x-auto text-sm"><code>{analysis[index].correctSolution}</code></pre>
+                        <pre className="p-4 bg-background rounded-md overflow-x-auto text-sm font-mono"><code>{analysis[index].correctSolution}</code></pre>
                     </div>
                 )}
               </AccordionContent>
@@ -172,7 +175,7 @@ export default function CodingQuizAnalysisPage() {
           ))}
         </Accordion>
         <div className="mt-8 text-center">
-            <Button onClick={() => router.push('/dashboard')}>Back to Dashboard</Button>
+            <Button onClick={() => router.push(isIzanami ? '/dashboard/arena' : '/dashboard')}>Back to {isIzanami ? 'Arena' : 'Dashboard'}</Button>
         </div>
       </div>
     </main>

@@ -200,7 +200,7 @@ export default function CodingQuizPage() {
         <Card className="shadow-lg">
           <CardHeader>
             <CardTitle className="text-2xl font-semibold">Question {currentQuestionIndex + 1}</CardTitle>
-            <CardDescription className="text-base">{currentQuestion.questionText}</CardDescription>
+            <CardDescription className="prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: currentQuestion.questionText }} />
           </CardHeader>
           <CardContent>
             <Textarea

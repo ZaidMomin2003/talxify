@@ -5,14 +5,10 @@ import {
   MessageSquare,
   Mic,
   Phone,
-  Settings,
-  Video,
   Loader2,
   AlertTriangle,
-  User,
-  Bot,
-  BrainCircuit,
-  Maximize
+  Maximize,
+  MicOff
 } from 'lucide-react';
 import React, {
   Suspense,
@@ -23,8 +19,8 @@ import React, {
 } from 'react';
 import { useSearchParams, useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
-import { addActivity, updateActivity } from '@/lib/firebase-service';
-import type { InterviewActivity, TranscriptEntry } from '@/lib/types';
+import { addActivity } from '@/lib/firebase-service';
+import type { InterviewActivity } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import {
   LiveConnectionState,
@@ -35,6 +31,10 @@ import {
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import type { Message } from 'genkit/model';
+
+
+type TranscriptEntry = { speaker: 'user' | 'ai'; text: string };
 
 
 function InterviewComponent() {
@@ -44,12 +44,14 @@ function InterviewComponent() {
   const params = useParams();
 
   const [transcript, setTranscript] = useState<TranscriptEntry[]>([]);
+  const [history, setHistory] = useState<Message[]>([]);
   const [isRecording, setIsRecording] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(false);
+  const [isMicReady, setIsMicReady] = useState(false);
+  const [isAwaitingResponse, setIsAwaitingResponse] = useState(true);
   
   const [connection, setConnection] = useState<LiveClient | null>();
   const [isConnecting, setIsConnecting] = useState(true);
-  const [micOpen, setMicOpen] = useState(false);
   
   const mainContainerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -65,6 +67,10 @@ function InterviewComponent() {
   const addTranscript = (entry: TranscriptEntry) => {
     setTranscript((prev) => [...prev, entry]);
   };
+  
+  const addHistory = (message: Message) => {
+    setHistory((prev) => [...prev, message]);
+  }
 
   const stopInterview = useCallback(async (save: boolean) => {
     connection?.finish();
@@ -98,7 +104,7 @@ function InterviewComponent() {
 
 
   const startRecording = useCallback(async () => {
-    if (isRecording || !connection) return;
+    if (isRecording || !connection || !isMicReady) return;
     try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         const newRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
@@ -115,6 +121,13 @@ function InterviewComponent() {
 
         newRecorder.onstop = () => {
             setIsRecording(false);
+             if (videoRef.current?.srcObject) {
+                const stream = videoRef.current.srcObject as MediaStream;
+                stream.getTracks().forEach(track => track.stop());
+            }
+            if (recorder.current?.stream) {
+                 recorder.current.stream.getTracks().forEach(track => track.stop());
+            }
         };
         
         newRecorder.start(250);
@@ -122,7 +135,7 @@ function InterviewComponent() {
     } catch(err) {
         console.error("Mic error:", err);
     }
-  }, [connection, isRecording]);
+  }, [connection, isRecording, isMicReady]);
 
   const stopRecording = useCallback(() => {
     if (!isRecording) return;
@@ -163,17 +176,22 @@ function InterviewComponent() {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [startRecording, stopRecording]);
   
-  const getAgentResponse = async (text: string) => {
+  const getAgentResponse = async (currentHistory: Message[]) => {
+      setIsAwaitingResponse(true);
+      setIsMicReady(false);
+      
       const response = await fetch('/api/deepgram-agent', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text, role, topic, level }),
+          body: JSON.stringify({ history: currentHistory, role, topic, level, company }),
       });
       const data = await response.json();
       
       addTranscript({ speaker: 'ai', text: data.text });
+      addHistory({ role: 'model', content: [{ text: data.text }] });
       
       const audioBuffer = Buffer.from(data.audio, 'base64');
       const audioBlob = new Blob([audioBuffer], { type: 'audio/mp3' });
@@ -181,8 +199,9 @@ function InterviewComponent() {
 
       if (audioPlayer.current) {
          audioPlayer.current.src = audioUrl;
-         audioPlayer.current.play();
-         setMicOpen(true);
+         await audioPlayer.current.play();
+         setIsAwaitingResponse(false);
+         setIsMicReady(true);
       }
   };
   
@@ -199,14 +218,16 @@ function InterviewComponent() {
 
     newConnection.on(LiveTranscriptionEvents.Open, async () => {
         setIsConnecting(false);
-        await getAgentResponse(''); 
+        await getAgentResponse([]); 
     });
 
     newConnection.on(LiveTranscriptionEvents.Transcript, async (transcription) => {
         const text = transcription.channel.alternatives[0].transcript;
         if (transcription.is_final && text.trim()) {
             addTranscript({ speaker: 'user', text });
-            await getAgentResponse(text);
+            const newHistory: Message[] = [...history, { role: 'user', content: [{ text }] }];
+            addHistory({ role: 'user', content: [{ text }] });
+            await getAgentResponse(newHistory);
         }
     });
 
@@ -297,7 +318,7 @@ function InterviewComponent() {
                                   </div>
                               </div>
                           ))}
-                           {audioPlayer.current?.seeking && (
+                           {isAwaitingResponse && (
                                <div className="flex items-start">
                                     <div className="p-3 rounded-lg bg-background flex items-center gap-2">
                                         <Loader2 className="w-4 h-4 animate-spin"/>
@@ -319,12 +340,9 @@ function InterviewComponent() {
                   onMouseUp={stopRecording}
                   onTouchStart={startRecording}
                   onTouchEnd={stopRecording}
-                  disabled={!micOpen || (audioPlayer.current && !audioPlayer.current.paused)}
+                  disabled={!isMicReady || isAwaitingResponse}
                 >
-                  <Mic className="w-6 h-6"/>
-                </Button>
-                <Button variant="outline" size="icon" className="rounded-full h-14 w-14">
-                  <Video className="w-6 h-6"/>
+                  {isMicReady ? <Mic className="w-6 h-6"/> : <MicOff className="w-6 h-6"/>}
                 </Button>
                 <Button variant="destructive" size="icon" className="rounded-full h-14 w-14" onClick={() => stopInterview(true)}>
                   <Phone className="w-6 h-6" />

@@ -12,7 +12,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import React, { useMemo } from "react";
-import type { UserData, QuizResult, Portfolio } from "@/lib/types";
+import type { UserData, QuizResult, Portfolio, InterviewActivity } from "@/lib/types";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Skeleton } from "@/components/ui/skeleton";
 import { initialPortfolioData } from "@/lib/initial-data";
@@ -170,7 +170,6 @@ function PortfolioLoadingSkeleton() {
 export default function PortfolioComponent({ userData }: { userData: UserData | null }) {
     const portfolio = userData?.portfolio;
     
-    // Fallback to default display options if they don't exist for a user
     const displayOptions = portfolio?.displayOptions ?? initialPortfolioData.portfolio.displayOptions;
 
     const { questionsSolved, interviewsCompleted, averageScore } = useMemo(() => {
@@ -178,17 +177,23 @@ export default function PortfolioComponent({ userData }: { userData: UserData | 
             return { questionsSolved: 0, interviewsCompleted: 0, averageScore: 0 };
         }
         const quizzes = userData.activity.filter(item => item.type === 'quiz') as QuizResult[];
-        const interviews = userData.activity.filter(item => item.type === 'interview');
+        const interviews = userData.activity.filter(item => item.type === 'interview') as InterviewActivity[];
         const completedQuizzes = quizzes.filter(item => item.analysis.length > 0);
+        const completedInterviews = interviews.filter(item => item.analysis && item.analysis.overallScore !== undefined);
     
         const solved = completedQuizzes.reduce((acc, quiz) => acc + quiz.quizState.length, 0);
-    
-        const totalScore = completedQuizzes.reduce((sum, quiz) => {
-            const quizScore = quiz.analysis.reduce((s, a) => s + a.score, 0);
-            return sum + (quizScore / Math.max(quiz.analysis.length, 1));
+
+        const totalQuizScore = completedQuizzes.reduce((sum, quiz) => {
+            const quizAvg = quiz.analysis.reduce((s, a) => s + a.score, 0) / Math.max(quiz.analysis.length, 1);
+            return sum + quizAvg * 100;
         }, 0);
+
+        const totalInterviewScore = completedInterviews.reduce((sum, interview) => sum + (interview.analysis?.overallScore || 0), 0);
+
+        const totalActivities = completedQuizzes.length + completedInterviews.length;
+        const totalScore = totalQuizScore + totalInterviewScore;
         
-        const avgScore = completedQuizzes.length > 0 ? Math.round((totalScore / completedQuizzes.length) * 100) : 0;
+        const avgScore = totalActivities > 0 ? Math.round(totalScore / totalActivities) : 0;
     
         return {
             questionsSolved: solved,
@@ -247,16 +252,15 @@ export default function PortfolioComponent({ userData }: { userData: UserData | 
                                 </a>
                             </Button>
                         </Card>
-                        <Card className="p-6 mt-8 shadow-lg">
-                           <CardTitle className="mb-4 text-xl">Skills</CardTitle>
-                           <CardContent className="p-0">
+                         <Section id="skills" icon={<Code />} title="Skills" className="py-8" isVisible={displayOptions.showSkills}>
+                            <Card className="p-6 shadow-lg">
                                 <div className="flex flex-wrap gap-2">
                                     {portfolio.skills.map((skill) => (
                                         <Badge key={skill.skill} variant="secondary" className="text-base px-3 py-1">{skill.skill}</Badge>
                                     ))}
                                 </div>
-                            </CardContent>
-                        </Card>
+                            </Card>
+                        </Section>
                     </aside>
 
                     {/* Main Content */}

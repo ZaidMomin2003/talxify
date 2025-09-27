@@ -105,6 +105,16 @@ export default function LoginPage() {
       toast({ title: "Email required", description: "Please enter your email address.", variant: "destructive" });
       return;
     }
+    // Simple check for social login emails
+    if (resetEmail.endsWith('@gmail.com') || resetEmail.endsWith('@google.com') || resetEmail.includes('github')) {
+        toast({
+            title: "Social Login Detected",
+            description: "It looks like you might use Google or GitHub to sign in. Please use that method or manage your password through your provider.",
+            duration: 7000
+        });
+        return;
+    }
+
     setResetLoading(true);
     try {
       await sendPasswordResetEmail(auth, resetEmail);
@@ -216,11 +226,7 @@ export default function LoginPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between">
-                  <label className="text-muted-foreground flex items-center text-sm">
-                    <input type="checkbox" className="border-border text-primary h-4 w-4 rounded focus:ring-primary" />
-                    <span className="ml-2">Remember me</span>
-                  </label>
+                <div className="flex items-center justify-end">
                   <button type="button" onClick={() => setIsForgotPassOpen(true)} className="text-primary hover:text-primary/80 text-sm font-medium">
                     Forgot password?
                   </button>

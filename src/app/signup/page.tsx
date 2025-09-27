@@ -43,7 +43,7 @@ export default function SignupPage() {
     setLoading(true);
     try {
       await signUp({ name, email, password });
-      router.push('/dashboard');
+      router.push('/onboarding');
     } catch (error: any) {
       console.error("Signup Error Code:", error.code);
       const friendlyMessage = getFriendlyAuthErrorMessage(error.code);
@@ -61,7 +61,7 @@ export default function SignupPage() {
     setGoogleLoading(true);
     try {
       await signInWithGoogle();
-      router.push('/dashboard');
+      router.push('/onboarding');
     } catch (error: any) {
       console.error(error);
       toast({
@@ -78,7 +78,7 @@ export default function SignupPage() {
     setGithubLoading(true);
     try {
       await signInWithGitHub();
-      router.push('/dashboard');
+      router.push('/onboarding');
     } catch (error: any) {
       console.error(error);
       toast({
