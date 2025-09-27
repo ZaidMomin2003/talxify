@@ -25,7 +25,7 @@ const features = [
   {
     icon: <BrainCircuit className="w-8 h-8" />,
     title: 'Targeted Prep Tracks',
-    description: 'Choose a company like Google or Amazon, and get a personalized 30-day syllabus and mock interviews tailored to their style.',
+    description: 'Choose a company like Google or Amazon, and get a personalized 60-day syllabus and mock interviews tailored to their style.',
   },
   {
     icon: <FileText className="w-8 h-8" />,
@@ -39,7 +39,7 @@ const howItWorksSteps = [
         icon: CalendarDays,
         step: 1,
         title: "Get Your Personalized Plan",
-        description: "Answer a few questions about your career goals, and our AI will generate a custom 30-day prep syllabus tailored just for you."
+        description: "Answer a few questions about your career goals, and our AI will generate a custom 60-day prep syllabus tailored just for you."
     },
     {
         icon: Code,

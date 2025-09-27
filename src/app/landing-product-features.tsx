@@ -10,14 +10,14 @@ import Image from "next/image";
 
 const features = [
     {
-        title: 'Your Personalized 30-Day Prep Plan',
-        description: 'Start with a plan tailored to your target roles and companies. Our AI generates a comprehensive, 30-day syllabus covering everything from data structures to system design, ensuring you learn what matters most.',
+        title: 'Your Personalized 60-Day Prep Plan',
+        description: 'Start with a plan tailored to your target roles and companies. Our AI generates a comprehensive, 60-day syllabus covering everything from data structures to system design, ensuring you learn what matters most.',
         icon: CalendarDays,
         prototype: (
             <Card className="w-full max-w-lg mx-auto bg-card/80 backdrop-blur-sm p-6 shadow-xl border border-border/50">
                 <CardHeader className="p-0 mb-4 flex flex-row items-center gap-3">
                     <div className="flex-shrink-0 bg-primary/10 text-primary p-2 rounded-lg"><CalendarDays className="w-6 h-6"/></div>
-                    <CardTitle className="text-xl m-0">Your 30-Day Arena</CardTitle>
+                    <CardTitle className="text-xl m-0">Your 60-Day Arena</CardTitle>
                 </CardHeader>
                 <CardContent className="p-0 space-y-3">
                     <div className="flex items-center justify-between p-3 rounded-lg bg-muted border border-green-500/50">
