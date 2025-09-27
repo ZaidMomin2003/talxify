@@ -25,7 +25,7 @@ export default function DeprecatedInterviewPage() {
                 <CardDescription>Redirecting you to the Arena...</CardDescription>
             </CardHeader>
             <CardContent>
-                <p className="text-muted-foreground">The interview functionality is now accessed through the 30-Day Arena.</p>
+                <p className="text-muted-foreground">The interview functionality is now accessed through the 60-Day Arena.</p>
             </CardContent>
         </Card>
     </main>

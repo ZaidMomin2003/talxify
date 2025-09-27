@@ -9,7 +9,7 @@ const steps = [
         icon: CalendarDays,
         step: 1,
         title: "Get a Personalized Plan",
-        description: "Answer a few questions about your career goals, and our AI will generate a custom 30-day prep syllabus tailored just for you."
+        description: "Answer a few questions about your career goals, and our AI will generate a custom 60-day prep syllabus tailored just for you."
     },
     {
         icon: Code,

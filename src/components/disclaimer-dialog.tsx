@@ -19,7 +19,7 @@ import { Badge } from '@/components/ui/badge';
 
 const features = [
     { icon: BrainCircuit, title: 'AI Mock Interviews', description: 'Practice with a realistic AI that asks relevant questions.' },
-    { icon: Swords, title: '30-Day Prep Arena', description: 'Follow a personalized syllabus to master key concepts.' },
+    { icon: Swords, title: '60-Day Prep Arena', description: 'Follow a personalized syllabus to master key concepts.' },
     { icon: Code, title: 'Code Izanami', description: 'Adaptive coding quizzes that challenge your skills.'},
     { icon: BookOpen, title: 'Detailed Notes Generation', description: 'Generate in-depth study notes on any technical topic.'},
     { icon: FileText, title: 'Resume Builder', description: 'Craft a professional resume with our easy-to-use tool.', badge: 'Free Forever' },
