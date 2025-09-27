@@ -87,12 +87,17 @@ export default function DashboardPage() {
 
     const solved = completedQuizzes.reduce((acc, quiz) => acc + quiz.quizState.length, 0);
 
-    const totalScore = completedQuizzes.reduce((sum, quiz) => {
-        const quizScore = quiz.analysis.reduce((s, a) => s + a.score, 0);
-        return sum + (quizScore / Math.max(quiz.analysis.length, 1));
+    const totalQuizScore = completedQuizzes.reduce((sum, quiz) => {
+        const quizAvg = quiz.analysis.reduce((s, a) => s + a.score, 0) / Math.max(quiz.analysis.length, 1);
+        return sum + quizAvg * 100;
     }, 0);
+
+    const totalInterviewScore = completedInterviews.reduce((sum, interview) => sum + (interview.analysis?.overallScore || 0), 0);
+
+    const totalActivities = completedQuizzes.length + completedInterviews.length;
+    const totalScore = totalQuizScore + totalInterviewScore;
     
-    const avgScore = completedQuizzes.length > 0 ? Math.round((totalScore / completedQuizzes.length) * 100) : 0;
+    const avgScore = totalActivities > 0 ? Math.round(totalScore / totalActivities) : 0;
     
     const quizTaken = completedQuizzes.length > 0;
     
@@ -436,3 +441,5 @@ export default function DashboardPage() {
     </main>
   );
 }
+
+    
