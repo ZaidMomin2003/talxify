@@ -5,15 +5,9 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence, easeInOut } from 'framer-motion';
-import { Menu, X, ArrowRight, Bot, MessageSquare, Code, BrainCircuit, FileText, User, Swords } from 'lucide-react';
+import { Menu, X, ArrowRight, Bot, MessageSquare, Code, BrainCircuit, FileText, User, Swords, ChevronDown } from 'lucide-react';
 import { useAuth } from "@/context/auth-context";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { cn } from "@/lib/utils";
+import { usePathname } from 'next/navigation';
 
 interface NavItem {
   name: string;
@@ -42,7 +36,9 @@ export default function LandingHeader() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
+  const [isFeaturesMenuOpen, setIsFeaturesMenuOpen] = useState(false);
   const { user, loading } = useAuth();
+  const pathname = usePathname();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -51,6 +47,11 @@ export default function LandingHeader() {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+  
+  useEffect(() => {
+    // Close mobile menu on route change
+    setIsMobileMenuOpen(false);
+  }, [pathname]);
 
   const handleLinkClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     if (href.startsWith('/#')) {
@@ -60,7 +61,6 @@ export default function LandingHeader() {
       if (targetElement) {
         targetElement.scrollIntoView({ behavior: 'smooth' });
       } else {
-        // If on a different page, navigate and then scroll
         window.location.href = href;
       }
     }
@@ -103,6 +103,13 @@ export default function LandingHeader() {
       },
     },
   };
+  
+   const featuresMenuVariants = {
+    hidden: { opacity: 0, y: -10, scale: 0.95 },
+    visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.2, ease: 'easeOut' } },
+    exit: { opacity: 0, y: -10, scale: 0.95, transition: { duration: 0.15, ease: 'easeIn' } },
+  };
+
 
   const mobileItemVariants = {
     closed: { opacity: 0, x: 20 },
@@ -145,53 +152,51 @@ export default function LandingHeader() {
             </motion.div>
 
             <nav className="hidden items-center space-x-1 lg:flex">
-               <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                     <motion.div
-                      variants={itemVariants}
-                      className="relative"
-                      onMouseEnter={() => setHoveredItem('Features')}
-                      onMouseLeave={() => setHoveredItem(null)}
+               <motion.div
+                    onMouseEnter={() => setIsFeaturesMenuOpen(true)}
+                    onMouseLeave={() => setIsFeaturesMenuOpen(false)}
+                    className="relative"
+                    variants={itemVariants}
+                >
+                    <div
+                      className={`relative flex items-center gap-1 rounded-lg px-4 py-2 text-sm font-medium transition-colors duration-200 text-foreground cursor-pointer`}
                     >
-                      <div
-                        className={`relative rounded-lg px-4 py-2 text-sm font-medium transition-colors duration-200 text-foreground cursor-pointer`}
-                      >
-                        {hoveredItem === 'Features' && (
-                          <motion.div
-                            className="bg-muted absolute inset-0 rounded-lg"
-                            layoutId="navbar-hover"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            transition={{
-                              type: 'spring',
-                              stiffness: 400,
-                              damping: 30,
-                            }}
-                          />
-                        )}
-                        <span className="relative z-10 flex items-center">Features</span>
-                      </div>
-                    </motion.div>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-[30rem] p-4" align="start">
-                    <div className="grid grid-cols-2 gap-4">
-                        {featureItems.map(item => (
-                            <DropdownMenuItem key={item.name} asChild>
-                                <Link href={item.href} className="flex items-start gap-3 p-2 rounded-lg hover:bg-muted focus:bg-muted">
-                                    <div className="bg-primary/10 text-primary rounded-md p-2 mt-0.5">
-                                        <item.icon className="w-5 h-5"/>
-                                    </div>
-                                    <div>
-                                        <p className="font-semibold text-foreground">{item.name}</p>
-                                        <p className="text-xs text-muted-foreground">{item.description}</p>
-                                    </div>
-                                </Link>
-                            </DropdownMenuItem>
-                        ))}
+                      <span>Features</span>
+                      <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isFeaturesMenuOpen ? 'rotate-180' : ''}`} />
                     </div>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                     <AnimatePresence>
+                        {isFeaturesMenuOpen && (
+                            <motion.div
+                                variants={featuresMenuVariants}
+                                initial="hidden"
+                                animate="visible"
+                                exit="exit"
+                                className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-max origin-top"
+                            >
+                                <div className="bg-background border border-border rounded-xl shadow-lg p-4">
+                                     <div className="grid grid-cols-2 gap-4 w-[34rem]">
+                                        {featureItems.map(item => (
+                                            <Link 
+                                                key={item.name} 
+                                                href={item.href} 
+                                                className="flex items-start gap-3 p-3 rounded-lg hover:bg-muted focus:bg-muted focus:outline-none transition-colors"
+                                                onClick={(e) => handleLinkClick(e, item.href)}
+                                            >
+                                                <div className="bg-primary/10 text-primary rounded-md p-2 mt-0.5">
+                                                    <item.icon className="w-5 h-5"/>
+                                                </div>
+                                                <div>
+                                                    <p className="font-semibold text-foreground">{item.name}</p>
+                                                    <p className="text-xs text-muted-foreground">{item.description}</p>
+                                                </div>
+                                            </Link>
+                                        ))}
+                                    </div>
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </motion.div>
 
               {navItems.map((item) => (
                 <motion.div
@@ -246,6 +251,16 @@ export default function LandingHeader() {
                   </motion.div>
               ) : (
                 <>
+                   <motion.div
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <Button asChild variant="ghost">
+                        <Link href="/login">
+                            <span>Sign In</span>
+                        </Link>
+                    </Button>
+                  </motion.div>
                   <motion.div
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
