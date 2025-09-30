@@ -5,8 +5,15 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence, easeInOut } from 'framer-motion';
-import { Menu, X, ArrowRight, Bot } from 'lucide-react';
+import { Menu, X, ArrowRight, Bot, MessageSquare, Code, BrainCircuit, FileText, User, Swords } from 'lucide-react';
 import { useAuth } from "@/context/auth-context";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
 
 interface NavItem {
   name: string;
@@ -14,13 +21,22 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { name: 'Features', href: '/#features' },
+  // Features is now handled separately
   { name: 'Testimonials', href: '/#testimonials' },
   { name: 'Pricing', href: '/#pricing' },
   { name: 'FAQ', href: '/#faq' },
   { name: 'About', href: '/about' },
   { name: 'For Institutes', href: '/institutepartnership' },
 ];
+
+const featureItems = [
+    { name: '60-Day Prep Arena', href: '/#features', icon: Swords, description: "Personalized syllabus to master key concepts." },
+    { name: 'AI Mock Interviews', href: '/#features', icon: MessageSquare, description: 'Practice with a realistic AI that asks relevant questions.' },
+    { name: 'AI Coding Gym', href: '/#features', icon: Code, description: 'Solve problems with instant, line-by-line feedback.' },
+    { name: 'AI Study Notes', href: '/#features', icon: BrainCircuit, description: 'Generate in-depth study guides for any topic.' },
+    { name: 'Resume Builder', href: '/#features', icon: FileText, description: 'Craft a professional resume with our easy-to-use tool.' },
+    { name: 'Portfolio Builder', href: '/#features', icon: User, description: 'Showcase your skills with an automatically generated portfolio.' },
+]
 
 export default function LandingHeader() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -129,6 +145,54 @@ export default function LandingHeader() {
             </motion.div>
 
             <nav className="hidden items-center space-x-1 lg:flex">
+               <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                     <motion.div
+                      variants={itemVariants}
+                      className="relative"
+                      onMouseEnter={() => setHoveredItem('Features')}
+                      onMouseLeave={() => setHoveredItem(null)}
+                    >
+                      <div
+                        className={`relative rounded-lg px-4 py-2 text-sm font-medium transition-colors duration-200 text-foreground cursor-pointer`}
+                      >
+                        {hoveredItem === 'Features' && (
+                          <motion.div
+                            className="bg-muted absolute inset-0 rounded-lg"
+                            layoutId="navbar-hover"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{
+                              type: 'spring',
+                              stiffness: 400,
+                              damping: 30,
+                            }}
+                          />
+                        )}
+                        <span className="relative z-10 flex items-center">Features</span>
+                      </div>
+                    </motion.div>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-[30rem] p-4" align="start">
+                    <div className="grid grid-cols-2 gap-4">
+                        {featureItems.map(item => (
+                            <DropdownMenuItem key={item.name} asChild>
+                                <Link href={item.href} className="flex items-start gap-3 p-2 rounded-lg hover:bg-muted focus:bg-muted">
+                                    <div className="bg-primary/10 text-primary rounded-md p-2 mt-0.5">
+                                        <item.icon className="w-5 h-5"/>
+                                    </div>
+                                    <div>
+                                        <p className="font-semibold text-foreground">{item.name}</p>
+                                        <p className="text-xs text-muted-foreground">{item.description}</p>
+                                    </div>
+                                </Link>
+                            </DropdownMenuItem>
+                        ))}
+                    </div>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
               {navItems.map((item) => (
                 <motion.div
                   key={item.name}
@@ -232,6 +296,15 @@ export default function LandingHeader() {
             >
               <div className="space-y-6 p-6">
                 <div className="space-y-1">
+                   <motion.div variants={mobileItemVariants}>
+                     <Link
+                        href="/#features"
+                        className="block rounded-lg px-4 py-3 font-medium transition-colors duration-200 hover:bg-muted"
+                        onClick={(e) => handleLinkClick(e, '/#features')}
+                      >
+                        Features
+                      </Link>
+                   </motion.div>
                   {navItems.map((item) => (
                     <motion.div key={item.name} variants={mobileItemVariants}>
                       <Link
