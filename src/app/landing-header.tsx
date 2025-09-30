@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence, easeInOut } from 'framer-motion';
-import { Menu, X, ArrowRight, Bot, MessageSquare, Code, BrainCircuit, FileText, User, Swords, ChevronDown } from 'lucide-react';
+import { Menu, X, ArrowRight, Bot, MessageSquare, Code, BrainCircuit, FileText, User, Swords, ChevronDown, Sparkles, UserRound, Check } from 'lucide-react';
 import { useAuth } from "@/context/auth-context";
 import { usePathname } from 'next/navigation';
 
@@ -15,9 +15,8 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  // Features is now handled separately
+  // Features and Pricing are now handled separately
   { name: 'Testimonials', href: '/#testimonials' },
-  { name: 'Pricing', href: '/#pricing' },
   { name: 'FAQ', href: '/#faq' },
   { name: 'About', href: '/about' },
   { name: 'For Institutes', href: '/institutepartnership' },
@@ -30,13 +29,30 @@ const featureItems = [
     { name: 'AI Study Notes', href: '/#features', icon: BrainCircuit, description: 'Generate in-depth study guides for any topic.' },
     { name: 'Resume Builder', href: '/#features', icon: FileText, description: 'Craft a professional resume with our easy-to-use tool.' },
     { name: 'Portfolio Builder', href: '/#features', icon: User, description: 'Showcase your skills with an automatically generated portfolio.' },
-]
+];
+
+const freePlanFeatures = [
+    'First Day of 60-Day Arena',
+    'AI-Powered Mock Interview',
+    'AI-Analyzed Coding Quiz',
+    'Limited Portfolio Access (24h)',
+];
+
+const proPlanFeatures = [
+    'Full 60-Day Arena Access',
+    'Unlimited Coding Questions',
+    'Professional Resume Builder',
+    'Full Portfolio Customization',
+    'And everything in Free...',
+];
+
 
 export default function LandingHeader() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const [isFeaturesMenuOpen, setIsFeaturesMenuOpen] = useState(false);
+  const [isPricingMenuOpen, setIsPricingMenuOpen] = useState(false);
   const { user, loading } = useAuth();
   const pathname = usePathname();
 
@@ -65,6 +81,8 @@ export default function LandingHeader() {
       }
     }
     setIsMobileMenuOpen(false);
+    setIsFeaturesMenuOpen(false);
+    setIsPricingMenuOpen(false);
   };
 
   const containerVariants = {
@@ -104,7 +122,7 @@ export default function LandingHeader() {
     },
   };
   
-   const featuresMenuVariants = {
+   const megaMenuVariants = {
     hidden: { opacity: 0, y: -10, scale: 0.95 },
     visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.2, ease: 'easeOut' } },
     exit: { opacity: 0, y: -10, scale: 0.95, transition: { duration: 0.15, ease: 'easeIn' } },
@@ -159,7 +177,7 @@ export default function LandingHeader() {
                     variants={itemVariants}
                 >
                     <div
-                      className={`relative flex items-center gap-1 rounded-lg px-4 py-2 text-sm font-medium transition-colors duration-200 text-foreground cursor-pointer`}
+                      className={`relative flex items-center gap-1 rounded-lg px-4 py-2 text-sm font-medium transition-colors duration-200 text-foreground cursor-pointer hover:bg-muted`}
                     >
                       <span>Features</span>
                       <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isFeaturesMenuOpen ? 'rotate-180' : ''}`} />
@@ -167,7 +185,7 @@ export default function LandingHeader() {
                      <AnimatePresence>
                         {isFeaturesMenuOpen && (
                             <motion.div
-                                variants={featuresMenuVariants}
+                                variants={megaMenuVariants}
                                 initial="hidden"
                                 animate="visible"
                                 exit="exit"
@@ -197,6 +215,71 @@ export default function LandingHeader() {
                         )}
                     </AnimatePresence>
                 </motion.div>
+                
+                <motion.div
+                    onMouseEnter={() => setIsPricingMenuOpen(true)}
+                    onMouseLeave={() => setIsPricingMenuOpen(false)}
+                    className="relative"
+                    variants={itemVariants}
+                >
+                    <div
+                      className={`relative flex items-center gap-1 rounded-lg px-4 py-2 text-sm font-medium transition-colors duration-200 text-foreground cursor-pointer hover:bg-muted`}
+                    >
+                      <span>Pricing</span>
+                      <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isPricingMenuOpen ? 'rotate-180' : ''}`} />
+                    </div>
+                     <AnimatePresence>
+                        {isPricingMenuOpen && (
+                            <motion.div
+                                variants={megaMenuVariants}
+                                initial="hidden"
+                                animate="visible"
+                                exit="exit"
+                                className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-max origin-top"
+                            >
+                                <div className="bg-background border border-border rounded-xl shadow-lg grid grid-cols-2 w-[36rem]">
+                                    <div className="p-6">
+                                        <div className="flex items-center gap-3 mb-3">
+                                            <UserRound className="w-6 h-6 text-muted-foreground"/>
+                                            <h3 className="font-bold text-lg">Free</h3>
+                                        </div>
+                                        <p className="text-muted-foreground text-sm mb-4">A glimpse into our powerful platform, forever free.</p>
+                                        <ul className="space-y-2 text-sm mb-6">
+                                            {freePlanFeatures.map(f => (
+                                                <li key={f} className="flex items-start gap-2">
+                                                    <Check className="w-4 h-4 text-green-500 mt-0.5 shrink-0"/>
+                                                    <span className="text-muted-foreground">{f}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                         <Button asChild variant="secondary" className="w-full" onClick={() => setIsPricingMenuOpen(false)}>
+                                            <Link href="/signup">Start for Free</Link>
+                                        </Button>
+                                    </div>
+                                    <div className="p-6 bg-primary/5 border-l">
+                                        <div className="flex items-center gap-3 mb-3">
+                                            <Sparkles className="w-6 h-6 text-primary"/>
+                                            <h3 className="font-bold text-lg">Pro</h3>
+                                        </div>
+                                        <p className="text-muted-foreground text-sm mb-4">Unlock your full potential and land your dream job.</p>
+                                        <ul className="space-y-2 text-sm mb-6">
+                                             {proPlanFeatures.map(f => (
+                                                <li key={f} className="flex items-start gap-2">
+                                                    <Check className="w-4 h-4 text-primary mt-0.5 shrink-0"/>
+                                                    <span className="text-muted-foreground">{f}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                        <Button asChild className="w-full" onClick={() => setIsPricingMenuOpen(false)}>
+                                            <Link href="/#pricing">Choose Plan</Link>
+                                        </Button>
+                                    </div>
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </motion.div>
+
 
               {navItems.map((item) => (
                 <motion.div
@@ -320,6 +403,15 @@ export default function LandingHeader() {
                         Features
                       </Link>
                    </motion.div>
+                   <motion.div variants={mobileItemVariants}>
+                     <Link
+                        href="/#pricing"
+                        className="block rounded-lg px-4 py-3 font-medium transition-colors duration-200 hover:bg-muted"
+                        onClick={(e) => handleLinkClick(e, '/#pricing')}
+                      >
+                        Pricing
+                      </Link>
+                   </motion.div>
                   {navItems.map((item) => (
                     <motion.div key={item.name} variants={mobileItemVariants}>
                       <Link
@@ -372,3 +464,5 @@ export default function LandingHeader() {
     </>
   );
 }
+
+    
