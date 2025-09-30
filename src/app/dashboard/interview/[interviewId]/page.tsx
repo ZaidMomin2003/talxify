@@ -194,7 +194,7 @@ function InterviewComponent() {
       addHistory({ role: 'model', content: [{ text: data.text }] });
       
       const audioBuffer = Buffer.from(data.audio, 'base64');
-      const audioBlob = new Blob([audioBuffer], { type: 'audio/mp3' });
+      const audioBlob = new Blob([audioBuffer], { type: 'audio/wav' });
       const audioUrl = URL.createObjectURL(audioBlob);
 
       if (audioPlayer.current) {

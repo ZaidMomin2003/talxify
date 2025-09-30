@@ -3,8 +3,8 @@
 
 import { ai } from '@/ai/genkit';
 import { stream, z } from 'genkit';
-import { textToSpeechWithDeepgramFlow } from './deepgram-tts';
 import { MessageSchema } from 'genkit/model';
+import wav from 'wav';
 
 export const runInterviewAgent = ai.defineFlow(
   {
@@ -16,7 +16,10 @@ export const runInterviewAgent = ai.defineFlow(
       level: z.string().describe("The candidate's experience level."),
       company: z.string().optional().describe("The target company for the interview."),
     }),
-    outputSchema: z.any(),
+    outputSchema: z.object({
+        text: z.string(),
+        audio: z.any(),
+    }),
   },
   async (input) => {
     return stream(async function* (stream) {
@@ -50,6 +53,7 @@ export const runInterviewAgent = ai.defineFlow(
       }
       
       const llmResponse = await ai.generate({
+        model: 'googleai/gemini-1.5-flash-latest',
         prompt: prompt,
         history: input.history,
         config: {
@@ -58,17 +62,62 @@ export const runInterviewAgent = ai.defineFlow(
       });
 
       const responseText = llmResponse.text;
-
-      const ttsResponse = await textToSpeechWithDeepgramFlow({
-        text: responseText,
-      });
       
+      const { media } = await ai.generate({
+        model: 'googleai/gemini-2.5-flash-preview-tts',
+        config: {
+            responseModalities: ['AUDIO'],
+            speechConfig: {
+                voiceConfig: {
+                    prebuiltVoiceConfig: { voiceName: 'Algenib' },
+                },
+            },
+        },
+        prompt: responseText,
+      });
+
+      if (!media) {
+        throw new Error('TTS response did not include media.');
+      }
+      
+      // Convert raw PCM audio from Gemini to a WAV buffer for broad browser compatibility
+      const pcmData = Buffer.from(
+        media.url.substring(media.url.indexOf(',') + 1),
+        'base64'
+      );
+      const wavBuffer = await toWav(pcmData);
+
       const response = {
-        audio: ttsResponse.audioBuffer,
         text: responseText,
+        audio: wavBuffer,
       }
 
       stream.yield(response);
     });
   }
 );
+
+
+// Helper function to convert raw PCM audio data to a WAV file buffer.
+async function toWav(
+  pcmData: Buffer,
+  channels = 1,
+  rate = 24000,
+  sampleWidth = 2
+): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    const writer = new wav.Writer({
+      channels,
+      sampleRate: rate,
+      bitDepth: sampleWidth * 8,
+    });
+
+    const buffers: Buffer[] = [];
+    writer.on('error', reject);
+    writer.on('data', (chunk) => buffers.push(chunk));
+    writer.on('end', () => resolve(Buffer.concat(buffers)));
+
+    writer.write(pcmData);
+    writer.end();
+  });
+}

@@ -7,21 +7,22 @@ import { Buffer } from 'buffer';
 
 export async function POST(request: NextRequest) {
   const req = await request.json();
-  const { text, role, topic, level } = req;
+  const { history, role, topic, level, company } = req;
   
-  if (text === undefined || !role || !topic || !level) {
+  if (history === undefined || !role || !topic || !level) {
     return NextResponse.json(
-      { error: 'text, role, topic, and level are required' },
+      { error: 'history, role, topic, and level are required' },
       { status: 400 }
     );
   }
 
   try {
     const { stream } = await runInterviewAgent({
-      text,
+      history,
       role,
       topic,
       level,
+      company,
     });
 
     for await (const chunk of stream) {
