@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
@@ -116,6 +117,8 @@ const LiveInterviewComponent = () => {
             }
           },
         }),
+        // @ts-ignore
+        duplex: 'half',
       });
 
       if (!response.ok || !response.body) {
@@ -285,5 +288,3 @@ const LiveInterviewComponent = () => {
 };
 
 export default LiveInterviewComponent;
-
-    
