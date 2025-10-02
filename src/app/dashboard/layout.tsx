@@ -303,6 +303,8 @@ function DashboardLayoutContent({
   const [searchQuery, setSearchQuery] = useState("");
   const [isActivityLoading, setIsActivityLoading] = useState(true);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
+  const [isSidebarVisible, setIsSidebarVisible] = useState(true);
+
 
   const fetchUserData = useCallback(async () => {
     if (user) {
@@ -312,6 +314,12 @@ function DashboardLayoutContent({
         setIsActivityLoading(false);
     }
   }, [user]);
+
+  useEffect(() => {
+    const pathSegments = pathname.split('/').filter(Boolean);
+    const isLiveInterview = pathSegments[0] === 'dashboard' && pathSegments[1] === 'interview' && pathSegments.length === 3;
+    setIsSidebarVisible(!isLiveInterview);
+  }, [pathname]);
 
   const weakConcepts = useMemo(() => {
     if (!userData || !userData.activity) return [];
@@ -383,12 +391,8 @@ function DashboardLayoutContent({
     }
   }, [user, loading, router, fetchUserData]);
   
-  // Logic to conditionally render sidebar
-  const pathSegments = pathname.split('/').filter(Boolean);
-  const isLiveInterviewPage = pathSegments[0] === 'dashboard' && pathSegments[1] === 'interview' && pathSegments.length === 3;
-  const isDraftPage = pathname.startsWith('/dashboard/draft');
 
-  if (isLiveInterviewPage || isDraftPage) {
+  if (!isSidebarVisible) {
     return <main className="flex-1 w-full h-screen overflow-hidden">{children}</main>;
   }
 
@@ -398,7 +402,6 @@ function DashboardLayoutContent({
     { href: "/dashboard/arena", label: "Arena", icon: Swords },
     { href: "/dashboard/resume-builder", label: "Resume Builder", icon: FileText, isFree: true, isTesting: true },
     { href: "/dashboard/portfolio", label: "Portfolio Builder", icon: User },
-    { href: "/dashboard/draft", label: "Draft Page", icon: FlaskConical },
   ];
   
   const recentActivity = userData?.activity?.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()) || [];
