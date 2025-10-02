@@ -60,15 +60,20 @@ export async function POST(req: NextRequest) {
         if (!req.body) return;
         const reader = req.body.getReader();
         try {
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) {
-                    break;
-                }
-                session.sendRealtimeInput({ media: { data: Buffer.from(value).toString('base64'), mimeType: 'audio/pcm;rate=16000' } });
-            }
+            await session.sendRealtimeInput(
+                (async function* () {
+                    while (true) {
+                        const { done, value } = await reader.read();
+                        if (done) {
+                            break;
+                        }
+                        yield { media: { data: Buffer.from(value).toString('base64'), mimeType: 'audio/pcm;rate=16000' } };
+                    }
+                })()
+            );
         } catch (error) {
             console.error('Request Body Reading Error:', error);
+        } finally {
             session.close();
         }
     })();
@@ -86,3 +91,4 @@ export async function POST(req: NextRequest) {
     return new Response(e.message || 'Failed to connect to live session', { status: 500 });
   }
 }
+
