@@ -178,4 +178,3 @@ const LiveAudioVisuals3D: React.FC<LiveAudioVisuals3DProps> = ({ inputNode, outp
 };
 
 export default LiveAudioVisuals3D;
-
