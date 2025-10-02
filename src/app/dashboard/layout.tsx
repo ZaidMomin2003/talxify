@@ -304,7 +304,6 @@ function DashboardLayoutContent({
   const [isActivityLoading, setIsActivityLoading] = useState(true);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
 
-
   const fetchUserData = useCallback(async () => {
     if (user) {
         setIsActivityLoading(true);
@@ -313,6 +312,66 @@ function DashboardLayoutContent({
         setIsActivityLoading(false);
     }
   }, [user]);
+
+  const weakConcepts = useMemo(() => {
+    if (!userData || !userData.activity) return [];
+
+    const conceptScores: { [topic: string]: { totalScore: number; count: number } } = {};
+
+    // Process quiz results
+    const quizResults = userData.activity.filter(
+        (item): item is QuizResult => item.type === 'quiz' && item.analysis && item.analysis.length > 0
+    );
+
+    quizResults.forEach(result => {
+        if (!result.analysis || result.analysis.length === 0) return;
+        const averageQuizScore = result.analysis.reduce((sum, a) => sum + a.score, 0) / result.analysis.length;
+        
+        const topics = result.topics.split(',').map(t => t.trim().toLowerCase());
+        topics.forEach(topic => {
+            if (!conceptScores[topic]) {
+                conceptScores[topic] = { totalScore: 0, count: 0 };
+            }
+            conceptScores[topic].totalScore += averageQuizScore * 100;
+            conceptScores[topic].count += 1;
+        });
+    });
+
+    // Process interview results
+    const interviewResults = userData.activity.filter(
+        (item): item is InterviewActivity => item.type === 'interview' && item.analysis?.overallScore !== undefined
+    );
+
+    interviewResults.forEach(result => {
+        const topic = result.details.topic.toLowerCase();
+        if (!conceptScores[topic]) {
+            conceptScores[topic] = { totalScore: 0, count: 0 };
+        }
+        conceptScores[topic].totalScore += result.analysis!.overallScore;
+        conceptScores[topic].count += 1;
+    });
+
+    return Object.entries(conceptScores)
+        .map(([topic, data]) => ({
+            topic,
+            score: Math.round(data.totalScore / data.count)
+        }))
+        .filter(item => item.score < 70)
+        .sort((a, b) => a.score - b.score)
+        .slice(0, 5);
+        
+  }, [userData]);
+
+  const allGettingStartedCompleted = useMemo(() => {
+    if (!userData || !userData.activity) return false;
+    const activity = userData.activity;
+    const hasGeneratedNotes = activity.some(a => a.type === 'note-generation');
+    const hasTakenInterview = activity.some(a => a.type === 'interview');
+    const hasTakenQuiz = activity.some(a => a.type === 'quiz');
+    const canDeployPortfolio = hasTakenInterview && hasTakenQuiz && hasGeneratedNotes;
+    return hasGeneratedNotes && hasTakenInterview && hasTakenQuiz && canDeployPortfolio;
+  }, [userData]);
+
 
   useEffect(() => {
     if (!loading && !user) {
@@ -398,66 +457,6 @@ function DashboardLayoutContent({
     }
   };
   
-  const weakConcepts = useMemo(() => {
-    if (!userData || !userData.activity) return [];
-
-    const conceptScores: { [topic: string]: { totalScore: number; count: number } } = {};
-
-    // Process quiz results
-    const quizResults = userData.activity.filter(
-        (item): item is QuizResult => item.type === 'quiz' && item.analysis && item.analysis.length > 0
-    );
-
-    quizResults.forEach(result => {
-        if (!result.analysis || result.analysis.length === 0) return;
-        const averageQuizScore = result.analysis.reduce((sum, a) => sum + a.score, 0) / result.analysis.length;
-        
-        const topics = result.topics.split(',').map(t => t.trim().toLowerCase());
-        topics.forEach(topic => {
-            if (!conceptScores[topic]) {
-                conceptScores[topic] = { totalScore: 0, count: 0 };
-            }
-            conceptScores[topic].totalScore += averageQuizScore * 100;
-            conceptScores[topic].count += 1;
-        });
-    });
-
-    // Process interview results
-    const interviewResults = userData.activity.filter(
-        (item): item is InterviewActivity => item.type === 'interview' && item.analysis?.overallScore !== undefined
-    );
-
-    interviewResults.forEach(result => {
-        const topic = result.details.topic.toLowerCase();
-        if (!conceptScores[topic]) {
-            conceptScores[topic] = { totalScore: 0, count: 0 };
-        }
-        conceptScores[topic].totalScore += result.analysis!.overallScore;
-        conceptScores[topic].count += 1;
-    });
-
-    return Object.entries(conceptScores)
-        .map(([topic, data]) => ({
-            topic,
-            score: Math.round(data.totalScore / data.count)
-        }))
-        .filter(item => item.score < 70)
-        .sort((a, b) => a.score - b.score)
-        .slice(0, 5);
-        
-  }, [userData]);
-
-  const allGettingStartedCompleted = useMemo(() => {
-    if (!userData || !userData.activity) return false;
-    const activity = userData.activity;
-    const hasGeneratedNotes = activity.some(a => a.type === 'note-generation');
-    const hasTakenInterview = activity.some(a => a.type === 'interview');
-    const hasTakenQuiz = activity.some(a => a.type === 'quiz');
-    const canDeployPortfolio = hasTakenInterview && hasTakenQuiz && hasGeneratedNotes;
-    return hasGeneratedNotes && hasTakenInterview && hasTakenQuiz && canDeployPortfolio;
-  }, [userData]);
-
-
   if (loading || !user || !userData) {
     return (
         <div className="flex h-screen items-center justify-center">
@@ -768,5 +767,3 @@ export default function DashboardLayout({
     <DashboardLayoutContent>{children}</DashboardLayoutContent>
   )
 }
-
-    
