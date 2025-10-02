@@ -261,17 +261,32 @@ export default function LiveInterviewPage() {
   };
 
   const endInterview = async () => {
-    if (!isInterviewing && !mediaStreamRef.current) return;
+    if (!isInterviewing && !mediaStreamRef.current) {
+      // If interview hasn't even started, just go back.
+      router.push('/dashboard');
+      return;
+    }
     updateStatus('Interview ended. Saving results...');
     setIsInterviewing(false);
+
+    // Clean up media and audio resources
     scriptProcessorNodeRef.current?.disconnect();
     sourceNodeRef.current?.disconnect();
     mediaStreamRef.current?.getTracks().forEach((t) => t.stop());
     mediaStreamRef.current = null;
     if (userVideoEl.current) { userVideoEl.current.srcObject = null; }
-    
+
+    // Close the Gemini session
+    sessionPromiseRef.current?.then((s) => s.close());
+
     if (user) {
         const interviewId = params.interviewId as string;
+
+        // Ensure there is at least one entry in the transcript to avoid empty analysis
+        if (transcriptRef.current.length === 0) {
+            transcriptRef.current.push({ speaker: 'ai', text: 'Interview ended prematurely.' });
+        }
+
         const activity: InterviewActivity = {
             id: interviewId,
             type: 'interview',
@@ -290,8 +305,6 @@ export default function LiveInterviewPage() {
     } else {
         router.push('/dashboard');
     }
-
-    sessionPromiseRef.current?.then((s) => s.close());
   };
 
   const toggleMute = () => {
@@ -343,7 +356,7 @@ export default function LiveInterviewPage() {
             {isVideoOn ? <Video /> : <VideoOff />}
         </Button>
 
-        <Button className="end-call w-14 h-14" onClick={endInterview} disabled={!isInterviewing} aria-label="End Interview">
+        <Button className="end-call w-14 h-14" onClick={endInterview} aria-label="End Interview">
            <Phone />
         </Button>
       </div>
