@@ -262,14 +262,19 @@ export default function LiveInterviewPage() {
 
   const endInterview = async () => {
     if (!isInterviewing && !mediaStreamRef.current) {
-      // If interview hasn't even started, just go back.
       router.push('/dashboard');
       return;
     }
-    updateStatus('Interview ended. Saving results...');
-    setIsInterviewing(false);
 
-    // Clean up media and audio resources
+    setIsInterviewing(false);
+    updateStatus('Interview ended. Navigating to results...');
+
+    const interviewId = params.interviewId as string;
+    
+    // Immediately navigate to the results page
+    router.push(`/dashboard/interview/${interviewId}/results`);
+
+    // Clean up media and audio resources in the background
     scriptProcessorNodeRef.current?.disconnect();
     sourceNodeRef.current?.disconnect();
     mediaStreamRef.current?.getTracks().forEach((t) => t.stop());
@@ -279,9 +284,8 @@ export default function LiveInterviewPage() {
     // Close the Gemini session
     sessionPromiseRef.current?.then((s) => s.close());
 
+    // Save activity in the background
     if (user) {
-        const interviewId = params.interviewId as string;
-
         // Ensure there is at least one entry in the transcript to avoid empty analysis
         if (transcriptRef.current.length === 0) {
             transcriptRef.current.push({ speaker: 'ai', text: 'Interview ended prematurely.' });
@@ -300,10 +304,17 @@ export default function LiveInterviewPage() {
                 company: searchParams.get('company') || undefined,
             }
         };
-        await addActivity(user.uid, activity);
-        router.push(`/dashboard/interview/${interviewId}/results`);
-    } else {
-        router.push('/dashboard');
+        
+        // This will now run without blocking navigation
+        addActivity(user.uid, activity).catch(error => {
+            console.error("Failed to save activity in background:", error);
+            // Optionally, show a non-blocking toast notification about the save failure
+            toast({
+                title: "Could not save interview results",
+                description: "There was an issue saving your interview data, but you can still view the results.",
+                variant: "destructive"
+            });
+        });
     }
   };
 
