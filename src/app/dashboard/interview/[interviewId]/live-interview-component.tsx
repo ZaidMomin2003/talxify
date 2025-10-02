@@ -102,6 +102,7 @@ const LiveInterviewComponent = () => {
   const startInterview = useCallback(async (stream: MediaStream) => {
     const role = searchParams.get('role') || 'Software Engineer';
     const company = searchParams.get('company') || 'a top tech company';
+    const voice = searchParams.get('voice') || 'gemini-2.5-flash-preview-tts/Zephyr';
     
     setStatus('starting');
     
@@ -120,7 +121,7 @@ const LiveInterviewComponent = () => {
       setElapsedTime(`${minutes}:${seconds}`);
     }, 1000);
 
-    const queryParams = new URLSearchParams({ role, company }).toString();
+    const queryParams = new URLSearchParams({ role, company, voice }).toString();
 
     try {
         const sourceNode = inputAudioContextRef.current!.createMediaStreamSource(stream);

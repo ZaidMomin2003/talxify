@@ -12,6 +12,7 @@ export async function POST(req: NextRequest) {
   const searchParams = req.nextUrl.searchParams;
   const role = searchParams.get('role') || 'Software Engineer';
   const company = searchParams.get('company') || 'a leading tech firm';
+  const voice = searchParams.get('voice') || 'gemini-2.5-flash-preview-tts/Zephyr';
 
   const systemInstruction = `Your name is Clarie. You are a senior hiring manager at "${company}" with over 10 years of experience in talent acquisition. You have a reputation for being insightful, encouraging, and highly professional. Your goal is to create a positive and supportive interview environment where candidates can showcase their best selves.
 
@@ -48,7 +49,7 @@ export async function POST(req: NextRequest) {
             // Ask for both audio and text in the response
             responseModalities: ['AUDIO', 'TEXT'],
             speechConfig: {
-                 voiceConfig: { prebuiltVoiceConfig: { voiceName: 'gemini-2.5-flash-preview-tts/Zephyr' } },
+                 voiceConfig: { prebuiltVoiceConfig: { voiceName: voice } },
             },
         },
     });

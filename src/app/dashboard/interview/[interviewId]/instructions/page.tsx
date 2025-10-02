@@ -7,12 +7,19 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Briefcase, PlayCircle, Loader2, Building, RefreshCw } from 'lucide-react';
+import { Briefcase, PlayCircle, Loader2, Building, RefreshCw, AudioLines } from 'lucide-react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import React, { Suspense, useState } from 'react';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { checkAndIncrementUsage } from '@/lib/firebase-service';
+
+const voices = [
+    { id: 'gemini-2.5-flash-preview-tts/Zephyr', name: 'Clarie (Zephyr)', gender: 'Female' },
+    { id: 'gemini-2.5-flash-preview-tts/Comet', name: 'David (Comet)', gender: 'Male' },
+    { id: 'gemini-2.5-flash-preview-tts/Nova', name: 'Sarah (Nova)', gender: 'Female' },
+    { id: 'gemini-2.5-flash-preview-tts/Rigel', name: 'Michael (Rigel)', gender: 'Male' },
+];
 
 function Instructions() {
   const router = useRouter();
@@ -28,6 +35,7 @@ function Instructions() {
   const [level, setLevel] = useState(searchParams.get('level') || 'entry-level');
   const [role, setRole] = useState(searchParams.get('role') || 'Software Engineer');
   const [company, setCompany] = useState(searchParams.get('company') || '');
+  const [voice, setVoice] = useState(voices[0].id);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -53,7 +61,7 @@ function Instructions() {
             return;
         }
 
-        const queryParams = new URLSearchParams({ topic, level, role });
+        const queryParams = new URLSearchParams({ topic, level, role, voice });
         if (company) {
             queryParams.append('company', company);
         }
@@ -124,6 +132,22 @@ function Instructions() {
                     onChange={(e) => setRole(e.target.value)}
                     required
                 />
+                </div>
+            </div>
+             <div className="space-y-2">
+                <Label htmlFor="voice">Interviewer Voice*</Label>
+                 <div className="relative">
+                    <AudioLines className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Select value={voice} onValueChange={setVoice}>
+                        <SelectTrigger id="voice" className="pl-10">
+                        <SelectValue placeholder="Select a voice" />
+                        </SelectTrigger>
+                        <SelectContent>
+                        {voices.map(v => (
+                            <SelectItem key={v.id} value={v.id}>{v.name} ({v.gender})</SelectItem>
+                        ))}
+                        </SelectContent>
+                    </Select>
                 </div>
             </div>
             {error && <p className="text-sm text-destructive">{error}</p>}
