@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { doc, getDoc, setDoc, updateDoc, arrayUnion, collection, getDocs, addDoc, serverTimestamp, runTransaction, deleteDoc, increment, arrayRemove } from 'firebase/firestore';
@@ -66,18 +67,26 @@ export const updateUserFromIcebreaker = async (userId: string, icebreakerData: I
     if (icebreakerData.city) {
         updateData['portfolio.personalInfo.address'] = icebreakerData.city;
     }
-     if (icebreakerData.college) {
+    if (icebreakerData.college) {
         updateData['portfolio.education'] = arrayUnion({
             institution: icebreakerData.college,
             degree: 'Degree',
             year: 'Year'
-        })
+        });
     }
     if (icebreakerData.hobbies && icebreakerData.hobbies.length > 0) {
-        updateData['portfolio.hobbies'] = arrayUnion(...icebreakerData.hobbies.map(h => ({ name: h })));
+        // Filter out any potential undefined/null values from hobbies before mapping
+        const validHobbies = icebreakerData.hobbies.filter(h => h).map(h => ({ name: h }));
+        if (validHobbies.length > 0) {
+             updateData['portfolio.hobbies'] = arrayUnion(...validHobbies);
+        }
     }
-     if (icebreakerData.skills && icebreakerData.skills.length > 0) {
-        updateData['portfolio.skills'] = arrayUnion(...icebreakerData.skills.map(s => ({ skill: s, expertise: 50 })));
+    if (icebreakerData.skills && icebreakerData.skills.length > 0) {
+        // Filter out any potential undefined/null values from skills before mapping
+        const validSkills = icebreakerData.skills.filter(s => s).map(s => ({ skill: s, expertise: 50 }));
+        if (validSkills.length > 0) {
+            updateData['portfolio.skills'] = arrayUnion(...validSkills);
+        }
     }
     
     if (Object.keys(updateData).length > 0) {
