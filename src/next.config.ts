@@ -14,6 +14,7 @@ const nextConfig: NextConfig = {
     domains: ["res.cloudinary.com", "placehold.co", "blocks.mvp-subha.me", "randomuser.me", "drive.google.com", "lh3.googleusercontent.com"],
   },
   experimental: {
+    transpilePackages: ['@react-three/drei', '@react-three/fiber', 'three'],
   },
   allowedDevOrigins: [
     "https://*.cloudworkstations.dev",
@@ -31,10 +32,3 @@ const nextConfig: NextConfig = {
 };
 
 export default nextConfig;
-
-
-
-
-    
-
-    
