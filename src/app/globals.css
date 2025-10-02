@@ -130,7 +130,7 @@
 .meet-layout {
   width: 100vw;
   height: 100vh;
-  background-color: #202124;
+  background-color: hsl(var(--background));
   display: flex;
   flex-direction: column;
   position: relative;
@@ -151,7 +151,7 @@
   right: 20px;
   width: 240px;
   height: 180px;
-  border: 2px solid #5f6368;
+  border: 2px solid hsl(var(--border));
   border-radius: 8px;
   object-fit: cover;
   transform: scaleX(-1); /* Mirror effect */
@@ -168,14 +168,16 @@
   bottom: 100px;
   left: 50%;
   transform: translateX(-50%);
-  background-color: rgba(0, 0, 0, 0.6);
-  color: white;
+  background-color: hsla(var(--background) / 0.6);
+  backdrop-filter: blur(4px);
+  color: hsl(var(--foreground));
   padding: 10px 20px;
   border-radius: 8px;
   max-width: 80%;
   text-align: center;
   font-size: 1.2rem;
   visibility: hidden;
+  border: 1px solid hsl(var(--border));
 }
 
 .captions-overlay.active {
@@ -184,7 +186,7 @@
 
 .control-bar {
   height: 80px;
-  background-color: #202124;
+  background-color: hsl(var(--background));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -197,8 +199,9 @@
 }
 
 .control-bar button {
-  background-color: #3c4043;
+  background-color: hsl(var(--secondary));
   border: none;
+  color: hsl(var(--secondary-foreground));
   border-radius: 50%;
   width: 56px;
   height: 56px;
@@ -210,18 +213,15 @@
 }
 
 .control-bar button:hover {
-  background-color: #52565a;
+  background-color: hsl(var(--accent));
 }
 
 .control-bar button.end-call {
-  background-color: #ea4335;
+  background-color: hsl(var(--destructive));
+  color: hsl(var(--destructive-foreground));
 }
 .control-bar button.end-call:hover {
-  background-color: #f28b82;
-}
-
-.control-bar button svg {
-  fill: white;
+  background-color: hsl(var(--destructive) / 0.9);
 }
 
 .control-bar button:disabled {
@@ -231,10 +231,10 @@
 
 .control-bar select {
   outline: none;
-  border: 1px solid #3c4043;
-  color: white;
+  border: 1px solid hsl(var(--border));
+  color: hsl(var(--foreground));
   border-radius: 25px;
-  background: #3c4043;
+  background: hsl(var(--secondary));
   padding: 10px 15px;
   width: 150px;
   font-size: 1rem;
@@ -243,7 +243,7 @@
 }
 
 .control-bar select:hover {
-  background: #52565a;
+  background: hsl(var(--accent));
 }
 
 .control-bar select:disabled {
@@ -252,8 +252,8 @@
 }
 
 .control-bar select option {
-  background: #100c14;
-  color: white;
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
 }
 
 #status {
@@ -261,8 +261,10 @@
   top: 20px;
   left: 50%;
   transform: translateX(-50%);
-  color: #bdc1c6;
-  background-color: rgba(0, 0, 0, 0.5);
+  color: hsl(var(--muted-foreground));
+  background-color: hsla(var(--background) / 0.5);
+  border: 1px solid hsl(var(--border));
+  backdrop-filter: blur(4px);
   padding: 8px 16px;
   border-radius: 16px;
   z-index: 10;
