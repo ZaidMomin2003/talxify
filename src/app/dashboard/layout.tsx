@@ -22,7 +22,6 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuTrigger,
   DropdownMenuSub,
   DropdownMenuSubTrigger,
   DropdownMenuSubContent
@@ -323,6 +322,11 @@ function DashboardLayoutContent({
       fetchUserData();
     }
   }, [user, loading, router, fetchUserData]);
+
+  // If it's an interview or draft page, render children directly
+  if (pathname.startsWith('/dashboard/interview') || pathname.startsWith('/dashboard/draft')) {
+    return <main className="flex-1 w-full h-screen overflow-hidden">{children}</main>;
+  }
 
 
   const menuItems = [
