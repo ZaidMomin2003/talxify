@@ -40,8 +40,6 @@ export default function LiveInterviewPage() {
   const [selectedVoice, setSelectedVoice] = useState('Kore');
   const [currentUserTranscription, setCurrentUserTranscription] = useState('');
   const [currentAiTranscription, setCurrentAiTranscription] = useState('');
-  const [inputNode, setInputNode] = useState<GainNode | null>(null);
-  const [outputNode, setOutputNode] = useState<GainNode | null>(null);
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOn, setIsVideoOn] = useState(true);
 
@@ -58,6 +56,13 @@ export default function LiveInterviewPage() {
   const clientRef = useRef<GoogleGenAI | null>(null);
   const isInitializedRef = useRef(false);
 
+  // Use refs for audio nodes to maintain stable references across renders
+  const inputNodeRef = useRef<GainNode | null>(null);
+  const outputNodeRef = useRef<GainNode | null>(null);
+  // Separate state to trigger re-render of visualizer when nodes are ready
+  const [audioNodesReady, setAudioNodesReady] = useState(false);
+
+
   const updateStatus = (msg: string) => { setStatus(msg); setError(''); };
   const updateError = (msg: string) => { setError(msg); console.error(msg); };
   
@@ -69,18 +74,18 @@ export default function LiveInterviewPage() {
   }, []);
 
   const playAudio = useCallback(async (base64EncodedAudioString: string) => {
-    if (!outputAudioContextRef.current || !outputNode) return;
+    if (!outputAudioContextRef.current || !outputNodeRef.current) return;
     await outputAudioContextRef.current.resume();
     nextStartTimeRef.current = Math.max(nextStartTimeRef.current, outputAudioContextRef.current.currentTime);
     const audioBuffer = await decodeAudioData(decode(base64EncodedAudioString), outputAudioContextRef.current, 24000, 1);
     const source = outputAudioContextRef.current.createBufferSource();
     source.buffer = audioBuffer;
-    source.connect(outputNode);
+    source.connect(outputNodeRef.current);
     source.addEventListener('ended', () => { sourcesRef.current.delete(source); });
     source.start(nextStartTimeRef.current);
     nextStartTimeRef.current += audioBuffer.duration;
     sourcesRef.current.add(source);
-  }, [outputNode]);
+  }, []);
 
 
   const initSession = useCallback(() => {
@@ -190,19 +195,19 @@ export default function LiveInterviewPage() {
     const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
     if (!inputAudioContextRef.current) {
         inputAudioContextRef.current = new AudioContext({ sampleRate: 16000 });
-        setInputNode(inputAudioContextRef.current.createGain());
+        inputNodeRef.current = inputAudioContextRef.current.createGain();
     }
     if (!outputAudioContextRef.current) {
         outputAudioContextRef.current = new AudioContext({ sampleRate: 24000 });
-        const outNode = outputAudioContextRef.current.createGain();
-        outNode.connect(outputAudioContextRef.current.destination);
-        setOutputNode(outNode);
+        outputNodeRef.current = outputAudioContextRef.current.createGain();
+        outputNodeRef.current.connect(outputAudioContextRef.current.destination);
     }
     
     if (!clientRef.current) {
         clientRef.current = new GoogleGenAI({ apiKey });
     }
-
+    
+    setAudioNodesReady(true);
     startInterview();
 
     return () => {
@@ -214,7 +219,7 @@ export default function LiveInterviewPage() {
 
   const startInterview = async () => {
     if (isInterviewing) return;
-    if (!inputAudioContextRef.current) return;
+    if (!inputAudioContextRef.current || !inputNodeRef.current) return;
     await inputAudioContextRef.current.resume();
     updateStatus('Requesting device access...');
     try {
@@ -224,7 +229,7 @@ export default function LiveInterviewPage() {
       updateStatus('Access granted. Starting...');
       const inputCtx = inputAudioContextRef.current!;
       sourceNodeRef.current = inputCtx.createMediaStreamSource(stream);
-      sourceNodeRef.current.connect(inputNode!);
+      sourceNodeRef.current.connect(inputNodeRef.current);
       const bufferSize = 4096;
       scriptProcessorNodeRef.current = inputCtx.createScriptProcessor(bufferSize, 1, 1);
       scriptProcessorNodeRef.current.onaudioprocess = (e) => {
@@ -307,8 +312,8 @@ export default function LiveInterviewPage() {
     <div className="meet-layout">
       <div id="status">{error || status}</div>
       <div className="main-view">
-        {inputNode && outputNode && (
-            <LiveAudioVisuals3D inputNode={inputNode} outputNode={outputNode} />
+        {audioNodesReady && (
+            <LiveAudioVisuals3D inputNode={inputNodeRef.current} outputNode={outputNodeRef.current} />
         )}
         <video id="user-video" className={isInterviewing ? 'active' : ''} ref={userVideoEl} muted playsInline></video>
         <div className={`captions-overlay ${captionText ? 'active' : ''}`}>
@@ -342,5 +347,3 @@ export default function LiveInterviewPage() {
     </div>
   );
 }
-
-    
