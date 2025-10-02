@@ -319,7 +319,7 @@ export default function LiveInterviewPage() {
         </div>
       </div>
       <div className="control-bar">
-        <select id="voiceSelect" onChange={onVoiceChange} value={selectedVoice} disabled={isInterviewing} aria-label="Select Interviewer Voice">
+        <select id="voiceSelect" onChange={onVoiceChange} value={selectedVoice} disabled={!isInterviewing} aria-label="Select Interviewer Voice">
           {voices.map((voice) => (
             <option key={voice.value} value={voice.value} title={voice.description}>
               {voice.name}
@@ -342,3 +342,5 @@ export default function LiveInterviewPage() {
     </div>
   );
 }
+
+    
