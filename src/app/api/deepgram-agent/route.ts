@@ -1,11 +1,9 @@
-// This file is no longer needed as the interview logic is now handled
-// by the streaming /api/gemini-live endpoint.
-// It can be deleted.
-
+// This file is no longer needed.
+// The interview orchestration is being rebuilt.
 import { NextResponse } from 'next/server';
 
 export async function POST() {
-  return new Response('This endpoint is deprecated and no longer in use.', {
+  return new Response('This endpoint is inactive.', {
     status: 410,
   });
 }
