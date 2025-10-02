@@ -9,7 +9,6 @@ import {
 } from '@google/genai';
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { createBlob, decode, decodeAudioData } from '@/lib/utils';
-import LiveAudioVisuals3D from '@/app/dashboard/draft/live-audio-visuals-3d';
 import { useSearchParams, useRouter, useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Mic, MicOff, Video, VideoOff, Phone, Loader2 } from 'lucide-react';
@@ -347,9 +346,6 @@ export default function LiveInterviewPage() {
             </div>
         </div>
       <div className="main-view">
-        {audioNodesReady && (
-            <LiveAudioVisuals3D inputNode={inputNodeRef.current} outputNode={outputNodeRef.current} />
-        )}
         <video id="user-video" className={isInterviewing ? 'active' : ''} ref={userVideoEl} muted playsInline></video>
         <div className={`captions-overlay ${captionText ? 'active' : ''}`}>
           {currentAiTranscription
