@@ -28,7 +28,8 @@ const FeaturebaseMessenger = () => {
       appId: "689df97845396713701c443c",
       theme: theme || 'dark',
       language: "en",
-      // This is the definitive fix. It disables the failing userHash check.
+      // This disables the userHash check, which is the recommended fix for this error
+      // in client-side-only implementations.
       shouldDisableIdentityVerification: true, 
     };
     
