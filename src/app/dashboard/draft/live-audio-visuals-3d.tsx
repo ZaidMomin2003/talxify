@@ -3,12 +3,9 @@
 
 import React, { useRef, useEffect, useCallback } from 'react';
 import * as THREE from 'three';
-import { EXRLoader } from 'three/examples/jsm/loaders/EXRLoader.js';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
-import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
-import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader.js';
 import { Analyser } from '@/lib/analyser';
 import { fs as backdropFS, vs as backdropVS } from '@/lib/shaders/backdrop';
 import { vs as sphereVS } from '@/lib/shaders/sphere';
@@ -72,7 +69,8 @@ const LiveAudioVisuals3D: React.FC<LiveAudioVisuals3DProps> = ({ inputNode, outp
         };
         const sphere = new THREE.Mesh(sphereGeo, sphereMaterial);
         scene.add(sphere);
-        sphere.visible = true; // Make sphere visible immediately
+        // Make sphere visible immediately, since we are not loading env maps
+        sphere.visible = true; 
         
         const pmremGenerator = new THREE.PMREMGenerator(renderer);
         pmremGenerator.compileEquirectangularShader();
@@ -83,9 +81,8 @@ const LiveAudioVisuals3D: React.FC<LiveAudioVisuals3DProps> = ({ inputNode, outp
         composer.addPass(renderPass);
         composer.addPass(bloomPass);
 
-        const clock = new THREE.Clock();
-        const rotation = new THREE.Vector3(0, 0, 0);
         let prevTime = 0;
+        const rotation = new THREE.Vector3(0, 0, 0);
 
         let animationFrameId: number;
         const animate = () => {
@@ -103,10 +100,6 @@ const LiveAudioVisuals3D: React.FC<LiveAudioVisuals3DProps> = ({ inputNode, outp
             backdropMat.uniforms.rand.value = Math.random() * 10000;
 
             if (sphereMaterial.userData.shader) {
-                const avgOutputVolume = outputData.reduce((acc, val) => acc + val, 0) / outputData.length;
-                const targetIntensity = avgOutputVolume > 5 ? 3.0 : 1.5;
-                sphereMaterial.emissiveIntensity = THREE.MathUtils.lerp(sphereMaterial.emissiveIntensity, targetIntensity, 0.1);
-                
                 sphere.scale.setScalar(1 + (0.2 * outputData[1]) / 255);
 
                 const f = 0.001;
