@@ -1,13 +1,12 @@
 
 'use client';
 
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useCallback } from 'react';
 import * as THREE from 'three';
 import { EXRLoader } from 'three/examples/jsm/loaders/EXRLoader.js';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Analyser } from '@/lib/live-audio/utils';
 
 // Backdrop Shaders
@@ -124,168 +123,158 @@ interface LiveAudioVisuals3DProps {
   outputNode: GainNode | null;
 }
 
-const SceneContent: React.FC<LiveAudioVisuals3DProps> = ({ inputNode, outputNode }) => {
-  const { scene, camera, gl } = useThree();
-  const composerRef = useRef<EffectComposer>();
-  const backdropRef = useRef<THREE.Mesh>(null);
-  const sphereRef = useRef<THREE.Mesh>(null);
-  const rotationRef = useRef(new THREE.Vector3(0, 0, 0));
-  const inputAnalyser = useRef<Analyser>();
-  const outputAnalyser = useRef<Analyser>();
-  const sphereMaterialRef = useRef<THREE.MeshStandardMaterial>();
-
-  useEffect(() => {
-    // Setup Analysers
-    if (inputNode) inputAnalyser.current = new Analyser(inputNode);
-    if (outputNode) outputAnalyser.current = new Analyser(outputNode);
-  }, [inputNode, outputNode]);
-
-  useEffect(() => {
-    // Scene setup
-    scene.background = new THREE.Color(0x100c14);
-
-    // Backdrop
-    const backdropGeo = new THREE.IcosahedronGeometry(10, 5);
-    const backdropMat = new THREE.RawShaderMaterial({
-      uniforms: {
-        resolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
-        rand: { value: 0 },
-      },
-      vertexShader: backdropVS,
-      fragmentShader: backdropFS,
-      glslVersion: THREE.GLSL3,
-      side: THREE.BackSide,
-    });
-    if (backdropRef.current) backdropRef.current.material = backdropMat;
-
-    // Sphere
-    const sphereGeo = new THREE.IcosahedronGeometry(1, 10);
-    const sphereMat = new THREE.MeshStandardMaterial({
-      color: 0x000010,
-      metalness: 0.5,
-      roughness: 0.1,
-      emissive: 0x000010,
-      emissiveIntensity: 1.5,
-    });
-
-    sphereMat.onBeforeCompile = (shader) => {
-      shader.uniforms.time = { value: 0 };
-      shader.uniforms.inputData = { value: new THREE.Vector4() };
-      shader.uniforms.outputData = { value: new THREE.Vector4() };
-      sphereMat.userData.shader = shader;
-      shader.vertexShader = sphereVS;
-    };
-    sphereMaterialRef.current = sphereMat;
-    if (sphereRef.current) sphereRef.current.material = sphereMat;
-
-    new EXRLoader().load('/piz_compressed.exr', (texture) => {
-      texture.mapping = THREE.EquirectangularReflectionMapping;
-      const pmremGenerator = new THREE.PMREMGenerator(gl);
-      pmremGenerator.compileEquirectangularShader();
-      const exrCubeRenderTarget = pmremGenerator.fromEquirectangular(texture);
-      sphereMat.envMap = exrCubeRenderTarget.texture;
-      if (sphereRef.current) sphereRef.current.visible = true;
-      pmremGenerator.dispose();
-    });
-
-    // Post-processing
-    const renderPass = new RenderPass(scene, camera);
-    const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 5, 0.5, 0);
-    const effectComposer = new EffectComposer(gl);
-    effectComposer.addPass(renderPass);
-    effectComposer.addPass(bloomPass);
-    composerRef.current = effectComposer;
-
-    const onResize = () => {
-        const dpr = gl.getPixelRatio();
-        const w = window.innerWidth;
-        const h = window.innerHeight;
-        if(backdropMat.uniforms.resolution) {
-            backdropMat.uniforms.resolution.value.set(w * dpr, h * dpr);
-        }
-        effectComposer.setSize(w, h);
-    };
-    window.addEventListener('resize', onResize);
-
-    return () => {
-      window.removeEventListener('resize', onResize);
-    };
-  }, [scene, camera, gl]);
-
-  useFrame((state, delta) => {
-    if (!inputAnalyser.current || !outputAnalyser.current) return;
-    
-    inputAnalyser.current.update();
-    outputAnalyser.current.update();
-
-    const inputData = inputAnalyser.current.data;
-    const outputData = outputAnalyser.current.data;
-
-    if (backdropRef.current && backdropRef.current.material) {
-        (backdropRef.current.material as THREE.RawShaderMaterial).uniforms.rand.value = Math.random() * 10000;
-    }
-    
-    if (sphereRef.current && sphereMaterialRef.current?.userData.shader) {
-        const shader = sphereMaterialRef.current.userData.shader;
-        const sphere = sphereRef.current;
-        const rotation = rotationRef.current;
-
-        const avgOutputVolume = outputData.reduce((acc, val) => acc + val, 0) / outputData.length;
-        const targetIntensity = avgOutputVolume > 5 ? 3.0 : 1.5;
-        sphereMaterialRef.current.emissiveIntensity = THREE.MathUtils.lerp(sphereMaterialRef.current.emissiveIntensity, targetIntensity, 0.1);
-        
-        sphere.scale.setScalar(1 + (0.2 * outputData[1]) / 255);
-
-        const f = 0.001;
-        rotation.x += (delta * f * 0.5 * outputData[1]) / 255;
-        rotation.z += (delta * f * 0.5 * inputData[1]) / 255;
-        rotation.y += (delta * f * 0.25 * (inputData[2] + outputData[2])) / 255;
-
-        const euler = new THREE.Euler(rotation.x, rotation.y, rotation.z);
-        const quaternion = new THREE.Quaternion().setFromEuler(euler);
-        const vector = new THREE.Vector3(0, 0, 5);
-        vector.applyQuaternion(quaternion);
-        camera.position.copy(vector);
-        camera.lookAt(sphere.position);
-
-        shader.uniforms.time.value += (delta * 0.1 * outputData[0]) / 255;
-        shader.uniforms.inputData.value.set(
-            (1 * inputData[0]) / 255,
-            (0.1 * inputData[1]) / 255,
-            (10 * inputData[2]) / 255,
-            0
-        );
-        shader.uniforms.outputData.value.set(
-            (2 * outputData[0]) / 255,
-            (0.1 * outputData[1]) / 255,
-            (10 * outputData[2]) / 255,
-            0
-        );
-    }
-    
-    composerRef.current?.render();
-  }, 1);
-
-  return (
-    <>
-      <mesh ref={backdropRef}>
-        <icosahedronGeometry args={[10, 5]} />
-      </mesh>
-      <mesh ref={sphereRef} visible={false}>
-         <icosahedronGeometry args={[1, 10]} />
-      </mesh>
-    </>
-  );
-};
-
 
 const LiveAudioVisuals3D: React.FC<LiveAudioVisuals3DProps> = ({ inputNode, outputNode }) => {
+    const mountRef = useRef<HTMLDivElement>(null);
+    
+    useEffect(() => {
+        if (!mountRef.current || typeof window === 'undefined') return;
+        
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x100c14);
+
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(2, -2, 5);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        mountRef.current.appendChild(renderer.domElement);
+
+        // Analysers
+        const inputAnalyser = inputNode ? new Analyser(inputNode) : null;
+        const outputAnalyser = outputNode ? new Analyser(outputNode) : null;
+
+        // Backdrop
+        const backdropGeo = new THREE.IcosahedronGeometry(10, 5);
+        const backdropMat = new THREE.RawShaderMaterial({
+            uniforms: {
+                resolution: { value: new THREE.Vector2(window.innerWidth * window.devicePixelRatio, window.innerHeight * window.devicePixelRatio) },
+                rand: { value: 0 },
+            },
+            vertexShader: backdropVS,
+            fragmentShader: backdropFS,
+            glslVersion: THREE.GLSL3,
+            side: THREE.BackSide,
+        });
+        const backdrop = new THREE.Mesh(backdropGeo, backdropMat);
+        scene.add(backdrop);
+
+        // Sphere
+        const sphereGeo = new THREE.IcosahedronGeometry(1, 10);
+        const sphereMaterial = new THREE.MeshStandardMaterial({
+            color: 0x000010,
+            metalness: 0.5,
+            roughness: 0.1,
+            emissive: 0x000010,
+            emissiveIntensity: 1.5,
+        });
+
+        sphereMaterial.onBeforeCompile = (shader) => {
+            shader.uniforms.time = { value: 0 };
+            shader.uniforms.inputData = { value: new THREE.Vector4() };
+            shader.uniforms.outputData = { value: new THREE.Vector4() };
+            sphereMaterial.userData.shader = shader;
+            shader.vertexShader = sphereVS;
+        };
+        const sphere = new THREE.Mesh(sphereGeo, sphereMaterial);
+        scene.add(sphere);
+        sphere.visible = false;
+        
+        const pmremGenerator = new THREE.PMREMGenerator(renderer);
+        pmremGenerator.compileEquirectangularShader();
+        new EXRLoader().load('/piz_compressed.exr', (texture) => {
+            texture.mapping = THREE.EquirectangularReflectionMapping;
+            const exrCubeRenderTarget = pmremGenerator.fromEquirectangular(texture);
+            sphereMaterial.envMap = exrCubeRenderTarget.texture;
+            sphere.visible = true;
+            pmremGenerator.dispose();
+        });
+
+        // Post-processing
+        const renderPass = new RenderPass(scene, camera);
+        const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 5, 0.5, 0);
+        const composer = new EffectComposer(renderer);
+        composer.addPass(renderPass);
+        composer.addPass(bloomPass);
+
+        const clock = new THREE.Clock();
+        const rotation = new THREE.Vector3(0, 0, 0);
+
+        const animate = () => {
+            requestAnimationFrame(animate);
+            const delta = clock.getDelta();
+
+            if (!inputAnalyser || !outputAnalyser) return;
+            
+            inputAnalyser.update();
+            outputAnalyser.update();
+            const inputData = inputAnalyser.data;
+            const outputData = outputAnalyser.data;
+            
+            if(backdropMat.uniforms.resolution) {
+                backdropMat.uniforms.rand.value = Math.random() * 10000;
+            }
+
+            if (sphereMaterial.userData.shader) {
+                const avgOutputVolume = outputData.reduce((acc, val) => acc + val, 0) / outputData.length;
+                const targetIntensity = avgOutputVolume > 5 ? 3.0 : 1.5;
+                sphereMaterial.emissiveIntensity = THREE.MathUtils.lerp(sphereMaterial.emissiveIntensity, targetIntensity, 0.1);
+                
+                sphere.scale.setScalar(1 + (0.2 * outputData[1]) / 255);
+
+                const f = 0.001;
+                rotation.x += (delta * 60 * f * 0.5 * outputData[1]) / 255;
+                rotation.z += (delta * 60 * f * 0.5 * inputData[1]) / 255;
+                rotation.y += (delta * 60 * f * 0.25 * (inputData[2] + outputData[2])) / 255;
+
+                const euler = new THREE.Euler(rotation.x, rotation.y, rotation.z);
+                const quaternion = new THREE.Quaternion().setFromEuler(euler);
+                const vector = new THREE.Vector3(0, 0, 5);
+                vector.applyQuaternion(quaternion);
+                camera.position.copy(vector);
+                camera.lookAt(sphere.position);
+
+                sphereMaterial.userData.shader.uniforms.time.value += (delta * 0.1 * outputData[0]) / 255;
+                sphereMaterial.userData.shader.uniforms.inputData.value.set( (1 * inputData[0]) / 255, (0.1 * inputData[1]) / 255, (10 * inputData[2]) / 255, 0);
+                sphereMaterial.userData.shader.uniforms.outputData.value.set( (2 * outputData[0]) / 255, (0.1 * outputData[1]) / 255, (10 * outputData[2]) / 255, 0);
+            }
+            
+            composer.render();
+        };
+
+        animate();
+
+        const handleResize = () => {
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+            camera.aspect = w / h;
+            camera.updateProjectionMatrix();
+            renderer.setSize(w, h);
+            composer.setSize(w, h);
+            const dpr = renderer.getPixelRatio();
+            if(backdropMat.uniforms.resolution) {
+                backdropMat.uniforms.resolution.value.set(w * dpr, h * dpr);
+            }
+        };
+
+        window.addEventListener('resize', handleResize);
+
+        return () => {
+            window.removeEventListener('resize', handleResize);
+            if (mountRef.current) {
+                mountRef.current.removeChild(renderer.domElement);
+            }
+            renderer.dispose();
+            backdropGeo.dispose();
+            backdropMat.dispose();
+            sphereGeo.dispose();
+            sphereMaterial.dispose();
+        };
+    }, [inputNode, outputNode]);
+
     return (
-        <div className="absolute inset-0 -z-10">
-            <Canvas camera={{ position: [2, -2, 5], fov: 75 }}>
-                <SceneContent inputNode={inputNode} outputNode={outputNode} />
-            </Canvas>
-        </div>
+        <div ref={mountRef} className="absolute inset-0 -z-10" />
     );
 };
 
