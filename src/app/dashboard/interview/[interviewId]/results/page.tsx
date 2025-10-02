@@ -172,7 +172,7 @@ export default function InterviewResultsPage() {
 
     if (!interviewData) {
          return (
-            <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
+            <main className="p-4 sm:p-6 lg:p-8">
                 <div className="max-w-6xl mx-auto space-y-8 text-center">
                     <Card>
                         <CardHeader>
@@ -195,7 +195,7 @@ export default function InterviewResultsPage() {
     }
 
     return (
-        <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
+        <main className="p-4 sm:p-6 lg:p-8">
             <div className="max-w-6xl mx-auto space-y-8">
                 {/* Header */}
                 <div>
