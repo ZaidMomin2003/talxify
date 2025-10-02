@@ -8,9 +8,9 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader.js';
-import { Analyser } from '@/lib/live-audio/analyser';
-import { fs as backdropFS, vs as backdropVS } from '@/lib/live-audio/backdrop-shader';
-import { vs as sphereVS } from '@/lib/live-audio/sphere-shader';
+import { Analyser } from '@/lib/analyser';
+import { fs as backdropFS, vs as backdropVS } from '@/lib/shaders/backdrop';
+import { vs as sphereVS } from '@/lib/shaders/sphere';
 
 
 interface LiveAudioVisuals3DProps {
