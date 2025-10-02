@@ -12,9 +12,7 @@ import { Analyser } from '@/lib/live-audio/utils';
 // Backdrop Shaders
 const backdropVS = `
 precision highp float;
-in vec3 position;
-uniform mat4 modelViewMatrix;
-uniform mat4 projectionMatrix;
+varying vec3 vViewPosition;
 void main() {
   gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.);
 }`;
@@ -128,7 +126,7 @@ const LiveAudioVisuals3D: React.FC<LiveAudioVisuals3DProps> = ({ inputNode, outp
     const mountRef = useRef<HTMLDivElement>(null);
     
     useEffect(() => {
-        if (!mountRef.current || typeof window === 'undefined') return;
+        if (!mountRef.current || typeof window === 'undefined' || !inputNode || !outputNode) return;
         
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0x100c14);
@@ -142,8 +140,8 @@ const LiveAudioVisuals3D: React.FC<LiveAudioVisuals3DProps> = ({ inputNode, outp
         mountRef.current.appendChild(renderer.domElement);
 
         // Analysers
-        const inputAnalyser = inputNode ? new Analyser(inputNode) : null;
-        const outputAnalyser = outputNode ? new Analyser(outputNode) : null;
+        const inputAnalyser = new Analyser(inputNode);
+        const outputAnalyser = new Analyser(outputNode);
 
         // Backdrop
         const backdropGeo = new THREE.IcosahedronGeometry(10, 5);
@@ -154,9 +152,8 @@ const LiveAudioVisuals3D: React.FC<LiveAudioVisuals3DProps> = ({ inputNode, outp
             },
             vertexShader: backdropVS,
             fragmentShader: backdropFS,
-            glslVersion: THREE.GLSL3,
-            side: THREE.BackSide,
         });
+        backdropMat.side = THREE.BackSide;
         const backdrop = new THREE.Mesh(backdropGeo, backdropMat);
         scene.add(backdrop);
 
@@ -189,6 +186,7 @@ const LiveAudioVisuals3D: React.FC<LiveAudioVisuals3DProps> = ({ inputNode, outp
             sphereMaterial.envMap = exrCubeRenderTarget.texture;
             sphere.visible = true;
             pmremGenerator.dispose();
+            texture.dispose();
         });
 
         // Post-processing
@@ -201,20 +199,17 @@ const LiveAudioVisuals3D: React.FC<LiveAudioVisuals3DProps> = ({ inputNode, outp
         const clock = new THREE.Clock();
         const rotation = new THREE.Vector3(0, 0, 0);
 
+        let animationFrameId: number;
         const animate = () => {
-            requestAnimationFrame(animate);
+            animationFrameId = requestAnimationFrame(animate);
             const delta = clock.getDelta();
 
-            if (!inputAnalyser || !outputAnalyser) return;
-            
             inputAnalyser.update();
             outputAnalyser.update();
             const inputData = inputAnalyser.data;
             const outputData = outputAnalyser.data;
             
-            if(backdropMat.uniforms.resolution) {
-                backdropMat.uniforms.rand.value = Math.random() * 10000;
-            }
+            backdropMat.uniforms.rand.value = Math.random() * 10000;
 
             if (sphereMaterial.userData.shader) {
                 const avgOutputVolume = outputData.reduce((acc, val) => acc + val, 0) / outputData.length;
@@ -253,16 +248,15 @@ const LiveAudioVisuals3D: React.FC<LiveAudioVisuals3DProps> = ({ inputNode, outp
             renderer.setSize(w, h);
             composer.setSize(w, h);
             const dpr = renderer.getPixelRatio();
-            if(backdropMat.uniforms.resolution) {
-                backdropMat.uniforms.resolution.value.set(w * dpr, h * dpr);
-            }
+            backdropMat.uniforms.resolution.value.set(w * dpr, h * dpr);
         };
 
         window.addEventListener('resize', handleResize);
 
         return () => {
+            cancelAnimationFrame(animationFrameId);
             window.removeEventListener('resize', handleResize);
-            if (mountRef.current) {
+            if (mountRef.current && renderer.domElement) {
                 mountRef.current.removeChild(renderer.domElement);
             }
             renderer.dispose();

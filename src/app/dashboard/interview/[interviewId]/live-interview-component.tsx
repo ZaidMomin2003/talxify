@@ -13,8 +13,7 @@ import LiveAudioVisuals3D from './live-audio-visuals-3d';
 import { Analyser, createBlob, decodeAudioData } from '@/lib/live-audio/utils';
 import type { LiveServerMessage } from '@google/genai';
 
-type AppState = 'form' | 'interview';
-type InterviewStatus = 'idle' | 'requesting_media' | 'ready' | 'recording' | 'processing' | 'error' | 'finished';
+type InterviewStatus = 'idle' | 'requesting_media' | 'ready' | 'starting' | 'recording' | 'processing' | 'error' | 'finished';
 
 const LiveInterviewComponent = () => {
   const router = useRouter();
@@ -23,18 +22,13 @@ const LiveInterviewComponent = () => {
   const { user } = useAuth();
   const { toast } = useToast();
 
-  const [appState, setAppState] = useState<AppState>('form');
-  const [jobRole, setJobRole] = useState('');
-  const [company, setCompany] = useState('');
-  
   const [status, setStatus] = useState<InterviewStatus>('idle');
   const [error, setError] = useState<string | null>(null);
   const [elapsedTime, setElapsedTime] = useState('00:00');
   
   // Audio & Video state
   const [isMuted, setIsMuted] = useState(false);
-  const [hasMicPermission, setHasMicPermission] = useState(false);
-  const [hasCameraPermission, setHasCameraPermission] = useState(false);
+  const [isVideoOff, setIsVideoOff] = useState(false);
   
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const scriptProcessorNodeRef = useRef<ScriptProcessorNode | null>(null);
@@ -88,17 +82,16 @@ const LiveInterviewComponent = () => {
     mediaStreamRef.current = null;
   }, []);
 
-  const requestMediaPermissions = useCallback(async () => {
+  const requestMediaAndStart = useCallback(async () => {
     setStatus('requesting_media');
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
-      setHasMicPermission(true);
-      setHasCameraPermission(true);
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
       }
       mediaStreamRef.current = stream;
       setStatus('ready');
+      startInterview(stream);
     } catch (err) {
       console.error('Media access denied:', err);
       setError('Microphone and camera access are required to start the interview.');
@@ -106,14 +99,11 @@ const LiveInterviewComponent = () => {
     }
   }, []);
 
-  const startInterview = useCallback(async () => {
-    if (!jobRole || !company) {
-        setError('Please fill out both role and company.');
-        return;
-    }
-    setError('');
-    setAppState('interview');
-    setStatus('processing');
+  const startInterview = useCallback(async (stream: MediaStream) => {
+    const role = searchParams.get('role') || 'Software Engineer';
+    const company = searchParams.get('company') || 'a top tech company';
+    
+    setStatus('starting');
     
     if (outputAudioContextRef.current?.state === 'suspended') {
         await outputAudioContextRef.current.resume();
@@ -130,14 +120,10 @@ const LiveInterviewComponent = () => {
       setElapsedTime(`${minutes}:${seconds}`);
     }, 1000);
 
-    const queryParams = new URLSearchParams({ role: jobRole, company }).toString();
+    const queryParams = new URLSearchParams({ role, company }).toString();
 
     try {
-        if (!mediaStreamRef.current) {
-             throw new Error("Media stream not available.");
-        }
-        
-        const sourceNode = inputAudioContextRef.current!.createMediaStreamSource(mediaStreamRef.current);
+        const sourceNode = inputAudioContextRef.current!.createMediaStreamSource(stream);
         inputNodeRef.current = inputAudioContextRef.current!.createGain();
         sourceNode.connect(inputNodeRef.current);
         
@@ -146,7 +132,6 @@ const LiveInterviewComponent = () => {
 
         const response = await fetch(`/api/gemini-live?${queryParams}`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/octet-stream' },
             body: new ReadableStream({
                 start(controller) {
                     scriptProcessorNodeRef.current = inputAudioContextRef.current!.createScriptProcessor(4096, 1, 1);
@@ -183,13 +168,11 @@ const LiveInterviewComponent = () => {
                 setStatus('finished');
                 break;
             }
-            // The value is an SSE message string: "data: {...}\n\n"
+            
             const dataString = value.replace(/^data: /, '').trim();
             if (dataString) {
                 try {
                     const message: LiveServerMessage = JSON.parse(dataString);
-
-                    // Handle AI Audio
                     const audio = message.serverContent?.modelTurn?.parts[0]?.inlineData;
                     if (audio) {
                         const audioBuffer = await decodeAudioData(Buffer.from(audio.data, 'base64'), outputAudioContextRef.current!, 24000, 1);
@@ -203,13 +186,10 @@ const LiveInterviewComponent = () => {
                         source.onended = () => sourcesRef.current.delete(source);
                     }
                     
-                    // Handle AI Text
                     const aiText = message.serverContent?.modelTurn?.parts.find(p => p.text)?.text;
                     if (aiText) {
                          transcriptRef.current.push({ speaker: 'ai', text: aiText });
                     }
-
-                    // Handle User Text
                     const userText = message.serverContent?.userTurn?.parts.find(p => p.text)?.text;
                     if (userText) {
                         transcriptRef.current.push({ speaker: 'user', text: userText });
@@ -229,12 +209,15 @@ const LiveInterviewComponent = () => {
     } finally {
         cleanupMedia();
     }
-  }, [jobRole, company, cleanupMedia, isMuted]);
+  }, [isMuted, cleanupMedia, searchParams]);
 
    const finishInterviewAndSave = useCallback(async () => {
     if (timerIntervalIdRef.current) clearInterval(timerIntervalIdRef.current);
     setStatus('processing');
     cleanupMedia();
+
+    const role = searchParams.get('role') || 'Software Engineer';
+    const company = searchParams.get('company') || '';
 
     if (user && interviewId) {
         try {
@@ -244,7 +227,7 @@ const LiveInterviewComponent = () => {
                 timestamp: new Date().toISOString(),
                 transcript: transcriptRef.current,
                 feedback: 'Feedback will be generated on the results page.',
-                details: { topic: "Live Interview", role: jobRole, company }
+                details: { topic: searchParams.get('topic') || "Live Interview", role, company }
             };
             await addActivity(user.uid, activity);
             toast({
@@ -257,38 +240,41 @@ const LiveInterviewComponent = () => {
             toast({ title: "Save Error", description: "Could not save your interview session.", variant: "destructive" });
         }
     }
-  }, [cleanupMedia, user, interviewId, jobRole, company, router, toast]);
+  }, [cleanupMedia, user, interviewId, router, toast, searchParams]);
 
   useEffect(() => {
-    requestMediaPermissions();
+    requestMediaAndStart();
     return () => {
       cleanupMedia();
       if (timerIntervalIdRef.current) clearInterval(timerIntervalIdRef.current);
     };
-  }, [requestMediaPermissions, cleanupMedia]);
+  }, [requestMediaAndStart, cleanupMedia]);
   
   const toggleMute = () => setIsMuted(prev => !prev);
+  const toggleVideo = () => {
+      if (mediaStreamRef.current) {
+        const videoTrack = mediaStreamRef.current.getVideoTracks()[0];
+        if (videoTrack) {
+            videoTrack.enabled = !videoTrack.enabled;
+            setIsVideoOff(!videoTrack.enabled);
+        }
+      }
+  };
   
-  const renderForm = () => (
-    <div className="absolute inset-0 flex items-center justify-center z-20 bg-black/30 backdrop-blur-md">
-        <div className="bg-gray-800/80 p-8 rounded-lg border border-white/10 shadow-2xl text-white text-center w-[400px]">
-          <h2 className="text-2xl font-bold mb-4">AI Interview Practice</h2>
-          <input id="role" type="text" placeholder="Job Role (e.g., Software Engineer)" className="w-full p-2 mb-4 rounded-md border border-gray-600 bg-gray-700 text-white" value={jobRole} onChange={(e) => setJobRole(e.target.value)} />
-          <input id="company" type="text" placeholder="Company (e.g., Google)" className="w-full p-2 mb-6 rounded-md border border-gray-600 bg-gray-700 text-white" value={company} onChange={(e) => setCompany(e.target.value)} />
-          <Button onClick={startInterview} size="lg" className="w-full bg-blue-600 hover:bg-blue-700">Start Interview</Button>
-        </div>
-      </div>
-  );
-
   const renderInterviewControls = () => (
      <>
-        <div className="absolute top-2 left-1/2 -translate-x-1/2 bg-black/30 text-white px-4 py-2 rounded-lg font-mono z-10">
-            {elapsedTime}
-        </div>
-        <video id="user-video" ref={videoRef} autoPlay muted playsInline className="absolute bottom-5 right-2 w-[20vw] max-w-[250px] aspect-4/3 rounded-lg border border-white/20 object-cover transform -scale-x-100 z-10"></video>
+        {status === 'recording' && (
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-black/30 text-white px-4 py-2 rounded-lg font-mono z-10">
+                {elapsedTime}
+            </div>
+        )}
+        <video id="user-video" ref={videoRef} autoPlay muted playsInline className="absolute bottom-5 right-5 w-[20vw] max-w-[250px] aspect-video rounded-lg border-2 border-white/20 object-cover transform -scale-x-100 z-10"></video>
         <div className="absolute bottom-[5vh] left-0 right-0 flex justify-center items-center gap-4 z-10">
             <Button onClick={toggleMute} variant="outline" size="icon" className="w-16 h-16 rounded-full bg-white/10 border-white/20 text-white backdrop-blur-md">
                 {isMuted ? <MicOff size={28}/> : <Mic size={28}/>}
+            </Button>
+             <Button onClick={toggleVideo} variant="outline" size="icon" className="w-16 h-16 rounded-full bg-white/10 border-white/20 text-white backdrop-blur-md">
+                {isVideoOff ? <VideoOff size={28}/> : <Video size={28}/>}
             </Button>
             <Button onClick={finishInterviewAndSave} variant="destructive" size="icon" className="w-16 h-16 rounded-full">
                 <X size={32}/>
@@ -297,19 +283,42 @@ const LiveInterviewComponent = () => {
      </>
   );
 
-  const renderMessages = () => (
-    <div className="absolute bottom-[15vh] left-1/2 -translate-x-1/2 z-10 flex flex-col gap-2 max-w-[80%] text-center">
-        {error && <div className="bg-red-500/50 text-white p-2 px-4 rounded-md animate-in fade-in slide-in-from-bottom-5">{error}</div>}
-        {!error && status && status !== 'recording' && <div className="bg-black/30 text-white p-2 px-4 rounded-md animate-in fade-in slide-in-from-bottom-5">{status}</div>}
-    </div>
-  );
+  const getStatusMessage = () => {
+    switch (status) {
+        case 'idle':
+        case 'requesting_media':
+            return 'Requesting camera and microphone access...';
+        case 'ready':
+        case 'starting':
+            return 'Clarie is preparing for the interview...';
+        case 'processing':
+            return 'Processing and saving your interview...';
+        case 'finished':
+            return 'Interview finished!';
+        default:
+            return null;
+    }
+  }
+
+  const renderMessages = () => {
+    const statusMessage = getStatusMessage();
+    return (
+        <div className="absolute bottom-[20vh] left-1/2 -translate-x-1/2 z-10 flex flex-col gap-2 max-w-[80%] text-center">
+            {error && <div className="bg-red-500/50 text-white p-2 px-4 rounded-md animate-in fade-in slide-in-from-bottom-5">{error}</div>}
+            {statusMessage && (
+                <div className="bg-black/30 text-white p-3 px-6 rounded-lg animate-in fade-in slide-in-from-bottom-5 backdrop-blur-sm">
+                   {statusMessage}
+                </div>
+            )}
+        </div>
+    );
+  };
 
 
   return (
     <div className="relative w-full h-screen overflow-hidden bg-black text-white">
         <LiveAudioVisuals3D inputNode={inputNodeRef.current} outputNode={outputNodeRef.current} />
-        {appState === 'form' && renderForm()}
-        {appState === 'interview' && renderInterviewControls()}
+        {renderInterviewControls()}
         {renderMessages()}
     </div>
   );
