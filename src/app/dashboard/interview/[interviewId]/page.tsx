@@ -191,7 +191,6 @@ export default function LiveInterviewPage() {
     if (isInitializedRef.current) return;
     isInitializedRef.current = true;
     
-    // Check for API Key early
     const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
     if (!apiKey) {
       updateError("Gemini API Key is not configured. Please set NEXT_PUBLIC_GEMINI_API_KEY in your environment.");
@@ -351,6 +350,3 @@ export default function LiveInterviewPage() {
     </div>
   );
 }
-
-
-      
