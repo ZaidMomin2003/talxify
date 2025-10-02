@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -6,7 +7,6 @@ import {
   Modality,
   Session,
 } from '@google/genai';
-// FIX: Imported `React` to make the React namespace available for types like `React.ChangeEvent`.
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { createBlob, decode, decodeAudioData } from '@/lib/utils';
 import Visualizer3D from './Visualizer3D';
@@ -20,7 +20,7 @@ const voices = [
   { name: 'Fenrir (Male)', value: 'Fenrir', description: 'Strong, commanding, and resonant.' },
 ];
 
-export default function InterviewUI() {
+export default function InterviewUI({ apiKey }: { apiKey: string }) {
   const [isInterviewing, setIsInterviewing] = useState(false);
   const [status, setStatus] = useState('Click the mic to start your interview');
   const [error, setError] = useState('');
@@ -144,7 +144,12 @@ export default function InterviewUI() {
     setInputNode(inNode);
     setOutputNode(outNode);
     
-    clientRef.current = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY! });
+    if (!apiKey) {
+      updateError("Gemini API Key is not configured.");
+      return;
+    }
+    
+    clientRef.current = new GoogleGenAI({ apiKey });
     initSession();
 
     return () => {
@@ -153,7 +158,7 @@ export default function InterviewUI() {
       inputAudioContextRef.current?.close();
       outputAudioContextRef.current?.close();
     };
-  }, [initSession]);
+  }, [initSession, apiKey]);
 
   const startInterview = async () => {
     if (isInterviewing) return;
