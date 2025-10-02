@@ -382,9 +382,13 @@ function DashboardLayoutContent({
       fetchUserData();
     }
   }, [user, loading, router, fetchUserData]);
+  
+  // Logic to conditionally render sidebar
+  const pathSegments = pathname.split('/').filter(Boolean);
+  const isLiveInterviewPage = pathSegments[0] === 'dashboard' && pathSegments[1] === 'interview' && pathSegments.length === 3;
+  const isDraftPage = pathname.startsWith('/dashboard/draft');
 
-  // If it's an interview or draft page, render children directly
-  if (pathname.startsWith('/dashboard/interview') || pathname.startsWith('/dashboard/draft')) {
+  if (isLiveInterviewPage || isDraftPage) {
     return <main className="flex-1 w-full h-screen overflow-hidden">{children}</main>;
   }
 
