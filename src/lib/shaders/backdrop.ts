@@ -2,7 +2,7 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
 */
-export const vs = `precision highp float;
+const vs = `precision highp float;
 
 in vec3 position;
 
@@ -13,7 +13,7 @@ void main() {
   gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.);
 }`;
 
-export const fs = `precision highp float;
+const fs = `precision highp float;
 
 out vec4 fragmentColor;
 
@@ -36,3 +36,5 @@ void main() {
   fragmentColor = vec4(mix(from, to, d) + .005 * noise, 1.);
 }
 `;
+
+export {fs, vs};
