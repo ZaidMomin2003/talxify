@@ -250,7 +250,7 @@ export default function LiveInterviewPage() {
             sessionPromiseRef.current?.then((s) => s.sendRealtimeInput({ media: createBlob(e.inputBuffer.getChannelData(0)) }));
         }
       };
-      sourceNodeRef.current.connect(scriptProcessorNodeRef.current);
+      inputNodeRef.current.connect(scriptProcessorNodeRef.current);
       scriptProcessorNodeRef.current.connect(inputCtx.destination);
       setIsInterviewing(true);
       updateStatus('🔴 Interview in progress...');

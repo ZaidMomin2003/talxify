@@ -229,33 +229,6 @@
   cursor: not-allowed;
 }
 
-.control-bar select {
-  outline: none;
-  border: 1px solid hsl(var(--border));
-  color: hsl(var(--foreground));
-  border-radius: 25px;
-  background: hsl(var(--secondary));
-  padding: 10px 15px;
-  width: 150px;
-  font-size: 1rem;
-  cursor: pointer;
-  text-align: center;
-}
-
-.control-bar select:hover {
-  background: hsl(var(--accent));
-}
-
-.control-bar select:disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
-}
-
-.control-bar select option {
-  background: hsl(var(--background));
-  color: hsl(var(--foreground));
-}
-
 #status {
   position: absolute;
   top: 20px;
