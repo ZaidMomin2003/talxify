@@ -77,19 +77,6 @@ const LiveAudioVisuals3D: React.FC<LiveAudioVisuals3DProps> = ({ inputNode, outp
         const pmremGenerator = new THREE.PMREMGenerator(renderer);
         pmremGenerator.compileEquirectangularShader();
         
-        /*
-        // FIX: Removed EXRLoader to prevent crash from invalid file format.
-        // This will change the sphere's appearance but make the app stable.
-        new EXRLoader().load('/piz_compressed.exr', (texture) => {
-            texture.mapping = THREE.EquirectangularReflectionMapping;
-            const exrCubeRenderTarget = pmremGenerator.fromEquirectangular(texture);
-            sphereMaterial.envMap = exrCubeRenderTarget.texture;
-            sphere.visible = true;
-            pmremGenerator.dispose();
-            texture.dispose();
-        });
-        */
-
         const renderPass = new RenderPass(scene, camera);
         const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 5, 0.5, 0);
         const composer = new EffectComposer(renderer);
