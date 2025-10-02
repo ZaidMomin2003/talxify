@@ -136,25 +136,23 @@ const LiveInterviewComponent = () => {
         
         abortControllerRef.current = new AbortController();
         const signal = abortControllerRef.current.signal;
+        
+        const transformStream = new TransformStream();
+        const writer = transformStream.writable.getWriter();
+        
+        scriptProcessorNodeRef.current = inputAudioContextRef.current!.createScriptProcessor(4096, 1, 1);
+        sourceNode.connect(scriptProcessorNodeRef.current);
+        scriptProcessorNodeRef.current.connect(inputAudioContextRef.current!.destination);
+        scriptProcessorNodeRef.current.onaudioprocess = (audioProcessingEvent) => {
+            if (isMuted) return;
+            const pcmData = audioProcessingEvent.inputBuffer.getChannelData(0);
+            const base64 = createBlob(pcmData).data;
+            writer.write(new TextEncoder().encode(base64));
+        };
 
         const response = await fetch(`/api/gemini-live?${queryParams}`, {
             method: 'POST',
-            body: new ReadableStream({
-                start(controller) {
-                    scriptProcessorNodeRef.current = inputAudioContextRef.current!.createScriptProcessor(4096, 1, 1);
-                    sourceNode.connect(scriptProcessorNodeRef.current);
-                    scriptProcessorNodeRef.current.connect(inputAudioContextRef.current!.destination);
-                    scriptProcessorNodeRef.current.onaudioprocess = (audioProcessingEvent) => {
-                        if (isMuted) return;
-                        const pcmData = audioProcessingEvent.inputBuffer.getChannelData(0);
-                        const base64 = createBlob(pcmData).data;
-                        controller.enqueue(new TextEncoder().encode(base64));
-                    };
-                },
-                cancel() {
-                   if (scriptProcessorNodeRef.current) scriptProcessorNodeRef.current.disconnect();
-                }
-            }),
+            body: transformStream.readable,
             signal,
             // @ts-ignore
             duplex: 'half',
