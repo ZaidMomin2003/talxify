@@ -32,10 +32,9 @@ export async function POST(req: NextRequest) {
         systemInstruction: systemInstruction,
         callbacks: {
             onmessage: async (message: LiveServerMessage) => {
-                const audio = message.serverContent?.modelTurn?.parts[0]?.inlineData;
-                if (audio) {
-                    await writer.write(new Uint8Array(Buffer.from(audio.data, 'base64')));
-                }
+                // Forward the entire message (including audio and text) to the client
+                const messageString = JSON.stringify(message);
+                await writer.write(new TextEncoder().encode(`data: ${messageString}\n\n`));
             },
             onclose: () => {
                 writer.close();
@@ -46,7 +45,8 @@ export async function POST(req: NextRequest) {
             },
         },
         config: {
-            responseModalities: ['AUDIO'],
+            // Ask for both audio and text in the response
+            responseModalities: ['AUDIO', 'TEXT'],
             speechConfig: {
                  voiceConfig: { prebuiltVoiceConfig: { voiceName: 'gemini-2.5-flash-preview-tts/Zephyr' } },
             },
@@ -58,17 +58,14 @@ export async function POST(req: NextRequest) {
         if (!req.body) return;
         const reader = req.body.getReader();
         try {
-            await session.sendRealtimeInput(
-                (async function* () {
-                    while (true) {
-                        const { done, value } = await reader.read();
-                        if (done) {
-                            break;
-                        }
-                        yield { media: { data: Buffer.from(value).toString('base64'), mimeType: 'audio/pcm;rate=16000' } };
-                    }
-                })()
-            );
+            // The client will send base64 encoded audio chunks
+            const decoder = new TextDecoder();
+            while (true) {
+                 const { done, value } = await reader.read();
+                 if (done) break;
+                 const chunk = decoder.decode(value);
+                 await session.sendRealtimeInput({ media: { data: chunk, mimeType: 'audio/pcm;rate=16000' } });
+            }
         } catch (error) {
             console.error('Request Body Reading Error:', error);
         } finally {
@@ -78,7 +75,7 @@ export async function POST(req: NextRequest) {
 
     return new Response(stream.readable, {
       headers: {
-        'Content-Type': 'audio/mpeg',
+        'Content-Type': 'text/event-stream',
         'Connection': 'keep-alive',
         'Cache-Control': 'no-cache',
       },

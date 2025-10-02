@@ -10,7 +10,8 @@ import { addActivity } from '@/lib/firebase-service';
 import { useAuth } from '@/context/auth-context';
 import type { InterviewActivity, TranscriptEntry } from '@/lib/types';
 import LiveAudioVisuals3D from './live-audio-visuals-3d';
-import { Analyser, createBlob, decode, decodeAudioData } from '@/lib/live-audio/utils';
+import { Analyser, createBlob, decodeAudioData } from '@/lib/live-audio/utils';
+import type { LiveServerMessage } from '@google/genai';
 
 type AppState = 'form' | 'interview';
 type InterviewStatus = 'idle' | 'requesting_media' | 'ready' | 'recording' | 'processing' | 'error' | 'finished';
@@ -36,7 +37,7 @@ const LiveInterviewComponent = () => {
   const [hasCameraPermission, setHasCameraPermission] = useState(false);
   
   const mediaStreamRef = useRef<MediaStream | null>(null);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const scriptProcessorNodeRef = useRef<ScriptProcessorNode | null>(null);
   
   const inputAudioContextRef = useRef<AudioContext>();
   const outputAudioContextRef = useRef<AudioContext>();
@@ -54,6 +55,8 @@ const LiveInterviewComponent = () => {
   const interviewId = params.interviewId as string;
   const transcriptRef = useRef<TranscriptEntry[]>([]);
   
+  const abortControllerRef = useRef<AbortController | null>(null);
+  
   // Initialize AudioContexts
   useEffect(() => {
     if (!inputAudioContextRef.current) {
@@ -62,7 +65,6 @@ const LiveInterviewComponent = () => {
     if (!outputAudioContextRef.current) {
         outputAudioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
     }
-     // Initialize and connect the output node once
     if (outputAudioContextRef.current && !outputNodeRef.current) {
       outputNodeRef.current = outputAudioContextRef.current.createGain();
       outputNodeRef.current.connect(outputAudioContextRef.current.destination);
@@ -71,15 +73,18 @@ const LiveInterviewComponent = () => {
 
 
   const cleanupMedia = useCallback(() => {
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-        mediaRecorderRef.current.stop();
+    if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+        abortControllerRef.current = null;
+    }
+     if (scriptProcessorNodeRef.current) {
+      scriptProcessorNodeRef.current.disconnect();
+      scriptProcessorNodeRef.current = null;
     }
     if (mediaStreamRef.current) {
         mediaStreamRef.current.getTracks().forEach(track => track.stop());
     }
     if(videoRef.current) videoRef.current.srcObject = null;
-    
-    mediaRecorderRef.current = null;
     mediaStreamRef.current = null;
   }, []);
 
@@ -132,67 +137,99 @@ const LiveInterviewComponent = () => {
              throw new Error("Media stream not available.");
         }
         
-        // Input node for visualisation
         const sourceNode = inputAudioContextRef.current!.createMediaStreamSource(mediaStreamRef.current);
         inputNodeRef.current = inputAudioContextRef.current!.createGain();
         sourceNode.connect(inputNodeRef.current);
         
-        mediaRecorderRef.current = new MediaRecorder(mediaStreamRef.current, { mimeType: 'audio/webm' });
+        abortControllerRef.current = new AbortController();
+        const signal = abortControllerRef.current.signal;
 
-      const response = await fetch(`/api/gemini-live?${queryParams}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/octet-stream' },
-        body: new ReadableStream({
-          start(controller) {
-            if (!mediaRecorderRef.current) return;
-            mediaRecorderRef.current.ondataavailable = (event) => {
-              if (event.data.size > 0) {
-                controller.enqueue(event.data);
-              }
-            };
-            mediaRecorderRef.current.onstop = () => { try { controller.close(); } catch(e) {} };
-            mediaRecorderRef.current.onerror = (err) => { try { controller.error(err); } catch(e) {} }
-          },
-        }),
-        // @ts-ignore
-        duplex: 'half',
-      });
+        const response = await fetch(`/api/gemini-live?${queryParams}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/octet-stream' },
+            body: new ReadableStream({
+                start(controller) {
+                    scriptProcessorNodeRef.current = inputAudioContextRef.current!.createScriptProcessor(4096, 1, 1);
+                    sourceNode.connect(scriptProcessorNodeRef.current);
+                    scriptProcessorNodeRef.current.connect(inputAudioContextRef.current!.destination);
+                    scriptProcessorNodeRef.current.onaudioprocess = (audioProcessingEvent) => {
+                        if (isMuted) return;
+                        const pcmData = audioProcessingEvent.inputBuffer.getChannelData(0);
+                        const base64 = createBlob(pcmData).data;
+                        controller.enqueue(new TextEncoder().encode(base64));
+                    };
+                },
+                cancel() {
+                   if (scriptProcessorNodeRef.current) scriptProcessorNodeRef.current.disconnect();
+                }
+            }),
+            signal,
+            // @ts-ignore
+            duplex: 'half',
+        });
 
-      if (!response.ok || !response.body) {
-        throw new Error('Failed to start the live session.');
-      }
-      
-      setStatus('recording');
-      mediaRecorderRef.current.start(250); // Send data every 250ms
-
-      const reader = response.body.getReader();
-      nextStartTimeRef.current = outputAudioContextRef.current!.currentTime;
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) {
-          setStatus('finished');
-          break;
+        if (!response.ok || !response.body) {
+            throw new Error('Failed to start the live session.');
         }
-
-        const audioBuffer = await decodeAudioData(value, outputAudioContextRef.current!, 24000, 1);
-        const source = outputAudioContextRef.current!.createBufferSource();
-        source.buffer = audioBuffer;
-        source.connect(outputNodeRef.current!);
         
-        const scheduledTime = Math.max(nextStartTimeRef.current, outputAudioContextRef.current!.currentTime);
-        source.start(scheduledTime);
-        nextStartTimeRef.current = scheduledTime + audioBuffer.duration;
-        sourcesRef.current.add(source);
-        source.onended = () => sourcesRef.current.delete(source);
-      }
+        setStatus('recording');
+        
+        const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
+        nextStartTimeRef.current = outputAudioContextRef.current!.currentTime;
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) {
+                setStatus('finished');
+                break;
+            }
+            // The value is an SSE message string: "data: {...}\n\n"
+            const dataString = value.replace(/^data: /, '').trim();
+            if (dataString) {
+                try {
+                    const message: LiveServerMessage = JSON.parse(dataString);
+
+                    // Handle AI Audio
+                    const audio = message.serverContent?.modelTurn?.parts[0]?.inlineData;
+                    if (audio) {
+                        const audioBuffer = await decodeAudioData(Buffer.from(audio.data, 'base64'), outputAudioContextRef.current!, 24000, 1);
+                        const source = outputAudioContextRef.current!.createBufferSource();
+                        source.buffer = audioBuffer;
+                        source.connect(outputNodeRef.current!);
+                        const scheduledTime = Math.max(nextStartTimeRef.current, outputAudioContextRef.current!.currentTime);
+                        source.start(scheduledTime);
+                        nextStartTimeRef.current = scheduledTime + audioBuffer.duration;
+                        sourcesRef.current.add(source);
+                        source.onended = () => sourcesRef.current.delete(source);
+                    }
+                    
+                    // Handle AI Text
+                    const aiText = message.serverContent?.modelTurn?.parts.find(p => p.text)?.text;
+                    if (aiText) {
+                         transcriptRef.current.push({ speaker: 'ai', text: aiText });
+                    }
+
+                    // Handle User Text
+                    const userText = message.serverContent?.userTurn?.parts.find(p => p.text)?.text;
+                    if (userText) {
+                        transcriptRef.current.push({ speaker: 'user', text: userText });
+                    }
+
+                } catch (e) {
+                    console.error("Error parsing SSE message:", e);
+                }
+            }
+        }
     } catch (err: any) {
-      console.error('Interview Error:', err);
-      setError(err.message || 'An unknown error occurred during the interview.');
-      setStatus('error');
-      cleanupMedia();
+        if (err.name !== 'AbortError') {
+            console.error('Interview Error:', err);
+            setError(err.message || 'An unknown error occurred during the interview.');
+            setStatus('error');
+        }
+    } finally {
+        cleanupMedia();
     }
-  }, [jobRole, company, cleanupMedia]);
+  }, [jobRole, company, cleanupMedia, isMuted]);
 
    const finishInterviewAndSave = useCallback(async () => {
     if (timerIntervalIdRef.current) clearInterval(timerIntervalIdRef.current);
@@ -230,15 +267,7 @@ const LiveInterviewComponent = () => {
     };
   }, [requestMediaPermissions, cleanupMedia]);
   
-  const toggleMute = () => {
-    setIsMuted(prev => {
-        const newMuted = !prev;
-        if(mediaStreamRef.current) {
-            mediaStreamRef.current.getAudioTracks().forEach(track => track.enabled = !newMuted);
-        }
-        return newMuted;
-    });
-  }
+  const toggleMute = () => setIsMuted(prev => !prev);
   
   const renderForm = () => (
     <div className="absolute inset-0 flex items-center justify-center z-20 bg-black/30 backdrop-blur-md">
