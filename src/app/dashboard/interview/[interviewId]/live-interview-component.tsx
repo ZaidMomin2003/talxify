@@ -77,7 +77,7 @@ const LiveInterviewComponent = () => {
     cleanupAudio();
 
     try {
-      const liveStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      const liveStream = await navigator.mediaDevices.getUserMedia({ audio: { sampleRate: 16000 } });
 
       // --- Setup for Input Visualization ---
       const inputAudioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -88,7 +88,7 @@ const LiveInterviewComponent = () => {
       inputAnalyserRef.current = new Analyser(inputGainNode);
       
       // --- Setup for Output Visualization ---
-      const outputAudioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const outputAudioContext = new (window.AudioContext || (window as any).webkitAudioContext)({sampleRate: 24000});
       const outputGainNode = outputAudioContext.createGain();
       outputGainNode.connect(outputAudioContext.destination);
       outputNodeRef.current = outputGainNode;
@@ -283,3 +283,7 @@ const LiveInterviewComponent = () => {
     </div>
   );
 };
+
+export default LiveInterviewComponent;
+
+    
