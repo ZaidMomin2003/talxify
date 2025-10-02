@@ -18,15 +18,6 @@ import { useAuth } from '@/context/auth-context';
 import type { InterviewActivity, TranscriptEntry, IcebreakerData } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 
-const voices = [
-  { name: 'Clarie (Female)', value: 'Kore', description: 'Warm, friendly, and clear.' },
-  { name: 'Zephyr (Male)', value: 'Zephyr', description: 'Calm, smooth, and reassuring.' },
-  { name: 'Orus (Male)', value: 'Orus', description: 'Deep, authoritative, and warm.' },
-  { name: 'Puck (Male)', value: 'Puck', description: 'Playful, bright, and energetic.' },
-  { name: 'Charon (Male)', value: 'Charon', description: 'Gravelly, wise, and mysterious.' },
-  { name: 'Fenrir (Male)', value: 'Fenrir', description: 'Strong, commanding, and resonant.' },
-];
-
 export default function LiveInterviewPage() {
   const router = useRouter();
   const params = useParams();
@@ -37,11 +28,11 @@ export default function LiveInterviewPage() {
   const [isInterviewing, setIsInterviewing] = useState(false);
   const [status, setStatus] = useState('Click the mic to start your interview');
   const [error, setError] = useState('');
-  const [selectedVoice, setSelectedVoice] = useState('Kore');
   const [currentUserTranscription, setCurrentUserTranscription] = useState('');
   const [currentAiTranscription, setCurrentAiTranscription] = useState('');
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOn, setIsVideoOn] = useState(true);
+  const [elapsedTime, setElapsedTime] = useState(0);
 
   const transcriptRef = useRef<TranscriptEntry[]>([]);
   const userVideoEl = useRef<HTMLVideoElement>(null);
@@ -66,6 +57,25 @@ export default function LiveInterviewPage() {
   const updateStatus = (msg: string) => { setStatus(msg); setError(''); };
   const updateError = (msg: string) => { setError(msg); console.error(msg); };
   
+  useEffect(() => {
+    let timerInterval: NodeJS.Timeout;
+    if (isInterviewing) {
+      setElapsedTime(0); // Reset timer
+      timerInterval = setInterval(() => {
+        setElapsedTime(prevTime => prevTime + 1);
+      }, 1000);
+    }
+    return () => {
+      clearInterval(timerInterval);
+    };
+  }, [isInterviewing]);
+
+  const formatTime = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+  };
+
   const stopAllPlayback = useCallback(() => {
     if (!outputAudioContextRef.current) return;
     for (const source of sourcesRef.current.values()) { source.stop(); }
@@ -165,7 +175,7 @@ export default function LiveInterviewPage() {
         },
         config: {
           responseModalities: [Modality.AUDIO, Modality.TEXT],
-          speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: selectedVoice } } },
+          speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "Kore" } } },
           inputAudioTranscription: {},
           outputAudioTranscription: {},
           systemInstruction,
@@ -175,22 +185,18 @@ export default function LiveInterviewPage() {
     } catch (e: any) {
       updateError(e.message);
     }
-  }, [selectedVoice, playAudio, stopAllPlayback, searchParams, user, toast, currentAiTranscription, currentUserTranscription]);
+  }, [playAudio, stopAllPlayback, searchParams, user, toast, currentAiTranscription, currentUserTranscription]);
   
-  const reset = useCallback(() => {
-    stopAllPlayback();
-    if(sessionPromiseRef.current) {
-        sessionPromiseRef.current.then((session) => session.close());
-    }
-    initSession();
-    updateStatus('Session Reset. Ready for a new interview.');
-  }, [initSession, stopAllPlayback]);
-
   useEffect(() => {
     if (isInitializedRef.current) return;
     isInitializedRef.current = true;
+    
+    // Check for API Key early
     const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
-    if (!apiKey) { updateError("Gemini API Key is not configured."); return; }
+    if (!apiKey) {
+      updateError("Gemini API Key is not configured. Please set NEXT_PUBLIC_GEMINI_API_KEY in your environment.");
+      return;
+    }
 
     const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
     if (!inputAudioContextRef.current) {
@@ -210,16 +216,23 @@ export default function LiveInterviewPage() {
     setAudioNodesReady(true);
     startInterview();
 
+    // Cleanup on component unmount
     return () => {
       mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
       sessionPromiseRef.current?.then((session) => session.close());
+      inputAudioContextRef.current?.close();
+      outputAudioContextRef.current?.close();
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
 
   const startInterview = async () => {
     if (isInterviewing) return;
-    if (!inputAudioContextRef.current || !inputNodeRef.current) return;
+    if (!inputAudioContextRef.current || !inputNodeRef.current) {
+        updateError("Audio context not ready.");
+        return;
+    }
     await inputAudioContextRef.current.resume();
     updateStatus('Requesting device access...');
     try {
@@ -233,8 +246,9 @@ export default function LiveInterviewPage() {
       const bufferSize = 4096;
       scriptProcessorNodeRef.current = inputCtx.createScriptProcessor(bufferSize, 1, 1);
       scriptProcessorNodeRef.current.onaudioprocess = (e) => {
-        if (!isInterviewing) return;
-        sessionPromiseRef.current?.then((s) => s.sendRealtimeInput({ media: createBlob(e.inputBuffer.getChannelData(0)) }));
+        if (isInterviewing && !isMuted) {
+            sessionPromiseRef.current?.then((s) => s.sendRealtimeInput({ media: createBlob(e.inputBuffer.getChannelData(0)) }));
+        }
       };
       sourceNodeRef.current.connect(scriptProcessorNodeRef.current);
       scriptProcessorNodeRef.current.connect(inputCtx.destination);
@@ -281,19 +295,8 @@ export default function LiveInterviewPage() {
     sessionPromiseRef.current?.then((s) => s.close());
   };
 
-  const onVoiceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setSelectedVoice(e.target.value);
-    reset();
-  };
-
   const toggleMute = () => {
-    const nextMuted = !isMuted;
-    setIsMuted(nextMuted);
-    if (mediaStreamRef.current) {
-        mediaStreamRef.current.getAudioTracks().forEach(track => {
-            track.enabled = !nextMuted;
-        });
-    }
+    setIsMuted(prev => !prev);
   }
 
   const toggleVideo = () => {
@@ -310,7 +313,16 @@ export default function LiveInterviewPage() {
 
   return (
     <div className="meet-layout">
-      <div id="status">{error || status}</div>
+        <div id="status">
+            <div className="flex items-center gap-4">
+                <span>{error || status}</span>
+                {isInterviewing && (
+                <div className="font-mono bg-background/50 border rounded-full px-3 py-1 text-sm">
+                    {formatTime(elapsedTime)}
+                </div>
+                )}
+            </div>
+        </div>
       <div className="main-view">
         {audioNodesReady && (
             <LiveAudioVisuals3D inputNode={inputNodeRef.current} outputNode={outputNodeRef.current} />
@@ -324,14 +336,6 @@ export default function LiveInterviewPage() {
         </div>
       </div>
       <div className="control-bar">
-        <select id="voiceSelect" onChange={onVoiceChange} value={selectedVoice} disabled={!isInterviewing} aria-label="Select Interviewer Voice">
-          {voices.map((voice) => (
-            <option key={voice.value} value={voice.value} title={voice.description}>
-              {voice.name}
-            </option>
-          ))}
-        </select>
-        
         <Button onClick={toggleMute} aria-label={isMuted ? 'Unmute' : 'Mute'} size="icon" className="w-14 h-14" variant={isMuted ? 'destructive' : 'secondary'}>
             {isMuted ? <MicOff /> : <Mic />}
         </Button>
@@ -347,3 +351,6 @@ export default function LiveInterviewPage() {
     </div>
   );
 }
+
+
+      
