@@ -15,4 +15,3 @@ import '@/ai/flows/generate-syllabus.ts';
 import '@/ai/flows/generate-study-notes.ts';
 import '@/ai/flows/generate-interview-feedback.ts';
 import '@/ai/flows/enhance-resume.ts';
-import '@/ai/flows/interview-agent.ts';
