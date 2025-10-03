@@ -159,16 +159,12 @@ export default function LiveInterviewPage() {
       timerInterval = setInterval(() => {
         setElapsedTime(prevTime => prevTime + 1);
       }, 1000);
-    } else {
-        if (elapsedTime === 0 && isInterviewing) {
-            setElapsedTime(0); // Ensure timer starts at 0 when interview begins
-        }
     }
 
     return () => {
       clearInterval(timerInterval);
     };
-  }, [isInterviewing, status, error, elapsedTime]);
+  }, [isInterviewing, status, error]);
 
   const stopAllPlayback = useCallback(() => {
     if (!outputAudioContextRef.current) return;
