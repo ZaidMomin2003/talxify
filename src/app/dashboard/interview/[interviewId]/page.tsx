@@ -12,7 +12,6 @@ import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { encode, decodeAudioData, createBlob } from '@/lib/utils';
-import LiveAudioVisuals3D from '@/components/live-audio-visuals-3d';
 
 
 // --- Sub-components for better structure ---
@@ -379,7 +378,7 @@ export default function LiveInterviewPage() {
 
   return (
     <div className="relative flex flex-col h-screen w-full p-4 sm:p-6 bg-background">
-        <LiveAudioVisuals3D inputStream={mediaStreamRef.current} outputStream={outputStream} />
+        <div className="absolute inset-0 thermal-gradient-bg z-0"/>
         <InterviewHeader status={error || status} elapsedTime={elapsedTime}/>
         <main className="flex-1 relative flex items-center justify-center">
             <AIPanel isInterviewing={isInterviewing} />
