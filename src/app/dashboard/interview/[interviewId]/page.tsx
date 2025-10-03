@@ -11,11 +11,114 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { createBlob, decode, decodeAudioData } from '@/lib/utils';
 import { useSearchParams, useRouter, useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Mic, MicOff, Video, VideoOff, Phone, Loader2 } from 'lucide-react';
+import { Mic, MicOff, Video, VideoOff, Phone, Loader2, BrainCircuit } from 'lucide-react';
 import { addActivity, updateUserFromIcebreaker } from '@/lib/firebase-service';
 import { useAuth } from '@/context/auth-context';
 import type { InterviewActivity, TranscriptEntry, IcebreakerData } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { cn } from '@/lib/utils';
+
+
+// --- Sub-components for better structure ---
+
+const InterviewHeader = ({ status, elapsedTime }: { status: string; elapsedTime: number }) => {
+  const formatTime = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+  };
+
+  return (
+    <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20">
+        <div className="flex items-center gap-4 bg-background/50 border rounded-full px-4 py-2 text-sm text-muted-foreground backdrop-blur-sm">
+            <span className={cn("w-2 h-2 rounded-full", status.includes('progress') ? 'bg-red-500 animate-pulse' : 'bg-yellow-500')}/>
+            <span>{status}</span>
+            {elapsedTime > 0 && <span className="font-mono">{formatTime(elapsedTime)}</span>}
+        </div>
+    </div>
+  );
+};
+
+const AIPanel = ({ isInterviewing }: { isInterviewing: boolean }) => {
+  return (
+    <div className="relative flex flex-col items-center justify-center w-full h-full bg-muted/20 rounded-2xl overflow-hidden border">
+       <div className="absolute inset-0 bg-dot-pattern opacity-10"/>
+      <div className={cn("relative flex items-center justify-center w-48 h-48 rounded-full transition-all duration-500", isInterviewing ? 'scale-100' : 'scale-90')}>
+         <div className={cn("absolute inset-0 rounded-full bg-primary/10", isInterviewing && 'animate-pulse duration-1000')}/>
+         <div className={cn("absolute inset-2 rounded-full bg-primary/20", isInterviewing && 'animate-pulse duration-1500')}/>
+        <Avatar className="w-32 h-32 border-4 border-background">
+          <div className="w-full h-full flex items-center justify-center bg-primary/10 text-primary">
+            <BrainCircuit className="w-16 h-16" />
+          </div>
+          <AvatarFallback>AI</AvatarFallback>
+        </Avatar>
+      </div>
+      <p className="mt-6 text-2xl font-bold font-headline text-foreground">Kathy</p>
+      <p className="text-muted-foreground">AI Interviewer</p>
+    </div>
+  );
+};
+
+const UserVideo = ({ videoRef, isVideoOn }: { videoRef: React.RefObject<HTMLVideoElement>; isVideoOn: boolean; }) => {
+  return (
+    <div className={cn(
+        "absolute bottom-6 right-6 w-48 h-36 rounded-lg overflow-hidden border-2 border-border bg-black shadow-lg transition-all duration-300",
+        !isVideoOn && "flex items-center justify-center"
+    )}>
+      <video
+        ref={videoRef}
+        muted
+        playsInline
+        className={cn(
+            "w-full h-full object-cover transform -scale-x-100",
+            !isVideoOn && "hidden"
+        )}
+      ></video>
+      {!isVideoOn && (
+        <div className="flex flex-col items-center text-muted-foreground">
+          <VideoOff className="w-8 h-8"/>
+          <p className="text-sm mt-2">Camera is off</p>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const CaptionDisplay = ({ text }: { text: string }) => {
+  if (!text) return null;
+  return (
+    <div className="absolute bottom-28 left-1/2 -translate-x-1/2 w-full max-w-4xl px-4">
+      <div className="bg-background/60 backdrop-blur-md rounded-lg p-4 text-center text-foreground text-lg shadow-lg border">
+        {text}
+      </div>
+    </div>
+  );
+};
+
+const ControlBar = ({ onMuteToggle, onVideoToggle, onEndCall, isMuted, isVideoOn, isInterviewing }: {
+  onMuteToggle: () => void;
+  onVideoToggle: () => void;
+  onEndCall: () => void;
+  isMuted: boolean;
+  isVideoOn: boolean;
+  isInterviewing: boolean;
+}) => {
+  return (
+    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex items-center gap-4 rounded-full bg-background/50 border p-3 backdrop-blur-md">
+      <Button onClick={onMuteToggle} size="icon" className="w-14 h-14 rounded-full" variant={isMuted ? 'destructive' : 'secondary'}>
+        {isMuted ? <MicOff /> : <Mic />}
+      </Button>
+      <Button onClick={onVideoToggle} size="icon" className="w-14 h-14 rounded-full" variant={!isVideoOn ? 'destructive' : 'secondary'}>
+        {isVideoOn ? <Video /> : <VideoOff />}
+      </Button>
+      <Button onClick={onEndCall} size="icon" className="w-14 h-14 rounded-full bg-red-600 hover:bg-red-700 text-white" disabled={!isInterviewing}>
+        <Phone />
+      </Button>
+    </div>
+  );
+};
+
 
 export default function LiveInterviewPage() {
   const router = useRouter();
@@ -25,10 +128,9 @@ export default function LiveInterviewPage() {
   const { toast } = useToast();
 
   const [isInterviewing, setIsInterviewing] = useState(false);
-  const [status, setStatus] = useState('Click the mic to start your interview');
+  const [status, setStatus] = useState('Initializing...');
   const [error, setError] = useState('');
-  const [currentUserTranscription, setCurrentUserTranscription] = useState('');
-  const [currentAiTranscription, setCurrentAiTranscription] = useState('');
+  const [currentTranscription, setCurrentTranscription] = useState('');
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOn, setIsVideoOn] = useState(true);
   const [elapsedTime, setElapsedTime] = useState(0);
@@ -46,13 +148,6 @@ export default function LiveInterviewPage() {
   const clientRef = useRef<GoogleGenAI | null>(null);
   const isInitializedRef = useRef(false);
 
-  // Use refs for audio nodes to maintain stable references across renders
-  const inputNodeRef = useRef<GainNode | null>(null);
-  const outputNodeRef = useRef<GainNode | null>(null);
-  // Separate state to trigger re-render of visualizer when nodes are ready
-  const [audioNodesReady, setAudioNodesReady] = useState(false);
-
-
   const updateStatus = (msg: string) => { setStatus(msg); setError(''); };
   const updateError = (msg: string) => { setError(msg); console.error(msg); };
   
@@ -69,12 +164,6 @@ export default function LiveInterviewPage() {
     };
   }, [isInterviewing]);
 
-  const formatTime = (seconds: number) => {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
-  };
-
   const stopAllPlayback = useCallback(() => {
     if (!outputAudioContextRef.current) return;
     for (const source of sourcesRef.current.values()) { source.stop(); }
@@ -83,19 +172,18 @@ export default function LiveInterviewPage() {
   }, []);
 
   const playAudio = useCallback(async (base64EncodedAudioString: string) => {
-    if (!outputAudioContextRef.current || !outputNodeRef.current) return;
+    if (!outputAudioContextRef.current) return;
     await outputAudioContextRef.current.resume();
     nextStartTimeRef.current = Math.max(nextStartTimeRef.current, outputAudioContextRef.current.currentTime);
     const audioBuffer = await decodeAudioData(decode(base64EncodedAudioString), outputAudioContextRef.current, 24000, 1);
     const source = outputAudioContextRef.current.createBufferSource();
     source.buffer = audioBuffer;
-    source.connect(outputNodeRef.current);
+    source.connect(outputAudioContextRef.current.destination);
     source.addEventListener('ended', () => { sourcesRef.current.delete(source); });
     source.start(nextStartTimeRef.current);
     nextStartTimeRef.current += audioBuffer.duration;
     sourcesRef.current.add(source);
   }, []);
-
 
   const initSession = useCallback(() => {
     if (!clientRef.current) return;
@@ -136,37 +224,34 @@ export default function LiveInterviewPage() {
             const audio = message.serverContent?.modelTurn?.parts[0]?.inlineData;
             if (audio?.data) { playAudio(audio.data); }
             if (message.serverContent?.interrupted) { stopAllPlayback(); }
-            if (message.serverContent?.outputTranscription) {
-              const text = message.serverContent.outputTranscription.text;
-              setCurrentAiTranscription(prev => prev + text);
-            }
-            if (message.serverContent?.inputTranscription) {
-              const text = message.serverContent.inputTranscription.text;
-              setCurrentUserTranscription(prev => prev + text);
-            }
-            if (message.serverContent?.turnComplete) {
-                if (currentUserTranscription.trim()) {
-                    transcriptRef.current.push({ speaker: 'user', text: currentUserTranscription.trim() });
-                }
-                if (currentAiTranscription.trim()) {
-                    transcriptRef.current.push({ speaker: 'ai', text: currentAiTranscription.trim() });
+            
+            let userText = '';
+            let aiText = '';
 
-                    // Check for icebreaker JSON
-                    const jsonMatch = currentAiTranscription.match(/<JSON_DATA>(.*?)<\/JSON_DATA>/);
+            if (message.serverContent?.inputTranscription) {
+              userText = message.serverContent.inputTranscription.text;
+            }
+             if (message.serverContent?.outputTranscription) {
+              aiText = message.serverContent.outputTranscription.text;
+            }
+            setCurrentTranscription(userText || aiText);
+
+            if (message.serverContent?.turnComplete) {
+                if (userText.trim()) transcriptRef.current.push({ speaker: 'user', text: userText.trim() });
+                if (aiText.trim()) {
+                    transcriptRef.current.push({ speaker: 'ai', text: aiText.trim() });
+                    const jsonMatch = aiText.match(/<JSON_DATA>(.*?)<\/JSON_DATA>/);
                     if (jsonMatch && jsonMatch[1]) {
                         try {
                             const icebreakerData: IcebreakerData = JSON.parse(jsonMatch[1]);
                             if (user && icebreakerData.isIcebreaker) {
                                 await updateUserFromIcebreaker(user.uid, icebreakerData);
-                                toast({ title: "Icebreaker Complete!", description: "Your profile has been updated with the info you provided."});
+                                toast({ title: "Icebreaker Complete!", description: "Your profile has been updated."});
                             }
-                        } catch (e) {
-                            console.error("Failed to parse icebreaker JSON", e);
-                        }
+                        } catch (e) { console.error("Failed to parse icebreaker JSON", e); }
                     }
                 }
-              setCurrentUserTranscription('');
-              setCurrentAiTranscription('');
+                setCurrentTranscription('');
             }
           },
           onerror: (e: ErrorEvent) => updateError(e.message),
@@ -184,7 +269,7 @@ export default function LiveInterviewPage() {
     } catch (e: any) {
       updateError(e.message);
     }
-  }, [playAudio, stopAllPlayback, searchParams, user, toast, currentAiTranscription, currentUserTranscription]);
+  }, [playAudio, stopAllPlayback, searchParams, user, toast]);
   
   useEffect(() => {
     if (isInitializedRef.current) return;
@@ -192,29 +277,19 @@ export default function LiveInterviewPage() {
     
     const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
     if (!apiKey) {
-      updateError("Gemini API Key is not configured. Please set NEXT_PUBLIC_GEMINI_API_KEY in your environment.");
+      updateError("Gemini API Key is not configured.");
       return;
     }
 
     const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
-    if (!inputAudioContextRef.current) {
-        inputAudioContextRef.current = new AudioContext({ sampleRate: 16000 });
-        inputNodeRef.current = inputAudioContextRef.current.createGain();
-    }
-    if (!outputAudioContextRef.current) {
-        outputAudioContextRef.current = new AudioContext({ sampleRate: 24000 });
-        outputNodeRef.current = outputAudioContextRef.current.createGain();
-        outputNodeRef.current.connect(outputAudioContextRef.current.destination);
-    }
+    if (!inputAudioContextRef.current) inputAudioContextRef.current = new AudioContext({ sampleRate: 16000 });
+    if (!outputAudioContextRef.current) outputAudioContextRef.current = new AudioContext({ sampleRate: 24000 });
+    outputAudioContextRef.current.destination.channelCount = 1;
     
-    if (!clientRef.current) {
-        clientRef.current = new GoogleGenAI({ apiKey });
-    }
+    if (!clientRef.current) clientRef.current = new GoogleGenAI({ apiKey });
     
-    setAudioNodesReady(true);
     startInterview();
 
-    // Cleanup on component unmount
     return () => {
       mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
       sessionPromiseRef.current?.then((session) => session.close());
@@ -227,20 +302,16 @@ export default function LiveInterviewPage() {
 
   const startInterview = async () => {
     if (isInterviewing) return;
-    if (!inputAudioContextRef.current || !inputNodeRef.current) {
-        updateError("Audio context not ready.");
-        return;
-    }
+    if (!inputAudioContextRef.current) { updateError("Audio context not ready."); return; }
     await inputAudioContextRef.current.resume();
     updateStatus('Requesting device access...');
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
       mediaStreamRef.current = stream;
       if (userVideoEl.current) { userVideoEl.current.srcObject = stream; userVideoEl.current.play(); }
-      updateStatus('Access granted. Starting...');
+      
       const inputCtx = inputAudioContextRef.current!;
       sourceNodeRef.current = inputCtx.createMediaStreamSource(stream);
-      sourceNodeRef.current.connect(inputNodeRef.current);
       const bufferSize = 4096;
       scriptProcessorNodeRef.current = inputCtx.createScriptProcessor(bufferSize, 1, 1);
       scriptProcessorNodeRef.current.onaudioprocess = (e) => {
@@ -248,10 +319,11 @@ export default function LiveInterviewPage() {
             sessionPromiseRef.current?.then((s) => s.sendRealtimeInput({ media: createBlob(e.inputBuffer.getChannelData(0)) }));
         }
       };
-      inputNodeRef.current.connect(scriptProcessorNodeRef.current);
+      sourceNodeRef.current.connect(scriptProcessorNodeRef.current);
       scriptProcessorNodeRef.current.connect(inputCtx.destination);
+      
       setIsInterviewing(true);
-      updateStatus('🔴 Interview in progress...');
+      updateStatus('Interview in progress...');
       initSession();
     } catch (err: any) {
       updateError(`Error starting interview: ${err.message}`);
@@ -260,36 +332,24 @@ export default function LiveInterviewPage() {
   };
 
   const endInterview = async () => {
-    if (!isInterviewing && !mediaStreamRef.current) {
-      router.push('/dashboard');
-      return;
-    }
+    if (!isInterviewing && !mediaStreamRef.current) { router.push('/dashboard'); return; }
 
     setIsInterviewing(false);
     updateStatus('Interview ended. Navigating to results...');
 
     const interviewId = params.interviewId as string;
-    
-    // Immediately navigate to the results page
     router.push(`/dashboard/interview/${interviewId}/results`);
 
-    // Clean up media and audio resources in the background
     scriptProcessorNodeRef.current?.disconnect();
     sourceNodeRef.current?.disconnect();
     mediaStreamRef.current?.getTracks().forEach((t) => t.stop());
     mediaStreamRef.current = null;
     if (userVideoEl.current) { userVideoEl.current.srcObject = null; }
 
-    // Close the Gemini session
     sessionPromiseRef.current?.then((s) => s.close());
 
-    // Save activity in the background
     if (user) {
-        // Ensure there is at least one entry in the transcript to avoid empty analysis
-        if (transcriptRef.current.length === 0) {
-            transcriptRef.current.push({ speaker: 'ai', text: 'Interview ended prematurely.' });
-        }
-
+        if (transcriptRef.current.length === 0) transcriptRef.current.push({ speaker: 'ai', text: 'Interview ended prematurely.' });
         const activity: InterviewActivity = {
             id: interviewId,
             type: 'interview',
@@ -304,69 +364,42 @@ export default function LiveInterviewPage() {
             }
         };
         
-        // This will now run without blocking navigation
         addActivity(user.uid, activity).catch(error => {
             console.error("Failed to save activity in background:", error);
-            // Optionally, show a non-blocking toast notification about the save failure
             toast({
                 title: "Could not save interview results",
-                description: "There was an issue saving your interview data, but you can still view the results.",
+                description: "There was an issue saving your interview data.",
                 variant: "destructive"
             });
         });
     }
   };
 
-  const toggleMute = () => {
-    setIsMuted(prev => !prev);
-  }
-
+  const toggleMute = () => setIsMuted(prev => !prev);
   const toggleVideo = () => {
     const nextVideoOn = !isVideoOn;
     setIsVideoOn(nextVideoOn);
      if (mediaStreamRef.current) {
-        mediaStreamRef.current.getVideoTracks().forEach(track => {
-            track.enabled = nextVideoOn;
-        });
+        mediaStreamRef.current.getVideoTracks().forEach(track => { track.enabled = nextVideoOn; });
     }
   }
 
-  const captionText = currentAiTranscription || currentUserTranscription;
-
   return (
-    <div className="meet-layout">
-        <div id="status">
-            <div className="flex items-center gap-4">
-                <span>{error || status}</span>
-                {isInterviewing && (
-                <div className="font-mono bg-background/50 border rounded-full px-3 py-1 text-sm">
-                    {formatTime(elapsedTime)}
-                </div>
-                )}
-            </div>
-        </div>
-      <div className="main-view">
-        <video id="user-video" className={isInterviewing ? 'active' : ''} ref={userVideoEl} muted playsInline></video>
-        <div className={`captions-overlay ${captionText ? 'active' : ''}`}>
-          {currentAiTranscription
-            ? <><b>Kathy:</b> {currentAiTranscription}</>
-            : <><b>You:</b> {currentUserTranscription}</>
-          }
-        </div>
-      </div>
-      <div className="control-bar">
-        <Button onClick={toggleMute} aria-label={isMuted ? 'Unmute' : 'Mute'} size="icon" className="w-14 h-14" variant={isMuted ? 'destructive' : 'secondary'}>
-            {isMuted ? <MicOff /> : <Mic />}
-        </Button>
-
-         <Button onClick={toggleVideo} aria-label={isVideoOn ? 'Turn off camera' : 'Turn on camera'} size="icon" className="w-14 h-14" variant={!isVideoOn ? 'destructive' : 'secondary'}>
-            {isVideoOn ? <Video /> : <VideoOff />}
-        </Button>
-
-        <Button className="end-call w-14 h-14" onClick={endInterview} aria-label="End Interview">
-           <Phone />
-        </Button>
-      </div>
+    <div className="relative flex flex-col h-screen w-full p-4 sm:p-6 bg-background thermal-gradient-bg">
+        <InterviewHeader status={error || status} elapsedTime={elapsedTime}/>
+        <main className="flex-1 relative flex items-center justify-center">
+            <AIPanel isInterviewing={isInterviewing} />
+        </main>
+        <UserVideo videoRef={userVideoEl} isVideoOn={isVideoOn} />
+        <CaptionDisplay text={currentTranscription}/>
+        <ControlBar 
+            onMuteToggle={toggleMute}
+            onVideoToggle={toggleVideo}
+            onEndCall={endInterview}
+            isMuted={isMuted}
+            isVideoOn={isVideoOn}
+            isInterviewing={isInterviewing}
+        />
     </div>
   );
 }
