@@ -40,12 +40,12 @@ export function createBlob(data: Float32Array): Blob {
 }
 
 export async function decodeAudioData(
-  data: Uint8Array,
+  data: Buffer,
   ctx: AudioContext,
   sampleRate: number,
   numChannels: number,
 ): Promise<AudioBuffer> {
-  const dataInt16 = new Int16Array(data.buffer);
+  const dataInt16 = new Int16Array(data.buffer, data.byteOffset, data.length / 2);
   const frameCount = dataInt16.length / numChannels;
   const buffer = ctx.createBuffer(numChannels, frameCount, sampleRate);
 

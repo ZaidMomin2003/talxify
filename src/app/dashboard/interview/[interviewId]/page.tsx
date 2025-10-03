@@ -1,23 +1,17 @@
 
 'use client';
 
-import {
-  GoogleGenAI,
-  LiveServerMessage,
-  Modality,
-  Session,
-} from '@google/genai';
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { createBlob, decode, decodeAudioData } from '@/lib/utils';
 import { useSearchParams, useRouter, useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Mic, MicOff, Video, VideoOff, Phone, Loader2, BrainCircuit } from 'lucide-react';
+import { Mic, MicOff, Video, VideoOff, Phone, BrainCircuit } from 'lucide-react';
 import { addActivity, updateUserFromIcebreaker } from '@/lib/firebase-service';
 import { useAuth } from '@/context/auth-context';
 import type { InterviewActivity, TranscriptEntry, IcebreakerData } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
+import { encode, decodeAudioData, createBlob } from '@/lib/utils';
 
 
 // --- Sub-components for better structure ---
@@ -137,21 +131,18 @@ export default function LiveInterviewPage() {
 
   const transcriptRef = useRef<TranscriptEntry[]>([]);
   const userVideoEl = useRef<HTMLVideoElement>(null);
-  const sessionPromiseRef = useRef<Promise<Session> | null>(null);
-  const inputAudioContextRef = useRef<AudioContext | null>(null);
+  const socketRef = useRef<WebSocket | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
   const outputAudioContextRef = useRef<AudioContext | null>(null);
-  const nextStartTimeRef = useRef(0);
   const mediaStreamRef = useRef<MediaStream | null>(null);
-  const sourceNodeRef = useRef<MediaStreamAudioSourceNode | null>(null);
   const scriptProcessorNodeRef = useRef<ScriptProcessorNode | null>(null);
-  const sourcesRef = useRef(new Set<AudioBufferSourceNode>());
-  const clientRef = useRef<GoogleGenAI | null>(null);
+  const sourceNodeRef = useRef<MediaStreamAudioSourceNode | null>(null);
   const isInitializedRef = useRef(false);
 
   const updateStatus = (msg: string) => { setStatus(msg); setError(''); };
   const updateError = (msg: string) => { setError(msg); console.error(msg); };
   
-  useEffect(() => {
+   useEffect(() => {
     let timerInterval: NodeJS.Timeout;
     const isSessionActive = isInterviewing && !status.toLowerCase().includes('closed') && !status.toLowerCase().includes('ended') && !error;
     
@@ -166,29 +157,17 @@ export default function LiveInterviewPage() {
     };
   }, [isInterviewing, status, error]);
 
-  const stopAllPlayback = useCallback(() => {
-    if (!outputAudioContextRef.current) return;
-    for (const source of sourcesRef.current.values()) { source.stop(); }
-    sourcesRef.current.clear();
-    nextStartTimeRef.current = 0;
-  }, []);
-
   const playAudio = useCallback(async (base64EncodedAudioString: string) => {
     if (!outputAudioContextRef.current) return;
     await outputAudioContextRef.current.resume();
-    nextStartTimeRef.current = Math.max(nextStartTimeRef.current, outputAudioContextRef.current.currentTime);
-    const audioBuffer = await decodeAudioData(decode(base64EncodedAudioString), outputAudioContextRef.current, 24000, 1);
+    const audioBuffer = await decodeAudioData(Buffer.from(base64EncodedAudioString, 'base64'), outputAudioContextRef.current, 24000, 1);
     const source = outputAudioContextRef.current.createBufferSource();
     source.buffer = audioBuffer;
     source.connect(outputAudioContextRef.current.destination);
-    source.addEventListener('ended', () => { sourcesRef.current.delete(source); });
-    source.start(nextStartTimeRef.current);
-    nextStartTimeRef.current += audioBuffer.duration;
-    sourcesRef.current.add(source);
+    source.start();
   }, []);
 
   const initSession = useCallback(() => {
-    if (!clientRef.current) return;
     const topic = searchParams.get('topic') || 'general software engineering';
     const role = searchParams.get('role') || 'Software Engineer';
     const company = searchParams.get('company');
@@ -204,7 +183,7 @@ export default function LiveInterviewPage() {
         systemInstruction += ` The candidate is specifically interested in ${company}, so you can tailor behavioral questions to their leadership principles if applicable (e.g., STAR method for Amazon).`;
     }
 
-    if (topic === 'Icebreaker Introduction') {
+     if (topic === 'Icebreaker Introduction') {
         systemInstruction = `Your name is Kathy, a friendly career coach at Talxify. Your goal is to conduct a short, 2-minute icebreaker session.
         Start by warmly welcoming the user.
         Ask them about their name, what city they are from, their college, their skills, and their hobbies.
@@ -217,33 +196,36 @@ export default function LiveInterviewPage() {
     }
     
     updateStatus('Initializing session...');
-    try {
-      sessionPromiseRef.current = clientRef.current.live.connect({
-        model: 'gemini-2.5-flash-native-audio-preview-09-2025',
-        callbacks: {
-          onopen: () => updateStatus('Session Opened. Ready for interview.'),
-          onmessage: async (message: LiveServerMessage) => {
-            const audio = message.serverContent?.modelTurn?.parts[0]?.inlineData;
-            if (audio?.data) { playAudio(audio.data); }
-            if (message.serverContent?.interrupted) { stopAllPlayback(); }
-            
-            let userText = '';
-            let aiText = '';
 
-            if (message.serverContent?.inputTranscription) {
-              userText = message.serverContent.inputTranscription.text;
-            }
-             if (message.serverContent?.outputTranscription) {
-              aiText = message.serverContent.outputTranscription.text;
-            }
-            setCurrentTranscription(userText || aiText);
+    const wsUrl = process.env.NODE_ENV === 'production' 
+      ? 'wss://talxify.space/api/gemini-live' 
+      : 'ws://localhost:3001/api/gemini-live';
 
-            if (message.serverContent?.turnComplete) {
-                if (userText.trim()) transcriptRef.current.push({ speaker: 'user', text: userText.trim() });
-                if (aiText.trim()) {
-                    transcriptRef.current.push({ speaker: 'ai', text: aiText.trim() });
-                    const jsonMatch = aiText.match(/<JSON_DATA>(.*?)<\/JSON_DATA>/);
-                    if (jsonMatch && jsonMatch[1]) {
+    const socket = new WebSocket(wsUrl);
+    socketRef.current = socket;
+
+    socket.onopen = () => {
+        socket.send(JSON.stringify({ type: 'config', config: { systemInstruction } }));
+    };
+
+    socket.onmessage = async (event) => {
+        const message = JSON.parse(event.data);
+        switch (message.type) {
+            case 'status':
+                updateStatus(message.data);
+                break;
+            case 'audio':
+                playAudio(message.data);
+                break;
+            case 'transcription':
+                setCurrentTranscription(message.data);
+                break;
+            case 'turnComplete':
+                 if (message.data.user) transcriptRef.current.push({ speaker: 'user', text: message.data.user });
+                 if (message.data.ai) {
+                     transcriptRef.current.push({ speaker: 'ai', text: message.data.ai });
+                     const jsonMatch = message.data.ai.match(/<JSON_DATA>(.*?)<\/JSON_DATA>/);
+                     if (jsonMatch && jsonMatch[1]) {
                         try {
                             const icebreakerData: IcebreakerData = JSON.parse(jsonMatch[1]);
                             if (user && icebreakerData.isIcebreaker) {
@@ -252,50 +234,42 @@ export default function LiveInterviewPage() {
                             }
                         } catch (e) { console.error("Failed to parse icebreaker JSON", e); }
                     }
-                }
+                 }
                 setCurrentTranscription('');
-            }
-          },
-          onerror: (e: ErrorEvent) => updateError(e.message),
-          onclose: (e: CloseEvent) => updateStatus('Session Closed.'),
-        },
-        config: {
-          responseModalities: [Modality.AUDIO, Modality.TEXT],
-          speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "Kore" } } },
-          inputAudioTranscription: {},
-          outputAudioTranscription: {},
-          systemInstruction,
-        },
-      });
-      sessionPromiseRef.current.catch((e) => updateError(e.message));
-    } catch (e: any) {
-      updateError(e.message);
-    }
-  }, [playAudio, stopAllPlayback, searchParams, user, toast]);
+                break;
+            case 'error':
+                updateError(message.data);
+                break;
+        }
+    };
+    
+    socket.onerror = (error) => {
+        console.error('WebSocket Error:', error);
+        updateError('WebSocket connection error.');
+    };
+
+    socket.onclose = () => {
+        updateStatus('Session Closed.');
+        setIsInterviewing(false);
+    };
+
+  }, [playAudio, searchParams, user, toast]);
   
   useEffect(() => {
     if (isInitializedRef.current) return;
     isInitializedRef.current = true;
     
-    const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
-    if (!apiKey) {
-      updateError("Gemini API Key is not configured.");
-      return;
-    }
-
     const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
-    if (!inputAudioContextRef.current) inputAudioContextRef.current = new AudioContext({ sampleRate: 16000 });
+    if (!audioContextRef.current) audioContextRef.current = new AudioContext({ sampleRate: 16000 });
     if (!outputAudioContextRef.current) outputAudioContextRef.current = new AudioContext({ sampleRate: 24000 });
     outputAudioContextRef.current.destination.channelCount = 1;
-    
-    if (!clientRef.current) clientRef.current = new GoogleGenAI({ apiKey });
     
     startInterview();
 
     return () => {
       mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
-      sessionPromiseRef.current?.then((session) => session.close());
-      inputAudioContextRef.current?.close();
+      socketRef.current?.close();
+      audioContextRef.current?.close();
       outputAudioContextRef.current?.close();
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -304,21 +278,24 @@ export default function LiveInterviewPage() {
 
   const startInterview = async () => {
     if (isInterviewing) return;
-    if (!inputAudioContextRef.current) { updateError("Audio context not ready."); return; }
-    await inputAudioContextRef.current.resume();
+    if (!audioContextRef.current) { updateError("Audio context not ready."); return; }
+    await audioContextRef.current.resume();
     updateStatus('Requesting device access...');
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
       mediaStreamRef.current = stream;
       if (userVideoEl.current) { userVideoEl.current.srcObject = stream; userVideoEl.current.play(); }
       
-      const inputCtx = inputAudioContextRef.current!;
+      const inputCtx = audioContextRef.current!;
       sourceNodeRef.current = inputCtx.createMediaStreamSource(stream);
       const bufferSize = 4096;
       scriptProcessorNodeRef.current = inputCtx.createScriptProcessor(bufferSize, 1, 1);
+      
       scriptProcessorNodeRef.current.onaudioprocess = (e) => {
-        if (isInterviewing && !isMuted) {
-            sessionPromiseRef.current?.then((s) => s.sendRealtimeInput({ media: createBlob(e.inputBuffer.getChannelData(0)) }));
+        if (socketRef.current?.readyState === WebSocket.OPEN && isInterviewing && !isMuted) {
+             const pcmData = e.inputBuffer.getChannelData(0);
+             const blob = createBlob(pcmData);
+             socketRef.current.send(JSON.stringify({ type: 'audio', data: blob.data }));
         }
       };
       sourceNodeRef.current.connect(scriptProcessorNodeRef.current);
@@ -348,7 +325,7 @@ export default function LiveInterviewPage() {
     mediaStreamRef.current = null;
     if (userVideoEl.current) { userVideoEl.current.srcObject = null; }
 
-    sessionPromiseRef.current?.then((s) => s.close());
+    socketRef.current?.close();
 
     if (user) {
         if (transcriptRef.current.length === 0) transcriptRef.current.push({ speaker: 'ai', text: 'Interview ended prematurely.' });
@@ -405,3 +382,4 @@ export default function LiveInterviewPage() {
     </div>
   );
 }
+
