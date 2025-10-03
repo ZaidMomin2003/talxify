@@ -1,7 +1,5 @@
 
 
-
-
 "use client"
 
 import { Button } from "@/components/ui/button";
@@ -42,9 +40,8 @@ const CloudinaryIcon = () => (
 );
 
 
-const ImagePicker = ({ value, onChange, dataAiHint, isAvatar }: { value: string, onChange: (value: string) => void, dataAiHint: string, isAvatar?: boolean }) => {
+const ImagePicker = ({ value, onChange, dataAiHint, isAvatar, isCloudinaryLoaded }: { value: string, onChange: (value: string) => void, dataAiHint: string, isAvatar?: boolean, isCloudinaryLoaded: boolean }) => {
     const { toast } = useToast();
-    const [isCloudinaryLoaded, setIsCloudinaryLoaded] = useState(false);
     const cloudinaryRef = useRef<any>();
     const widgetRef = useRef<any>();
 
@@ -83,10 +80,6 @@ const ImagePicker = ({ value, onChange, dataAiHint, isAvatar }: { value: string,
 
     return (
         <div className="space-y-3">
-            <Script 
-                src="https://upload-widget.cloudinary.com/global/all.js"
-                onLoad={() => setIsCloudinaryLoaded(true)}
-            />
             <div className={containerClasses}>
                 {value ? (
                     <Image src={value} alt="Image preview" width={isAvatar ? 128 : 400} height={isAvatar ? 128 : 210} className="w-full h-full object-cover" data-ai-hint={dataAiHint} />
@@ -153,6 +146,7 @@ export default function PortfolioPage() {
   const [portfolio, setPortfolio] = useState<Portfolio | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isCloudinaryLoaded, setIsCloudinaryLoaded] = useState(false);
   
   const [isCheckingSlug, setIsCheckingSlug] = useState(false);
   const [slugStatus, setSlugStatus] = useState<'idle' | 'available' | 'taken' | 'invalid'>('idle');
@@ -333,6 +327,11 @@ export default function PortfolioPage() {
 
 
   return (
+    <>
+    <Script 
+        src="https://upload-widget.cloudinary.com/global/all.js"
+        onLoad={() => setIsCloudinaryLoaded(true)}
+    />
     <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
       <div className="mb-8 max-w-4xl mx-auto">
         <h1 className="font-headline text-4xl font-bold">Craft Your Portfolio</h1>
@@ -390,6 +389,7 @@ export default function PortfolioPage() {
                         onChange={(value) => setPortfolio({...portfolio, personalInfo: {...portfolio.personalInfo, avatarUrl: value}})}
                         dataAiHint="person avatar"
                         isAvatar
+                        isCloudinaryLoaded={isCloudinaryLoaded}
                     />
                  </div>
                  <div>
@@ -398,6 +398,7 @@ export default function PortfolioPage() {
                         value={portfolio.personalInfo.bannerUrl}
                         onChange={(value) => setPortfolio({...portfolio, personalInfo: {...portfolio.personalInfo, bannerUrl: value}})}
                         dataAiHint="abstract banner"
+                        isCloudinaryLoaded={isCloudinaryLoaded}
                     />
                  </div>
             </div>
@@ -550,6 +551,7 @@ export default function PortfolioPage() {
                             value={item.imageUrl}
                             onChange={(value) => handleFieldChange('projects', index, 'imageUrl', value)}
                             dataAiHint="project screenshot"
+                            isCloudinaryLoaded={isCloudinaryLoaded}
                         />
                     </div>
                     <div><Label>Description</Label><Textarea value={item.description} onChange={(e) => handleFieldChange('projects', index, 'description', e.target.value)} /></div>
@@ -580,6 +582,7 @@ export default function PortfolioPage() {
                             value={item.imageUrl}
                             onChange={(value) => handleFieldChange('certificates', index, 'imageUrl', value)}
                             dataAiHint="certificate logo"
+                            isCloudinaryLoaded={isCloudinaryLoaded}
                         />
                     </div>
                 </div>
@@ -607,6 +610,7 @@ export default function PortfolioPage() {
                                 value={item.imageUrl}
                                 onChange={(value) => handleSimpleListChange('achievements', index, 'imageUrl', value)}
                                 dataAiHint="achievement award"
+                                isCloudinaryLoaded={isCloudinaryLoaded}
                             />
                         </div>
                     </div>
@@ -668,5 +672,6 @@ export default function PortfolioPage() {
         </div>
       </div>
     </main>
+    </>
   );
 }
