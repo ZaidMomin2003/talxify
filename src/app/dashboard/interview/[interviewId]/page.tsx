@@ -307,8 +307,8 @@ export default function LiveInterviewPage() {
       scriptProcessorNodeRef.current.onaudioprocess = (e) => {
         if (socketRef.current?.readyState === WebSocket.OPEN && isInterviewing && !isMuted) {
              const pcmData = e.inputBuffer.getChannelData(0);
-             const blob = createBlob(pcmData);
-             socketRef.current.send(JSON.stringify({ type: 'audio', data: blob.data }));
+             const encodedData = createBlob(pcmData);
+             socketRef.current.send(JSON.stringify({ type: 'audio', data: encodedData.data }));
         }
       };
       sourceNodeRef.current.connect(scriptProcessorNodeRef.current);
