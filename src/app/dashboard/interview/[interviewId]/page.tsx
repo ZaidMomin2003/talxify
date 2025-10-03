@@ -11,8 +11,8 @@ import type { InterviewActivity, TranscriptEntry, IcebreakerData } from '@/lib/t
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
-import { encode, decodeAudioData } from '@/lib/utils';
-
+import { GoogleGenAI, LiveServerMessage, Modality, Session } from '@google/genai';
+import { createBlob, decode, decodeAudioData } from '@/lib/utils';
 
 // --- Sub-components for better structure ---
 
@@ -26,7 +26,7 @@ const InterviewHeader = ({ status, elapsedTime }: { status: string; elapsedTime:
   return (
     <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20">
         <div className="flex items-center gap-4 bg-background/50 border rounded-full px-4 py-2 text-sm text-muted-foreground backdrop-blur-sm">
-            <span className={cn("w-2 h-2 rounded-full", status.toLowerCase().includes('progress') ? 'bg-red-500 animate-pulse' : 'bg-yellow-500')}/>
+            <span className={cn("w-2 h-2 rounded-full", status.toLowerCase().includes('recording') ? 'bg-red-500 animate-pulse' : 'bg-yellow-500')}/>
             <span>{status}</span>
             {elapsedTime > 0 && <span className="font-mono">{formatTime(elapsedTime)}</span>}
         </div>
@@ -90,13 +90,13 @@ const CaptionDisplay = ({ text }: { text: string }) => {
   );
 };
 
-const ControlBar = ({ onMuteToggle, onVideoToggle, onEndCall, isMuted, isVideoOn, isInterviewing }: {
+const ControlBar = ({ onMuteToggle, onVideoToggle, onEndCall, isMuted, isVideoOn, isRecording }: {
   onMuteToggle: () => void;
   onVideoToggle: () => void;
   onEndCall: () => void;
   isMuted: boolean;
   isVideoOn: boolean;
-  isInterviewing: boolean;
+  isRecording: boolean;
 }) => {
   return (
     <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex items-center gap-4 rounded-full bg-background/50 border p-3 backdrop-blur-md">
@@ -106,7 +106,7 @@ const ControlBar = ({ onMuteToggle, onVideoToggle, onEndCall, isMuted, isVideoOn
       <Button onClick={onVideoToggle} size="icon" className="w-14 h-14 rounded-full" variant={!isVideoOn ? 'destructive' : 'secondary'}>
         {isVideoOn ? <Video /> : <VideoOff />}
       </Button>
-      <Button onClick={onEndCall} size="icon" className="w-14 h-14 rounded-full bg-red-600 hover:bg-red-700 text-white" disabled={!isInterviewing}>
+      <Button onClick={onEndCall} size="icon" className="w-14 h-14 rounded-full bg-red-600 hover:bg-red-700 text-white" disabled={!isRecording}>
         <Phone />
       </Button>
     </div>
@@ -121,7 +121,7 @@ export default function LiveInterviewPage() {
   const { user } = useAuth();
   const { toast } = useToast();
 
-  const [isInterviewing, setIsInterviewing] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
   const [status, setStatus] = useState('Initializing...');
   const [error, setError] = useState('');
   const [currentTranscription, setCurrentTranscription] = useState('');
@@ -131,49 +131,36 @@ export default function LiveInterviewPage() {
 
   const transcriptRef = useRef<TranscriptEntry[]>([]);
   const userVideoEl = useRef<HTMLVideoElement>(null);
-  const socketRef = useRef<WebSocket | null>(null);
-  const audioContextRef = useRef<AudioContext | null>(null);
+  
+  const clientRef = useRef<GoogleGenAI | null>(null);
+  const sessionRef = useRef<Session | null>(null);
+  
+  const inputAudioContextRef = useRef<AudioContext | null>(null);
   const outputAudioContextRef = useRef<AudioContext | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
-  const isInitializedRef = useRef(false);
-
-  const [outputStream, setOutputStream] = useState<MediaStream | null>(null);
-  const audioDestinationNodeRef = useRef<MediaStreamAudioDestinationNode | null>(null);
+  const sourceNodeRef = useRef<MediaStreamAudioSourceNode | null>(null);
+  const scriptProcessorNodeRef = useRef<ScriptProcessorNode | null>(null);
+  
+  const nextStartTimeRef = useRef(0);
+  const audioSourcesRef = useRef(new Set<AudioBufferSourceNode>());
 
   const updateStatus = (msg: string) => { setStatus(msg); setError(''); };
   const updateError = (msg: string) => { setError(msg); console.error(msg); };
   
    useEffect(() => {
     let timerInterval: NodeJS.Timeout;
-    const isSessionActive = isInterviewing && !status.toLowerCase().includes('closed') && !status.toLowerCase().includes('ended') && !error;
-    
-    if (isSessionActive) {
+    if (isRecording) {
       timerInterval = setInterval(() => {
         setElapsedTime(prevTime => prevTime + 1);
       }, 1000);
     }
+    return () => clearInterval(timerInterval);
+  }, [isRecording]);
 
-    return () => {
-      clearInterval(timerInterval);
-    };
-  }, [isInterviewing, status, error]);
 
-  const playAudio = useCallback(async (base64EncodedAudioString: string) => {
-    if (!outputAudioContextRef.current) return;
-    await outputAudioContextRef.current.resume();
-    const audioBuffer = await decodeAudioData(Buffer.from(base64EncodedAudioString, 'base64'), outputAudioContextRef.current, 24000, 1);
-    const source = outputAudioContextRef.current.createBufferSource();
-    source.buffer = audioBuffer;
-    
-    source.connect(outputAudioContextRef.current.destination);
-    if (audioDestinationNodeRef.current) {
-        source.connect(audioDestinationNodeRef.current);
-    }
+  const initSession = useCallback(async () => {
+    if (!clientRef.current) return;
 
-    source.start();
-  }, []);
-
-  const initSession = useCallback(() => {
     const topic = searchParams.get('topic') || 'general software engineering';
     const role = searchParams.get('role') || 'Software Engineer';
     const company = searchParams.get('company');
@@ -201,141 +188,159 @@ export default function LiveInterviewPage() {
         `;
     }
     
-    updateStatus('Initializing session...');
+    try {
+      sessionRef.current = await clientRef.current.live.connect({
+        model: 'gemini-2.5-flash-preview-native-audio-dialog',
+        config: {
+          responseModalities: [Modality.AUDIO, Modality.TEXT],
+          speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } } },
+          inputAudioTranscription: {},
+          outputAudioTranscription: {},
+          systemInstruction,
+        },
+        callbacks: {
+          onopen: () => updateStatus('Session Opened. Ready for interview.'),
+          onmessage: async (message: LiveServerMessage) => {
+            const audio = message.serverContent?.modelTurn?.parts[0]?.inlineData;
+            if (audio) {
+                const outputCtx = outputAudioContextRef.current!;
+                nextStartTimeRef.current = Math.max(nextStartTimeRef.current, outputCtx.currentTime);
+                const audioBuffer = await decodeAudioData(decode(audio.data), outputCtx, 24000, 1);
+                const source = outputCtx.createBufferSource();
+                source.buffer = audioBuffer;
+                source.connect(outputCtx.destination);
+                source.addEventListener('ended', () => audioSourcesRef.current.delete(source));
+                source.start(nextStartTimeRef.current);
+                nextStartTimeRef.current += audioBuffer.duration;
+                audioSourcesRef.current.add(source);
+            }
 
-    const wsUrl = process.env.NODE_ENV === 'production' 
-      ? 'wss://talxify.space/api/gemini-live' 
-      : 'ws://localhost:3001/api/gemini-live';
+            if (message.serverContent?.interrupted) {
+                for (const source of audioSourcesRef.current.values()) {
+                    source.stop();
+                    audioSourcesRef.current.delete(source);
+                }
+                nextStartTimeRef.current = 0;
+            }
 
-    const socket = new WebSocket(wsUrl);
-    socketRef.current = socket;
+            let userText = message.serverContent?.inputTranscription?.text || '';
+            let aiText = message.serverContent?.outputTranscription?.text || '';
 
-    socket.onopen = () => {
-        socket.send(JSON.stringify({ type: 'config', config: { systemInstruction } }));
-    };
+            if (userText) setCurrentTranscription(userText);
+            if (aiText) setCurrentTranscription(aiText);
 
-    socket.onmessage = async (event) => {
-        const message = JSON.parse(event.data);
-        switch (message.type) {
-            case 'status':
-                updateStatus(message.data);
-                break;
-            case 'audio':
-                playAudio(message.data);
-                break;
-            case 'transcription':
-                setCurrentTranscription(message.data);
-                break;
-            case 'turnComplete':
-                 if (message.data.user) transcriptRef.current.push({ speaker: 'user', text: message.data.user });
-                 if (message.data.ai) {
-                     transcriptRef.current.push({ speaker: 'ai', text: message.data.ai });
-                     const jsonMatch = message.data.ai.match(/<JSON_DATA>(.*?)<\/JSON_DATA>/);
-                     if (jsonMatch && jsonMatch[1]) {
-                        try {
-                            const icebreakerData: IcebreakerData = JSON.parse(jsonMatch[1]);
-                            if (user && icebreakerData.isIcebreaker) {
-                                await updateUserFromIcebreaker(user.uid, icebreakerData);
-                                toast({ title: "Icebreaker Complete!", description: "Your profile has been updated."});
-                            }
-                        } catch (e) { console.error("Failed to parse icebreaker JSON", e); }
-                    }
-                 }
-                setCurrentTranscription('');
-                break;
-            case 'error':
-                updateError(message.data);
-                break;
-        }
-    };
-    
-    socket.onerror = (error) => {
-        console.error('WebSocket Error:', error);
-        updateError('WebSocket connection error.');
-    };
-
-    socket.onclose = () => {
-        updateStatus('Session Closed.');
-        setIsInterviewing(false);
-    };
-
-  }, [playAudio, searchParams, user, toast]);
-  
-  useEffect(() => {
-    if (isInitializedRef.current) return;
-    isInitializedRef.current = true;
-    
-    const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
-    if (!audioContextRef.current) audioContextRef.current = new AudioContext({ sampleRate: 16000 });
-    if (!outputAudioContextRef.current) {
-        outputAudioContextRef.current = new AudioContext({ sampleRate: 24000 });
-        audioDestinationNodeRef.current = outputAudioContextRef.current.createMediaStreamDestination();
-        setOutputStream(audioDestinationNodeRef.current.stream);
+            if (message.serverContent?.turnComplete) {
+              if (userText) transcriptRef.current.push({ speaker: 'user', text: userText });
+              if (aiText) {
+                transcriptRef.current.push({ speaker: 'ai', text: aiText });
+                 const jsonMatch = aiText.match(/<JSON_DATA>(.*?)<\/JSON_DATA>/s);
+                 if (jsonMatch && jsonMatch[1]) {
+                    try {
+                        const icebreakerData: IcebreakerData = JSON.parse(jsonMatch[1]);
+                        if (user && icebreakerData.isIcebreaker) {
+                           await updateUserFromIcebreaker(user.uid, icebreakerData);
+                           toast({ title: "Icebreaker Complete!", description: "Your profile has been updated."});
+                        }
+                    } catch (e) { console.error("Failed to parse icebreaker JSON", e); }
+                }
+              }
+              setCurrentTranscription('');
+            }
+          },
+          onerror: (e: ErrorEvent) => updateError(e.message),
+          onclose: (e: CloseEvent) => {
+            updateStatus('Session Closed: ' + e.reason);
+            setIsRecording(false);
+          },
+        },
+      });
+      startRecording();
+    } catch (e: any) {
+      console.error(e);
+      updateError(`Failed to initialize session: ${e.message}`);
     }
-    outputAudioContextRef.current.destination.channelCount = 1;
+  }, [searchParams, toast, user]);
+
+
+  useEffect(() => {
+    clientRef.current = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY });
+    inputAudioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
+    outputAudioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
     
-    startInterview();
+    initSession();
 
     return () => {
-      mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
-      socketRef.current?.close();
-      audioContextRef.current?.close();
+      stopRecording(false); // Stop recording without navigation
+      sessionRef.current?.close();
+      inputAudioContextRef.current?.close();
       outputAudioContextRef.current?.close();
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-
-  const startInterview = async () => {
-    if (isInterviewing) return;
-    if (!audioContextRef.current) { updateError("Audio context not ready."); return; }
-    await audioContextRef.current.resume();
+  const startRecording = async () => {
+    if (isRecording) return;
+    if (!inputAudioContextRef.current) { updateError("Input audio context not ready."); return; }
+    await inputAudioContextRef.current.resume();
     updateStatus('Requesting device access...');
+
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
       mediaStreamRef.current = stream;
       if (userVideoEl.current) { userVideoEl.current.srcObject = stream; userVideoEl.current.play(); }
-      
-      const inputCtx = audioContextRef.current!;
-      const source = inputCtx.createMediaStreamSource(stream);
-      const processor = inputCtx.createScriptProcessor(4096, 1, 1);
 
-      source.connect(processor);
-      processor.connect(inputCtx.destination);
+      updateStatus('Microphone access granted. Starting capture...');
+
+      const inputCtx = inputAudioContextRef.current!;
+      sourceNodeRef.current = inputCtx.createMediaStreamSource(stream);
       
-      processor.onaudioprocess = (e) => {
-        if (socketRef.current?.readyState === WebSocket.OPEN && isInterviewing && !isMuted) {
-             const pcmData = e.inputBuffer.getChannelData(0);
-             const encodedData = encode(new Uint8Array(pcmData.buffer));
-             socketRef.current.send(JSON.stringify({ type: 'audio', data: encodedData }));
-        }
+      const bufferSize = 256;
+      scriptProcessorNodeRef.current = inputCtx.createScriptProcessor(bufferSize, 1, 1);
+      
+      scriptProcessorNodeRef.current.onaudioprocess = (audioProcessingEvent) => {
+        if (!isRecording || isMuted || !sessionRef.current) return;
+        const inputBuffer = audioProcessingEvent.inputBuffer;
+        const pcmData = inputBuffer.getChannelData(0);
+        sessionRef.current.sendRealtimeInput({ media: createBlob(pcmData) });
       };
-      
-      setIsInterviewing(true);
-      updateStatus('Interview in progress...');
-      initSession();
+
+      sourceNodeRef.current.connect(scriptProcessorNodeRef.current);
+      scriptProcessorNodeRef.current.connect(inputCtx.destination);
+
+      setIsRecording(true);
+      updateStatus('🔴 Recording... Speak now.');
     } catch (err: any) {
-      updateError(`Error starting interview: ${err.message}`);
-      await endInterview();
+      updateError(`Error starting recording: ${err.message}`);
+      await stopRecording();
     }
   };
 
-  const endInterview = async () => {
-    if (!isInterviewing && !mediaStreamRef.current) { router.push('/dashboard'); return; }
+  const stopRecording = async (shouldNavigate = true) => {
+    if (!isRecording && !mediaStreamRef.current) { 
+        if (shouldNavigate) router.push('/dashboard'); 
+        return; 
+    }
 
-    setIsInterviewing(false);
-    updateStatus('Interview ended. Navigating to results...');
+    setIsRecording(false);
+    if(shouldNavigate) updateStatus('Interview ended. Navigating to results...');
 
-    const interviewId = params.interviewId as string;
-    router.push(`/dashboard/interview/${interviewId}/results`);
+    if (scriptProcessorNodeRef.current && sourceNodeRef.current) {
+      scriptProcessorNodeRef.current.disconnect();
+      sourceNodeRef.current.disconnect();
+    }
+    scriptProcessorNodeRef.current = null;
+    sourceNodeRef.current = null;
 
     mediaStreamRef.current?.getTracks().forEach((t) => t.stop());
     mediaStreamRef.current = null;
     if (userVideoEl.current) { userVideoEl.current.srcObject = null; }
 
-    socketRef.current?.close();
+    sessionRef.current?.close();
 
-    if (user) {
+    if (shouldNavigate && user) {
+        const interviewId = params.interviewId as string;
+        router.push(`/dashboard/interview/${interviewId}/results`);
+
         if (transcriptRef.current.length === 0) transcriptRef.current.push({ speaker: 'ai', text: 'Interview ended prematurely.' });
         const activity: InterviewActivity = {
             id: interviewId,
@@ -376,17 +381,17 @@ export default function LiveInterviewPage() {
         <div className="absolute inset-0 thermal-gradient-bg z-0"/>
         <InterviewHeader status={error || status} elapsedTime={elapsedTime}/>
         <main className="flex-1 relative flex items-center justify-center">
-            <AIPanel isInterviewing={isInterviewing} />
+            <AIPanel isInterviewing={isRecording} />
         </main>
         <UserVideo videoRef={userVideoEl} isVideoOn={isVideoOn} />
         <CaptionDisplay text={currentTranscription}/>
         <ControlBar 
             onMuteToggle={toggleMute}
             onVideoToggle={toggleVideo}
-            onEndCall={endInterview}
+            onEndCall={stopRecording}
             isMuted={isMuted}
             isVideoOn={isVideoOn}
-            isInterviewing={isInterviewing}
+            isRecording={isRecording}
         />
     </div>
   );
