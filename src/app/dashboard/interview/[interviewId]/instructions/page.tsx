@@ -1,25 +1,35 @@
 
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useSearchParams, useParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ShieldCheck, MessageSquare, Bot, ArrowRight, Video } from 'lucide-react';
+import { ShieldCheck, MessageSquare, Bot, ArrowRight, Video, Building, BarChartHorizontal } from 'lucide-react';
 import Link from 'next/link';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export default function InterviewInstructionsPage() {
     const searchParams = useSearchParams();
     const params = useParams();
-    const router = useRouter();
     
     const interviewId = params.interviewId as string;
     const topic = searchParams.get('topic') || 'Not specified';
     const role = searchParams.get('role');
     const level = searchParams.get('level');
-    const company = searchParams.get('company');
+    
+    const [company, setCompany] = useState(searchParams.get('company') || '');
+    const [difficulty, setDifficulty] = useState('moderate');
 
-    const startUrl = `/dashboard/interview/${interviewId}?${searchParams.toString()}`;
+    const startUrl = new URLSearchParams({
+        topic,
+        role: role || '',
+        level: level || '',
+        company,
+        difficulty,
+    });
 
     return (
         <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
@@ -41,8 +51,26 @@ export default function InterviewInstructionsPage() {
                                 <li><strong className="text-foreground">Topic:</strong> {topic}</li>
                                 {role && <li><strong className="text-foreground">Role:</strong> {role}</li>}
                                 {level && <li><strong className="text-foreground">Level:</strong> {level}</li>}
-                                {company && <li><strong className="text-foreground">Company:</strong> {company}</li>}
                             </ul>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
+                                <div>
+                                    <Label htmlFor="company" className="flex items-center gap-2 mb-2"><Building className="w-4 h-4"/> Target Company (Optional)</Label>
+                                    <Input id="company" placeholder="e.g., Google, Amazon" value={company} onChange={(e) => setCompany(e.target.value)} />
+                                </div>
+                                <div>
+                                     <Label htmlFor="difficulty" className="flex items-center gap-2 mb-2"><BarChartHorizontal className="w-4 h-4"/> Difficulty</Label>
+                                     <Select value={difficulty} onValueChange={setDifficulty}>
+                                        <SelectTrigger id="difficulty">
+                                            <SelectValue placeholder="Select difficulty" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="easy">Easy</SelectItem>
+                                            <SelectItem value="moderate">Moderate</SelectItem>
+                                            <SelectItem value="difficult">Difficult</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
                         </div>
 
                          <div className="space-y-4">
@@ -89,7 +117,7 @@ export default function InterviewInstructionsPage() {
 
                         <div className="text-center pt-4">
                             <Button asChild size="lg">
-                                <Link href={startUrl}>Start Interview</Link>
+                                <Link href={`/dashboard/interview/${interviewId}?${startUrl.toString()}`}>Start Interview</Link>
                             </Button>
                         </div>
                     </CardContent>
