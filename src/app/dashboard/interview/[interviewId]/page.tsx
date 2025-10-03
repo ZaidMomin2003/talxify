@@ -153,16 +153,22 @@ export default function LiveInterviewPage() {
   
   useEffect(() => {
     let timerInterval: NodeJS.Timeout;
-    if (isInterviewing) {
-      setElapsedTime(0); // Reset timer
+    const isSessionActive = isInterviewing && !status.toLowerCase().includes('closed') && !status.toLowerCase().includes('ended') && !error;
+    
+    if (isSessionActive) {
       timerInterval = setInterval(() => {
         setElapsedTime(prevTime => prevTime + 1);
       }, 1000);
+    } else {
+        if (elapsedTime === 0 && isInterviewing) {
+            setElapsedTime(0); // Ensure timer starts at 0 when interview begins
+        }
     }
+
     return () => {
       clearInterval(timerInterval);
     };
-  }, [isInterviewing]);
+  }, [isInterviewing, status, error, elapsedTime]);
 
   const stopAllPlayback = useCallback(() => {
     if (!outputAudioContextRef.current) return;
