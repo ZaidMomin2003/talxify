@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { encode, decodeAudioData, createBlob } from '@/lib/utils';
+import LiveAudioVisuals3D from '@/components/live-audio-visuals-3d';
 
 
 // --- Sub-components for better structure ---
@@ -26,7 +27,7 @@ const InterviewHeader = ({ status, elapsedTime }: { status: string; elapsedTime:
   return (
     <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20">
         <div className="flex items-center gap-4 bg-background/50 border rounded-full px-4 py-2 text-sm text-muted-foreground backdrop-blur-sm">
-            <span className={cn("w-2 h-2 rounded-full", status.includes('progress') ? 'bg-red-500 animate-pulse' : 'bg-yellow-500')}/>
+            <span className={cn("w-2 h-2 rounded-full", status.toLowerCase().includes('progress') ? 'bg-red-500 animate-pulse' : 'bg-yellow-500')}/>
             <span>{status}</span>
             {elapsedTime > 0 && <span className="font-mono">{formatTime(elapsedTime)}</span>}
         </div>
@@ -139,6 +140,9 @@ export default function LiveInterviewPage() {
   const sourceNodeRef = useRef<MediaStreamAudioSourceNode | null>(null);
   const isInitializedRef = useRef(false);
 
+  const [outputStream, setOutputStream] = useState<MediaStream | null>(null);
+  const audioDestinationNodeRef = useRef<MediaStreamAudioDestinationNode | null>(null);
+
   const updateStatus = (msg: string) => { setStatus(msg); setError(''); };
   const updateError = (msg: string) => { setError(msg); console.error(msg); };
   
@@ -163,7 +167,13 @@ export default function LiveInterviewPage() {
     const audioBuffer = await decodeAudioData(Buffer.from(base64EncodedAudioString, 'base64'), outputAudioContextRef.current, 24000, 1);
     const source = outputAudioContextRef.current.createBufferSource();
     source.buffer = audioBuffer;
+    
+    // Connect to both destination for playback and the node for visualization
     source.connect(outputAudioContextRef.current.destination);
+    if (audioDestinationNodeRef.current) {
+        source.connect(audioDestinationNodeRef.current);
+    }
+
     source.start();
   }, []);
 
@@ -261,7 +271,11 @@ export default function LiveInterviewPage() {
     
     const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
     if (!audioContextRef.current) audioContextRef.current = new AudioContext({ sampleRate: 16000 });
-    if (!outputAudioContextRef.current) outputAudioContextRef.current = new AudioContext({ sampleRate: 24000 });
+    if (!outputAudioContextRef.current) {
+        outputAudioContextRef.current = new AudioContext({ sampleRate: 24000 });
+        audioDestinationNodeRef.current = outputAudioContextRef.current.createMediaStreamDestination();
+        setOutputStream(audioDestinationNodeRef.current.stream);
+    }
     outputAudioContextRef.current.destination.channelCount = 1;
     
     startInterview();
@@ -364,7 +378,8 @@ export default function LiveInterviewPage() {
   }
 
   return (
-    <div className="relative flex flex-col h-screen w-full p-4 sm:p-6 bg-background thermal-gradient-bg">
+    <div className="relative flex flex-col h-screen w-full p-4 sm:p-6 bg-background">
+        <LiveAudioVisuals3D inputStream={mediaStreamRef.current} outputStream={outputStream} />
         <InterviewHeader status={error || status} elapsedTime={elapsedTime}/>
         <main className="flex-1 relative flex items-center justify-center">
             <AIPanel isInterviewing={isInterviewing} />
@@ -382,4 +397,3 @@ export default function LiveInterviewPage() {
     </div>
   );
 }
-
