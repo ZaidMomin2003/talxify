@@ -11,7 +11,7 @@ import type { InterviewActivity, TranscriptEntry, IcebreakerData } from '@/lib/t
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
-import { encode, decodeAudioData, createBlob } from '@/lib/utils';
+import { encode, decodeAudioData } from '@/lib/utils';
 
 
 // --- Sub-components for better structure ---
@@ -135,8 +135,6 @@ export default function LiveInterviewPage() {
   const audioContextRef = useRef<AudioContext | null>(null);
   const outputAudioContextRef = useRef<AudioContext | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
-  const scriptProcessorNodeRef = useRef<ScriptProcessorNode | null>(null);
-  const sourceNodeRef = useRef<MediaStreamAudioSourceNode | null>(null);
   const isInitializedRef = useRef(false);
 
   const [outputStream, setOutputStream] = useState<MediaStream | null>(null);
@@ -167,7 +165,6 @@ export default function LiveInterviewPage() {
     const source = outputAudioContextRef.current.createBufferSource();
     source.buffer = audioBuffer;
     
-    // Connect to both destination for playback and the node for visualization
     source.connect(outputAudioContextRef.current.destination);
     if (audioDestinationNodeRef.current) {
         source.connect(audioDestinationNodeRef.current);
@@ -300,19 +297,19 @@ export default function LiveInterviewPage() {
       if (userVideoEl.current) { userVideoEl.current.srcObject = stream; userVideoEl.current.play(); }
       
       const inputCtx = audioContextRef.current!;
-      sourceNodeRef.current = inputCtx.createMediaStreamSource(stream);
-      const bufferSize = 4096;
-      scriptProcessorNodeRef.current = inputCtx.createScriptProcessor(bufferSize, 1, 1);
+      const source = inputCtx.createMediaStreamSource(stream);
+      const processor = inputCtx.createScriptProcessor(4096, 1, 1);
+
+      source.connect(processor);
+      processor.connect(inputCtx.destination);
       
-      scriptProcessorNodeRef.current.onaudioprocess = (e) => {
+      processor.onaudioprocess = (e) => {
         if (socketRef.current?.readyState === WebSocket.OPEN && isInterviewing && !isMuted) {
              const pcmData = e.inputBuffer.getChannelData(0);
-             const encodedData = createBlob(pcmData);
-             socketRef.current.send(JSON.stringify({ type: 'audio', data: encodedData.data }));
+             const encodedData = encode(new Uint8Array(pcmData.buffer));
+             socketRef.current.send(JSON.stringify({ type: 'audio', data: encodedData }));
         }
       };
-      sourceNodeRef.current.connect(scriptProcessorNodeRef.current);
-      scriptProcessorNodeRef.current.connect(inputCtx.destination);
       
       setIsInterviewing(true);
       updateStatus('Interview in progress...');
@@ -332,8 +329,6 @@ export default function LiveInterviewPage() {
     const interviewId = params.interviewId as string;
     router.push(`/dashboard/interview/${interviewId}/results`);
 
-    scriptProcessorNodeRef.current?.disconnect();
-    sourceNodeRef.current?.disconnect();
     mediaStreamRef.current?.getTracks().forEach((t) => t.stop());
     mediaStreamRef.current = null;
     if (userVideoEl.current) { userVideoEl.current.srcObject = null; }
