@@ -162,8 +162,8 @@ export default function AppHero() {
 
             <motion.div variants={itemVariants} className="mb-8 flex flex-wrap items-center justify-center gap-2 lg:justify-start">
               <span className="text-xs font-medium text-gray-400">Powered by:</span>
-                <div className="flex items-center gap-1 text-sm"><div className="w-2 h-2 rounded-full bg-blue-400"/>Gemini</div>
-                <div className="flex items-center gap-1 text-sm"><div className="w-2 h-2 rounded-full bg-red-400"/>Deepgram</div>
+                <div className="flex items-center gap-1 text-sm"><div className="w-2 h-2 rounded-full bg-blue-400"/>Gemini Native Audio</div>
+                <div className="flex items-center gap-1 text-sm"><div className="w-2 h-2 rounded-full bg-green-400"/>LiveKit</div>
                 <div className="flex items-center gap-1 text-sm"><div className="w-2 h-2 rounded-full bg-yellow-400"/>Genkit</div>
             </motion.div>
           </div>
