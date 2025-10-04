@@ -74,16 +74,17 @@ const generateSyllabusFlow = ai.defineFlow(
   async (input) => {
     const { output } = await prompt(input);
     
+    // Robust fallback mechanism
     if (!output || !output.syllabus || output.syllabus.length < 60) {
-        console.error("Syllabus generation resulted in an incomplete plan.", output);
-        // Fallback mechanism to ensure a valid 60-day plan is always returned
+        console.error("Syllabus generation resulted in an incomplete plan. Applying fallback.", output);
+        
         const fallbackSyllabus: SyllabusDay[] = Array.from({ length: 60 }, (_, i) => ({
             day: i + 1,
             topic: `Review Day ${i + 1}: Core CS Fundamentals`,
             description: "Revisiting foundational concepts to build a strong base."
         }));
         
-        // If some days were generated, merge them with the fallback
+        // If some days were generated, merge them with the fallback to preserve as much as possible
         if(output?.syllabus) {
             output.syllabus.forEach(day => {
                 if (day.day >= 1 && day.day <= 60) {
@@ -95,13 +96,13 @@ const generateSyllabusFlow = ai.defineFlow(
         return { syllabus: fallbackSyllabus };
     }
 
-    // Ensure syllabus is sorted and day numbers are correct
+    // Ensure syllabus from AI is sorted and day numbers are correct, just in case
     const finalSyllabus = output.syllabus
       .sort((a, b) => a.day - b.day)
       .slice(0, 60)
       .map((day, index) => ({
         ...day,
-        day: index + 1,
+        day: index + 1, // Re-assign day number to ensure it's sequential
       }));
 
     return { syllabus: finalSyllabus };
