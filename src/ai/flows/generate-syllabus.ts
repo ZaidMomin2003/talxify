@@ -31,20 +31,17 @@ const GenerateSyllabusOutputSchema = z.object({
 });
 export type GenerateSyllabusOutput = z.infer<typeof GenerateSyllabusOutputSchema>;
 
-const ChunkSyllabusInputSchema = z.object({
-    roles: z.string(),
-    companies: z.string(),
-    count: z.number().int(),
-    startDay: z.number().int(),
-});
+export async function generateSyllabus(input: GenerateSyllabusInput): Promise<GenerateSyllabusOutput> {
+  return generateSyllabusFlow(input);
+}
 
 const prompt = ai.definePrompt({
   name: 'generateSyllabusPrompt',
-  input: {schema: ChunkSyllabusInputSchema},
+  input: {schema: GenerateSyllabusInputSchema},
   output: {schema: GenerateSyllabusOutputSchema},
   config: {
     model: 'googleai/gemini-1.5-pro-latest',
-    safetySettings: [
+     safetySettings: [
         {
             category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
             threshold: 'BLOCK_NONE',
@@ -52,23 +49,20 @@ const prompt = ai.definePrompt({
     ],
   },
   prompt: `You are an expert career coach and technical interviewer who has worked at FAANG companies.
-  Your task is to generate a portion of a structured interview preparation syllabus for a candidate.
+  Your task is to generate a structured 60-day interview preparation syllabus for a candidate.
 
   **Candidate Profile:**
   - Roles: {{roles}}
   - Target Companies: {{companies}}
 
   **Instructions:**
-  1.  Generate a plan for **exactly {{count}} days**, starting from day {{startDay}}.
-  2.  The plan MUST be tailored to the types of questions and priorities of the specified companies.
-  3.  Structure the topics logically.
-  4.  For each day, provide the day number, a specific topic, and a brief, encouraging one-sentence description of the goal.
+  1.  Generate a plan for **exactly 60 days**.
+  2.  The plan MUST be tailored to the types of questions and priorities of the specified companies. For example, if "Google" is a target, include more algorithm and data structure topics. If "Netflix" is included, add system design for scalability.
+  3.  Structure the topics logically, starting with fundamentals and progressing to more advanced concepts.
+  4.  For each day, provide the day number, a specific, actionable topic (e.g., "Two Pointers & Sliding Window"), and a brief, encouraging one-sentence description of the goal for the day.
+  5.  Ensure the response contains exactly 60 entries in the syllabus array.
   `,
 });
-
-export async function generateSyllabus(input: GenerateSyllabusInput): Promise<GenerateSyllabusOutput> {
-  return generateSyllabusFlow(input);
-}
 
 
 const generateSyllabusFlow = ai.defineFlow(
@@ -78,81 +72,37 @@ const generateSyllabusFlow = ai.defineFlow(
     outputSchema: GenerateSyllabusOutputSchema,
   },
   async (input) => {
-    const totalDays = 60;
-    const chunkSize = 15; // Reduced chunk size for better reliability
-    let allDays: SyllabusDay[] = [];
-
-    const chunkPromises = [];
-    for (let i = 0; i < Math.ceil(totalDays / chunkSize); i++) {
-        const startDay = i * chunkSize + 1;
-        const count = Math.min(chunkSize, totalDays - startDay + 1);
+    const { output } = await prompt(input);
+    
+    if (!output || !output.syllabus || output.syllabus.length < 60) {
+        console.error("Syllabus generation resulted in an incomplete plan.", output);
+        // Fallback mechanism to ensure a valid 60-day plan is always returned
+        const fallbackSyllabus: SyllabusDay[] = Array.from({ length: 60 }, (_, i) => ({
+            day: i + 1,
+            topic: `Review Day ${i + 1}: Core CS Fundamentals`,
+            description: "Revisiting foundational concepts to build a strong base."
+        }));
         
-        chunkPromises.push(
-            prompt({
-                ...input,
-                count: count,
-                startDay: startDay,
-            })
-        );
-    }
-    
-    try {
-        const results = await Promise.all(chunkPromises);
-        results.forEach(({ output }) => {
-            if (output && output.syllabus) {
-                allDays = allDays.concat(output.syllabus);
-            }
-        });
-    } catch(error) {
-        console.error(`Syllabus generation failed during parallel execution:`, error);
-        // Fallback to sequential generation if parallel fails
-        for (let i = 0; i < Math.ceil(totalDays / chunkSize); i++) {
-            const startDay = i * chunkSize + 1;
-            const count = Math.min(chunkSize, totalDays - startDay + 1);
-             try {
-                const { output } = await prompt({ ...input, count, startDay });
-                if (output && output.syllabus) {
-                    allDays = allDays.concat(output.syllabus);
+        // If some days were generated, merge them with the fallback
+        if(output?.syllabus) {
+            output.syllabus.forEach(day => {
+                if (day.day >= 1 && day.day <= 60) {
+                    fallbackSyllabus[day.day - 1] = day;
                 }
-            } catch (e) {
-                 console.error(`Syllabus generation failed for chunk starting at day ${startDay}:`, e);
-            }
+            });
         }
+
+        return { syllabus: fallbackSyllabus };
     }
-    
-    // Ensure the output contains exactly 60 days and days are numbered correctly.
-    const finalSyllabus = allDays
+
+    // Ensure syllabus is sorted and day numbers are correct
+    const finalSyllabus = output.syllabus
       .sort((a, b) => a.day - b.day)
-      .slice(0, totalDays)
+      .slice(0, 60)
       .map((day, index) => ({
         ...day,
         day: index + 1,
       }));
-    
-     // Fallback to ensure we always have 60 days if generation is partially or fully incomplete
-    if (finalSyllabus.length < totalDays) {
-        const remainingDays = totalDays - finalSyllabus.length;
-        const lastDay = finalSyllabus.length > 0 ? finalSyllabus[finalSyllabus.length - 1].day : 0;
-        const fallbackTopics = [
-            "Review: Data Structures",
-            "Practice: Algorithms",
-            "System Design: Scalability",
-            "Behavioral Interview Practice",
-            "Review: Company-specific Questions"
-        ];
-        for (let i = 0; i < remainingDays; i++) {
-            finalSyllabus.push({
-                day: lastDay + i + 1,
-                topic: fallbackTopics[i % fallbackTopics.length],
-                description: "Reviewing key concepts and practicing problems."
-            });
-        }
-    }
-
-
-    if (finalSyllabus.length === 0) {
-        throw new Error(`Syllabus generation failed completely. Please try again.`);
-    }
 
     return { syllabus: finalSyllabus };
   }

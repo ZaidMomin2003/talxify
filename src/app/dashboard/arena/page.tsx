@@ -126,50 +126,31 @@ export default function ArenaPage() {
             status[day.day] = { learn: false, quiz: false, interview: false };
         });
 
-        const dayTopicMap = new Map(syllabus.map(d => [d.day, d.topic.toLowerCase()]));
+        // A map to quickly find a day by its topic, case-insensitive
+        const dayTopicMap = new Map(syllabus.map(d => [d.topic.toLowerCase(), d.day]));
 
         activity.forEach(act => {
             const actTopic = act.details.topic.toLowerCase();
             let matchedDay = -1;
 
-            if (act.type === 'quiz' && act.details.difficulty === 'Izanami Mode') {
-                 // Izanami quizzes are associated with a single day's topic
-                for (const [dayNum, dayTopic] of dayTopicMap.entries()) {
-                    if (dayTopic.includes(actTopic) || actTopic.includes(dayTopic)) {
-                        matchedDay = dayNum;
-                        break;
-                    }
-                }
-            } else if (act.type === 'interview') {
-                 // Interviews are more specific
-                 for (const [dayNum, dayTopic] of dayTopicMap.entries()) {
-                    if (actTopic.includes('icebreaker') && dayNum === 1) {
-                         matchedDay = 1;
-                         break;
-                    }
-                    if (actTopic.includes('final') && dayNum === 60) {
-                        matchedDay = 60;
-                        break;
-                    }
-                    if (dayTopic === actTopic) {
-                        matchedDay = dayNum;
-                        break;
-                    }
+            // Direct topic match
+            if (dayTopicMap.has(actTopic)) {
+                matchedDay = dayTopicMap.get(actTopic)!;
+            } else {
+                 // Fallback for partial matches if needed, can be complex
+                 // For now, we rely on exact topic matches for simplicity and reliability
+                 if (act.type === 'interview') {
+                     if (actTopic.includes('icebreaker') && dayTopicMap.has('icebreaker introduction')) matchedDay = dayTopicMap.get('icebreaker introduction')!;
+                     if (actTopic.includes('final') && dayTopicMap.has('final comprehensive review')) matchedDay = dayTopicMap.get('final comprehensive review')!;
                  }
-            } else if (act.type === 'note-generation') {
-                for (const [dayNum, dayTopic] of dayTopicMap.entries()) {
-                    if (dayTopic === actTopic) {
-                        matchedDay = dayNum;
-                        break;
-                    }
-                }
             }
-
+            
             if (matchedDay !== -1 && status[matchedDay]) {
                  if (act.type === 'note-generation') status[matchedDay].learn = true;
                  if (act.type === 'quiz') status[matchedDay].quiz = true;
                  if (act.type === 'interview') {
                     const interviewAct = act as InterviewActivity;
+                    // Check if feedback is still pending to determine 'in progress'
                     if (interviewAct.feedback === "Feedback will be generated on the results page.") {
                          status[matchedDay].isInterviewInProgress = true;
                     } else {
@@ -186,10 +167,14 @@ export default function ArenaPage() {
             if (!dayStatus) continue;
 
             const isFinalDay = i === 60;
-            const learnRequired = !isFinalDay;
-            const interviewRequired = isFinalDay || ((i - 1) % 3 === 0);
+            // Day 1 has a special interview, no 'learn' task
+            const learnRequired = !isFinalDay && i !== 1;
+            // Every 3rd day, starting from Day 1, plus the final day has an interview
+            const interviewRequired = isFinalDay || (i - 1) % 3 === 0;
             
-            const isDayComplete = dayStatus.quiz && (!learnRequired || dayStatus.learn) && (!interviewRequired || dayStatus.interview);
+            const isDayComplete = dayStatus.quiz && 
+                                  (!learnRequired || dayStatus.learn) && 
+                                  (!interviewRequired || dayStatus.interview);
 
             if (isDayComplete) {
                 lastCompletedDay = i;
@@ -203,18 +188,19 @@ export default function ArenaPage() {
 
 
     const handleStartChallenge = (day: number, type: 'learn' | 'quiz' | 'interview') => {
-        const topic = syllabus.find(d => d.day === day)?.topic || 'JavaScript';
-        const isFinalDay = day === 60;
+        const topic = syllabus.find(d => d.day === day)?.topic;
+        if (!topic) {
+             console.error(`No topic found for day ${day}`);
+             return;
+        }
 
         if (type === 'learn') {
             router.push(`/dashboard/arena/notes?topic=${encodeURIComponent(topic)}`);
         } else if (type === 'quiz') {
             router.push(`/dashboard/coding-gym?topic=${encodeURIComponent(topic)}`);
         } else if (type === 'interview') {
-            const isDay1 = day === 1;
-            const interviewTopic = isDay1 ? 'Icebreaker Introduction' : (isFinalDay ? 'Final Comprehensive Review' : topic);
             const meetingId = user!.uid + "_" + Date.now();
-            const params = new URLSearchParams({ topic: interviewTopic });
+            const params = new URLSearchParams({ topic });
             router.push(`/dashboard/interview/${meetingId}/instructions?${params.toString()}`);
         }
         setDialogOpen(null);
@@ -235,6 +221,7 @@ export default function ArenaPage() {
     const { plan, endDate } = userData?.subscription || {};
     const isExpired = endDate ? new Date() > new Date(endDate) : false;
     const isFreePlan = !plan || plan === 'free' || isExpired;
+    // Allow free users to access Day 1. If they have completed Day 1 (completedDays >= 1), they hit the paywall.
     const trialExpired = isFreePlan && completedDays >= 1;
 
   return (
@@ -260,6 +247,8 @@ export default function ArenaPage() {
                     const isCompleted = day.day <= completedDays;
                     const dayStatus = dailyTaskStatus[day.day] || { learn: false, quiz: false, interview: false };
                     const isFinalDay = day.day === 60;
+                    const isDay1 = day.day === 1;
+                    const learnRequired = !isFinalDay && !isDay1;
                     const interviewIsScheduled = isFinalDay || (day.day - 1) % 3 === 0;
 
                     return (
@@ -302,7 +291,7 @@ export default function ArenaPage() {
                                     </DialogDescriptionComponent>
                                 </DialogHeader>
                                 <div className="my-6 space-y-4">
-                                    {!isFinalDay && (
+                                    {learnRequired && (
                                         <div className="flex items-center gap-4 p-3 rounded-lg bg-muted/50">
                                             {dayStatus.learn ? <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" /> : <BookOpen className="h-5 w-5 text-yellow-500 flex-shrink-0" />}
                                             <div className="flex-1">
@@ -333,8 +322,8 @@ export default function ArenaPage() {
                                     <div className="flex items-center gap-4 p-3 rounded-lg bg-muted/50">
                                         {dayStatus.interview ? <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" /> : <Briefcase className="h-5 w-5 text-green-500 flex-shrink-0" />}
                                         <div className="flex-1">
-                                            <p className="font-semibold text-foreground">{day.day === 1 ? "Icebreaker Interview" : isFinalDay ? "Final Comprehensive Interview" : "Take a Mock Interview"}</p>
-                                            <p className="text-xs text-muted-foreground">{day.day === 1 ? "A friendly chat to get to know you." : (isFinalDay ? "A 20-minute interview on all learned concepts." : "Practice your interview skills.")}</p>
+                                            <p className="font-semibold text-foreground">{isDay1 ? "Icebreaker Interview" : isFinalDay ? "Final Comprehensive Interview" : "Take a Mock Interview"}</p>
+                                            <p className="text-xs text-muted-foreground">{isDay1 ? "A friendly chat to get to know you." : (isFinalDay ? "A 20-minute interview on all learned concepts." : "Practice your interview skills.")}</p>
                                         </div>
                                         <div className="flex flex-col sm:flex-row gap-2">
                                              {dayStatus.interview && (

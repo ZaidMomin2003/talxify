@@ -81,15 +81,15 @@ export default function OnboardingPage() {
   }
 
   const handleAddCustomRole = () => {
-    if (customRole && !formData.roles.includes(customRole)) {
-        setFormData(prev => ({ ...prev, roles: [...prev.roles, customRole] }));
+    if (customRole.trim() && !formData.roles.includes(customRole.trim())) {
+        setFormData(prev => ({ ...prev, roles: [...prev.roles, customRole.trim()] }));
         setCustomRole('');
     }
   };
 
   const handleAddCustomCompany = () => {
-    if (customCompany && !formData.companies.includes(customCompany)) {
-        setFormData(prev => ({ ...prev, companies: [...prev.companies, customCompany] }));
+    if (customCompany.trim() && !formData.companies.includes(customCompany.trim())) {
+        setFormData(prev => ({ ...prev, companies: [...prev.companies, customCompany.trim()] }));
         setCustomCompany('');
     }
   };
@@ -100,6 +100,11 @@ export default function OnboardingPage() {
       return;
     }
     
+    if (formData.roles.length === 0 || formData.companies.length === 0) {
+        toast({ title: "Information Missing", description: "Please select at least one role and one company.", variant: "destructive" });
+        return;
+    }
+
     setIsProcessing(true);
     setStep(prev => prev + 1); // Move to loading screen
 
@@ -214,7 +219,7 @@ export default function OnboardingPage() {
     <motion.div key={4} custom={direction} variants={variants} initial="enter" animate="center" exit="exit" transition={{ type: 'tween' }} className="w-full text-center">
         <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto mb-6" />
         <h2 className="text-3xl font-bold font-headline">Crafting Your Plan...</h2>
-        <p className="text-muted-foreground mt-2">Our AI is generating a personalized 30-day syllabus just for you.</p>
+        <p className="text-muted-foreground mt-2">Our AI is generating a personalized 60-day syllabus just for you.</p>
     </motion.div>
   ];
 
