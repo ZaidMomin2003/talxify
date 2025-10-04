@@ -79,32 +79,60 @@ const generateSyllabusFlow = ai.defineFlow(
   },
   async (input) => {
     const totalDays = 60;
-    const chunkSize = 20;
+    const chunkSize = 15; // Reduced chunk size for better reliability
     let allDays: SyllabusDay[] = [];
 
+    const chunkPromises = [];
     for (let i = 0; i < Math.ceil(totalDays / chunkSize); i++) {
         const startDay = i * chunkSize + 1;
+        const count = Math.min(chunkSize, totalDays - startDay + 1);
         
-        try {
-            const { output } = await prompt({
+        chunkPromises.push(
+            prompt({
                 ...input,
-                count: chunkSize,
+                count: count,
                 startDay: startDay,
-            });
-
+            })
+        );
+    }
+    
+    try {
+        const results = await Promise.all(chunkPromises);
+        results.forEach(({ output }) => {
             if (output && output.syllabus) {
                 allDays = allDays.concat(output.syllabus);
-            } else {
-                 console.error(`Syllabus generation returned no output for chunk starting at day ${startDay}.`);
             }
-        } catch(error) {
-             console.error(`Syllabus generation failed for chunk starting at day ${startDay}:`, error);
+        });
+    } catch(error) {
+        console.error(`Syllabus generation failed during parallel execution:`, error);
+        // Fallback to sequential generation if parallel fails
+        for (let i = 0; i < Math.ceil(totalDays / chunkSize); i++) {
+            const startDay = i * chunkSize + 1;
+            const count = Math.min(chunkSize, totalDays - startDay + 1);
+             try {
+                const { output } = await prompt({ ...input, count, startDay });
+                if (output && output.syllabus) {
+                    allDays = allDays.concat(output.syllabus);
+                }
+            } catch (e) {
+                 console.error(`Syllabus generation failed for chunk starting at day ${startDay}:`, e);
+            }
         }
     }
     
-    // Fallback to ensure we always have 60 days.
-    if (allDays.length < totalDays) {
-        const remainingDays = totalDays - allDays.length;
+    // Ensure the output contains exactly 60 days and days are numbered correctly.
+    const finalSyllabus = allDays
+      .sort((a, b) => a.day - b.day)
+      .slice(0, totalDays)
+      .map((day, index) => ({
+        ...day,
+        day: index + 1,
+      }));
+    
+     // Fallback to ensure we always have 60 days if generation is partially or fully incomplete
+    if (finalSyllabus.length < totalDays) {
+        const remainingDays = totalDays - finalSyllabus.length;
+        const lastDay = finalSyllabus.length > 0 ? finalSyllabus[finalSyllabus.length - 1].day : 0;
         const fallbackTopics = [
             "Review: Data Structures",
             "Practice: Algorithms",
@@ -113,19 +141,14 @@ const generateSyllabusFlow = ai.defineFlow(
             "Review: Company-specific Questions"
         ];
         for (let i = 0; i < remainingDays; i++) {
-            allDays.push({
-                day: allDays.length + 1,
+            finalSyllabus.push({
+                day: lastDay + i + 1,
                 topic: fallbackTopics[i % fallbackTopics.length],
                 description: "Reviewing key concepts and practicing problems."
             });
         }
     }
 
-    // Ensure the output contains exactly 60 days and days are numbered correctly.
-    const finalSyllabus = allDays.slice(0, totalDays).map((day, index) => ({
-      ...day,
-      day: index + 1,
-    }));
 
     if (finalSyllabus.length === 0) {
         throw new Error(`Syllabus generation failed completely. Please try again.`);
