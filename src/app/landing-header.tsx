@@ -177,7 +177,7 @@ export default function LandingHeader() {
                     variants={itemVariants}
                 >
                     <div
-                      className={`relative flex items-center gap-1 rounded-lg px-4 py-2 text-sm font-medium transition-colors duration-200 text-foreground cursor-pointer hover:bg-red-500/10 hover:text-red-500`}
+                      className={`relative flex items-center gap-1 rounded-lg px-4 py-2 text-sm font-medium transition-colors duration-200 text-foreground cursor-pointer hover:bg-destructive/10 hover:text-destructive`}
                     >
                       <span>Features</span>
                       <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isFeaturesMenuOpen ? 'rotate-180' : ''}`} />
@@ -223,7 +223,7 @@ export default function LandingHeader() {
                     variants={itemVariants}
                 >
                     <div
-                      className={`relative flex items-center gap-1 rounded-lg px-4 py-2 text-sm font-medium transition-colors duration-200 text-foreground cursor-pointer hover:bg-red-500/10 hover:text-red-500`}
+                      className={`relative flex items-center gap-1 rounded-lg px-4 py-2 text-sm font-medium transition-colors duration-200 text-foreground cursor-pointer hover:bg-destructive/10 hover:text-destructive`}
                     >
                       <span>Pricing</span>
                       <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isPricingMenuOpen ? 'rotate-180' : ''}`} />
@@ -296,7 +296,7 @@ export default function LandingHeader() {
                   >
                     {hoveredItem === item.name && (
                       <motion.div
-                        className="bg-red-500/20 absolute inset-0 rounded-lg"
+                        className="bg-destructive/20 absolute inset-0 rounded-lg"
                         layoutId="navbar-hover"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
