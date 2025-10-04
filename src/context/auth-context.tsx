@@ -5,7 +5,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { User, onAuthStateChanged, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, updateProfile } from 'firebase/auth';
 import { auth, googleProvider, githubProvider } from '@/lib/firebase';
 import type { SignUpForm, SignInForm } from '@/lib/types';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { createUserDocument, getUserData } from '@/lib/firebase-service';
 
 interface AuthContextType {
@@ -24,21 +24,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      setUser(user);
+      setLoading(false);
+
       if (user) {
         const userData = await getUserData(user.uid);
-        if (userData && !userData.onboardingCompleted) {
+        // Only redirect to onboarding if it hasn't been completed and they aren't already there.
+        if (userData && !userData.onboardingCompleted && !pathname.startsWith('/onboarding')) {
           router.push('/onboarding');
         }
       }
-      setUser(user);
-      setLoading(false);
     });
 
     return () => unsubscribe();
-  }, [router]);
+  }, [router, pathname]);
 
   const signUp = async (data: SignUpForm) => {
     const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);

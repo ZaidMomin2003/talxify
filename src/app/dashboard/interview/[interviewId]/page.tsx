@@ -4,7 +4,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useSearchParams, useRouter, useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Mic, MicOff, Video, VideoOff, Phone, BrainCircuit } from 'lucide-react';
+import { Mic, MicOff, Video, VideoOff, Phone, BrainCircuit, Loader2 } from 'lucide-react';
 import { addActivity, updateUserFromIcebreaker } from '@/lib/firebase-service';
 import { useAuth } from '@/context/auth-context';
 import type { InterviewActivity, TranscriptEntry, IcebreakerData } from '@/lib/types';
@@ -13,6 +13,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { GoogleGenAI, LiveServerMessage, Modality, Session } from '@google/genai';
 import { createBlob, decode, decodeAudioData } from '@/lib/utils';
+import { getGeminiApiKey } from '@/app/actions/gemini';
 
 // --- Sub-components for better structure ---
 
@@ -121,6 +122,7 @@ export default function LiveInterviewPage() {
   const { user } = useAuth();
   const { toast } = useToast();
 
+  const [isInitializing, setIsInitializing] = useState(true);
   const [isRecording, setIsRecording] = useState(false);
   const [status, setStatus] = useState('Initializing...');
   const [error, setError] = useState('');
@@ -160,6 +162,8 @@ export default function LiveInterviewPage() {
 
   const initSession = useCallback(async () => {
     if (!clientRef.current) return;
+    setIsInitializing(true);
+    updateStatus('Initializing Session...');
 
     const topic = searchParams.get('topic') || 'general software engineering';
     const role = searchParams.get('role') || 'Software Engineer';
@@ -199,7 +203,10 @@ export default function LiveInterviewPage() {
           systemInstruction,
         },
         callbacks: {
-          onopen: () => updateStatus('Session Opened. Ready for interview.'),
+          onopen: () => {
+            updateStatus('Session Opened. Ready for interview.');
+            setIsInitializing(false);
+          },
           onmessage: async (message: LiveServerMessage) => {
             const audio = message.serverContent?.modelTurn?.parts[0]?.inlineData;
             if (audio) {
@@ -251,6 +258,7 @@ export default function LiveInterviewPage() {
           onclose: (e: CloseEvent) => {
             updateStatus('Session Closed: ' + e.reason);
             setIsRecording(false);
+            setIsInitializing(false);
           },
         },
       });
@@ -258,16 +266,32 @@ export default function LiveInterviewPage() {
     } catch (e: any) {
       console.error(e);
       updateError(`Failed to initialize session: ${e.message}`);
+      setIsInitializing(false);
     }
   }, [searchParams, toast, user]);
 
 
   useEffect(() => {
-    clientRef.current = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY });
-    inputAudioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
-    outputAudioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
+    async function setupClient() {
+        try {
+            const apiKey = await getGeminiApiKey();
+            if (!apiKey) {
+                updateError('GEMINI_API_KEY is not available.');
+                setIsInitializing(false);
+                return;
+            }
+            clientRef.current = new GoogleGenAI({ apiKey });
+            inputAudioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
+            outputAudioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
+            
+            initSession();
+        } catch(e: any) {
+             updateError(`Failed to set up Gemini Client: ${e.message}`);
+             setIsInitializing(false);
+        }
+    }
     
-    initSession();
+    setupClient();
 
     return () => {
       stopRecording(false); // Stop recording without navigation
@@ -376,6 +400,20 @@ export default function LiveInterviewPage() {
     }
   }
 
+  if (isInitializing) {
+     return (
+       <div className="relative flex flex-col h-screen w-full p-4 sm:p-6 bg-background">
+          <div className="absolute inset-0 thermal-gradient-bg z-0"/>
+          <main className="flex-1 relative flex items-center justify-center">
+            <div className="flex flex-col items-center gap-4">
+              <Loader2 className="h-12 w-12 animate-spin text-primary"/>
+              <p className="text-muted-foreground">{status}</p>
+            </div>
+          </main>
+       </div>
+     )
+  }
+
   return (
     <div className="relative flex flex-col h-screen w-full p-4 sm:p-6 bg-background">
         <div className="absolute inset-0 thermal-gradient-bg z-0"/>
@@ -388,7 +426,7 @@ export default function LiveInterviewPage() {
         <ControlBar 
             onMuteToggle={toggleMute}
             onVideoToggle={toggleVideo}
-            onEndCall={stopRecording}
+            onEndCall={() => stopRecording()}
             isMuted={isMuted}
             isVideoOn={isVideoOn}
             isRecording={isRecording}
@@ -396,5 +434,3 @@ export default function LiveInterviewPage() {
     </div>
   );
 }
-
-    

@@ -72,6 +72,8 @@ export interface OnboardingData {
 }
 
 export interface IcebreakerData {
+    isIcebreaker: boolean;
+    name?: string;
     college?: string;
     city?: string;
     skills?: string[];

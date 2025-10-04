@@ -61,6 +61,7 @@ const WaitlistForm = () => {
     const [loading, setLoading] = useState(false);
     const [submitted, setSubmitted] = useState(false);
     const { toast } = useToast();
+    const router = useRouter();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -68,6 +69,7 @@ const WaitlistForm = () => {
         try {
             await saveWaitlistSubmission({ name, email });
             setSubmitted(true);
+            router.push('/survey');
         } catch (error) {
             toast({ title: "Submission Failed", description: "Could not save your details. Please try again.", variant: "destructive" });
         } finally {
@@ -80,7 +82,7 @@ const WaitlistForm = () => {
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="text-center bg-green-500/10 border border-green-500/30 rounded-lg p-6">
                 <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-4" />
                 <h3 className="text-xl font-bold">You're on the list!</h3>
-                <p className="text-muted-foreground">Thank you for joining. We'll notify you as soon as we launch.</p>
+                <p className="text-muted-foreground">Thank you for joining. Redirecting you to a quick survey...</p>
             </motion.div>
         )
     }
@@ -179,8 +181,8 @@ export default function WaitlistPage() {
                 </div>
                 
                 <div className="relative grid grid-cols-1 md:grid-cols-3 gap-8">
-                     <div className="absolute top-1/2 left-0 w-full h-px bg-border -translate-y-1/2 hidden md:block"></div>
-                     <div className="absolute top-0 left-1/2 w-px h-full bg-border -translate-x-1/2 md:hidden"></div>
+                     <div className="absolute top-8 left-0 w-full h-px bg-border hidden md:block"></div>
+                     <div className="absolute top-0 left-8 w-px h-full bg-border md:hidden"></div>
 
                     {howItWorksSteps.map((step, index) => (
                         <motion.div 

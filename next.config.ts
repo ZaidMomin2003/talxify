@@ -11,11 +11,26 @@ const nextConfig: NextConfig = {
     ignoreDuringBuilds: true,
   },
   images: {
-    domains: ["res.cloudinary.com", "placehold.co", "blocks.mvp-subha.me", "randomuser.me", "drive.google.com", "lh3.googleusercontent.com"],
+    remotePatterns: [
+        {
+            protocol: 'https',
+            hostname: 'res.cloudinary.com',
+        },
+        {
+            protocol: 'https',
+            hostname: 'placehold.co',
+        },
+        {
+            protocol: 'https',
+            hostname: 'randomuser.me',
+        },
+        {
+            protocol: 'https',
+            hostname: 'lh3.googleusercontent.com',
+        },
+    ]
   },
-  experimental: {
-    transpilePackages: ['@react-three/drei', '@react-three/fiber', 'three'],
-  },
+  transpilePackages: ['three'],
   allowedDevOrigins: [
     "https://*.cloudworkstations.dev",
     "https://*.firebase.studio"
@@ -28,6 +43,7 @@ const nextConfig: NextConfig = {
     NEXT_PUBLIC_VIDEOSDK_API_KEY: process.env.VIDEOSDK_API_KEY,
     NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
     NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET: process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET,
+    NEXT_PUBLIC_ADMIN_EMAIL: process.env.NEXT_PUBLIC_ADMIN_EMAIL,
   }
 };
 
