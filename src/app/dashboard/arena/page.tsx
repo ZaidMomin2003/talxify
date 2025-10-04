@@ -247,8 +247,7 @@ export default function ArenaPage() {
                     const isCompleted = day.day <= completedDays;
                     const dayStatus = dailyTaskStatus[day.day] || { learn: false, quiz: false, interview: false };
                     const isFinalDay = day.day === 60;
-                    const isDay1 = day.day === 1;
-                    const learnRequired = !isFinalDay && !isDay1;
+                    const learnRequired = !isFinalDay; // Learn button is available for all days except the last.
                     const interviewIsScheduled = isFinalDay || (day.day - 1) % 3 === 0;
 
                     return (
@@ -322,8 +321,8 @@ export default function ArenaPage() {
                                     <div className="flex items-center gap-4 p-3 rounded-lg bg-muted/50">
                                         {dayStatus.interview ? <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" /> : <Briefcase className="h-5 w-5 text-green-500 flex-shrink-0" />}
                                         <div className="flex-1">
-                                            <p className="font-semibold text-foreground">{isDay1 ? "Icebreaker Interview" : isFinalDay ? "Final Comprehensive Interview" : "Take a Mock Interview"}</p>
-                                            <p className="text-xs text-muted-foreground">{isDay1 ? "A friendly chat to get to know you." : (isFinalDay ? "A 20-minute interview on all learned concepts." : "Practice your interview skills.")}</p>
+                                            <p className="font-semibold text-foreground">{day.day === 1 ? "Icebreaker Interview" : isFinalDay ? "Final Comprehensive Interview" : "Take a Mock Interview"}</p>
+                                            <p className="text-xs text-muted-foreground">{day.day === 1 ? "A friendly chat to get to know you." : (isFinalDay ? "A 20-minute interview on all learned concepts." : "Practice your interview skills.")}</p>
                                         </div>
                                         <div className="flex flex-col sm:flex-row gap-2">
                                              {dayStatus.interview && (
