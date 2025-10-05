@@ -168,7 +168,7 @@ export default function ArenaPage() {
 
             const isFinalDay = i === 60;
             // Day 1 has a special interview, no 'learn' task
-            const learnRequired = !isFinalDay && i !== 1;
+            const learnRequired = !isFinalDay;
             // Every 3rd day, starting from Day 1, plus the final day has an interview
             const interviewRequired = isFinalDay || (i - 1) % 3 === 0;
             
@@ -247,7 +247,7 @@ export default function ArenaPage() {
                     const isCompleted = day.day <= completedDays;
                     const dayStatus = dailyTaskStatus[day.day] || { learn: false, quiz: false, interview: false };
                     const isFinalDay = day.day === 60;
-                    const learnRequired = !isFinalDay && day.day !== 1;
+                    const learnRequired = !isFinalDay;
                     const interviewIsScheduled = isFinalDay || (day.day - 1) % 3 === 0;
 
                     return (
@@ -354,3 +354,5 @@ export default function ArenaPage() {
     </main>
   );
 }
+
+    
