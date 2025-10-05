@@ -10,7 +10,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { AlertTriangle, BookOpen, BrainCircuit, Code, HelpCircle, Key, Loader2, Star, Lightbulb } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
-import { addActivity, checkAndIncrementUsage } from '@/lib/firebase-service';
+import { addActivity, checkAndIncrementUsage, getUserData } from '@/lib/firebase-service';
 import type { NoteGenerationActivity } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 
@@ -67,7 +67,21 @@ function NotesComponent() {
     
     setIsLoading(true);
     setError(null);
+
     try {
+        // 1. Check if notes already exist in user's activity
+        const userData = await getUserData(user.uid);
+        const existingNoteActivity = userData?.activity
+            .filter((a): a is NoteGenerationActivity => a.type === 'note-generation')
+            .find(a => a.details.topic === topic);
+
+        if (existingNoteActivity && existingNoteActivity.notes) {
+            setNotes(existingNoteActivity.notes);
+            setIsLoading(false);
+            return;
+        }
+
+        // 2. If not, generate them
         const usageCheck = await checkAndIncrementUsage(user.uid);
         if (!usageCheck.success) {
             toast({ title: "Usage Limit Reached", description: usageCheck.message, variant: "destructive" });
@@ -78,13 +92,15 @@ function NotesComponent() {
         const result = await generateStudyNotes({ topic });
         setNotes(result);
         
+        // 3. Save the newly generated notes to Firestore
         const activity: NoteGenerationActivity = {
             id: `notes_${Date.now()}`,
             type: 'note-generation',
             timestamp: new Date().toISOString(),
             details: {
                 topic: topic,
-            }
+            },
+            notes: result, // Save the full notes object
         };
         await addActivity(user.uid, activity);
 

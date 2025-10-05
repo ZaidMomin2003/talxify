@@ -1,7 +1,7 @@
 
-
 import type { AnswerAnalysis } from "@/ai/flows/analyze-coding-answers";
 import type { GenerateInterviewFeedbackOutput } from "@/ai/flows/generate-interview-feedback";
+import type { GenerateStudyNotesOutput } from "@/ai/flows/generate-study-notes";
 import type { QuizState } from "@/app/dashboard/coding-quiz/quiz/page";
 import type { SyllabusDay } from "@/ai/flows/generate-syllabus";
 import { z } from 'genkit';
@@ -56,6 +56,7 @@ export interface InterviewActivity extends BaseActivity {
 // A specific type for when a user generates study notes
 export interface NoteGenerationActivity extends BaseActivity {
     type: 'note-generation';
+    notes?: GenerateStudyNotesOutput;
     details: {
         topic: string;
     }
