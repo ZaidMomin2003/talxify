@@ -185,16 +185,20 @@ export default function LiveInterviewPage() {
         config: {
           responseModalities: [Modality.AUDIO, Modality.TEXT],
           speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } } },
-          systemInstruction,
         },
         callbacks: {
           onopen: () => {
             updateStatus('Session Opened. Ready for interview.');
             setIsInitializing(false);
+            sessionRef.current?.sendTurn({
+                userTurn: {
+                    parts: [{ systemInstruction: systemInstruction }]
+                }
+            })
           },
           onmessage: async (message: LiveServerMessage) => {
-            const audio = message.serverContent?.modelTurn?.parts[0]?.inlineData;
-            if (audio) {
+            if (message.serverContent?.modelTurn?.parts[0]?.inlineData?.data) {
+                const audio = message.serverContent.modelTurn.parts[0].inlineData;
                 const outputCtx = outputAudioContextRef.current!;
                 nextStartTimeRef.current = Math.max(nextStartTimeRef.current, outputCtx.currentTime);
                 const audioBuffer = await decodeAudioData(decode(audio.data), outputCtx, 24000, 1);
@@ -259,6 +263,7 @@ export default function LiveInterviewPage() {
   useEffect(() => {
     let isMounted = true;
     async function setup() {
+        if (!isMounted) return;
         try {
             const apiKey = await getGeminiApiKey();
             if (!apiKey) {
@@ -271,7 +276,7 @@ export default function LiveInterviewPage() {
                 inputAudioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
                 outputAudioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
                 
-                initSession();
+                await initSession();
             }
         } catch(e: any) {
              updateError(`Failed to set up Gemini Client: ${e.message}`);
@@ -288,8 +293,7 @@ export default function LiveInterviewPage() {
       inputAudioContextRef.current?.close();
       outputAudioContextRef.current?.close();
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [initSession]);
 
   const startRecording = async () => {
     if (isRecording) return;
