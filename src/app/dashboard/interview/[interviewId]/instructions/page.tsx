@@ -5,7 +5,7 @@ import React, { useState } from 'react';
 import { useSearchParams, useParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ShieldCheck, MessageSquare, Bot, ArrowRight, Video, Building, BarChartHorizontal } from 'lucide-react';
+import { ShieldCheck, MessageSquare, Bot, ArrowRight, Video, Building, BarChartHorizontal, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -101,6 +101,15 @@ export default function InterviewInstructionsPage() {
                                     <div>
                                         <h3 className="font-semibold">Be Professional</h3>
                                         <p className="text-muted-foreground text-sm">Treat this as a real interview. Speak clearly and structure your answers thoughtfully.</p>
+                                    </div>
+                                </div>
+                                 <div className="flex items-start gap-4">
+                                    <div className="bg-primary/10 text-primary rounded-full p-2 mt-1">
+                                        <Sparkles className="h-5 w-5" />
+                                    </div>
+                                    <div>
+                                        <h3 className="font-semibold">Answer in Detail</h3>
+                                        <p className="text-muted-foreground text-sm">Provide comprehensive answers. The more detail you give, the better the AI can analyze your performance.</p>
                                     </div>
                                 </div>
                                  <div className="flex items-start gap-4">
