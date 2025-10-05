@@ -145,18 +145,27 @@ export default function LiveInterviewPage() {
   
   const nextStartTimeRef = useRef(0);
   const audioSourcesRef = useRef(new Set<AudioBufferSourceNode>());
+  const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const updateStatus = (msg: string) => { setStatus(msg); setError(''); };
   const updateError = (msg: string) => { setError(msg); console.error(msg); };
   
    useEffect(() => {
-    let timerInterval: NodeJS.Timeout;
     if (isRecording) {
-      timerInterval = setInterval(() => {
+      timerIntervalRef.current = setInterval(() => {
         setElapsedTime(prevTime => prevTime + 1);
       }, 1000);
+    } else {
+        if (timerIntervalRef.current) {
+            clearInterval(timerIntervalRef.current);
+            timerIntervalRef.current = null;
+        }
     }
-    return () => clearInterval(timerInterval);
+    return () => {
+        if (timerIntervalRef.current) {
+            clearInterval(timerIntervalRef.current);
+        }
+    };
   }, [isRecording]);
 
 
