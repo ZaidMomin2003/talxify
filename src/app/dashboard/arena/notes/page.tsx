@@ -34,7 +34,7 @@ function StudyNotesError() {
                     </div>
                     <CardTitle className="text-2xl font-bold">Failed to Generate Notes</CardTitle>
                     <CardDescription>
-                        We encountered an error while creating your study guide. Please try again later.
+                        We encountered an error while creating your study guide. This might be due to a temporary issue with the AI service. Please try again later.
                     </CardDescription>
                 </CardHeader>
             </Card>
@@ -69,11 +69,10 @@ function NotesComponent() {
     setError(null);
 
     try {
-        // 1. Check if notes already exist in user's activity
         const userData = await getUserData(user.uid);
         const existingNoteActivity = userData?.activity
             .filter((a): a is NoteGenerationActivity => a.type === 'note-generation')
-            .find(a => a.details.topic === topic);
+            .find(a => a.details.topic.toLowerCase() === topic.toLowerCase());
 
         if (existingNoteActivity && existingNoteActivity.notes) {
             setNotes(existingNoteActivity.notes);
@@ -81,7 +80,6 @@ function NotesComponent() {
             return;
         }
 
-        // 2. If not, generate them
         const usageCheck = await checkAndIncrementUsage(user.uid);
         if (!usageCheck.success) {
             toast({ title: "Usage Limit Reached", description: usageCheck.message, variant: "destructive" });
@@ -92,7 +90,6 @@ function NotesComponent() {
         const result = await generateStudyNotes({ topic });
         setNotes(result);
         
-        // 3. Save the newly generated notes to Firestore
         const activity: NoteGenerationActivity = {
             id: `notes_${Date.now()}`,
             type: 'note-generation',
@@ -100,7 +97,7 @@ function NotesComponent() {
             details: {
                 topic: topic,
             },
-            notes: result, // Save the full notes object
+            notes: result,
         };
         await addActivity(user.uid, activity);
 
@@ -122,7 +119,6 @@ function NotesComponent() {
   return (
     <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
         <div className="max-w-6xl mx-auto space-y-8">
-            {/* Header */}
             <Card className="shadow-lg border-primary/20">
                 <CardHeader>
                     <div className="flex items-center gap-4">
@@ -138,9 +134,7 @@ function NotesComponent() {
             </Card>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Left Column */}
                 <div className="lg:col-span-2 space-y-8">
-                     {/* Core Concepts */}
                     <Card>
                         <CardHeader>
                             <CardTitle className="flex items-center gap-3"><BrainCircuit className="h-6 w-6"/> Core Concepts</CardTitle>
@@ -153,7 +147,7 @@ function NotesComponent() {
                                     <AccordionContent>
                                         <div
                                             className="prose prose-sm dark:prose-invert max-w-none text-muted-foreground"
-                                            dangerouslySetInnerHTML={{ __html: concept.description.replace(/\n/g, '<br />') }}
+                                            dangerouslySetInnerHTML={{ __html: concept.description }}
                                         />
                                     </AccordionContent>
                                 </AccordionItem>
@@ -162,7 +156,6 @@ function NotesComponent() {
                         </CardContent>
                     </Card>
 
-                    {/* Examples */}
                     <Card>
                         <CardHeader>
                             <CardTitle className="flex items-center gap-3"><Code className="h-6 w-6"/> Practical Examples</CardTitle>
@@ -185,9 +178,7 @@ function NotesComponent() {
                     </Card>
                 </div>
 
-                {/* Right Column */}
                 <div className="space-y-8">
-                    {/* Key Terminology */}
                     <Card>
                         <CardHeader>
                             <CardTitle className="flex items-center gap-3"><Key className="h-6 w-6"/> Key Terminology</CardTitle>
@@ -202,7 +193,6 @@ function NotesComponent() {
                         </CardContent>
                     </Card>
 
-                    {/* Use Cases */}
                     <Card>
                         <CardHeader>
                             <CardTitle className="flex items-center gap-3"><Star className="h-6 w-6"/> Common Use Cases</CardTitle>
@@ -217,7 +207,6 @@ function NotesComponent() {
                         </CardContent>
                     </Card>
 
-                    {/* Interview Questions */}
                     <Card>
                         <CardHeader>
                             <CardTitle className="flex items-center gap-3"><HelpCircle className="h-6 w-6"/> Interview Prep</CardTitle>

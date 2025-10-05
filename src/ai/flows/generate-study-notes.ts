@@ -39,7 +39,7 @@ const GenerateStudyNotesOutputSchema = z.object({
   terminology: z.array(TerminologySchema).describe('A list of key terms and their definitions.'),
   coreConcepts: z.array(z.object({
     concept: z.string().describe("A core concept or sub-topic."),
-    description: z.string().describe("A detailed, bullet-point description of the concept.")
+    description: z.string().describe("A detailed, bullet-point description of the concept formatted as an HTML string. Use <strong> tags for bold text.")
   })).describe('A breakdown of the fundamental concepts, organized from basic to advanced.'),
   examples: z.array(ExampleSchema).describe('A set of practical, real-world code examples with explanations.'),
   useCases: z.array(z.string()).describe('A bulleted list of common use cases and scenarios where this topic is applied.'),
@@ -60,7 +60,7 @@ const prompt = ai.definePrompt({
 Structure the guide in the following manner, starting from fundamental concepts and progressing to more complex ones.
 
 1.  **Introduction**: Write a brief, engaging introduction. Explain what {{topic}} is and why it's important for a developer to know.
-2.  **Core Concepts**: Break down the topic into its most critical concepts. Present them in a logical order, from easy to difficult. For each concept, provide a detailed description using bullet points for clarity.
+2.  **Core Concepts**: Break down the topic into its most critical concepts. Present them in a logical order, from easy to difficult. For each concept, provide a detailed description. IMPORTANT: Format the description as a valid HTML string and use <strong> tags for any bold text instead of markdown.
 3.  **Key Terminology**: Define the essential terms a developer must know related to {{topic}}.
 4.  **Practical Examples**: Provide at least two clear, practical code examples. For each, include a title, the code snippet, and a step-by-step explanation.
 5.  **Common Use Cases**: List the most common real-world scenarios and use cases for {{topic}}.
@@ -81,5 +81,3 @@ const generateStudyNotesFlow = ai.defineFlow(
     return output!;
   }
 );
-
-    
