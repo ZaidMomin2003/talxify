@@ -134,7 +134,7 @@ function TodoListPopup({ todos, userId, onDataRefresh }: { todos: TodoItem[], us
                         <TabsTrigger value="completed">Completed</TabsTrigger>
                     </TabsList>
                     <TabsContent value="incomplete">
-                        <div className="h-[400px] overflow-y-auto pr-2 space-y-3 mt-4">
+                        <div className="h-[60vh] sm:h-[400px] overflow-y-auto pr-2 space-y-3 mt-4">
                             {incompleteTasks.map(item => (
                                 <Card key={item.id} className="p-3">
                                     <div className="flex items-center gap-3">
@@ -156,7 +156,7 @@ function TodoListPopup({ todos, userId, onDataRefresh }: { todos: TodoItem[], us
                         </div>
                     </TabsContent>
                     <TabsContent value="completed">
-                         <div className="h-[400px] overflow-y-auto pr-2 space-y-3 mt-4">
+                         <div className="h-[60vh] sm:h-[400px] overflow-y-auto pr-2 space-y-3 mt-4">
                             {completedTasks.map(item => (
                                 <Card key={item.id} className="p-3 bg-muted/50">
                                     <div className="flex items-center gap-3">
