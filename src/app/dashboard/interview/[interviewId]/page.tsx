@@ -169,32 +169,19 @@ export default function LiveInterviewPage() {
     const role = searchParams.get('role') || 'Software Engineer';
     const company = searchParams.get('company');
 
-    let systemInstruction = `Your name is Kathy, you are an expert technical interviewer at Talxify.
-    You are interviewing a candidate for the role of "${role}". The main topic for this interview is "${topic}".
-    Your tone must be professional, encouraging, and clear.
-    Start with a brief, friendly introduction and then begin the interview by asking your first question.
-    Keep your questions relevant and your responses concise. Always wait for the user to finish speaking before you reply.
-    `;
-
+    let systemInstruction = `You are Kathy, an expert technical interviewer at Talxify. You are interviewing a candidate for the role of "${role}" on the topic of "${topic}". Your tone must be professional, encouraging, and clear. Start with a friendly introduction, then ask your first question. Always wait for the user to finish speaking.`;
+    
     if (company) {
-        systemInstruction += ` The candidate is specifically interested in ${company}, so you can tailor behavioral questions to their leadership principles if applicable (e.g., STAR method for Amazon).`;
+        systemInstruction += ` The candidate is interested in ${company}, so you can tailor behavioral questions to their leadership principles if applicable.`;
     }
 
      if (topic === 'Icebreaker Introduction') {
-        systemInstruction = `Your name is Kathy, a friendly career coach at Talxify. Your goal is to conduct a short, 2-minute icebreaker session.
-        Start by warmly welcoming the user.
-        Ask them about their name, what city they are from, their college, their skills, and their hobbies.
-        Keep the conversation light and encouraging.
-        After gathering this information, respond with a JSON object containing the extracted data. The JSON object should follow this format:
-        { "isIcebreaker": true, "name": "User's Name", "city": "User's City", "college": "User's College", "skills": ["skill1", "skill2"], "hobbies": ["hobby1", "hobby2"] }
-        Wrap the JSON object within <JSON_DATA> tags. For example: <JSON_DATA>{"isIcebreaker": true, ...}</JSON_DATA>.
-        Do not add any other text before or after the JSON data block. This is your final response.
-        `;
+        systemInstruction = `You are Kathy, a friendly career coach at Talxify. Your goal is a short, 2-minute icebreaker. Start warmly. Ask about their name, city, college, skills, and hobbies. Keep it light and encouraging. After getting this info, you MUST respond with ONLY a JSON object in this exact format: { "isIcebreaker": true, "name": "User's Name", "city": "User's City", "college": "User's College", "skills": ["skill1"], "hobbies": ["hobby1"] }. Wrap this JSON object in <JSON_DATA> tags. This is your final response.`;
     }
     
     try {
       sessionRef.current = await clientRef.current.live.connect({
-        model: 'gemini-2.5-flash-preview-native-audio-dialog',
+        model: 'gemini-2.5-flash-preview-native-audio-dialog-001',
         config: {
           responseModalities: [Modality.AUDIO, Modality.TEXT],
           speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } } },
@@ -270,7 +257,8 @@ export default function LiveInterviewPage() {
 
 
   useEffect(() => {
-    async function setupClient() {
+    let isMounted = true;
+    async function setup() {
         try {
             const apiKey = await getGeminiApiKey();
             if (!apiKey) {
@@ -278,20 +266,23 @@ export default function LiveInterviewPage() {
                 setIsInitializing(false);
                 return;
             }
-            clientRef.current = new GoogleGenAI({ apiKey });
-            inputAudioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
-            outputAudioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
-            
-            initSession();
+            if (isMounted) {
+                clientRef.current = new GoogleGenAI({ apiKey });
+                inputAudioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
+                outputAudioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
+                
+                initSession();
+            }
         } catch(e: any) {
              updateError(`Failed to set up Gemini Client: ${e.message}`);
-             setIsInitializing(false);
+             if (isMounted) setIsInitializing(false);
         }
     }
     
-    setupClient();
+    setup();
 
     return () => {
+      isMounted = false;
       stopRecording(false); // Stop recording without navigation
       sessionRef.current?.close();
       inputAudioContextRef.current?.close();
