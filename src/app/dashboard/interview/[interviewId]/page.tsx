@@ -192,7 +192,7 @@ export default function LiveInterviewPage() {
     
     try {
       sessionRef.current = await clientRef.current.live.connect({
-        model: 'gemini-2.5-flash-preview-native-audio-dialog-001',
+        model: 'gemini-2.5-flash-preview-native-audio-dialog',
         config: {
           responseModalities: [Modality.AUDIO, Modality.TEXT],
         },
@@ -258,6 +258,9 @@ export default function LiveInterviewPage() {
             updateStatus('Session Closed: ' + e.reason);
             setIsRecording(false);
             setIsInitializing(false);
+            if (timerIntervalRef.current) {
+                clearInterval(timerIntervalRef.current);
+            }
           },
         },
       });
