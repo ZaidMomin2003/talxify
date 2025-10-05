@@ -247,7 +247,7 @@ export default function ArenaPage() {
                     const isCompleted = day.day <= completedDays;
                     const dayStatus = dailyTaskStatus[day.day] || { learn: false, quiz: false, interview: false };
                     const isFinalDay = day.day === 60;
-                    const learnRequired = !isFinalDay; // Learn button is available for all days except the last.
+                    const learnRequired = !isFinalDay && day.day !== 1;
                     const interviewIsScheduled = isFinalDay || (day.day - 1) % 3 === 0;
 
                     return (
@@ -354,5 +354,3 @@ export default function ArenaPage() {
     </main>
   );
 }
-
-    
