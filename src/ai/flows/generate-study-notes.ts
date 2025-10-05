@@ -55,9 +55,6 @@ const prompt = ai.definePrompt({
   name: 'generateStudyNotesPrompt',
   input: {schema: GenerateStudyNotesInputSchema},
   output: {schema: GenerateStudyNotesOutputSchema},
-  config: {
-    model: 'googleai/gemini-1.5-pro-latest',
-  },
   prompt: `You are an expert technical writer and educator. Your task is to create a comprehensive, detailed, and easy-to-understand study guide for a developer on the topic of: "{{topic}}".
 
 Structure the guide in the following manner, starting from fundamental concepts and progressing to more complex ones.
