@@ -169,14 +169,16 @@ export default function LiveInterviewPage() {
     const role = searchParams.get('role') || 'Software Engineer';
     const company = searchParams.get('company');
 
-    let systemInstruction = `You are Kathy, an expert technical interviewer at Talxify. You are interviewing a candidate for the role of "${role}" on the topic of "${topic}". Your tone must be professional, encouraging, and clear. Start with a friendly introduction, then ask your first question. Always wait for the user to finish speaking.`;
-    
-    if (company) {
-        systemInstruction += ` The candidate is interested in ${company}, so you can tailor behavioral questions to their leadership principles if applicable.`;
-    }
+    let systemInstruction = "You are a helpful assistant.";
 
-     if (topic === 'Icebreaker Introduction') {
-        systemInstruction = `You are Kathy, a friendly career coach at Talxify. Your goal is a short, 2-minute icebreaker. Start warmly. Ask about their name, city, college, skills, and hobbies. Keep it light and encouraging. After getting this info, you MUST respond with ONLY a JSON object in this exact format: { "isIcebreaker": true, "name": "User's Name", "city": "User's City", "college": "User's College", "skills": ["skill1"], "hobbies": ["hobby1"] }. Wrap this JSON object in <JSON_DATA> tags. This is your final response.`;
+     if (topic !== 'general software engineering') {
+        systemInstruction = `You are Kathy, an expert technical interviewer at Talxify. You are interviewing a candidate for the role of "${role}" on the topic of "${topic}". Your tone must be professional, encouraging, and clear. Start with a friendly introduction, then ask your first question. Always wait for the user to finish speaking.`;
+        if (company) {
+            systemInstruction += ` The candidate is interested in ${company}, so you can tailor behavioral questions to their leadership principles if applicable.`;
+        }
+         if (topic === 'Icebreaker Introduction') {
+            systemInstruction = `You are Kathy, a friendly career coach at Talxify. Your goal is a short, 2-minute icebreaker. Start warmly. Ask about their name, city, college, skills, and hobbies. Keep it light and encouraging. After getting this info, you MUST respond with ONLY a JSON object in this exact format: { "isIcebreaker": true, "name": "User's Name", "city": "User's City", "college": "User's College", "skills": ["skill1"], "hobbies": ["hobby1"] }. Wrap this JSON object in <JSON_DATA> tags. This is your final response.`;
+        }
     }
     
     try {
@@ -184,7 +186,6 @@ export default function LiveInterviewPage() {
         model: 'gemini-2.5-flash-preview-native-audio-dialog-001',
         config: {
           responseModalities: [Modality.AUDIO, Modality.TEXT],
-          speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } } },
         },
         callbacks: {
           onopen: () => {
@@ -284,7 +285,10 @@ export default function LiveInterviewPage() {
         }
     }
     
-    setup();
+    if (isMounted) {
+        setup();
+    }
+
 
     return () => {
       isMounted = false;
@@ -293,7 +297,8 @@ export default function LiveInterviewPage() {
       inputAudioContextRef.current?.close();
       outputAudioContextRef.current?.close();
     };
-  }, [initSession]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const startRecording = async () => {
     if (isRecording) return;
