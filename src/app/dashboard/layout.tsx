@@ -569,7 +569,7 @@ function DashboardLayoutContent({
                     <DialogTitle className="text-2xl font-bold">Getting Started with Talxify</DialogTitle>
                     <DialogDescription>Follow these steps to make the most of the platform.</DialogDescription>
                 </DialogHeader>
-                 <div className="my-6 space-y-4">
+                 <div className="my-6 space-y-4 max-h-[70vh] overflow-y-auto pr-4">
                     {guideSteps.map(step => (
                         <div key={step.title} className="flex items-start gap-4">
                             <div className="bg-primary/10 text-primary rounded-lg p-2 mt-0.5">
