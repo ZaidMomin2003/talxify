@@ -198,8 +198,6 @@ export default function LiveInterviewPage() {
         config: {
           responseModalities: [Modality.AUDIO, Modality.TEXT],
           speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } } },
-          inputAudioTranscription: {},
-          outputAudioTranscription: {},
           systemInstruction,
         },
         callbacks: {
