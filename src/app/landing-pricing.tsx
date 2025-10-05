@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Check, Star, UserRound, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
@@ -26,6 +26,7 @@ const freePlan = {
 
 const proPlan = {
     name: 'Pro',
+    originalPrice: '₹9999',
     price: '₹4999',
     period: '/60 days',
 };
@@ -44,6 +45,38 @@ const proFeatures = [
 
 
 export default function LandingPricing() {
+  const [timeLeft, setTimeLeft] = useState({
+    days: 0,
+    hours: 0,
+    minutes: 0,
+    seconds: 0,
+  });
+
+  useEffect(() => {
+    const offerEndDate = new Date();
+    offerEndDate.setDate(offerEndDate.getDate() + 30);
+
+    const timer = setInterval(() => {
+      const now = new Date().getTime();
+      const distance = offerEndDate.getTime() - now;
+
+      if (distance < 0) {
+        clearInterval(timer);
+        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+      } else {
+        const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+        const hours = Math.floor(
+          (distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
+        );
+        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+        setTimeLeft({ days, hours, minutes, seconds });
+      }
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
+
 
   return (
     <section className="bg-transparent text-foreground py-20 pb-8" id="pricing">
@@ -93,11 +126,24 @@ export default function LandingPricing() {
                 <CardHeader className="text-center">
                   <Sparkles className="h-10 w-10 mx-auto text-primary mb-2" />
                   <CardTitle className="text-3xl font-bold font-headline">Pro</CardTitle>
-                  <div className="flex items-baseline justify-center gap-1">
-                      <span className="text-5xl font-bold tracking-tighter">{proPlan.price}</span>
-                      <span className="text-muted-foreground text-lg">{proPlan.period}</span>
+                  <div className="flex items-baseline justify-center gap-2">
+                     <span className="text-3xl font-medium text-muted-foreground line-through">{proPlan.originalPrice}</span>
+                    <span className="text-5xl font-bold tracking-tighter">{proPlan.price}</span>
+                    <span className="text-muted-foreground text-lg">{proPlan.period}</span>
                   </div>
                   <CardDescription>Unlock your full potential and land your dream job.</CardDescription>
+                   <div className="bg-destructive/10 text-destructive-foreground border border-destructive/20 rounded-lg p-2 mt-2">
+                        <p className="text-sm font-semibold">Limited Time Offer Ends In:</p>
+                        <div className="flex justify-center gap-2 text-lg font-mono font-bold">
+                            <div>{timeLeft.days}d</div>
+                            <div>:</div>
+                            <div>{timeLeft.hours}h</div>
+                            <div>:</div>
+                            <div>{timeLeft.minutes}m</div>
+                            <div>:</div>
+                            <div>{timeLeft.seconds}s</div>
+                        </div>
+                    </div>
               </CardHeader>
               <CardContent className="flex-grow">
                   <ul className="space-y-4">
