@@ -10,6 +10,7 @@ import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { saveWaitlistSubmission } from '@/lib/firebase-service';
 import LandingFooter from '../landing-footer';
+import { useRouter } from 'next/navigation';
 
 const features = [
   {
