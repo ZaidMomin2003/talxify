@@ -33,7 +33,7 @@ const proPlan = {
     name: 'Pro',
     priceInr: 4999,
     discountedPriceInr: 3999,
-    priceUsd: 200,
+    priceUsd: 100,
 };
 
 const proFeatures = [
@@ -164,7 +164,7 @@ export default function PricingPage() {
                             onClick={() => setCurrency('inr')} 
                             variant={currency === 'inr' ? 'default' : 'ghost'} 
                             size="sm"
-                            className={cn("rounded-full", currency === 'inr' && 'bg-orange-500 hover:bg-orange-600')}
+                            className={cn("rounded-full")}
                         >
                             Indian (INR)
                         </Button>
@@ -172,7 +172,7 @@ export default function PricingPage() {
                             onClick={() => setCurrency('usd')} 
                             variant={currency === 'usd' ? 'default' : 'ghost'} 
                             size="sm"
-                            className={cn("rounded-full", currency === 'usd' && 'bg-orange-500 hover:bg-orange-600')}
+                            className={cn("rounded-full")}
                         >
                             International (USD)
                         </Button>

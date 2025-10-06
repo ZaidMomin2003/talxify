@@ -28,7 +28,7 @@ const proPlan = {
     name: 'Pro',
     originalPriceInr: '₹9999',
     priceInr: '₹4999',
-    priceUsd: '$200',
+    priceUsd: '$100',
     period: '/60 days',
 };
 
@@ -101,7 +101,7 @@ export default function LandingPricing() {
                     onClick={() => setCurrency('inr')} 
                     variant={currency === 'inr' ? 'default' : 'ghost'} 
                     size="sm"
-                    className={cn("rounded-full", currency === 'inr' && 'bg-orange-500 hover:bg-orange-600')}
+                    className={cn("rounded-full")}
                 >
                     Indian (INR)
                 </Button>
@@ -109,7 +109,7 @@ export default function LandingPricing() {
                     onClick={() => setCurrency('usd')} 
                     variant={currency === 'usd' ? 'default' : 'ghost'} 
                     size="sm"
-                    className={cn("rounded-full", currency === 'usd' && 'bg-orange-500 hover:bg-orange-600')}
+                    className={cn("rounded-full")}
                 >
                     International (USD)
                 </Button>
