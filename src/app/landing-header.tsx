@@ -18,6 +18,7 @@ const navItems: NavItem[] = [
   // Features and Pricing are now handled separately
   { name: 'Testimonials', href: '/#testimonials' },
   { name: 'FAQ', href: '/#faq' },
+  { name: 'Blog', href: '/blog' },
   { name: 'About', href: '/about' },
   { name: 'For Institutes', href: '/institutepartnership' },
 ];
