@@ -31,8 +31,9 @@ const freePlan = {
 
 const proPlan = {
     name: 'Pro',
-    price: 4999,
-    discountedPrice: 3999, // Price after applying FIRST1000 coupon
+    priceInr: 4999,
+    discountedPriceInr: 3999,
+    priceUsd: 200,
 };
 
 const proFeatures = [
@@ -55,8 +56,9 @@ export default function PricingPage() {
     const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
     const [couponCode, setCouponCode] = useState('');
     const [isCouponApplied, setIsCouponApplied] = useState(false);
+    const [currency, setCurrency] = useState('inr');
 
-    const finalPrice = isCouponApplied ? proPlan.discountedPrice : proPlan.price;
+    const finalPriceInr = isCouponApplied ? proPlan.discountedPriceInr : proPlan.priceInr;
 
     const handleApplyCoupon = () => {
         if (couponCode.toUpperCase() === 'FIRST1000') {
@@ -81,10 +83,18 @@ export default function PricingPage() {
             return;
         }
 
+        if (currency === 'usd') {
+            toast({
+                title: 'Coming Soon!',
+                description: 'International payments will be available shortly. Please check back later.',
+            });
+            return;
+        }
+
         setLoadingPlan(proPlan.name);
 
         try {
-            const order = await createOrder(finalPrice);
+            const order = await createOrder(finalPriceInr);
 
             const options = {
                 key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
@@ -148,6 +158,13 @@ export default function PricingPage() {
                         Simple, transparent pricing. Pick the plan that's right for you and start preparing today.
                     </p>
                 </div>
+                 <div className="flex justify-center mb-8">
+                    <div className="inline-flex items-center rounded-full bg-muted p-1">
+                        <Button onClick={() => setCurrency('inr')} variant={currency === 'inr' ? 'secondary' : 'ghost'} className="rounded-full">Indian (INR)</Button>
+                        <Button onClick={() => setCurrency('usd')} variant={currency === 'usd' ? 'secondary' : 'ghost'} className="rounded-full">International (USD)</Button>
+                    </div>
+                </div>
+
 
                 <div className="grid gap-8 md:grid-cols-2 max-w-4xl mx-auto">
                      {/* Free Plan */}
@@ -182,17 +199,24 @@ export default function PricingPage() {
                          <CardHeader className="text-center">
                             <Sparkles className="h-10 w-10 mx-auto text-primary mb-2" />
                             <CardTitle className="text-3xl font-bold font-headline">Pro</CardTitle>
-                             <div className="flex items-baseline justify-center gap-2">
-                                {isCouponApplied ? (
-                                    <>
-                                        <span className="text-3xl font-medium text-muted-foreground line-through">₹{proPlan.price}</span>
-                                        <span className="text-5xl font-bold tracking-tighter">₹{proPlan.discountedPrice}</span>
-                                    </>
-                                ) : (
-                                    <span className="text-5xl font-bold tracking-tighter">₹{proPlan.price}</span>
-                                )}
-                                <span className="text-muted-foreground text-lg">/60 days</span>
-                            </div>
+                            {currency === 'inr' ? (
+                                <div className="flex items-baseline justify-center gap-2">
+                                    {isCouponApplied ? (
+                                        <>
+                                            <span className="text-3xl font-medium text-muted-foreground line-through">₹{proPlan.priceInr}</span>
+                                            <span className="text-5xl font-bold tracking-tighter">₹{proPlan.discountedPriceInr}</span>
+                                        </>
+                                    ) : (
+                                        <span className="text-5xl font-bold tracking-tighter">₹{proPlan.priceInr}</span>
+                                    )}
+                                    <span className="text-muted-foreground text-lg">/60 days</span>
+                                </div>
+                            ) : (
+                                <div className="flex items-baseline justify-center gap-2">
+                                     <span className="text-5xl font-bold tracking-tighter">${proPlan.priceUsd}</span>
+                                     <span className="text-muted-foreground text-lg">/60 days</span>
+                                </div>
+                            )}
                             <CardDescription>Unlock your full potential and land your dream job.</CardDescription>
                         </CardHeader>
                         <CardContent className="flex-grow space-y-6">
@@ -206,21 +230,23 @@ export default function PricingPage() {
                                     </li>
                                 ))}
                             </ul>
-                             <div className="space-y-2 pt-4 border-t">
-                                <Label htmlFor="coupon" className="flex items-center gap-2 text-muted-foreground"><Ticket className="h-4 w-4"/> Have a coupon?</Label>
-                                <div className="flex gap-2">
-                                    <Input 
-                                        id="coupon" 
-                                        placeholder="Enter FIRST1000"
-                                        value={couponCode}
-                                        onChange={(e) => setCouponCode(e.target.value)}
-                                        disabled={isCouponApplied}
-                                    />
-                                    <Button onClick={handleApplyCoupon} disabled={isCouponApplied}>
-                                        {isCouponApplied ? 'Applied' : 'Apply'}
-                                    </Button>
+                            {currency === 'inr' && (
+                                 <div className="space-y-2 pt-4 border-t">
+                                    <Label htmlFor="coupon" className="flex items-center gap-2 text-muted-foreground"><Ticket className="h-4 w-4"/> Have a coupon?</Label>
+                                    <div className="flex gap-2">
+                                        <Input 
+                                            id="coupon" 
+                                            placeholder="Enter FIRST1000"
+                                            value={couponCode}
+                                            onChange={(e) => setCouponCode(e.target.value)}
+                                            disabled={isCouponApplied}
+                                        />
+                                        <Button onClick={handleApplyCoupon} disabled={isCouponApplied}>
+                                            {isCouponApplied ? 'Applied' : 'Apply'}
+                                        </Button>
+                                    </div>
                                 </div>
-                            </div>
+                            )}
                         </CardContent>
                         <CardFooter>
                             <Button

@@ -26,8 +26,9 @@ const freePlan = {
 
 const proPlan = {
     name: 'Pro',
-    originalPrice: '₹9999',
-    price: '₹4999',
+    originalPriceInr: '₹9999',
+    priceInr: '₹4999',
+    priceUsd: '$200',
     period: '/60 days',
 };
 
@@ -51,6 +52,8 @@ export default function LandingPricing() {
     minutes: 0,
     seconds: 0,
   });
+  const [currency, setCurrency] = useState('inr');
+
 
   useEffect(() => {
     const offerEndDate = new Date();
@@ -92,6 +95,13 @@ export default function LandingPricing() {
           </p>
         </div>
 
+        <div className="flex justify-center mb-8">
+            <div className="inline-flex items-center rounded-full bg-muted p-1">
+                <Button onClick={() => setCurrency('inr')} variant={currency === 'inr' ? 'secondary' : 'ghost'} className="rounded-full">Indian (INR)</Button>
+                <Button onClick={() => setCurrency('usd')} variant={currency === 'usd' ? 'secondary' : 'ghost'} className="rounded-full">International (USD)</Button>
+            </div>
+        </div>
+
         <div className="grid gap-y-10 md:gap-x-8 md:grid-cols-2 max-w-4xl mx-auto relative z-10">
           <Card className="flex flex-col shadow-lg transition-transform duration-300 w-full border-border">
               <CardHeader className="text-center">
@@ -127,23 +137,31 @@ export default function LandingPricing() {
                   <Sparkles className="h-10 w-10 mx-auto text-primary mb-2" />
                   <CardTitle className="text-3xl font-bold font-headline">Pro</CardTitle>
                   <div className="flex items-baseline justify-center gap-2">
-                     <span className="text-3xl font-medium text-muted-foreground line-through">{proPlan.originalPrice}</span>
-                    <span className="text-5xl font-bold tracking-tighter">{proPlan.price}</span>
+                     {currency === 'inr' ? (
+                        <>
+                            <span className="text-3xl font-medium text-muted-foreground line-through">{proPlan.originalPriceInr}</span>
+                            <span className="text-5xl font-bold tracking-tighter">{proPlan.priceInr}</span>
+                        </>
+                     ) : (
+                        <span className="text-5xl font-bold tracking-tighter">{proPlan.priceUsd}</span>
+                     )}
                     <span className="text-muted-foreground text-lg">{proPlan.period}</span>
                   </div>
                   <CardDescription>Unlock your full potential and land your dream job.</CardDescription>
-                   <div className="bg-destructive/10 text-destructive-foreground border border-destructive/20 rounded-lg p-2 mt-2">
-                        <p className="text-sm font-semibold">Limited Time Offer Ends In:</p>
-                        <div className="flex justify-center gap-2 text-lg font-mono font-bold">
-                            <div>{timeLeft.days}d</div>
-                            <div>:</div>
-                            <div>{timeLeft.hours}h</div>
-                            <div>:</div>
-                            <div>{timeLeft.minutes}m</div>
-                            <div>:</div>
-                            <div>{timeLeft.seconds}s</div>
+                   {currency === 'inr' && (
+                        <div className="bg-destructive/10 text-destructive-foreground border border-destructive/20 rounded-lg p-2 mt-2">
+                            <p className="text-sm font-semibold">Limited Time Offer Ends In:</p>
+                            <div className="flex justify-center gap-2 text-lg font-mono font-bold">
+                                <div>{timeLeft.days}d</div>
+                                <div>:</div>
+                                <div>{timeLeft.hours}h</div>
+                                <div>:</div>
+                                <div>{timeLeft.minutes}m</div>
+                                <div>:</div>
+                                <div>{timeLeft.seconds}s</div>
+                            </div>
                         </div>
-                    </div>
+                   )}
               </CardHeader>
               <CardContent className="flex-grow">
                   <ul className="space-y-4">
