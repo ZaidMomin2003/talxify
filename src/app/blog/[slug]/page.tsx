@@ -5,10 +5,11 @@ import Image from 'next/image';
 import { Badge } from '@/components/ui/badge';
 import LandingHeader from '../../landing-header';
 import LandingFooter from '../../landing-footer';
-import { Calendar, User } from 'lucide-react';
+import { Calendar, User, ArrowRight } from 'lucide-react';
 import type { Metadata } from 'next';
 import { Card, CardContent } from '@/components/ui/card';
 import Link from 'next/link';
+import { Button } from '@/components/ui/button';
 
 type Props = {
   params: { slug: string }
@@ -61,8 +62,8 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
       <LandingHeader />
       <main className="container mx-auto max-w-4xl p-4 sm:p-6 lg:p-8">
         <article>
-          <header className="py-12">
-             <div className="relative w-full h-72 rounded-xl overflow-hidden mb-8 shadow-lg">
+          <header className="py-8 md:py-12">
+             <div className="relative w-full h-56 md:h-72 rounded-xl overflow-hidden mb-8 shadow-lg border">
                 <Image 
                     src={post.imageUrl} 
                     alt={post.title}
@@ -70,7 +71,9 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
                     objectFit="cover"
                     priority
                     data-ai-hint="abstract blog image"
+                    className="opacity-80"
                 />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
             </div>
             <div className="flex flex-wrap gap-2 mb-4">
                 {post.tags.map(tag => <Badge key={tag} variant="secondary">{tag}</Badge>)}
@@ -89,7 +92,7 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
           </header>
 
           <div 
-            className="prose prose-lg dark:prose-invert max-w-none"
+            className="prose prose-lg dark:prose-invert max-w-none prose-blockquote:border-primary prose-blockquote:text-muted-foreground prose-a:text-primary hover:prose-a:text-primary/80 prose-strong:text-foreground"
             dangerouslySetInnerHTML={{ __html: post.content }}
           />
         </article>
@@ -100,7 +103,7 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
                 <div className="grid md:grid-cols-2 gap-8">
                     {relatedPosts.map(related => (
                         <Link href={`/blog/${related.slug}`} key={related.slug} className="group block">
-                            <Card className="overflow-hidden shadow-lg h-full flex flex-col hover:border-primary transition-all">
+                            <Card className="overflow-hidden shadow-lg h-full flex flex-col hover:border-primary transition-all duration-300 transform hover:-translate-y-1">
                                 <div className="relative w-full h-40">
                                      <Image 
                                         src={related.imageUrl} 

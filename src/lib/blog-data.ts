@@ -10,6 +10,18 @@ export interface BlogPost {
     content: string;
 }
 
+const ctaCard = `
+    <div class="not-prose my-16 rounded-xl bg-gradient-to-br from-primary/10 via-background to-background border border-primary/20 p-8 text-center shadow-lg">
+        <h3 class="text-3xl font-bold font-headline mb-4">Ready to Ace Your Interview?</h3>
+        <p class="text-muted-foreground mb-6 max-w-md mx-auto">Stop reading, start doing. Put these concepts into practice with AI-powered mock interviews and coding challenges.</p>
+        <a href="/dashboard" class="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-11 px-8">
+            Start Practicing Now
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ml-2 h-4 w-4"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+        </a>
+    </div>
+`;
+
+
 export const blogPosts: BlogPost[] = [
     {
         slug: 'demystifying-the-system-design-interview',
@@ -39,7 +51,7 @@ export const blogPosts: BlogPost[] = [
                 <li><strong>Database:</strong> Where will you store data? SQL or NoSQL? Why?</li>
                 <li><strong>Cache:</strong> To speed up reads for frequently accessed data.</li>
             </ul>
-            <p>Draw a simple diagram on the whiteboard. This shows you can think structurally and provides a roadmap for the rest of the discussion.</p>
+            <blockquote>Draw a simple diagram on the whiteboard. This shows you can think structurally and provides a roadmap for the rest of the discussion.</blockquote>
 
             <h3 class="text-2xl font-bold mt-8 mb-4">Step 3: Deep Dive into Components</h3>
             <p>The interviewer will likely guide you to focus on a specific part of your design. This is where you demonstrate depth. Let's say they ask about the video uploading flow:</p>
@@ -58,6 +70,7 @@ export const blogPosts: BlogPost[] = [
                 <li><strong>Caching:</strong> Identify what can be cached. The homepage of YouTube, user profiles, and hot videos are all great candidates for caching in a system like Redis or Memcached.</li>
             </ul>
             <p>By systematically breaking down the problem, starting broad and diving deep where it matters, you can confidently navigate the system design interview and showcase your ability to build robust, scalable software.</p>
+            ${ctaCard}
         `
     },
     {
@@ -91,7 +104,7 @@ export const blogPosts: BlogPost[] = [
                 <li>Had to learn a new technology quickly.</li>
                 <li>Dealt with an ambiguous requirement.</li>
             </ul>
-            <p>For each of these scenarios, structure your answer using the STAR method.</p>
+            <blockquote>For each of these scenarios, structure your answer using the <a href="/blog/the-star-method-guide">STAR method</a>.</blockquote>
 
             <h3 class="text-2xl font-bold mt-8 mb-4">The STAR Method: Your Secret Weapon</h3>
             <p>The STAR method is a structured way to tell a compelling story that provides exactly the information the interviewer is looking for. It stands for:</p>
@@ -110,6 +123,7 @@ export const blogPosts: BlogPost[] = [
                 <li><strong>Be Authentic:</strong> Don't make things up. Your genuine experiences are your most powerful asset.</li>
             </ul>
             <p>By preparing your stories and mastering the STAR method, you can transform behavioral questions from a source of anxiety into an opportunity to showcase your experience and prove you're the right candidate for the job.</p>
+            ${ctaCard}
         `
     },
     {
@@ -123,7 +137,7 @@ export const blogPosts: BlogPost[] = [
         content: `
             <p>In almost every behavioral interview, you'll hear the phrase, "Tell me about a time when..." This is your cue to use the STAR method. It's a simple, powerful framework that helps you provide a complete and compelling answer, demonstrating your skills and experience in a structured way.</p>
             <p>Let's break down each component with an example.</p>
-            <p><strong>The Question:</strong> "Tell me about a time you had a conflict with a coworker."</p>
+            <blockquote><strong>The Question:</strong> "Tell me about a time you had a conflict with a coworker."</blockquote>
 
             <h3 class="text-2xl font-bold mt-8 mb-4">S - Situation</h3>
             <p>Set the scene concisely. Provide just enough context for the interviewer to understand the circumstances. Avoid jargon and unnecessary detail.</p>
@@ -142,6 +156,7 @@ export const blogPosts: BlogPost[] = [
             <blockquote><em>"The senior developer agreed that my proposed changes would lead to a much better user experience. They updated the API specification, and the final integration was smooth. As a result, we were able to handle payment errors gracefully, which reduced customer support tickets related to checkout by an estimated 15% after launch. I learned the importance of proactive communication and framing feedback constructively to achieve a shared goal."</em></blockquote>
 
             <p class="mt-8">By following this structure, you create a narrative that is easy to follow, full of substance, and directly highlights your skills in communication, problem-solving, and collaboration. Practice framing your key career stories in the STAR format, and you'll be ready for any behavioral question that comes your way.</p>
+            ${ctaCard}
         `
     },
     {
@@ -180,6 +195,7 @@ export const blogPosts: BlogPost[] = [
                 <li><strong>Skill Proficiency:</strong> Display proficiency charts based on your performance in quizzes, giving recruiters a visual representation of your strengths.</li>
             </ul>
             <p>Your portfolio is a living document. Keep it updated with your latest projects and skills. A standout portfolio not only gets you the interview but also gives you a powerful set of talking points once you're in it.</p>
+            ${ctaCard}
         `
     },
     {
@@ -242,6 +258,7 @@ export const blogPosts: BlogPost[] = [
                 <li><strong>Same-Direction Pointers:</strong> Used in problems like "remove duplicates from a sorted array."</li>
             </ul>
             <p>Next time you encounter a problem involving a sorted array and pairs of elements, ask yourself: can I use two pointers? It might just be the key to an optimal solution.</p>
+            ${ctaCard}
         `
     },
     {
@@ -279,6 +296,7 @@ export const blogPosts: BlogPost[] = [
             </ul>
 
             <p class="mt-8">By integrating AI into your preparation strategy, you're not just practicing—you're practicing smarter. You're getting personalized coaching at a scale that was previously impossible. Embrace these new tools, and you'll walk into your next interview more prepared and confident than ever before.</p>
+            ${ctaCard}
         `
     }
 ];
