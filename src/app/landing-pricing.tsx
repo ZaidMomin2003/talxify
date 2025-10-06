@@ -97,8 +97,22 @@ export default function LandingPricing() {
 
         <div className="flex justify-center mb-8">
             <div className="inline-flex items-center rounded-full bg-muted p-1">
-                <Button onClick={() => setCurrency('inr')} variant={currency === 'inr' ? 'secondary' : 'ghost'} className="rounded-full">Indian (INR)</Button>
-                <Button onClick={() => setCurrency('usd')} variant={currency === 'usd' ? 'secondary' : 'ghost'} className="rounded-full">International (USD)</Button>
+                <Button 
+                    onClick={() => setCurrency('inr')} 
+                    variant={currency === 'inr' ? 'default' : 'ghost'} 
+                    size="sm"
+                    className={cn("rounded-full", currency === 'inr' && 'bg-orange-500 hover:bg-orange-600')}
+                >
+                    Indian (INR)
+                </Button>
+                <Button 
+                    onClick={() => setCurrency('usd')} 
+                    variant={currency === 'usd' ? 'default' : 'ghost'} 
+                    size="sm"
+                    className={cn("rounded-full", currency === 'usd' && 'bg-orange-500 hover:bg-orange-600')}
+                >
+                    International (USD)
+                </Button>
             </div>
         </div>
 
