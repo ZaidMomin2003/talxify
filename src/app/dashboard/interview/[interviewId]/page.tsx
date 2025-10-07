@@ -206,7 +206,7 @@ export default function LiveInterviewPage() {
     nextStartTimeRef.current += audioBuffer.duration;
     audioSourcesRef.current.add(source);
   }, []);
-  
+
   const handleMessage = useCallback((message: LiveServerMessage) => {
     const audio = message.serverContent?.modelTurn?.parts[0]?.inlineData;
     if (audio) playAudio(audio.data);
@@ -460,7 +460,7 @@ export default function LiveInterviewPage() {
     <div className="relative flex flex-col h-screen w-full p-4 sm:p-6 bg-background">
         <div className="absolute inset-0 thermal-gradient-bg z-0"/>
         <InterviewHeader status={status} elapsedTime={elapsedTime}/>
-        <main className="flex-1 relative flex items-center justify-center">
+        <main className="flex-1 relative flex items-center justify-center z-10">
             <AIPanel isInterviewing={isRecording} onStartInterview={startRecording} isReady={isSessionReady} />
         </main>
         <UserVideo videoRef={userVideoEl} isVideoOn={isVideoOn} />
