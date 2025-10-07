@@ -35,7 +35,7 @@ const InterviewHeader = ({ status, elapsedTime }: { status: string; elapsedTime:
   );
 };
 
-const AIPanel = ({ isInterviewing, onStartInterview, isReady }: { isInterviewing: boolean; onStartInterview: () => void; isReady: boolean }) => {
+const AIPanel = ({ isInterviewing }: { isInterviewing: boolean; }) => {
   return (
     <div className="relative flex flex-col items-center justify-center w-full h-full bg-muted/20 rounded-2xl overflow-hidden border">
        <div className="absolute inset-0 bg-dot-pattern opacity-10"/>
@@ -51,12 +51,6 @@ const AIPanel = ({ isInterviewing, onStartInterview, isReady }: { isInterviewing
       </div>
       <p className="mt-6 text-2xl font-bold font-headline text-foreground">Kathy</p>
       <p className="text-muted-foreground">AI Interviewer</p>
-      {isReady && !isInterviewing && (
-        <Button onClick={onStartInterview} size="lg" className="mt-6">
-          <Play className="mr-2 h-5 w-5"/>
-          Start Interview
-        </Button>
-      )}
     </div>
   );
 };
@@ -163,7 +157,7 @@ export default function LiveInterviewPage() {
   const updateStatus = (msg: string) => { setStatus(msg);};
   const updateError = (msg: string, e?: ErrorEvent | CloseEvent) => {
     const detailedMessage = e ? `${msg} | Details: ${JSON.stringify(e, Object.getOwnPropertyNames(e))}` : msg;
-    setStatus(`Error: ${msg}`);
+    setStatus(`Error: ${detailedMessage}`);
     console.error(detailedMessage, e);
   };
   
@@ -219,28 +213,35 @@ export default function LiveInterviewPage() {
     if (aiText) setCurrentAiTranscription(prev => prev + aiText);
 
     if (message.serverContent?.turnComplete) {
-      const finalUserText = currentUserTranscription + userText;
-      const finalAiText = currentAiTranscription + aiText;
+      // Use a functional update to get the latest state inside the callback
+      setCurrentUserTranscription(currentText => {
+          const finalUserText = currentText + userText;
+          if (finalUserText) {
+              transcriptRef.current.push({ speaker: 'user', text: finalUserText });
+          }
+          return ''; // Reset
+      });
 
-      if (finalUserText) transcriptRef.current.push({ speaker: 'user', text: finalUserText });
-      if (finalAiText) {
-        transcriptRef.current.push({ speaker: 'ai', text: finalAiText });
-        const jsonMatch = finalAiText.match(/<JSON_DATA>(.*?)<\/JSON_DATA>/s);
-        if (jsonMatch && jsonMatch[1]) {
-          try {
-            const icebreakerData: IcebreakerData = JSON.parse(jsonMatch[1]);
-            if (user && icebreakerData.isIcebreaker) {
-              updateUserFromIcebreaker(user.uid, icebreakerData).then(() => {
-                toast({ title: "Icebreaker Complete!", description: "Your profile has been updated."});
-              });
-            }
-          } catch (e) { console.error("Failed to parse icebreaker JSON", e); }
-        }
-      }
-      setCurrentUserTranscription('');
-      setCurrentAiTranscription('');
+      setCurrentAiTranscription(currentText => {
+          const finalAiText = currentText + aiText;
+          if (finalAiText) {
+              transcriptRef.current.push({ speaker: 'ai', text: finalAiText });
+              const jsonMatch = finalAiText.match(/<JSON_DATA>(.*?)<\/JSON_DATA>/s);
+              if (jsonMatch && jsonMatch[1]) {
+                try {
+                  const icebreakerData: IcebreakerData = JSON.parse(jsonMatch[1]);
+                  if (user && icebreakerData.isIcebreaker) {
+                    updateUserFromIcebreaker(user.uid, icebreakerData).then(() => {
+                      toast({ title: "Icebreaker Complete!", description: "Your profile has been updated."});
+                    });
+                  }
+                } catch (e) { console.error("Failed to parse icebreaker JSON", e); }
+              }
+          }
+          return ''; // Reset
+      });
     }
-  }, [playAudio, stopAllPlayback, currentUserTranscription, currentAiTranscription, user, toast]);
+  }, [playAudio, stopAllPlayback, user, toast]);
 
   const initSession = useCallback(() => {
     if (!clientRef.current) return;
@@ -279,7 +280,7 @@ export default function LiveInterviewPage() {
             },
         },
         config: {
-            responseModalities: [Modality.AUDIO],
+            responseModalities: [Modality.AUDIO, Modality.TEXT],
             speechConfig: {
                 voiceConfig: { prebuiltVoiceConfig: { voiceName: selectedVoice } },
             },
@@ -461,8 +462,16 @@ export default function LiveInterviewPage() {
         <div className="absolute inset-0 thermal-gradient-bg z-0"/>
         <InterviewHeader status={status} elapsedTime={elapsedTime}/>
         <main className="flex-1 relative flex items-center justify-center z-10">
-            <AIPanel isInterviewing={isRecording} onStartInterview={startRecording} isReady={isSessionReady} />
+            <AIPanel isInterviewing={isRecording} />
         </main>
+         {isSessionReady && !isRecording && (
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30">
+            <Button onClick={startRecording} size="lg" className="h-16 rounded-full px-8">
+              <Play className="mr-3 h-6 w-6"/>
+              Start Interview
+            </Button>
+          </div>
+        )}
         <UserVideo videoRef={userVideoEl} isVideoOn={isVideoOn} />
         <CaptionDisplay userText={currentUserTranscription} aiText={currentAiTranscription}/>
         {isRecording && (
