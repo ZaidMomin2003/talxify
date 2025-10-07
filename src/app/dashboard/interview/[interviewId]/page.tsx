@@ -80,12 +80,17 @@ const UserVideo = ({ videoRef, isVideoOn }: { videoRef: React.RefObject<HTMLVide
   );
 };
 
-const CaptionDisplay = ({ text }: { text: string }) => {
+const CaptionDisplay = ({ userText, aiText }: { userText: string; aiText: string; }) => {
+  const text = aiText || userText;
   if (!text) return null;
   return (
     <div className="absolute bottom-28 left-1/2 -translate-x-1/2 w-full max-w-4xl px-4">
       <div className="bg-background/60 backdrop-blur-md rounded-lg p-4 text-center text-foreground text-lg shadow-lg border">
-        {text}
+         {aiText ? (
+            <><b>Kathy:</b> {aiText}</>
+          ) : (
+            <><b>You:</b> {userText}</>
+          )}
       </div>
     </div>
   );
@@ -124,7 +129,8 @@ export default function LiveInterviewPage() {
 
   const [status, setStatus] = useState('Initializing...');
   const [isRecording, setIsRecording] = useState(false);
-  const [currentTranscription, setCurrentTranscription] = useState('');
+  const [currentAiTranscription, setCurrentAiTranscription] = useState('');
+  const [currentUserTranscription, setCurrentUserTranscription] = useState('');
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOn, setIsVideoOn] = useState(true);
   const [elapsedTime, setElapsedTime] = useState(0);
@@ -133,7 +139,7 @@ export default function LiveInterviewPage() {
   const userVideoEl = useRef<HTMLVideoElement>(null);
   
   const clientRef = useRef<GoogleGenAI | null>(null);
-  const sessionRef = useRef<Session | null>(null);
+  const sessionPromiseRef = useRef<Promise<Session> | null>(null);
   
   const inputAudioContextRef = useRef<AudioContext | null>(null);
   const outputAudioContextRef = useRef<AudioContext | null>(null);
@@ -166,9 +172,19 @@ export default function LiveInterviewPage() {
     };
   }, [isRecording]);
 
-
+  const stopAllPlayback = () => {
+    for (const source of audioSourcesRef.current.values()) {
+        source.stop();
+        audioSourcesRef.current.delete(source);
+    }
+    nextStartTimeRef.current = 0;
+  }
+  
   const initSession = useCallback(async () => {
-    if (!clientRef.current) return;
+    if (!clientRef.current) {
+        updateError('Gemini client not initialized.');
+        return;
+    };
     updateStatus('Connecting...');
 
     const topic = searchParams.get('topic') || 'general software engineering';
@@ -183,16 +199,14 @@ export default function LiveInterviewPage() {
         initialPrompt = `You are Kathy, a friendly career coach at Talxify. Your goal is a short, 2-minute icebreaker. Start warmly. Ask about their name, city, college, skills, and hobbies. Keep it light and encouraging. After getting this info, you MUST respond with ONLY a JSON object in this exact format: { "isIcebreaker": true, "name": "User's Name", "city": "User's City", "college": "User's College", "skills": ["skill1"], "hobbies": ["hobby1"] }. Wrap this JSON object in <JSON_DATA> tags. This is your final response.`;
     }
 
-    const systemInstruction: SystemInstruction = {
-        parts: [{ text: initialPrompt }]
-    };
-    
     try {
-      sessionRef.current = await clientRef.current.live.connect({
+      sessionPromiseRef.current = clientRef.current.live.connect({
         model: 'gemini-2.5-flash-native-audio-preview-09-2025',
-        systemInstruction,
         config: {
           responseModalities: [Modality.AUDIO, Modality.TEXT],
+          inputAudioTranscription: {},
+          outputAudioTranscription: {},
+          systemInstruction: initialPrompt,
         },
         callbacks: {
           onopen: () => {
@@ -200,8 +214,8 @@ export default function LiveInterviewPage() {
             startRecording();
           },
           onmessage: async (message: LiveServerMessage) => {
-            if (message.serverContent?.modelTurn?.parts[0]?.inlineData?.data) {
-                const audio = message.serverContent.modelTurn.parts[0].inlineData;
+            const audio = message.serverContent?.modelTurn?.parts[0]?.inlineData;
+            if (audio) {
                 const outputCtx = outputAudioContextRef.current!;
                 nextStartTimeRef.current = Math.max(nextStartTimeRef.current, outputCtx.currentTime);
                 const audioBuffer = await decodeAudioData(decode(audio.data), outputCtx, 24000, 1);
@@ -215,24 +229,23 @@ export default function LiveInterviewPage() {
             }
 
             if (message.serverContent?.interrupted) {
-                for (const source of audioSourcesRef.current.values()) {
-                    source.stop();
-                    audioSourcesRef.current.delete(source);
-                }
-                nextStartTimeRef.current = 0;
+                stopAllPlayback();
             }
 
             let userText = message.serverContent?.inputTranscription?.text || '';
             let aiText = message.serverContent?.outputTranscription?.text || '';
 
-            if (userText) setCurrentTranscription(userText);
-            if (aiText) setCurrentTranscription(aiText);
+            if (userText) setCurrentUserTranscription(prev => prev + userText);
+            if (aiText) setCurrentAiTranscription(prev => prev + aiText);
 
             if (message.serverContent?.turnComplete) {
-              if (userText) transcriptRef.current.push({ speaker: 'user', text: userText });
-              if (aiText) {
-                transcriptRef.current.push({ speaker: 'ai', text: aiText });
-                 const jsonMatch = aiText.match(/<JSON_DATA>(.*?)<\/JSON_DATA>/s);
+              const finalUserText = currentUserTranscription + userText;
+              const finalAiText = currentAiTranscription + aiText;
+              
+              if (finalUserText) transcriptRef.current.push({ speaker: 'user', text: finalUserText });
+              if (finalAiText) {
+                transcriptRef.current.push({ speaker: 'ai', text: finalAiText });
+                 const jsonMatch = finalAiText.match(/<JSON_DATA>(.*?)<\/JSON_DATA>/s);
                  if (jsonMatch && jsonMatch[1]) {
                     try {
                         const icebreakerData: IcebreakerData = JSON.parse(jsonMatch[1]);
@@ -243,15 +256,20 @@ export default function LiveInterviewPage() {
                     } catch (e) { console.error("Failed to parse icebreaker JSON", e); }
                 }
               }
-              setCurrentTranscription('');
+              setCurrentUserTranscription('');
+              setCurrentAiTranscription('');
             }
           },
           onerror: (e: ErrorEvent) => updateError(e.message),
           onclose: (e: CloseEvent) => {
+            if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
             updateStatus('Session Closed: ' + e.reason);
-            setIsRecording(false);
           },
         },
+      });
+      sessionPromiseRef.current.catch(e => {
+        console.error(e);
+        updateError(e.message);
       });
     } catch (e: any) {
       console.error(e);
@@ -275,7 +293,7 @@ export default function LiveInterviewPage() {
                 clientRef.current = new GoogleGenAI({ apiKey });
                 inputAudioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
                 outputAudioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
-                
+                nextStartTimeRef.current = outputAudioContextRef.current.currentTime;
                 await initSession();
             }
         } catch(e: any) {
@@ -285,11 +303,9 @@ export default function LiveInterviewPage() {
     
     setup();
 
-
     return () => {
       isMounted = false;
       stopRecording(false);
-      sessionRef.current?.close();
       inputAudioContextRef.current?.close();
       outputAudioContextRef.current?.close();
     };
@@ -312,14 +328,14 @@ export default function LiveInterviewPage() {
       const inputCtx = inputAudioContextRef.current!;
       sourceNodeRef.current = inputCtx.createMediaStreamSource(stream);
       
-      const bufferSize = 256;
+      const bufferSize = 4096;
       scriptProcessorNodeRef.current = inputCtx.createScriptProcessor(bufferSize, 1, 1);
       
-      scriptProcessorNodeRef.current.onaudioprocess = (audioProcessingEvent) => {
-        if (!isRecording || isMuted || !sessionRef.current) return;
-        const inputBuffer = audioProcessingEvent.inputBuffer;
-        const pcmData = inputBuffer.getChannelData(0);
-        sessionRef.current.sendRealtimeInput({ media: createBlob(pcmData) });
+      scriptProcessorNodeRef.current.onaudioprocess = async (audioProcessingEvent) => {
+        if (!isRecording || isMuted || !sessionPromiseRef.current) return;
+        const pcmData = audioProcessingEvent.inputBuffer.getChannelData(0);
+        const session = await sessionPromiseRef.current;
+        session.sendRealtimeInput({media: createBlob(pcmData)});
       };
 
       sourceNodeRef.current.connect(scriptProcessorNodeRef.current);
@@ -353,7 +369,7 @@ export default function LiveInterviewPage() {
     mediaStreamRef.current = null;
     if (userVideoEl.current) { userVideoEl.current.srcObject = null; }
 
-    sessionRef.current?.close();
+    sessionPromiseRef.current?.then(session => session.close());
 
     if (shouldNavigate && user) {
         const interviewId = params.interviewId as string;
@@ -416,7 +432,7 @@ export default function LiveInterviewPage() {
             <AIPanel isInterviewing={isRecording} />
         </main>
         <UserVideo videoRef={userVideoEl} isVideoOn={isVideoOn} />
-        <CaptionDisplay text={currentTranscription}/>
+        <CaptionDisplay userText={currentUserTranscription} aiText={currentAiTranscription}/>
         <ControlBar 
             onMuteToggle={toggleMute}
             onVideoToggle={toggleVideo}
