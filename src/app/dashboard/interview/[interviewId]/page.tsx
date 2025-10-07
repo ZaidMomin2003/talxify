@@ -122,10 +122,9 @@ export default function LiveInterviewPage() {
   const { user } = useAuth();
   const { toast } = useToast();
 
-  const [isInitializing, setIsInitializing] = useState(true);
-  const [isRecording, setIsRecording] = useState(false);
   const [status, setStatus] = useState('Initializing...');
   const [error, setError] = useState('');
+  const [isRecording, setIsRecording] = useState(false);
   const [currentTranscription, setCurrentTranscription] = useState('');
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOn, setIsVideoOn] = useState(true);
@@ -171,14 +170,13 @@ export default function LiveInterviewPage() {
 
   const initSession = useCallback(async () => {
     if (!clientRef.current) return;
-    setIsInitializing(true);
-    updateStatus('Initializing Session...');
+    setStatus('connecting');
 
     const topic = searchParams.get('topic') || 'general software engineering';
     const role = searchParams.get('role') || 'Software Engineer';
     const company = searchParams.get('company');
 
-    let systemInstruction = "You are a helpful assistant.";
+    let systemInstruction = `You are a helpful assistant.`;
 
      if (topic !== 'general software engineering') {
         systemInstruction = `You are Kathy, an expert technical interviewer at Talxify. You are interviewing a candidate for the role of "${role}" on the topic of "${topic}". Your tone must be professional, encouraging, and clear. Start with a friendly introduction, then ask your first question. Always wait for the user to finish speaking.`;
@@ -199,12 +197,12 @@ export default function LiveInterviewPage() {
         callbacks: {
           onopen: () => {
             updateStatus('Session Opened. Ready for interview.');
-            setIsInitializing(false);
             sessionRef.current?.sendTurn({
                 userTurn: {
                     parts: [{ systemInstruction: systemInstruction }]
                 }
             })
+            startRecording();
           },
           onmessage: async (message: LiveServerMessage) => {
             if (message.serverContent?.modelTurn?.parts[0]?.inlineData?.data) {
@@ -257,18 +255,15 @@ export default function LiveInterviewPage() {
           onclose: (e: CloseEvent) => {
             updateStatus('Session Closed: ' + e.reason);
             setIsRecording(false);
-            setIsInitializing(false);
             if (timerIntervalRef.current) {
                 clearInterval(timerIntervalRef.current);
             }
           },
         },
       });
-      startRecording();
     } catch (e: any) {
       console.error(e);
       updateError(`Failed to initialize session: ${e.message}`);
-      setIsInitializing(false);
     }
   }, [searchParams, toast, user]);
 
@@ -277,11 +272,12 @@ export default function LiveInterviewPage() {
     let isMounted = true;
     async function setup() {
         if (!isMounted) return;
+        updateStatus('Initializing...');
         try {
             const apiKey = await getGeminiApiKey();
             if (!apiKey) {
                 updateError('GEMINI_API_KEY is not available.');
-                setIsInitializing(false);
+                setStatus('error');
                 return;
             }
             if (isMounted) {
@@ -293,23 +289,21 @@ export default function LiveInterviewPage() {
             }
         } catch(e: any) {
              updateError(`Failed to set up Gemini Client: ${e.message}`);
-             if (isMounted) setIsInitializing(false);
+             if (isMounted) setStatus('error');
         }
     }
     
-    if (isMounted) {
-        setup();
-    }
+    setup();
 
 
     return () => {
       isMounted = false;
-      stopRecording(false); // Stop recording without navigation
+      stopRecording(false);
       sessionRef.current?.close();
       inputAudioContextRef.current?.close();
       outputAudioContextRef.current?.close();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const startRecording = async () => {
@@ -410,14 +404,14 @@ export default function LiveInterviewPage() {
     }
   }
 
-  if (isInitializing) {
+  if (status === 'initializing' || status === 'connecting') {
      return (
        <div className="relative flex flex-col h-screen w-full p-4 sm:p-6 bg-background">
           <div className="absolute inset-0 thermal-gradient-bg z-0"/>
           <main className="flex-1 relative flex items-center justify-center">
             <div className="flex flex-col items-center gap-4">
               <Loader2 className="h-12 w-12 animate-spin text-primary"/>
-              <p className="text-muted-foreground">{status}</p>
+              <p className="text-muted-foreground capitalize">{status}...</p>
             </div>
           </main>
        </div>
