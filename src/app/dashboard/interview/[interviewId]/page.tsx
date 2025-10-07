@@ -348,6 +348,10 @@ export default function LiveInterviewPage() {
       await outputAudioContextRef.current!.resume();
       updateStatus('Requesting device access...');
 
+      const session = await sessionPromiseRef.current;
+      // This empty call prompts the AI to start speaking based on the system instruction.
+      session.sendRealtimeInput({});
+
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
       mediaStreamRef.current = stream;
       if (userVideoEl.current) { userVideoEl.current.srcObject = stream; userVideoEl.current.play(); }
@@ -483,4 +487,3 @@ export default function LiveInterviewPage() {
     </div>
   );
 }
-
