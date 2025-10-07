@@ -144,64 +144,94 @@ export default function LiveInterviewPage() {
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const scriptProcessorNodeRef = useRef<ScriptProcessorNode | null>(null);
   const sourceNodeRef = useRef<MediaStreamAudioSourceNode | null>(null);
+  const outputGainNodeRef = useRef<GainNode | null>(null);
   
   const nextAudioStartTimeRef = useRef(0);
   const audioBufferSources = useRef(new Set<AudioBufferSourceNode>());
 
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  const endSession = useCallback(async (shouldNavigate = true) => {
-    if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
-    
-    setIsInterviewing(false);
-    if(shouldNavigate) setStatus('Interview ended. Navigating to results...');
+  useEffect(() => {
+    // This effect runs only once on component mount to initialize everything.
+    // @ts-ignore
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    inputAudioContextRef.current = new AudioContext({ sampleRate: 16000 });
+    outputAudioContextRef.current = new AudioContext({ sampleRate: 24000 });
+    outputGainNodeRef.current = outputAudioContextRef.current.createGain();
+    outputGainNodeRef.current.connect(outputAudioContextRef.current.destination);
 
-    session?.close();
-    setSession(null);
-
-    scriptProcessorNodeRef.current?.disconnect();
-    sourceNodeRef.current?.disconnect();
-    
-    mediaStreamRef.current?.getTracks().forEach((t) => t.stop());
-    mediaStreamRef.current = null;
-    
-    if (userVideoEl.current) userVideoEl.current.srcObject = null;
-
-    if (shouldNavigate && user) {
-        const interviewId = params.interviewId as string;
-        
-        if (transcriptRef.current.length === 0) {
-            transcriptRef.current.push({ speaker: 'ai', text: 'Interview session ended before any exchange.' });
-        }
-
-        const activity: InterviewActivity = {
-            id: interviewId,
-            type: 'interview',
-            timestamp: new Date().toISOString(),
-            transcript: transcriptRef.current,
-            feedback: "Feedback will be generated on the results page.",
-            details: {
-                topic: searchParams.get('topic') || 'General',
-                role: searchParams.get('role') || undefined,
-                level: searchParams.get('level') || undefined,
-                company: searchParams.get('company') || undefined,
-            }
-        };
-        
-        try {
-            await addActivity(user.uid, activity);
-        } catch (error) {
-            console.error("Failed to save activity:", error);
-            toast({ title: "Could not save interview results", variant: "destructive" });
-        } finally {
-            router.push(`/dashboard/interview/${interviewId}/results`);
-        }
+    if (!process.env.NEXT_PUBLIC_GEMINI_API_KEY) {
+        setStatus("Error: Gemini API Key not configured.");
+        return;
     }
-  }, [user, params.interviewId, searchParams, router, toast, session]);
-  
+    clientRef.current = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY });
+    
+    const topic = searchParams.get('topic') || 'general software engineering';
+    const role = searchParams.get('role') || 'Software Engineer';
+    const company = searchParams.get('company') || undefined;
+
+    let systemInstruction = `You are Kathy, an expert technical interviewer at Talxify. You are interviewing a candidate for the role of "${role}" on the topic of "${topic}". Start with a friendly introduction, then ask your first question. Always wait for the user to finish speaking. Your speech should be concise.`;
+    if (company) {
+        systemInstruction += ` The candidate is interested in ${company}, so you can tailor behavioral questions to their leadership principles if applicable.`;
+    }
+
+    const initSession = async () => {
+      if (!clientRef.current) return;
+      setStatus('Connecting to AI...');
+      try {
+        const newSession = await clientRef.current.live.connect({
+          model: 'gemini-2.5-flash-native-audio-preview-09-2025',
+          callbacks: {
+            onopen: () => setStatus('Waiting for Kathy to start...'),
+            onmessage: handleAIMessage,
+            onerror: (e) => {
+                let errorMessage = 'An unknown error occurred';
+                if (e instanceof CloseEvent) {
+                    errorMessage = `Session closed unexpectedly. Code: ${e.code}, Reason: ${e.reason}`;
+                } else if (e instanceof Error) {
+                    errorMessage = e.message;
+                } else {
+                    errorMessage = JSON.stringify(e);
+                }
+                setStatus(`Error: ${errorMessage}`);
+                console.error("Session Error:", e);
+            },
+            onclose: (e) => {
+              // This can be triggered on purpose, so we check the `isInterviewing` state.
+              if (isInterviewing) {
+                  setStatus('Session Closed: ' + e.reason);
+                  endSession();
+              }
+            },
+          },
+          config: {
+            responseModalities: [Modality.AUDIO],
+            speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Orus' } } },
+            inputAudioTranscription: {},
+            outputAudioTranscription: {},
+            systemInstruction: systemInstruction,
+          },
+        });
+        setSession(newSession);
+      } catch (e: any) {
+        console.error("Connection to Gemini failed:", e);
+        setStatus(`Error: ${e.message}`);
+      }
+    };
+    
+    initSession();
+
+    return () => {
+      endSession(false); // Cleanup on component unmount
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty dependency array ensures this runs only once.
+
+
   const playAudio = useCallback(async (base64Audio: string) => {
-    if (!outputAudioContextRef.current) return;
     const audioContext = outputAudioContextRef.current;
+    const gainNode = outputGainNodeRef.current;
+    if (!audioContext || !gainNode) return;
     
     if (audioContext.state === 'suspended') {
       await audioContext.resume();
@@ -219,7 +249,7 @@ export default function LiveInterviewPage() {
 
         const source = audioContext.createBufferSource();
         source.buffer = audioBuffer;
-        source.connect(audioContext.destination);
+        source.connect(gainNode);
 
         source.onended = () => {
             audioBufferSources.current.delete(source);
@@ -234,7 +264,6 @@ export default function LiveInterviewPage() {
   }, []);
 
   const stopAllPlayback = useCallback(() => {
-    if (!outputAudioContextRef.current) return;
     for (const source of audioBufferSources.current.values()) {
         source.stop();
     }
@@ -269,66 +298,6 @@ export default function LiveInterviewPage() {
        setStatus("🔴 Your turn... Speak now.");
     }
   }, [playAudio, stopAllPlayback, currentAiTranscription, currentUserTranscription]);
-
-  useEffect(() => {
-    // @ts-ignore
-    const AudioContext = window.AudioContext || window.webkitAudioContext;
-    inputAudioContextRef.current = new AudioContext({ sampleRate: 16000 });
-    outputAudioContextRef.current = new AudioContext({ sampleRate: 24000 });
-    
-    if (!process.env.NEXT_PUBLIC_GEMINI_API_KEY) {
-        setStatus("Error: Gemini API Key not configured.");
-        return;
-    }
-    clientRef.current = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY });
-    
-    const topic = searchParams.get('topic') || 'general software engineering';
-    const role = searchParams.get('role') || 'Software Engineer';
-    const company = searchParams.get('company') || undefined;
-
-    let systemInstruction = `You are Kathy, an expert technical interviewer at Talxify. You are interviewing a candidate for the role of "${role}" on the topic of "${topic}". Start with a friendly introduction, then ask your first question. Always wait for the user to finish speaking. Your speech should be concise.`;
-    if (company) {
-        systemInstruction += ` The candidate is interested in ${company}, so you can tailor behavioral questions to their leadership principles if applicable.`;
-    }
-
-    const init = async () => {
-        setStatus('Connecting to AI...');
-        try {
-            const newSession = await clientRef.current!.live.connect({
-                model: 'gemini-2.5-flash-native-audio-preview-09-2025',
-                callbacks: {
-                    onopen: () => setStatus('Waiting for Kathy to start...'),
-                    onmessage: handleAIMessage,
-                    onerror: (e) => setStatus(`Error: ${e.message}`),
-                    onclose: (e) => {
-                        if (isInterviewing) { // Only end if it was in progress
-                            setStatus('Session Closed: ' + e.reason);
-                            endSession();
-                        }
-                    },
-                },
-                config: {
-                    responseModalities: [Modality.AUDIO],
-                    speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Orus' } } },
-                    inputAudioTranscription: {},
-                    outputAudioTranscription: {},
-                    systemInstruction: systemInstruction,
-                },
-            });
-            setSession(newSession);
-        } catch (e: any) {
-            console.error("Connection to Gemini failed:", e);
-            setStatus(`Error: ${e.message}`);
-        }
-    }
-    
-    init();
-
-    return () => {
-        endSession(false);
-    }
-  }, [searchParams, handleAIMessage, endSession]);
-  
 
   const startInterview = useCallback(async () => {
     if (isInterviewing || !session) return;
@@ -383,11 +352,68 @@ export default function LiveInterviewPage() {
     } catch (err: any) {
         setStatus(`Error starting interview: ${err.message}`);
         console.error('Error starting interview:', err);
-        endSession(false);
+        endSession();
     }
-  }, [user, toast, router, endSession, isInterviewing, session]);
+  }, [session, user, toast, router, isInterviewing]);
+
+  const endSession = useCallback((shouldNavigate = true) => {
+    if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+    
+    setIsInterviewing(false);
+    if(shouldNavigate) setStatus('Interview ended. Navigating to results...');
+
+    session?.close();
+    setSession(null);
+
+    scriptProcessorNodeRef.current?.disconnect();
+    sourceNodeRef.current?.disconnect();
+    
+    mediaStreamRef.current?.getTracks().forEach((t) => t.stop());
+    mediaStreamRef.current = null;
+    
+    if (userVideoEl.current) userVideoEl.current.srcObject = null;
+
+    if (shouldNavigate && user) {
+        const interviewId = params.interviewId as string;
+        
+        if (transcriptRef.current.length === 0) {
+            transcriptRef.current.push({ speaker: 'ai', text: 'Interview session ended before any exchange.' });
+        }
+
+        const activity: InterviewActivity = {
+            id: interviewId,
+            type: 'interview',
+            timestamp: new Date().toISOString(),
+            transcript: transcriptRef.current,
+            feedback: "Feedback will be generated on the results page.",
+            details: {
+                topic: searchParams.get('topic') || 'General',
+                role: searchParams.get('role') || undefined,
+                level: searchParams.get('level') || undefined,
+                company: searchParams.get('company') || undefined,
+            }
+        };
+        
+        try {
+            addActivity(user.uid, activity);
+        } catch (error) {
+            console.error("Failed to save activity:", error);
+            toast({ title: "Could not save interview results", variant: "destructive" });
+        } finally {
+            router.push(`/dashboard/interview/${interviewId}/results`);
+        }
+    }
+  }, [user, params.interviewId, searchParams, router, toast, session]);
   
-  const toggleMute = () => setIsMuted(prev => !prev);
+  
+  const toggleMute = () => {
+    const nextMuted = !isMuted;
+    setIsMuted(nextMuted);
+    if (mediaStreamRef.current) {
+        mediaStreamRef.current.getAudioTracks().forEach(track => { track.enabled = !nextMuted; });
+    }
+  }
+
   const toggleVideo = () => {
     const nextVideoOn = !isVideoOn;
     setIsVideoOn(nextVideoOn);
@@ -404,7 +430,7 @@ export default function LiveInterviewPage() {
             <AIPanel isInterviewing={isInterviewing} />
              {!isInterviewing && (
                 <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30">
-                    <Button onClick={startInterview} size="lg" className="h-16 rounded-full px-8" disabled={!session}>
+                    <Button onClick={startInterview} size="lg" className="h-16 rounded-full px-8" disabled={!session || isInterviewing}>
                         {!session ? <Loader2 className="mr-3 h-6 w-6 animate-spin"/> : <Play className="mr-3 h-6 w-6"/>}
                         {!session ? 'Connecting...' : 'Start Interview'}
                     </Button>
@@ -426,4 +452,3 @@ export default function LiveInterviewPage() {
     </div>
   );
 }
-
