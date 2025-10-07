@@ -11,7 +11,7 @@ import type { InterviewActivity, TranscriptEntry, IcebreakerData } from '@/lib/t
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
-import { GoogleGenAI, LiveServerMessage, Modality, Session } from '@google/genai';
+import { GoogleGenAI, LiveServerMessage, Modality, Session, SystemInstruction } from '@google/genai';
 import { createBlob, decode, decodeAudioData } from '@/lib/utils';
 import { getGeminiApiKey } from '@/app/actions/gemini';
 
@@ -26,8 +26,8 @@ const InterviewHeader = ({ status, elapsedTime }: { status: string; elapsedTime:
 
   return (
     <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20">
-        <div className="flex items-center gap-4 bg-background/50 border rounded-full px-4 py-2 text-sm text-muted-foreground backdrop-blur-sm">
-            <span className={cn("w-2 h-2 rounded-full", status.toLowerCase().includes('recording') ? 'bg-red-500 animate-pulse' : 'bg-yellow-500')}/>
+        <div className={cn("flex items-center gap-4 bg-background/50 border rounded-full px-4 py-2 text-sm text-muted-foreground backdrop-blur-sm", status.toLowerCase().includes('error') && 'bg-destructive/20 border-destructive text-destructive-foreground')}>
+            <span className={cn("w-2 h-2 rounded-full", status.toLowerCase().includes('recording') ? 'bg-red-500 animate-pulse' : (status.toLowerCase().includes('error') ? 'bg-destructive' : 'bg-yellow-500'))}/>
             <span>{status}</span>
             {elapsedTime > 0 && <span className="font-mono">{formatTime(elapsedTime)}</span>}
         </div>
@@ -123,7 +123,6 @@ export default function LiveInterviewPage() {
   const { toast } = useToast();
 
   const [status, setStatus] = useState('Initializing...');
-  const [error, setError] = useState('');
   const [isRecording, setIsRecording] = useState(false);
   const [currentTranscription, setCurrentTranscription] = useState('');
   const [isMuted, setIsMuted] = useState(false);
@@ -146,8 +145,8 @@ export default function LiveInterviewPage() {
   const audioSourcesRef = useRef(new Set<AudioBufferSourceNode>());
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  const updateStatus = (msg: string) => { setStatus(msg); setError(''); };
-  const updateError = (msg: string) => { setError(msg); console.error(msg); };
+  const updateStatus = (msg: string) => { setStatus(msg);};
+  const updateError = (msg: string) => { setStatus(`Error: ${msg}`); console.error(msg); };
   
    useEffect(() => {
     if (isRecording) {
@@ -170,38 +169,34 @@ export default function LiveInterviewPage() {
 
   const initSession = useCallback(async () => {
     if (!clientRef.current) return;
-    setStatus('connecting');
+    updateStatus('Connecting...');
 
     const topic = searchParams.get('topic') || 'general software engineering';
     const role = searchParams.get('role') || 'Software Engineer';
     const company = searchParams.get('company');
 
-    let initialPrompt = `You are a helpful assistant.`;
-
-     if (topic !== 'general software engineering') {
-        initialPrompt = `You are Kathy, an expert technical interviewer at Talxify. You are interviewing a candidate for the role of "${role}" on the topic of "${topic}". Your tone must be professional, encouraging, and clear. Start with a friendly introduction, then ask your first question. Always wait for the user to finish speaking.`;
-        if (company) {
-            initialPrompt += ` The candidate is interested in ${company}, so you can tailor behavioral questions to their leadership principles if applicable.`;
-        }
-         if (topic === 'Icebreaker Introduction') {
-            initialPrompt = `You are Kathy, a friendly career coach at Talxify. Your goal is a short, 2-minute icebreaker. Start warmly. Ask about their name, city, college, skills, and hobbies. Keep it light and encouraging. After getting this info, you MUST respond with ONLY a JSON object in this exact format: { "isIcebreaker": true, "name": "User's Name", "city": "User's City", "college": "User's College", "skills": ["skill1"], "hobbies": ["hobby1"] }. Wrap this JSON object in <JSON_DATA> tags. This is your final response.`;
-        }
+    let initialPrompt = `You are Kathy, an expert technical interviewer at Talxify. You are interviewing a candidate for the role of "${role}" on the topic of "${topic}". Your tone must be professional, encouraging, and clear. Start with a friendly introduction, then ask your first question. Always wait for the user to finish speaking.`;
+    if (company) {
+        initialPrompt += ` The candidate is interested in ${company}, so you can tailor behavioral questions to their leadership principles if applicable.`;
     }
+     if (topic === 'Icebreaker Introduction') {
+        initialPrompt = `You are Kathy, a friendly career coach at Talxify. Your goal is a short, 2-minute icebreaker. Start warmly. Ask about their name, city, college, skills, and hobbies. Keep it light and encouraging. After getting this info, you MUST respond with ONLY a JSON object in this exact format: { "isIcebreaker": true, "name": "User's Name", "city": "User's City", "college": "User's College", "skills": ["skill1"], "hobbies": ["hobby1"] }. Wrap this JSON object in <JSON_DATA> tags. This is your final response.`;
+    }
+
+    const systemInstruction: SystemInstruction = {
+        parts: [{ text: initialPrompt }]
+    };
     
     try {
       sessionRef.current = await clientRef.current.live.connect({
         model: 'gemini-2.5-flash-native-audio-preview-09-2025',
+        systemInstruction,
         config: {
           responseModalities: [Modality.AUDIO, Modality.TEXT],
         },
         callbacks: {
           onopen: () => {
             updateStatus('Session Opened. Ready for interview.');
-            sessionRef.current?.sendTurn({
-                userTurn: {
-                    parts: [{ text: initialPrompt }]
-                }
-            })
             startRecording();
           },
           onmessage: async (message: LiveServerMessage) => {
@@ -274,7 +269,6 @@ export default function LiveInterviewPage() {
             const apiKey = await getGeminiApiKey();
             if (!apiKey) {
                 updateError('GEMINI_API_KEY is not available.');
-                setStatus('error');
                 return;
             }
             if (isMounted) {
@@ -286,7 +280,6 @@ export default function LiveInterviewPage() {
             }
         } catch(e: any) {
              updateError(`Failed to set up Gemini Client: ${e.message}`);
-             if (isMounted) setStatus('error');
         }
     }
     
@@ -334,7 +327,7 @@ export default function LiveInterviewPage() {
 
       setIsRecording(true);
       updateStatus('🔴 Recording... Speak now.');
-    } catch (err: any) {
+    } catch (err: any) => {
       updateError(`Error starting recording: ${err.message}`);
       await stopRecording();
     }
@@ -401,7 +394,7 @@ export default function LiveInterviewPage() {
     }
   }
 
-  if (status === 'initializing' || status === 'connecting') {
+  if (status.toLowerCase().includes('initializing') || status.toLowerCase().includes('connecting')) {
      return (
        <div className="relative flex flex-col h-screen w-full p-4 sm:p-6 bg-background">
           <div className="absolute inset-0 thermal-gradient-bg z-0"/>
@@ -418,7 +411,7 @@ export default function LiveInterviewPage() {
   return (
     <div className="relative flex flex-col h-screen w-full p-4 sm:p-6 bg-background">
         <div className="absolute inset-0 thermal-gradient-bg z-0"/>
-        <InterviewHeader status={error || status} elapsedTime={elapsedTime}/>
+        <InterviewHeader status={status} elapsedTime={elapsedTime}/>
         <main className="flex-1 relative flex items-center justify-center">
             <AIPanel isInterviewing={isRecording} />
         </main>
