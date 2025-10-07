@@ -217,38 +217,37 @@ export default function LiveInterviewPage() {
         callbacks: {
             onopen: () => updateStatus('Session Opened. Ready for interview.'),
             onmessage: async (message: LiveServerMessage) => {
-            const audio =
-                message.serverContent?.modelTurn?.parts[0]?.inlineData;
-            if (audio) playAudio(audio.data);
-            if (message.serverContent?.interrupted) stopAllPlayback();
-            
-            let userText = message.serverContent?.inputTranscription?.text || '';
-            let aiText = message.serverContent?.outputTranscription?.text || '';
-
-            if (userText) setCurrentUserTranscription( (prev) => prev + userText );
-            if (aiText) setCurrentAiTranscription( (prev) => prev + aiText );
-            
-            if (message.serverContent?.turnComplete) {
-                const finalUserText = currentUserTranscription + userText;
-                const finalAiText = currentAiTranscription + aiText;
+                const audio = message.serverContent?.modelTurn?.parts[0]?.inlineData;
+                if (audio) playAudio(audio.data);
+                if (message.serverContent?.interrupted) stopAllPlayback();
                 
-                if (finalUserText) transcriptRef.current.push({ speaker: 'user', text: finalUserText });
-                if (finalAiText) {
-                    transcriptRef.current.push({ speaker: 'ai', text: finalAiText });
-                    const jsonMatch = finalAiText.match(/<JSON_DATA>(.*?)<\/JSON_DATA>/s);
-                    if (jsonMatch && jsonMatch[1]) {
-                        try {
-                            const icebreakerData: IcebreakerData = JSON.parse(jsonMatch[1]);
-                            if (user && icebreakerData.isIcebreaker) {
-                            await updateUserFromIcebreaker(user.uid, icebreakerData);
-                            toast({ title: "Icebreaker Complete!", description: "Your profile has been updated."});
-                            }
-                        } catch (e) { console.error("Failed to parse icebreaker JSON", e); }
+                let userText = message.serverContent?.inputTranscription?.text || '';
+                let aiText = message.serverContent?.outputTranscription?.text || '';
+
+                if (userText) setCurrentUserTranscription( (prev) => prev + userText );
+                if (aiText) setCurrentAiTranscription( (prev) => prev + aiText );
+                
+                if (message.serverContent?.turnComplete) {
+                    const finalUserText = currentUserTranscription + userText;
+                    const finalAiText = currentAiTranscription + aiText;
+                    
+                    if (finalUserText) transcriptRef.current.push({ speaker: 'user', text: finalUserText });
+                    if (finalAiText) {
+                        transcriptRef.current.push({ speaker: 'ai', text: finalAiText });
+                        const jsonMatch = finalAiText.match(/<JSON_DATA>(.*?)<\/JSON_DATA>/s);
+                        if (jsonMatch && jsonMatch[1]) {
+                            try {
+                                const icebreakerData: IcebreakerData = JSON.parse(jsonMatch[1]);
+                                if (user && icebreakerData.isIcebreaker) {
+                                await updateUserFromIcebreaker(user.uid, icebreakerData);
+                                toast({ title: "Icebreaker Complete!", description: "Your profile has been updated."});
+                                }
+                            } catch (e) { console.error("Failed to parse icebreaker JSON", e); }
+                        }
                     }
+                    setCurrentUserTranscription('');
+                    setCurrentAiTranscription('');
                 }
-                setCurrentUserTranscription('');
-                setCurrentAiTranscription('');
-            }
             },
             onerror: (e: ErrorEvent) => {
                 updateError(e.message);
@@ -256,11 +255,14 @@ export default function LiveInterviewPage() {
             },
             onclose: (e: CloseEvent) => {
                 updateStatus('Session Closed: ' + e.reason);
-                if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+                if (timerIntervalRef.current) {
+                    clearInterval(timerIntervalRef.current);
+                    timerIntervalRef.current = null;
+                }
             },
         },
         config: {
-            responseModalities: [Modality.AUDIO],
+            responseModalities: [Modality.AUDIO, Modality.TEXT],
             speechConfig: {
                 voiceConfig: { prebuiltVoiceConfig: { voiceName: selectedVoice } },
             },
@@ -277,7 +279,7 @@ export default function LiveInterviewPage() {
         console.error(e);
         updateError(e.message);
     }
-}, [selectedVoice, playAudio, stopAllPlayback, searchParams, user, toast, currentUserTranscription, currentAiTranscription]);
+  }, [selectedVoice, playAudio, stopAllPlayback, searchParams, user, toast, currentUserTranscription, currentAiTranscription]);
 
 
   useEffect(() => {
@@ -322,8 +324,12 @@ export default function LiveInterviewPage() {
 
   const startRecording = async () => {
     if (isRecording) return;
-    if (!inputAudioContextRef.current) { updateError("Input audio context not ready."); return; }
+    if (!inputAudioContextRef.current || !outputAudioContextRef.current) {
+        updateError("Audio contexts not ready.");
+        return;
+    }
     await inputAudioContextRef.current.resume();
+    await outputAudioContextRef.current.resume();
     updateStatus('Requesting device access...');
 
     try {
@@ -457,4 +463,3 @@ export default function LiveInterviewPage() {
     </div>
   );
 }
-
