@@ -272,7 +272,7 @@ export default function LiveInterviewPage() {
   
 
   useEffect(() => {
-    async function init() {
+    const init = async () => {
         // @ts-ignore
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         inputAudioContextRef.current = new AudioContext({ sampleRate: 16000 });
@@ -294,7 +294,7 @@ export default function LiveInterviewPage() {
         }
 
         try {
-            const session = await clientRef.current.live.connect({
+            sessionRef.current = await clientRef.current.live.connect({
                 model: 'gemini-2.5-flash-native-audio-preview-09-2025',
                 callbacks: {
                     onopen: () => setStatus('Waiting for Kathy to start...'),
@@ -315,7 +315,6 @@ export default function LiveInterviewPage() {
                     systemInstruction: systemInstruction,
                 },
             });
-            sessionRef.current = session;
         } catch (e: any) {
             console.error("Connection to Gemini failed:", e);
             setStatus(`Error: ${e.message}`);
@@ -357,10 +356,8 @@ export default function LiveInterviewPage() {
             userVideoEl.current.srcObject = stream;
             userVideoEl.current.play();
         }
-        
-        setIsInterviewing(true);
-        setElapsedTime(0);
-        timerIntervalRef.current = setInterval(() => setElapsedTime(prev => prev + 1), 1000);
+
+        setStatus('Microphone access granted. Connecting...');
         
         const inputCtx = inputAudioContextRef.current!;
         sourceNodeRef.current = inputCtx.createMediaStreamSource(stream);
@@ -369,7 +366,7 @@ export default function LiveInterviewPage() {
         scriptProcessorNodeRef.current = inputCtx.createScriptProcessor(bufferSize, 1, 1);
 
         scriptProcessorNodeRef.current.onaudioprocess = (event) => {
-            if (!sessionRef.current || isMuted) return;
+            if (!isInterviewing || !sessionRef.current) return;
             const pcmData = event.inputBuffer.getChannelData(0);
             sessionRef.current.sendRealtimeInput({ media: createBlob(pcmData) });
         };
@@ -382,14 +379,17 @@ export default function LiveInterviewPage() {
         } else {
              throw new Error("Session is not available to start the interview.");
         }
-
+        
+        setIsInterviewing(true);
+        setElapsedTime(0);
+        timerIntervalRef.current = setInterval(() => setElapsedTime(prev => prev + 1), 1000);
 
     } catch (err: any) {
         setStatus(`Error starting interview: ${err.message}`);
         console.error('Error starting interview:', err);
         endSession(false);
     }
-  }, [user, toast, router, endSession, isMuted, isInterviewing]);
+  }, [user, toast, router, endSession, isInterviewing]);
   
   const toggleMute = () => setIsMuted(prev => !prev);
   const toggleVideo = () => {
@@ -430,3 +430,5 @@ export default function LiveInterviewPage() {
     </div>
   );
 }
+
+    
