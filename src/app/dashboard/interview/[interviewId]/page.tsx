@@ -4,7 +4,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useSearchParams, useRouter, useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Mic, MicOff, Video, VideoOff, Phone, BrainCircuit, Loader2 } from 'lucide-react';
+import { Mic, MicOff, Video, VideoOff, Phone, BrainCircuit, Loader2, Play } from 'lucide-react';
 import { addActivity, updateUserFromIcebreaker } from '@/lib/firebase-service';
 import { useAuth } from '@/context/auth-context';
 import type { InterviewActivity, TranscriptEntry, IcebreakerData } from '@/lib/types';
@@ -35,7 +35,7 @@ const InterviewHeader = ({ status, elapsedTime }: { status: string; elapsedTime:
   );
 };
 
-const AIPanel = ({ isInterviewing }: { isInterviewing: boolean }) => {
+const AIPanel = ({ isInterviewing, onStartInterview, isReady }: { isInterviewing: boolean; onStartInterview: () => void; isReady: boolean }) => {
   return (
     <div className="relative flex flex-col items-center justify-center w-full h-full bg-muted/20 rounded-2xl overflow-hidden border">
        <div className="absolute inset-0 bg-dot-pattern opacity-10"/>
@@ -51,6 +51,12 @@ const AIPanel = ({ isInterviewing }: { isInterviewing: boolean }) => {
       </div>
       <p className="mt-6 text-2xl font-bold font-headline text-foreground">Kathy</p>
       <p className="text-muted-foreground">AI Interviewer</p>
+      {isReady && !isInterviewing && (
+        <Button onClick={onStartInterview} size="lg" className="mt-6">
+          <Play className="mr-2 h-5 w-5"/>
+          Start Interview
+        </Button>
+      )}
     </div>
   );
 };
@@ -135,6 +141,7 @@ export default function LiveInterviewPage() {
   const [isVideoOn, setIsVideoOn] = useState(true);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [isClientInitialized, setIsClientInitialized] = useState(false);
+  const [isSessionReady, setIsSessionReady] = useState(false);
   const [selectedVoice, setSelectedVoice] = useState('Orus');
 
   const transcriptRef = useRef<TranscriptEntry[]>([]);
@@ -155,7 +162,7 @@ export default function LiveInterviewPage() {
 
   const updateStatus = (msg: string) => { setStatus(msg);};
   const updateError = (msg: string, e?: ErrorEvent | CloseEvent) => {
-    const detailedMessage = e ? `${msg} | Details: ${JSON.stringify(e)}` : msg;
+    const detailedMessage = e ? `${msg} | Details: ${JSON.stringify(e, Object.getOwnPropertyNames(e))}` : msg;
     setStatus(`Error: ${msg}`);
     console.error(detailedMessage, e);
   };
@@ -254,7 +261,10 @@ export default function LiveInterviewPage() {
         sessionPromiseRef.current = clientRef.current.live.connect({
         model: 'gemini-2.5-flash-native-audio-preview-09-2025',
         callbacks: {
-            onopen: () => updateStatus('Session Opened. Ready for interview.'),
+            onopen: () => {
+              updateStatus('Session Opened. Ready to start.');
+              setIsSessionReady(true);
+            },
             onmessage: handleMessage,
             onerror: (e: ErrorEvent) => {
                 updateError(`Session Error: ${e.message}`, e);
@@ -335,6 +345,7 @@ export default function LiveInterviewPage() {
         updateError("Audio contexts not ready.");
         return;
     }
+    
     await inputAudioContextRef.current.resume();
     await outputAudioContextRef.current.resume();
     updateStatus('Requesting device access...');
@@ -422,11 +433,6 @@ export default function LiveInterviewPage() {
     }
   };
 
-  useEffect(() => {
-    startRecording();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isClientInitialized]);
-
   const toggleMute = () => setIsMuted(prev => !prev);
   const toggleVideo = () => {
     const nextVideoOn = !isVideoOn;
@@ -455,18 +461,20 @@ export default function LiveInterviewPage() {
         <div className="absolute inset-0 thermal-gradient-bg z-0"/>
         <InterviewHeader status={status} elapsedTime={elapsedTime}/>
         <main className="flex-1 relative flex items-center justify-center">
-            <AIPanel isInterviewing={isRecording} />
+            <AIPanel isInterviewing={isRecording} onStartInterview={startRecording} isReady={isSessionReady} />
         </main>
         <UserVideo videoRef={userVideoEl} isVideoOn={isVideoOn} />
         <CaptionDisplay userText={currentUserTranscription} aiText={currentAiTranscription}/>
-        <ControlBar 
-            onMuteToggle={toggleMute}
-            onVideoToggle={toggleVideo}
-            onEndCall={() => stopRecording()}
-            isMuted={isMuted}
-            isVideoOn={isVideoOn}
-            isRecording={isRecording}
-        />
+        {isRecording && (
+          <ControlBar 
+              onMuteToggle={toggleMute}
+              onVideoToggle={toggleVideo}
+              onEndCall={() => stopRecording()}
+              isMuted={isMuted}
+              isVideoOn={isVideoOn}
+              isRecording={isRecording}
+          />
+        )}
     </div>
   );
 }
