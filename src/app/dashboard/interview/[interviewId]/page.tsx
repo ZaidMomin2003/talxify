@@ -327,7 +327,7 @@ export default function LiveInterviewPage() {
 
       setIsRecording(true);
       updateStatus('🔴 Recording... Speak now.');
-    } catch (err: any) => {
+    } catch (err: any) {
       updateError(`Error starting recording: ${err.message}`);
       await stopRecording();
     }
