@@ -11,7 +11,7 @@ import type { InterviewActivity, TranscriptEntry, IcebreakerData } from '@/lib/t
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
-import { GoogleGenAI, LiveServerMessage, Modality, Session, SystemInstruction } from '@google/genai';
+import { GoogleGenAI, LiveServerMessage, Modality, Session } from '@google/genai';
 import { createBlob, decode, decodeAudioData } from '@/lib/utils';
 import { getGeminiApiKey } from '@/app/actions/gemini';
 
@@ -204,6 +204,11 @@ export default function LiveInterviewPage() {
         model: 'gemini-2.5-flash-native-audio-preview-09-2025',
         config: {
           responseModalities: [Modality.AUDIO, Modality.TEXT],
+          speechConfig: {
+            voiceConfig: {
+                prebuiltVoiceConfig: {voiceName: 'Orus'},
+            },
+          },
           inputAudioTranscription: {},
           outputAudioTranscription: {},
           systemInstruction: initialPrompt,
@@ -262,7 +267,10 @@ export default function LiveInterviewPage() {
           },
           onerror: (e: ErrorEvent) => updateError(e.message),
           onclose: (e: CloseEvent) => {
-            if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+            if (timerIntervalRef.current) {
+                clearInterval(timerIntervalRef.current);
+                timerIntervalRef.current = null;
+            }
             updateStatus('Session Closed: ' + e.reason);
           },
         },
