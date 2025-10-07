@@ -134,6 +134,8 @@ export default function LiveInterviewPage() {
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOn, setIsVideoOn] = useState(true);
   const [elapsedTime, setElapsedTime] = useState(0);
+  const [isClientInitialized, setIsClientInitialized] = useState(false);
+  const [selectedVoice, setSelectedVoice] = useState('Orus');
 
   const transcriptRef = useRef<TranscriptEntry[]>([]);
   const userVideoEl = useRef<HTMLVideoElement>(null);
@@ -172,124 +174,116 @@ export default function LiveInterviewPage() {
     };
   }, [isRecording]);
 
-  const stopAllPlayback = () => {
+  const stopAllPlayback = useCallback(() => {
     for (const source of audioSourcesRef.current.values()) {
         source.stop();
         audioSourcesRef.current.delete(source);
     }
     nextStartTimeRef.current = 0;
-  }
+  }, []);
+
+  const playAudio = useCallback(async (base64EncodedAudioString: string) => {
+    if (!outputAudioContextRef.current) return;
+    const outputCtx = outputAudioContextRef.current;
+    nextStartTimeRef.current = Math.max(nextStartTimeRef.current, outputCtx.currentTime);
+    const audioBuffer = await decodeAudioData(decode(base64EncodedAudioString), outputCtx, 24000, 1);
+    const source = outputCtx.createBufferSource();
+    source.buffer = audioBuffer;
+    source.connect(outputCtx.destination);
+    source.addEventListener('ended', () => audioSourcesRef.current.delete(source));
+    source.start(nextStartTimeRef.current);
+    nextStartTimeRef.current += audioBuffer.duration;
+    audioSourcesRef.current.add(source);
+  }, []);
   
-  const initSession = useCallback(async () => {
-    if (!clientRef.current) {
-        updateError('Gemini client not initialized.');
-        return;
-    };
-    updateStatus('Connecting...');
+  const initSession = useCallback(() => {
+    if (!clientRef.current) return;
 
     const topic = searchParams.get('topic') || 'general software engineering';
     const role = searchParams.get('role') || 'Software Engineer';
-    const company = searchParams.get('company');
+    const company = searchParams.get('company') || 'Google';
 
-    let initialPrompt = `You are Kathy, an expert technical interviewer at Talxify. You are interviewing a candidate for the role of "${role}" on the topic of "${topic}". Your tone must be professional, encouraging, and clear. Start with a friendly introduction, then ask your first question. Always wait for the user to finish speaking.`;
+    let systemInstruction = `You are Kathy, an expert technical interviewer at Talxify. You are interviewing a candidate for the role of "${role}" on the topic of "${topic}". Your tone must be professional, encouraging, and clear. Start with a friendly introduction, then ask your first question. Always wait for the user to finish speaking.`;
     if (company) {
-        initialPrompt += ` The candidate is interested in ${company}, so you can tailor behavioral questions to their leadership principles if applicable.`;
+        systemInstruction += ` The candidate is interested in ${company}, so you can tailor behavioral questions to their leadership principles if applicable.`;
     }
-     if (topic === 'Icebreaker Introduction') {
-        initialPrompt = `You are Kathy, a friendly career coach at Talxify. Your goal is a short, 2-minute icebreaker. Start warmly. Ask about their name, city, college, skills, and hobbies. Keep it light and encouraging. After getting this info, you MUST respond with ONLY a JSON object in this exact format: { "isIcebreaker": true, "name": "User's Name", "city": "User's City", "college": "User's College", "skills": ["skill1"], "hobbies": ["hobby1"] }. Wrap this JSON object in <JSON_DATA> tags. This is your final response.`;
+    if (topic === 'Icebreaker Introduction') {
+        systemInstruction = `You are Kathy, a friendly career coach at Talxify. Your goal is a short, 2-minute icebreaker. Start warmly. Ask about their name, city, college, skills, and hobbies. Keep it light and encouraging. After getting this info, you MUST respond with ONLY a JSON object in this exact format: { "isIcebreaker": true, "name": "User's Name", "city": "User's City", "college": "User's College", "skills": ["skill1"], "hobbies": ["hobby1"] }. Wrap this JSON object in <JSON_DATA> tags. This is your final response.`;
     }
 
     try {
-      sessionPromiseRef.current = clientRef.current.live.connect({
+        sessionPromiseRef.current = clientRef.current.live.connect({
         model: 'gemini-2.5-flash-native-audio-preview-09-2025',
-        config: {
-          responseModalities: [Modality.AUDIO, Modality.TEXT],
-          speechConfig: {
-            voiceConfig: {
-                prebuiltVoiceConfig: {voiceName: 'Orus'},
-            },
-          },
-          inputAudioTranscription: {},
-          outputAudioTranscription: {},
-          systemInstruction: initialPrompt,
-        },
         callbacks: {
-          onopen: () => {
-            updateStatus('Session Opened. Ready for interview.');
-            startRecording();
-          },
-          onmessage: async (message: LiveServerMessage) => {
-            const audio = message.serverContent?.modelTurn?.parts[0]?.inlineData;
-            if (audio) {
-                const outputCtx = outputAudioContextRef.current!;
-                nextStartTimeRef.current = Math.max(nextStartTimeRef.current, outputCtx.currentTime);
-                const audioBuffer = await decodeAudioData(decode(audio.data), outputCtx, 24000, 1);
-                const source = outputCtx.createBufferSource();
-                source.buffer = audioBuffer;
-                source.connect(outputCtx.destination);
-                source.addEventListener('ended', () => audioSourcesRef.current.delete(source));
-                source.start(nextStartTimeRef.current);
-                nextStartTimeRef.current += audioBuffer.duration;
-                audioSourcesRef.current.add(source);
-            }
-
-            if (message.serverContent?.interrupted) {
-                stopAllPlayback();
-            }
-
+            onopen: () => updateStatus('Session Opened. Ready for interview.'),
+            onmessage: async (message: LiveServerMessage) => {
+            const audio =
+                message.serverContent?.modelTurn?.parts[0]?.inlineData;
+            if (audio) playAudio(audio.data);
+            if (message.serverContent?.interrupted) stopAllPlayback();
+            
             let userText = message.serverContent?.inputTranscription?.text || '';
             let aiText = message.serverContent?.outputTranscription?.text || '';
 
-            if (userText) setCurrentUserTranscription(prev => prev + userText);
-            if (aiText) setCurrentAiTranscription(prev => prev + aiText);
-
+            if (userText) setCurrentUserTranscription( (prev) => prev + userText );
+            if (aiText) setCurrentAiTranscription( (prev) => prev + aiText );
+            
             if (message.serverContent?.turnComplete) {
-              const finalUserText = currentUserTranscription + userText;
-              const finalAiText = currentAiTranscription + aiText;
-              
-              if (finalUserText) transcriptRef.current.push({ speaker: 'user', text: finalUserText });
-              if (finalAiText) {
-                transcriptRef.current.push({ speaker: 'ai', text: finalAiText });
-                 const jsonMatch = finalAiText.match(/<JSON_DATA>(.*?)<\/JSON_DATA>/s);
-                 if (jsonMatch && jsonMatch[1]) {
-                    try {
-                        const icebreakerData: IcebreakerData = JSON.parse(jsonMatch[1]);
-                        if (user && icebreakerData.isIcebreaker) {
-                           await updateUserFromIcebreaker(user.uid, icebreakerData);
-                           toast({ title: "Icebreaker Complete!", description: "Your profile has been updated."});
-                        }
-                    } catch (e) { console.error("Failed to parse icebreaker JSON", e); }
+                const finalUserText = currentUserTranscription + userText;
+                const finalAiText = currentAiTranscription + aiText;
+                
+                if (finalUserText) transcriptRef.current.push({ speaker: 'user', text: finalUserText });
+                if (finalAiText) {
+                    transcriptRef.current.push({ speaker: 'ai', text: finalAiText });
+                    const jsonMatch = finalAiText.match(/<JSON_DATA>(.*?)<\/JSON_DATA>/s);
+                    if (jsonMatch && jsonMatch[1]) {
+                        try {
+                            const icebreakerData: IcebreakerData = JSON.parse(jsonMatch[1]);
+                            if (user && icebreakerData.isIcebreaker) {
+                            await updateUserFromIcebreaker(user.uid, icebreakerData);
+                            toast({ title: "Icebreaker Complete!", description: "Your profile has been updated."});
+                            }
+                        } catch (e) { console.error("Failed to parse icebreaker JSON", e); }
+                    }
                 }
-              }
-              setCurrentUserTranscription('');
-              setCurrentAiTranscription('');
+                setCurrentUserTranscription('');
+                setCurrentAiTranscription('');
             }
-          },
-          onerror: (e: ErrorEvent) => updateError(e.message),
-          onclose: (e: CloseEvent) => {
-            if (timerIntervalRef.current) {
-                clearInterval(timerIntervalRef.current);
-                timerIntervalRef.current = null;
-            }
-            updateStatus('Session Closed: ' + e.reason);
-          },
+            },
+            onerror: (e: ErrorEvent) => {
+                updateError(e.message);
+                if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+            },
+            onclose: (e: CloseEvent) => {
+                updateStatus('Session Closed: ' + e.reason);
+                if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+            },
         },
-      });
-      sessionPromiseRef.current.catch(e => {
+        config: {
+            responseModalities: [Modality.AUDIO],
+            speechConfig: {
+                voiceConfig: { prebuiltVoiceConfig: { voiceName: selectedVoice } },
+            },
+            inputAudioTranscription: {},
+            outputAudioTranscription: {},
+            systemInstruction: systemInstruction,
+        },
+        });
+        sessionPromiseRef.current.catch((e) => {
         console.error(e);
         updateError(e.message);
-      });
+        });
     } catch (e: any) {
-      console.error(e);
-      updateError(`Failed to initialize session: ${e.message}`);
+        console.error(e);
+        updateError(e.message);
     }
-  }, [searchParams, toast, user]);
+}, [selectedVoice, playAudio, stopAllPlayback, searchParams, user, toast, currentUserTranscription, currentAiTranscription]);
 
 
   useEffect(() => {
     let isMounted = true;
     async function setup() {
-        if (!isMounted) return;
+        if (!isMounted || isClientInitialized) return;
         updateStatus('Initializing...');
         try {
             const apiKey = await getGeminiApiKey();
@@ -302,7 +296,7 @@ export default function LiveInterviewPage() {
                 inputAudioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
                 outputAudioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
                 nextStartTimeRef.current = outputAudioContextRef.current.currentTime;
-                await initSession();
+                setIsClientInitialized(true);
             }
         } catch(e: any) {
              updateError(`Failed to set up Gemini Client: ${e.message}`);
@@ -319,6 +313,12 @@ export default function LiveInterviewPage() {
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (isClientInitialized) {
+      initSession();
+    }
+  }, [isClientInitialized, initSession]);
 
   const startRecording = async () => {
     if (isRecording) return;
@@ -409,6 +409,11 @@ export default function LiveInterviewPage() {
     }
   };
 
+  useEffect(() => {
+    startRecording();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isClientInitialized]);
+
   const toggleMute = () => setIsMuted(prev => !prev);
   const toggleVideo = () => {
     const nextVideoOn = !isVideoOn;
@@ -418,7 +423,7 @@ export default function LiveInterviewPage() {
     }
   }
 
-  if (status.toLowerCase().includes('initializing') || status.toLowerCase().includes('connecting')) {
+  if (!isClientInitialized) {
      return (
        <div className="relative flex flex-col h-screen w-full p-4 sm:p-6 bg-background">
           <div className="absolute inset-0 thermal-gradient-bg z-0"/>
@@ -452,3 +457,4 @@ export default function LiveInterviewPage() {
     </div>
   );
 }
+
