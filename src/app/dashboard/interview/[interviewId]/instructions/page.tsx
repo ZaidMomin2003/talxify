@@ -74,7 +74,7 @@ export default function InterviewInstructionsPage() {
                         </div>
 
                          <div className="space-y-4">
-                            <h2 className="font-semibold text-2xl">How It Works</h2>
+                            <h2 className="font-semibold text-2xl">Instructions</h2>
                             <div className="grid gap-4 md:grid-cols-2">
                                 <div className="flex items-start gap-4">
                                     <div className="bg-primary/10 text-primary rounded-full p-2 mt-1">
