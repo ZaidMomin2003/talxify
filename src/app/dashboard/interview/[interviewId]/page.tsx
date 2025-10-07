@@ -190,7 +190,7 @@ export default function LiveInterviewPage() {
     
     try {
       sessionRef.current = await clientRef.current.live.connect({
-        model: 'gemini-2.5-flash-preview-native-audio-dialog',
+        model: 'gemini-2.5-flash-native-audio-preview-09-2025',
         config: {
           responseModalities: [Modality.AUDIO, Modality.TEXT],
         },
