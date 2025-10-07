@@ -240,11 +240,12 @@ export default function LiveInterviewPage() {
 
     if (shouldNavigate && user) {
         const interviewId = params.interviewId as string;
-        router.push(`/dashboard/interview/${interviewId}/results`);
-
+        
+        // Ensure there's something in the transcript before saving.
         if (transcriptRef.current.length === 0) {
-            transcriptRef.current.push({ speaker: 'ai', text: 'Interview ended prematurely.' });
+            transcriptRef.current.push({ speaker: 'ai', text: 'Interview session ended before any exchange.' });
         }
+
         const activity: InterviewActivity = {
             id: interviewId,
             type: 'interview',
@@ -259,12 +260,57 @@ export default function LiveInterviewPage() {
             }
         };
         
-        await addActivity(user.uid, activity).catch(error => {
+        try {
+            await addActivity(user.uid, activity);
+        } catch (error) {
             console.error("Failed to save activity:", error);
             toast({ title: "Could not save interview results", variant: "destructive" });
-        });
+        } finally {
+            router.push(`/dashboard/interview/${interviewId}/results`);
+        }
     }
-  }, [user, params, searchParams, router, toast]);
+  }, [user, params.interviewId, searchParams, router, toast]);
+  
+  const initSession = useCallback(() => {
+    if (!clientRef.current) return;
+    
+    const topic = searchParams.get('topic') || 'general software engineering';
+    const role = searchParams.get('role') || 'Software Engineer';
+    const company = searchParams.get('company') || undefined;
+
+    let systemInstruction = `You are Kathy, an expert technical interviewer at Talxify. You are interviewing a candidate for the role of "${role}" on the topic of "${topic}". Start with a friendly introduction, then ask your first question. Always wait for the user to finish speaking. Your speech should be concise.`;
+    if (company) {
+        systemInstruction += ` The candidate is interested in ${company}, so you can tailor behavioral questions to their leadership principles if applicable.`;
+    }
+
+    try {
+        const newSession = clientRef.current.live.connect({
+            model: 'gemini-2.5-flash-native-audio-preview-09-2025',
+            callbacks: {
+                onopen: () => setStatus('Waiting for Kathy to start...'),
+                onmessage: handleAIMessage,
+                onerror: (e) => setStatus(`Error: ${e.message}`),
+                onclose: (e) => {
+                    if (isInterviewing) {
+                        setStatus('Session Closed: ' + e.reason);
+                        endSession();
+                    }
+                },
+            },
+            config: {
+                responseModalities: [Modality.AUDIO],
+                speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Orus' } } },
+                inputAudioTranscription: {},
+                outputAudioTranscription: {},
+                systemInstruction: systemInstruction,
+            },
+        });
+        sessionRef.current = newSession;
+    } catch (e: any) {
+        console.error("Connection to Gemini failed:", e);
+        setStatus(`Error: ${e.message}`);
+    }
+  }, [searchParams, handleAIMessage, endSession, isInterviewing]);
 
   useEffect(() => {
     // @ts-ignore
@@ -278,57 +324,14 @@ export default function LiveInterviewPage() {
     }
     clientRef.current = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY });
     
-    const initSession = async () => {
-        if (!clientRef.current) return;
-        
-        const topic = searchParams.get('topic') || 'general software engineering';
-        const role = searchParams.get('role') || 'Software Engineer';
-        const company = searchParams.get('company') || undefined;
-
-        let systemInstruction = `You are Kathy, an expert technical interviewer at Talxify. You are interviewing a candidate for the role of "${role}" on the topic of "${topic}". Your tone must be professional, encouraging, and clear. Start with a friendly introduction, then ask your first question. Always wait for the user to finish speaking.`;
-        if (company) {
-            systemInstruction += ` The candidate is interested in ${company}, so you can tailor behavioral questions to their leadership principles if applicable.`;
-        }
-
-        try {
-            const newSession = await clientRef.current.live.connect({
-                model: 'gemini-2.5-flash-native-audio-preview-09-2025',
-                callbacks: {
-                    onopen: () => setStatus('Waiting for Kathy to start...'),
-                    onmessage: handleAIMessage,
-                    onerror: (e) => setStatus(`Error: ${e.message}`),
-                    onclose: (e) => {
-                        if (isInterviewing) {
-                            setStatus('Session Closed: ' + e.reason);
-                            endSession();
-                        }
-                    },
-                },
-                config: {
-                    responseModalities: [Modality.AUDIO],
-                    speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Orus' } } },
-                    inputAudioTranscription: {},
-                    outputAudioTranscription: {},
-                    systemInstruction: systemInstruction,
-                },
-            });
-            sessionRef.current = newSession;
-        } catch (e: any) {
-            console.error("Connection to Gemini failed:", e);
-            setStatus(`Error: ${e.message}`);
-        }
-    };
-    
     initSession();
 
     return () => {
         endSession(false);
     }
-  }, [handleAIMessage, endSession, searchParams, isInterviewing]);
+  }, [initSession, endSession]);
 
-  const startInterview = async () => {
-    if (isInterviewing) return;
-
+  const startInterview = useCallback(async () => {
     if (!user) {
         toast({ title: 'Not Logged In', description: 'Please log in to start an interview.', variant: 'destructive' });
         router.push('/login');
@@ -374,12 +377,15 @@ export default function LiveInterviewPage() {
         
         sourceNodeRef.current.connect(scriptProcessorNodeRef.current);
         scriptProcessorNodeRef.current.connect(inputCtx.destination);
+        
+        // This is the trigger for the AI to start speaking.
+        sessionRef.current?.sendRealtimeInput({});
 
     } catch (err: any) {
         setStatus(`Error starting interview: ${err.message}`);
         endSession(false);
     }
-  };
+  }, [user, toast, router, endSession, isMuted]);
   
   const toggleMute = () => setIsMuted(prev => !prev);
   const toggleVideo = () => {
@@ -396,14 +402,6 @@ export default function LiveInterviewPage() {
         <InterviewHeader status={status} elapsedTime={elapsedTime}/>
         <main className="flex-1 relative z-10 flex items-center justify-center">
             <AIPanel isInterviewing={isInterviewing} />
-             {!isInterviewing && status !== 'Ready to Start' && !status.toLowerCase().includes('error') && !status.toLowerCase().includes('kathy') &&(
-                 <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30">
-                    <div className="flex flex-col items-center gap-4">
-                        <Loader2 className="h-12 w-12 animate-spin text-primary"/>
-                        <p className="text-muted-foreground capitalize">{status}...</p>
-                    </div>
-                 </div>
-             )}
              {!isInterviewing && (status.toLowerCase().includes('kathy') || status.toLowerCase().includes('ready')) && (
                 <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30">
                     <Button onClick={startInterview} size="lg" className="h-16 rounded-full px-8">
@@ -428,3 +426,4 @@ export default function LiveInterviewPage() {
     </div>
   );
 }
+
