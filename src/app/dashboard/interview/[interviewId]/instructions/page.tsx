@@ -5,7 +5,7 @@ import React, { useState } from 'react';
 import { useSearchParams, useParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ShieldCheck, MessageSquare, Bot, ArrowRight, Video, Building, BarChartHorizontal, Sparkles } from 'lucide-react';
+import { ShieldCheck, MessageSquare, Bot, ArrowRight, Video, Building, BarChartHorizontal, Sparkles, Wifi } from 'lucide-react';
 import Link from 'next/link';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -92,6 +92,15 @@ export default function InterviewInstructionsPage() {
                                     <div>
                                         <h3 className="font-semibold">Enable Camera & Mic</h3>
                                         <p className="text-muted-foreground text-sm">For the best experience, allow access to your camera and microphone when prompted.</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-start gap-4">
+                                     <div className="bg-destructive/10 text-destructive rounded-full p-2 mt-1">
+                                        <Wifi className="h-5 w-5" />
+                                    </div>
+                                    <div>
+                                        <h3 className="font-semibold">Stable Internet Connection</h3>
+                                        <p className="text-muted-foreground text-sm">Ensure you are in an area with a good internet connection. An interrupted session cannot be resumed.</p>
                                     </div>
                                 </div>
                                 <div className="flex items-start gap-4">
