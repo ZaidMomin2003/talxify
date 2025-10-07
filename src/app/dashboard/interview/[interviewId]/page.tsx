@@ -148,11 +148,11 @@ export default function LiveInterviewPage() {
   
   const nextAudioStartTimeRef = useRef(0);
   const audioBufferSources = useRef(new Set<AudioBufferSourceNode>());
-
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
-
+  
+  // This effect runs only ONCE on component mount.
   useEffect(() => {
-    // This effect runs only once on component mount to initialize everything.
+    // 1. Initialize Audio Contexts
     // @ts-ignore
     const AudioContext = window.AudioContext || window.webkitAudioContext;
     inputAudioContextRef.current = new AudioContext({ sampleRate: 16000 });
@@ -160,49 +160,94 @@ export default function LiveInterviewPage() {
     outputGainNodeRef.current = outputAudioContextRef.current.createGain();
     outputGainNodeRef.current.connect(outputAudioContextRef.current.destination);
 
+    // 2. Initialize Gemini Client
     if (!process.env.NEXT_PUBLIC_GEMINI_API_KEY) {
         setStatus("Error: Gemini API Key not configured.");
         return;
     }
     clientRef.current = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY });
     
-    const topic = searchParams.get('topic') || 'general software engineering';
-    const role = searchParams.get('role') || 'Software Engineer';
-    const company = searchParams.get('company') || undefined;
+    // 3. Define session functions inside the effect
+    const playAudio = async (base64Audio: string) => {
+        const audioContext = outputAudioContextRef.current;
+        const gainNode = outputGainNodeRef.current;
+        if (!audioContext || !gainNode) return;
+        
+        if (audioContext.state === 'suspended') {
+            await audioContext.resume();
+        }
 
-    let systemInstruction = `You are Kathy, an expert technical interviewer at Talxify. You are interviewing a candidate for the role of "${role}" on the topic of "${topic}". Start with a friendly introduction, then ask your first question. Always wait for the user to finish speaking. Your speech should be concise.`;
-    if (company) {
-        systemInstruction += ` The candidate is interested in ${company}, so you can tailor behavioral questions to their leadership principles if applicable.`;
-    }
+        const nextStartTime = Math.max(nextAudioStartTimeRef.current, audioContext.currentTime);
+
+        try {
+            const audioBuffer = await decodeAudioData(decode(base64Audio), audioContext, 24000, 1);
+            const source = audioContext.createBufferSource();
+            source.buffer = audioBuffer;
+            source.connect(gainNode);
+            source.onended = () => audioBufferSources.current.delete(source);
+            source.start(nextStartTime);
+            nextAudioStartTimeRef.current = nextStartTime + audioBuffer.duration;
+            audioBufferSources.current.add(source);
+        } catch (e) {
+            console.error("Error playing audio:", e);
+        }
+    };
+
+    const stopAllPlayback = () => {
+        for (const source of audioBufferSources.current.values()) {
+            source.stop();
+        }
+        audioBufferSources.current.clear();
+        nextAudioStartTimeRef.current = 0;
+    };
 
     const initSession = async () => {
       if (!clientRef.current) return;
+
+      const topic = searchParams.get('topic') || 'general software engineering';
+      const role = searchParams.get('role') || 'Software Engineer';
+      const company = searchParams.get('company') || undefined;
+
+      let systemInstruction = `You are Kathy, an expert technical interviewer at Talxify. You are interviewing a candidate for the role of "${role}" on the topic of "${topic}". Start with a friendly introduction, then ask your first question. Always wait for the user to finish speaking. Your speech should be concise.`;
+      if (company) {
+          systemInstruction += ` The candidate is interested in ${company}, so you can tailor behavioral questions to their leadership principles if applicable.`;
+      }
+
       setStatus('Connecting to AI...');
+
       try {
         const newSession = await clientRef.current.live.connect({
           model: 'gemini-2.5-flash-native-audio-preview-09-2025',
           callbacks: {
             onopen: () => setStatus('Waiting for Kathy to start...'),
-            onmessage: handleAIMessage,
+            onmessage: (message: LiveServerMessage) => {
+              const audio = message.serverContent?.modelTurn?.parts[0]?.inlineData;
+              if (audio) playAudio(audio.data);
+              if (message.serverContent?.interrupted) stopAllPlayback();
+              if (message.serverContent?.outputTranscription) {
+                setCurrentAiTranscription(prev => prev + message.serverContent.outputTranscription.text);
+                setStatus("Kathy is speaking...");
+              }
+              if (message.serverContent?.inputTranscription) {
+                setCurrentUserTranscription(prev => prev + message.serverContent.inputTranscription.text);
+              }
+              if (message.serverContent?.turnComplete) {
+                if (currentAiTranscription.trim()) transcriptRef.current.push({ speaker: 'ai', text: currentAiTranscription.trim() });
+                if (currentUserTranscription.trim()) transcriptRef.current.push({ speaker: 'user', text: currentUserTranscription.trim() });
+                setCurrentUserTranscription('');
+                setCurrentAiTranscription('');
+                setStatus("🔴 Your turn... Speak now.");
+              }
+            },
             onerror: (e) => {
                 let errorMessage = 'An unknown error occurred';
-                if (e instanceof CloseEvent) {
-                    errorMessage = `Session closed unexpectedly. Code: ${e.code}, Reason: ${e.reason}`;
-                } else if (e instanceof Error) {
-                    errorMessage = e.message;
-                } else {
-                    errorMessage = JSON.stringify(e);
-                }
+                if (e instanceof CloseEvent) errorMessage = `Session closed unexpectedly. Code: ${e.code}, Reason: ${e.reason}`;
+                else if (e instanceof Error) errorMessage = e.message;
+                else errorMessage = JSON.stringify(e);
                 setStatus(`Error: ${errorMessage}`);
                 console.error("Session Error:", e);
             },
-            onclose: (e) => {
-              // This can be triggered on purpose, so we check the `isInterviewing` state.
-              if (isInterviewing) {
-                  setStatus('Session Closed: ' + e.reason);
-                  endSession();
-              }
-            },
+            onclose: (e) => setStatus('Session Closed: ' + e.reason),
           },
           config: {
             responseModalities: [Modality.AUDIO],
@@ -212,7 +257,7 @@ export default function LiveInterviewPage() {
             systemInstruction: systemInstruction,
           },
         });
-        setSession(newSession);
+        setSession(newSession); // <-- Set the session in state
       } catch (e: any) {
         console.error("Connection to Gemini failed:", e);
         setStatus(`Error: ${e.message}`);
@@ -221,83 +266,17 @@ export default function LiveInterviewPage() {
     
     initSession();
 
+    // 4. Cleanup function
     return () => {
-      endSession(false); // Cleanup on component unmount
+      mediaStreamRef.current?.getTracks().forEach((t) => t.stop());
+      session?.close();
+      inputAudioContextRef.current?.close();
+      outputAudioContextRef.current?.close();
+      if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Empty dependency array ensures this runs only once.
+  }, []); // <-- Empty dependency array ensures this runs only once.
 
-
-  const playAudio = useCallback(async (base64Audio: string) => {
-    const audioContext = outputAudioContextRef.current;
-    const gainNode = outputGainNodeRef.current;
-    if (!audioContext || !gainNode) return;
-    
-    if (audioContext.state === 'suspended') {
-      await audioContext.resume();
-    }
-
-    const nextStartTime = Math.max(nextAudioStartTimeRef.current, audioContext.currentTime);
-
-    try {
-        const audioBuffer = await decodeAudioData(
-            decode(base64Audio),
-            audioContext,
-            24000,
-            1
-        );
-
-        const source = audioContext.createBufferSource();
-        source.buffer = audioBuffer;
-        source.connect(gainNode);
-
-        source.onended = () => {
-            audioBufferSources.current.delete(source);
-        };
-        source.start(nextStartTime);
-        nextAudioStartTimeRef.current = nextStartTime + audioBuffer.duration;
-        audioBufferSources.current.add(source);
-
-    } catch (e) {
-      console.error("Error playing audio:", e);
-    }
-  }, []);
-
-  const stopAllPlayback = useCallback(() => {
-    for (const source of audioBufferSources.current.values()) {
-        source.stop();
-    }
-    audioBufferSources.current.clear();
-    nextAudioStartTimeRef.current = 0;
-  }, []);
-
-  const handleAIMessage = useCallback(async (message: LiveServerMessage) => {
-    const audio = message.serverContent?.modelTurn?.parts[0]?.inlineData;
-    if (audio) {
-      playAudio(audio.data);
-    }
-    if (message.serverContent?.interrupted) {
-      stopAllPlayback();
-    }
-    if (message.serverContent?.outputTranscription) {
-      setCurrentAiTranscription(prev => prev + message.serverContent.outputTranscription.text);
-      setStatus("Kathy is speaking...");
-    }
-    if (message.serverContent?.inputTranscription) {
-      setCurrentUserTranscription(prev => prev + message.serverContent.inputTranscription.text);
-    }
-    if (message.serverContent?.turnComplete) {
-       if (currentAiTranscription.trim()) {
-           transcriptRef.current.push({ speaker: 'ai', text: currentAiTranscription.trim() });
-       }
-       if (currentUserTranscription.trim()) {
-           transcriptRef.current.push({ speaker: 'user', text: currentUserTranscription.trim() });
-       }
-       setCurrentUserTranscription('');
-       setCurrentAiTranscription('');
-       setStatus("🔴 Your turn... Speak now.");
-    }
-  }, [playAudio, stopAllPlayback, currentAiTranscription, currentUserTranscription]);
 
   const startInterview = useCallback(async () => {
     if (isInterviewing || !session) return;
@@ -337,9 +316,10 @@ export default function LiveInterviewPage() {
         scriptProcessorNodeRef.current = inputCtx.createScriptProcessor(bufferSize, 1, 1);
 
         scriptProcessorNodeRef.current.onaudioprocess = (event) => {
-            if (!session) return;
-            const pcmData = event.inputBuffer.getChannelData(0);
-            session.sendRealtimeInput({ media: createBlob(pcmData) });
+            if (session) { // Check if session is valid before sending
+                const pcmData = event.inputBuffer.getChannelData(0);
+                session.sendRealtimeInput({ media: createBlob(pcmData) });
+            }
         };
         
         sourceNodeRef.current.connect(scriptProcessorNodeRef.current);
@@ -348,11 +328,12 @@ export default function LiveInterviewPage() {
         setIsInterviewing(true);
         setElapsedTime(0);
         timerIntervalRef.current = setInterval(() => setElapsedTime(prev => prev + 1), 1000);
+        setStatus("🔴 Your turn... Speak now.");
 
     } catch (err: any) {
         setStatus(`Error starting interview: ${err.message}`);
         console.error('Error starting interview:', err);
-        endSession();
+        if (isInterviewing) endSession();
     }
   }, [session, user, toast, router, isInterviewing]);
 
