@@ -196,6 +196,41 @@ export default function LiveInterviewPage() {
     audioSourcesRef.current.add(source);
   }, []);
   
+  const handleMessage = useCallback((message: LiveServerMessage) => {
+    const audio = message.serverContent?.modelTurn?.parts[0]?.inlineData;
+    if (audio) playAudio(audio.data);
+    if (message.serverContent?.interrupted) stopAllPlayback();
+
+    let userText = message.serverContent?.inputTranscription?.text || '';
+    let aiText = message.serverContent?.outputTranscription?.text || '';
+
+    if (userText) setCurrentUserTranscription(prev => prev + userText);
+    if (aiText) setCurrentAiTranscription(prev => prev + aiText);
+
+    if (message.serverContent?.turnComplete) {
+      const finalUserText = currentUserTranscription + userText;
+      const finalAiText = currentAiTranscription + aiText;
+
+      if (finalUserText) transcriptRef.current.push({ speaker: 'user', text: finalUserText });
+      if (finalAiText) {
+        transcriptRef.current.push({ speaker: 'ai', text: finalAiText });
+        const jsonMatch = finalAiText.match(/<JSON_DATA>(.*?)<\/JSON_DATA>/s);
+        if (jsonMatch && jsonMatch[1]) {
+          try {
+            const icebreakerData: IcebreakerData = JSON.parse(jsonMatch[1]);
+            if (user && icebreakerData.isIcebreaker) {
+              updateUserFromIcebreaker(user.uid, icebreakerData).then(() => {
+                toast({ title: "Icebreaker Complete!", description: "Your profile has been updated."});
+              });
+            }
+          } catch (e) { console.error("Failed to parse icebreaker JSON", e); }
+        }
+      }
+      setCurrentUserTranscription('');
+      setCurrentAiTranscription('');
+    }
+  }, [playAudio, stopAllPlayback, currentUserTranscription, currentAiTranscription, user, toast]);
+
   const initSession = useCallback(() => {
     if (!clientRef.current) return;
 
@@ -216,39 +251,7 @@ export default function LiveInterviewPage() {
         model: 'gemini-2.5-flash-native-audio-preview-09-2025',
         callbacks: {
             onopen: () => updateStatus('Session Opened. Ready for interview.'),
-            onmessage: async (message: LiveServerMessage) => {
-                const audio = message.serverContent?.modelTurn?.parts[0]?.inlineData;
-                if (audio) playAudio(audio.data);
-                if (message.serverContent?.interrupted) stopAllPlayback();
-                
-                let userText = message.serverContent?.inputTranscription?.text || '';
-                let aiText = message.serverContent?.outputTranscription?.text || '';
-
-                if (userText) setCurrentUserTranscription( (prev) => prev + userText );
-                if (aiText) setCurrentAiTranscription( (prev) => prev + aiText );
-                
-                if (message.serverContent?.turnComplete) {
-                    const finalUserText = currentUserTranscription + userText;
-                    const finalAiText = currentAiTranscription + aiText;
-                    
-                    if (finalUserText) transcriptRef.current.push({ speaker: 'user', text: finalUserText });
-                    if (finalAiText) {
-                        transcriptRef.current.push({ speaker: 'ai', text: finalAiText });
-                        const jsonMatch = finalAiText.match(/<JSON_DATA>(.*?)<\/JSON_DATA>/s);
-                        if (jsonMatch && jsonMatch[1]) {
-                            try {
-                                const icebreakerData: IcebreakerData = JSON.parse(jsonMatch[1]);
-                                if (user && icebreakerData.isIcebreaker) {
-                                await updateUserFromIcebreaker(user.uid, icebreakerData);
-                                toast({ title: "Icebreaker Complete!", description: "Your profile has been updated."});
-                                }
-                            } catch (e) { console.error("Failed to parse icebreaker JSON", e); }
-                        }
-                    }
-                    setCurrentUserTranscription('');
-                    setCurrentAiTranscription('');
-                }
-            },
+            onmessage: handleMessage,
             onerror: (e: ErrorEvent) => {
                 updateError(e.message);
                 if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
@@ -279,7 +282,7 @@ export default function LiveInterviewPage() {
         console.error(e);
         updateError(e.message);
     }
-  }, [selectedVoice, playAudio, stopAllPlayback, searchParams, user, toast, currentUserTranscription, currentAiTranscription]);
+  }, [selectedVoice, handleMessage, searchParams]);
 
 
   useEffect(() => {
