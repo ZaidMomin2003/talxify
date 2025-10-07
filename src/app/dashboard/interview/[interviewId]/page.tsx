@@ -191,6 +191,7 @@ export default function LiveInterviewPage() {
   const playAudio = useCallback(async (base64EncodedAudioString: string) => {
     if (!outputAudioContextRef.current) return;
     const outputCtx = outputAudioContextRef.current;
+    await outputCtx.resume(); // Ensure context is running
     nextStartTimeRef.current = Math.max(nextStartTimeRef.current, outputCtx.currentTime);
     const audioBuffer = await decodeAudioData(decode(base64EncodedAudioString), outputCtx, 24000, 1);
     const source = outputCtx.createBufferSource();
@@ -317,11 +318,14 @@ export default function LiveInterviewPage() {
       sessionRef.current = await clientRef.current.live.connect({
         model: 'gemini-2.5-flash-native-audio-preview-09-2025',
         config: {
-          responseModalities: [Modality.AUDIO, Modality.TEXT],
-          speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: selectedVoice } } },
-          inputAudioTranscription: {},
-          outputAudioTranscription: {},
-          systemInstruction: systemInstruction,
+            responseModalities: [Modality.AUDIO],
+            speechConfig: {
+              voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Orus' } },
+            },
+            inputAudioTranscription: {},
+            outputAudioTranscription: {},
+            systemInstruction:
+              'You are an expert interviewer for a senior frontend engineer position at Google. Ask me technical questions. Start with a brief introduction and then begin the interview.',
         },
         callbacks: {
             onopen: () => {
@@ -332,8 +336,8 @@ export default function LiveInterviewPage() {
                 sessionRef.current?.sendRealtimeInput({}); // Prompt AI to speak first
             },
             onmessage: handleMessage,
-            onerror: (e) => setStatus(`Error: ${e.message}`),
-            onclose: (e) => setStatus(`Session Closed: ${e.reason}`),
+            onerror: (e: any) => setStatus(`Error: ${e.message}`),
+            onclose: (e: any) => setStatus(`Session Closed: ${e.reason}`),
         },
       });
 
@@ -439,5 +443,3 @@ export default function LiveInterviewPage() {
     </div>
   );
 }
-
-    
