@@ -138,7 +138,6 @@ export default function LiveInterviewPage() {
   const transcriptRef = useRef<TranscriptEntry[]>([]);
   const userVideoEl = useRef<HTMLVideoElement>(null);
   
-  const clientRef = useRef<GoogleGenAI | null>(null);
   const inputAudioContextRef = useRef<AudioContext | null>(null);
   const outputAudioContextRef = useRef<AudioContext | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
@@ -150,8 +149,9 @@ export default function LiveInterviewPage() {
   const audioBufferSources = useRef(new Set<AudioBufferSourceNode>());
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
   
-  // This effect runs only ONCE on component mount.
   useEffect(() => {
+    // This effect runs only ONCE on component mount to initialize everything.
+    
     // 1. Initialize Audio Contexts
     // @ts-ignore
     const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -160,22 +160,13 @@ export default function LiveInterviewPage() {
     outputGainNodeRef.current = outputAudioContextRef.current.createGain();
     outputGainNodeRef.current.connect(outputAudioContextRef.current.destination);
 
-    // 2. Initialize Gemini Client
-    if (!process.env.NEXT_PUBLIC_GEMINI_API_KEY) {
-        setStatus("Error: Gemini API Key not configured.");
-        return;
-    }
-    clientRef.current = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY });
-    
-    // 3. Define session functions inside the effect
+    // 2. Define session functions
     const playAudio = async (base64Audio: string) => {
         const audioContext = outputAudioContextRef.current;
         const gainNode = outputGainNodeRef.current;
         if (!audioContext || !gainNode) return;
         
-        if (audioContext.state === 'suspended') {
-            await audioContext.resume();
-        }
+        if (audioContext.state === 'suspended') await audioContext.resume();
 
         const nextStartTime = Math.max(nextAudioStartTimeRef.current, audioContext.currentTime);
 
@@ -202,7 +193,11 @@ export default function LiveInterviewPage() {
     };
 
     const initSession = async () => {
-      if (!clientRef.current) return;
+      if (!process.env.NEXT_PUBLIC_GEMINI_API_KEY) {
+          setStatus("Error: Gemini API Key not configured.");
+          return;
+      }
+      const client = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY });
 
       const topic = searchParams.get('topic') || 'general software engineering';
       const role = searchParams.get('role') || 'Software Engineer';
@@ -216,14 +211,16 @@ export default function LiveInterviewPage() {
       setStatus('Connecting to AI...');
 
       try {
-        const newSession = await clientRef.current.live.connect({
+        const newSession = await client.live.connect({
           model: 'gemini-2.5-flash-native-audio-preview-09-2025',
           callbacks: {
             onopen: () => setStatus('Waiting for Kathy to start...'),
             onmessage: (message: LiveServerMessage) => {
+              if (message.serverContent?.interrupted) stopAllPlayback();
+
               const audio = message.serverContent?.modelTurn?.parts[0]?.inlineData;
               if (audio) playAudio(audio.data);
-              if (message.serverContent?.interrupted) stopAllPlayback();
+              
               if (message.serverContent?.outputTranscription) {
                 setCurrentAiTranscription(prev => prev + message.serverContent.outputTranscription.text);
                 setStatus("Kathy is speaking...");
@@ -257,7 +254,7 @@ export default function LiveInterviewPage() {
             systemInstruction: systemInstruction,
           },
         });
-        setSession(newSession); // <-- Set the session in state
+        setSession(newSession); // <-- Set the session in state once ready
       } catch (e: any) {
         console.error("Connection to Gemini failed:", e);
         setStatus(`Error: ${e.message}`);
@@ -266,7 +263,7 @@ export default function LiveInterviewPage() {
     
     initSession();
 
-    // 4. Cleanup function
+    // 3. Cleanup function
     return () => {
       mediaStreamRef.current?.getTracks().forEach((t) => t.stop());
       session?.close();
@@ -279,7 +276,7 @@ export default function LiveInterviewPage() {
 
 
   const startInterview = useCallback(async () => {
-    if (isInterviewing || !session) return;
+    if (isInterviewing || !session) return; // Prevent multiple starts
     if (!user) {
         toast({ title: 'Not Logged In', description: 'Please log in to start an interview.', variant: 'destructive' });
         router.push('/login');
@@ -333,7 +330,6 @@ export default function LiveInterviewPage() {
     } catch (err: any) {
         setStatus(`Error starting interview: ${err.message}`);
         console.error('Error starting interview:', err);
-        if (isInterviewing) endSession();
     }
   }, [session, user, toast, router, isInterviewing]);
 
