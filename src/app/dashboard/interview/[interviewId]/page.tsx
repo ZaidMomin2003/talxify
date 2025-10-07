@@ -126,8 +126,8 @@ export default function LiveInterviewPage() {
   const { user } = useAuth();
   const { toast } = useToast();
 
-  const [status, setStatus] = useState('Ready to Start');
   const [isInterviewing, setIsInterviewing] = useState(false);
+  const [status, setStatus] = useState('Initializing...');
   const [currentAiTranscription, setCurrentAiTranscription] = useState('');
   const [currentUserTranscription, setCurrentUserTranscription] = useState('');
   const [isMuted, setIsMuted] = useState(false);
@@ -163,7 +163,6 @@ export default function LiveInterviewPage() {
     if (!outputAudioContextRef.current) return;
     const audioContext = outputAudioContextRef.current;
     
-    // Ensure the context is running
     if (audioContext.state === 'suspended') {
       await audioContext.resume();
     }
@@ -267,13 +266,21 @@ export default function LiveInterviewPage() {
     }
   }, [user, params, searchParams, router, toast]);
 
-  const connectToGemini = useCallback(async () => {
-    if (!clientRef.current) {
-        setStatus("Error: Gemini client not initialized.");
+  useEffect(() => {
+    // @ts-ignore
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    inputAudioContextRef.current = new AudioContext({ sampleRate: 16000 });
+    outputAudioContextRef.current = new AudioContext({ sampleRate: 24000 });
+    
+    if (!process.env.NEXT_PUBLIC_GEMINI_API_KEY) {
+        setStatus("Error: Gemini API Key not configured.");
         return;
     }
-
-    try {
+    clientRef.current = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY });
+    
+    const initSession = async () => {
+        if (!clientRef.current) return;
+        
         const topic = searchParams.get('topic') || 'general software engineering';
         const role = searchParams.get('role') || 'Software Engineer';
         const company = searchParams.get('company') || undefined;
@@ -283,36 +290,41 @@ export default function LiveInterviewPage() {
             systemInstruction += ` The candidate is interested in ${company}, so you can tailor behavioral questions to their leadership principles if applicable.`;
         }
 
-        const newSession = await clientRef.current.live.connect({
-            model: 'gemini-2.5-flash-native-audio-preview-09-2025',
-            callbacks: {
-                onopen: () => setStatus('Waiting for Kathy to start...'),
-                onmessage: handleAIMessage,
-                onerror: (e) => setStatus(`Error: ${e.message}`),
-                onclose: (e) => {
-                    if (isInterviewing) {
-                        setStatus('Session Closed: ' + e.reason);
-                        endSession();
-                    }
+        try {
+            const newSession = await clientRef.current.live.connect({
+                model: 'gemini-2.5-flash-native-audio-preview-09-2025',
+                callbacks: {
+                    onopen: () => setStatus('Waiting for Kathy to start...'),
+                    onmessage: handleAIMessage,
+                    onerror: (e) => setStatus(`Error: ${e.message}`),
+                    onclose: (e) => {
+                        if (isInterviewing) {
+                            setStatus('Session Closed: ' + e.reason);
+                            endSession();
+                        }
+                    },
                 },
-            },
-            config: {
-                responseModalities: [Modality.AUDIO, Modality.TEXT],
-                speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Orus' } } },
-                inputAudioTranscription: {},
-                outputAudioTranscription: {},
-                systemInstruction: systemInstruction,
-            },
-        });
-        sessionRef.current = newSession;
-        // Prompt AI to speak first
-        newSession.sendRealtimeInput({});
+                config: {
+                    responseModalities: [Modality.AUDIO],
+                    speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Orus' } } },
+                    inputAudioTranscription: {},
+                    outputAudioTranscription: {},
+                    systemInstruction: systemInstruction,
+                },
+            });
+            sessionRef.current = newSession;
+        } catch (e: any) {
+            console.error("Connection to Gemini failed:", e);
+            setStatus(`Error: ${e.message}`);
+        }
+    };
+    
+    initSession();
 
-    } catch (e: any) {
-        console.error("Connection to Gemini failed:", e);
-        setStatus(`Error: ${e.message}`);
+    return () => {
+        endSession(false);
     }
-  }, [handleAIMessage, isInterviewing, endSession, searchParams]);
+  }, [handleAIMessage, endSession, searchParams, isInterviewing]);
 
   const startInterview = async () => {
     if (isInterviewing) return;
@@ -348,8 +360,6 @@ export default function LiveInterviewPage() {
         setElapsedTime(0);
         timerIntervalRef.current = setInterval(() => setElapsedTime(prev => prev + 1), 1000);
         
-        await connectToGemini();
-        
         const inputCtx = inputAudioContextRef.current!;
         sourceNodeRef.current = inputCtx.createMediaStreamSource(stream);
 
@@ -364,28 +374,12 @@ export default function LiveInterviewPage() {
         
         sourceNodeRef.current.connect(scriptProcessorNodeRef.current);
         scriptProcessorNodeRef.current.connect(inputCtx.destination);
+
     } catch (err: any) {
         setStatus(`Error starting interview: ${err.message}`);
         endSession(false);
     }
   };
-
-  useEffect(() => {
-    // @ts-ignore
-    const AudioContext = window.AudioContext || window.webkitAudioContext;
-    inputAudioContextRef.current = new AudioContext({ sampleRate: 16000 });
-    outputAudioContextRef.current = new AudioContext({ sampleRate: 24000 });
-    
-    if (!process.env.NEXT_PUBLIC_GEMINI_API_KEY) {
-        setStatus("Error: Gemini API Key not configured.");
-        return;
-    }
-    clientRef.current = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY });
-    
-    return () => {
-        endSession(false);
-    }
-  }, []);
   
   const toggleMute = () => setIsMuted(prev => !prev);
   const toggleVideo = () => {
@@ -402,7 +396,7 @@ export default function LiveInterviewPage() {
         <InterviewHeader status={status} elapsedTime={elapsedTime}/>
         <main className="flex-1 relative z-10 flex items-center justify-center">
             <AIPanel isInterviewing={isInterviewing} />
-             {!isInterviewing && status !== 'Ready to Start' && !status.toLowerCase().includes('error') && (
+             {!isInterviewing && status !== 'Ready to Start' && !status.toLowerCase().includes('error') && !status.toLowerCase().includes('kathy') &&(
                  <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30">
                     <div className="flex flex-col items-center gap-4">
                         <Loader2 className="h-12 w-12 animate-spin text-primary"/>
@@ -410,7 +404,7 @@ export default function LiveInterviewPage() {
                     </div>
                  </div>
              )}
-             {!isInterviewing && status === 'Ready to Start' && (
+             {!isInterviewing && (status.toLowerCase().includes('kathy') || status.toLowerCase().includes('ready')) && (
                 <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30">
                     <Button onClick={startInterview} size="lg" className="h-16 rounded-full px-8">
                     <Play className="mr-3 h-6 w-6"/>
@@ -434,5 +428,3 @@ export default function LiveInterviewPage() {
     </div>
   );
 }
-
-    
