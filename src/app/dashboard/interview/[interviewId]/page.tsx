@@ -27,7 +27,7 @@ const InterviewHeader = ({ status, elapsedTime }: { status: string; elapsedTime:
   return (
     <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20">
         <div className={cn("flex items-center gap-4 bg-background/50 border rounded-full px-4 py-2 text-sm text-muted-foreground backdrop-blur-sm", status.toLowerCase().includes('error') && 'bg-destructive/20 border-destructive text-destructive-foreground')}>
-            <span className={cn("w-2 h-2 rounded-full", status.toLowerCase().includes('recording') ? 'bg-red-500 animate-pulse' : (status.toLowerCase().includes('error') ? 'bg-destructive' : 'bg-yellow-500'))}/>
+            <span className={cn("w-2 h-2 rounded-full", status.toLowerCase().includes('your turn') ? 'bg-red-500 animate-pulse' : (status.toLowerCase().includes('error') ? 'bg-destructive' : 'bg-yellow-500'))}/>
             <span>{status}</span>
             {elapsedTime > 0 && <span className="font-mono">{formatTime(elapsedTime)}</span>}
         </div>
@@ -96,13 +96,13 @@ const CaptionDisplay = ({ userText, aiText }: { userText: string; aiText: string
   );
 };
 
-const ControlBar = ({ onMuteToggle, onVideoToggle, onEndCall, isMuted, isVideoOn, isRecording }: {
+const ControlBar = ({ onMuteToggle, onVideoToggle, onEndCall, isMuted, isVideoOn, isSessionLive }: {
   onMuteToggle: () => void;
   onVideoToggle: () => void;
   onEndCall: () => void;
   isMuted: boolean;
   isVideoOn: boolean;
-  isRecording: boolean;
+  isSessionLive: boolean;
 }) => {
   return (
     <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex items-center gap-4 rounded-full bg-background/50 border p-3 backdrop-blur-md">
@@ -112,7 +112,7 @@ const ControlBar = ({ onMuteToggle, onVideoToggle, onEndCall, isMuted, isVideoOn
       <Button onClick={onVideoToggle} size="icon" className="w-14 h-14 rounded-full" variant={!isVideoOn ? 'destructive' : 'secondary'}>
         {isVideoOn ? <Video /> : <VideoOff />}
       </Button>
-      <Button onClick={onEndCall} size="icon" className="w-14 h-14 rounded-full bg-red-600 hover:bg-red-700 text-white" disabled={!isRecording}>
+      <Button onClick={onEndCall} size="icon" className="w-14 h-14 rounded-full bg-red-600 hover:bg-red-700 text-white" disabled={!isSessionLive}>
         <Phone />
       </Button>
     </div>
@@ -129,6 +129,7 @@ export default function LiveInterviewPage() {
 
   const [status, setStatus] = useState('Initializing...');
   const [isRecording, setIsRecording] = useState(false);
+  const [isSessionLive, setIsSessionLive] = useState(false);
   const [currentAiTranscription, setCurrentAiTranscription] = useState('');
   const [currentUserTranscription, setCurrentUserTranscription] = useState('');
   const [isMuted, setIsMuted] = useState(false);
@@ -162,7 +163,7 @@ export default function LiveInterviewPage() {
   };
   
    useEffect(() => {
-    if (isRecording) {
+    if (isSessionLive) {
       timerIntervalRef.current = setInterval(() => {
         setElapsedTime(prevTime => prevTime + 1);
       }, 1000);
@@ -177,7 +178,7 @@ export default function LiveInterviewPage() {
             clearInterval(timerIntervalRef.current);
         }
     };
-  }, [isRecording]);
+  }, [isSessionLive]);
 
   const stopAllPlayback = useCallback(() => {
     for (const source of audioSourcesRef.current.values()) {
@@ -210,7 +211,11 @@ export default function LiveInterviewPage() {
     let aiText = message.serverContent?.outputTranscription?.text || '';
 
     if (userText) setCurrentUserTranscription(prev => prev + userText);
-    if (aiText) setCurrentAiTranscription(prev => prev + aiText);
+    if (aiText) {
+        setIsRecording(false); // AI is speaking, so user is not recording
+        updateStatus("Kathy is speaking...");
+        setCurrentAiTranscription(prev => prev + aiText);
+    }
 
     if (message.serverContent?.turnComplete) {
       if(currentUserTranscription) {
@@ -237,6 +242,12 @@ export default function LiveInterviewPage() {
 
       setCurrentUserTranscription('');
       setCurrentAiTranscription('');
+
+      if(message.serverContent.modelTurn) {
+        // AI's turn is over, now it's user's turn
+        updateStatus("🔴 Your turn... Speak now.");
+        setIsRecording(true);
+      }
     }
   }, [playAudio, stopAllPlayback, user, toast, currentAiTranscription, currentUserTranscription]);
 
@@ -252,7 +263,7 @@ export default function LiveInterviewPage() {
         systemInstruction += ` The candidate is interested in ${company}, so you can tailor behavioral questions to their leadership principles if applicable.`;
     }
     if (topic === 'Icebreaker Introduction') {
-        systemInstruction = `You are Kathy, a friendly career coach at Talxify. Your goal is a short, 2-minute icebreaker. Start warmly. Ask about their name, city, college, skills, and hobbies. Keep it light and encouraging. After getting this info, you MUST respond with ONLY a JSON object in this exact format: { "isIcebreaker": true, "name": "User's Name", "city": "User's City", "college": "User's College", "skills": ["skill1"], "hobbies": ["hobby1"] }. Wrap this JSON object in <JSON_DATA> tags. This is your final response.`;
+        systemInstruction = `You are Kathy, a friendly career coach at Talxify. Your goal is a short, 2-minute icebreaker. Start warmly. Ask about their name, city, college, skills, and hobbies. Keep it light and encouraging. After getting this info, you MUST respond with ONLY a JSON object in this format: { "isIcebreaker": true, "name": "User's Name", "city": "User's City", "college": "User's College", "skills": ["skill1"], "hobbies": ["hobby1"] }. Wrap this JSON object in <JSON_DATA> tags. This is your final response.`;
     }
 
     try {
@@ -324,7 +335,7 @@ export default function LiveInterviewPage() {
 
     return () => {
       isMounted = false;
-      stopRecording(false);
+      endSession(false);
       inputAudioContextRef.current?.close();
       outputAudioContextRef.current?.close();
     };
@@ -337,8 +348,8 @@ export default function LiveInterviewPage() {
     }
   }, [isClientInitialized, initSession]);
 
-  const startRecording = async () => {
-    if (isRecording) return;
+  const startInterview = async () => {
+    if (isSessionLive) return;
     
     try {
       await inputAudioContextRef.current!.resume();
@@ -349,7 +360,7 @@ export default function LiveInterviewPage() {
       mediaStreamRef.current = stream;
       if (userVideoEl.current) { userVideoEl.current.srcObject = stream; userVideoEl.current.play(); }
 
-      updateStatus('Microphone access granted. Starting capture...');
+      updateStatus('Microphone access granted. Connecting...');
 
       const inputCtx = inputAudioContextRef.current!;
       sourceNodeRef.current = inputCtx.createMediaStreamSource(stream);
@@ -368,22 +379,23 @@ export default function LiveInterviewPage() {
       scriptProcessorNodeRef.current.connect(inputCtx.destination);
 
       const session = await sessionPromiseRef.current;
-      session.sendRealtimeInput({});
+      session.sendRealtimeInput({}); // This prompts the AI to speak first
 
-      setIsRecording(true);
-      updateStatus('🔴 Recording... Speak now.');
+      setIsSessionLive(true);
+      updateStatus('Waiting for Kathy to start...');
     } catch (err: any) {
-      updateError(`Error starting recording: ${err.message}`);
-      await stopRecording();
+      updateError(`Error starting interview: ${err.message}`);
+      await endSession();
     }
   };
 
-  const stopRecording = async (shouldNavigate = true) => {
-    if (!isRecording && !mediaStreamRef.current) { 
+  const endSession = async (shouldNavigate = true) => {
+    if (!isSessionLive && !mediaStreamRef.current) { 
         if (shouldNavigate) router.push('/dashboard'); 
         return; 
     }
 
+    setIsSessionLive(false);
     setIsRecording(false);
     if(shouldNavigate) updateStatus('Interview ended. Navigating to results...');
 
@@ -458,10 +470,10 @@ export default function LiveInterviewPage() {
         <div className="absolute inset-0 thermal-gradient-bg z-0"/>
         <InterviewHeader status={status} elapsedTime={elapsedTime}/>
         <main className="flex-1 relative flex items-center justify-center z-10">
-            <AIPanel isInterviewing={isRecording} />
-             {isSessionReady && !isRecording && (
+            <AIPanel isInterviewing={isSessionLive} />
+             {isSessionReady && !isSessionLive && (
                 <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30">
-                    <Button onClick={startRecording} size="lg" className="h-16 rounded-full px-8">
+                    <Button onClick={startInterview} size="lg" className="h-16 rounded-full px-8">
                     <Play className="mr-3 h-6 w-6"/>
                     Start Interview
                     </Button>
@@ -470,16 +482,18 @@ export default function LiveInterviewPage() {
         </main>
         <UserVideo videoRef={userVideoEl} isVideoOn={isVideoOn} />
         <CaptionDisplay userText={currentUserTranscription} aiText={currentAiTranscription}/>
-        {isRecording && (
+        {isSessionLive && (
           <ControlBar 
               onMuteToggle={toggleMute}
               onVideoToggle={toggleVideo}
-              onEndCall={() => stopRecording()}
+              onEndCall={() => endSession()}
               isMuted={isMuted}
               isVideoOn={isVideoOn}
-              isRecording={isRecording}
+              isSessionLive={isSessionLive}
           />
         )}
     </div>
   );
 }
+
+    
