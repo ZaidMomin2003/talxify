@@ -213,35 +213,32 @@ export default function LiveInterviewPage() {
     if (aiText) setCurrentAiTranscription(prev => prev + aiText);
 
     if (message.serverContent?.turnComplete) {
-      // Use a functional update to get the latest state inside the callback
-      setCurrentUserTranscription(currentText => {
-          const finalUserText = currentText + userText;
-          if (finalUserText) {
-              transcriptRef.current.push({ speaker: 'user', text: finalUserText });
-          }
-          return ''; // Reset
-      });
-
-      setCurrentAiTranscription(currentText => {
-          const finalAiText = currentText + aiText;
-          if (finalAiText) {
-              transcriptRef.current.push({ speaker: 'ai', text: finalAiText });
-              const jsonMatch = finalAiText.match(/<JSON_DATA>(.*?)<\/JSON_DATA>/s);
-              if (jsonMatch && jsonMatch[1]) {
-                try {
-                  const icebreakerData: IcebreakerData = JSON.parse(jsonMatch[1]);
-                  if (user && icebreakerData.isIcebreaker) {
-                    updateUserFromIcebreaker(user.uid, icebreakerData).then(() => {
-                      toast({ title: "Icebreaker Complete!", description: "Your profile has been updated."});
-                    });
-                  }
-                } catch (e) { console.error("Failed to parse icebreaker JSON", e); }
+      if(currentUserTranscription) {
+        transcriptRef.current.push({ speaker: 'user', text: currentUserTranscription + userText });
+      }
+      if(currentAiTranscription) {
+         transcriptRef.current.push({ speaker: 'ai', text: currentAiTranscription + aiText });
+      }
+      
+      const finalAiText = currentAiTranscription + aiText;
+      if (finalAiText) {
+          const jsonMatch = finalAiText.match(/<JSON_DATA>(.*?)<\/JSON_DATA>/s);
+          if (jsonMatch && jsonMatch[1]) {
+            try {
+              const icebreakerData: IcebreakerData = JSON.parse(jsonMatch[1]);
+              if (user && icebreakerData.isIcebreaker) {
+                updateUserFromIcebreaker(user.uid, icebreakerData).then(() => {
+                  toast({ title: "Icebreaker Complete!", description: "Your profile has been updated."});
+                });
               }
+            } catch (e) { console.error("Failed to parse icebreaker JSON", e); }
           }
-          return ''; // Reset
-      });
+      }
+
+      setCurrentUserTranscription('');
+      setCurrentAiTranscription('');
     }
-  }, [playAudio, stopAllPlayback, user, toast]);
+  }, [playAudio, stopAllPlayback, user, toast, currentAiTranscription, currentUserTranscription]);
 
   const initSession = useCallback(() => {
     if (!clientRef.current) return;
@@ -348,10 +345,6 @@ export default function LiveInterviewPage() {
       await outputAudioContextRef.current!.resume();
       updateStatus('Requesting device access...');
 
-      const session = await sessionPromiseRef.current;
-      // This empty call prompts the AI to start speaking based on the system instruction.
-      session.sendRealtimeInput({});
-
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
       mediaStreamRef.current = stream;
       if (userVideoEl.current) { userVideoEl.current.srcObject = stream; userVideoEl.current.play(); }
@@ -373,6 +366,9 @@ export default function LiveInterviewPage() {
 
       sourceNodeRef.current.connect(scriptProcessorNodeRef.current);
       scriptProcessorNodeRef.current.connect(inputCtx.destination);
+
+      const session = await sessionPromiseRef.current;
+      session.sendRealtimeInput({});
 
       setIsRecording(true);
       updateStatus('🔴 Recording... Speak now.');
