@@ -5,12 +5,14 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useSearchParams, useRouter, useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Mic, MicOff, Video, VideoOff, Phone, BrainCircuit, Loader2, Play } from 'lucide-react';
-import { addActivity, updateUserFromIcebreaker, checkAndIncrementUsage } from '@/lib/firebase-service';
+import { addActivity, checkAndIncrementUsage } from '@/lib/firebase-service';
 import { useAuth } from '@/context/auth-context';
-import type { InterviewActivity, TranscriptEntry, IcebreakerData } from '@/lib/types';
+import type { InterviewActivity, TranscriptEntry } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
+import { GoogleGenAI, LiveServerMessage, Modality, Session } from '@google/genai';
+import { createBlob, decode, decodeAudioData } from '@/lib/utils';
 
 // --- Sub-components for better structure ---
 
@@ -125,8 +127,7 @@ export default function LiveInterviewPage() {
   const { toast } = useToast();
 
   const [status, setStatus] = useState('Ready to Start');
-  const [isRecording, setIsRecording] = useState(false);
-  const [isSessionLive, setIsSessionLive] = useState(false);
+  const [isInterviewing, setIsInterviewing] = useState(false);
   const [currentAiTranscription, setCurrentAiTranscription] = useState('');
   const [currentUserTranscription, setCurrentUserTranscription] = useState('');
   const [isMuted, setIsMuted] = useState(false);
@@ -136,152 +137,105 @@ export default function LiveInterviewPage() {
   const transcriptRef = useRef<TranscriptEntry[]>([]);
   const userVideoEl = useRef<HTMLVideoElement>(null);
   
-  const audioContextRef = useRef<AudioContext | null>(null);
+  const clientRef = useRef<GoogleGenAI | null>(null);
+  const sessionRef = useRef<Session | null>(null);
+  const inputAudioContextRef = useRef<AudioContext | null>(null);
+  const outputAudioContextRef = useRef<AudioContext | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const scriptProcessorNodeRef = useRef<ScriptProcessorNode | null>(null);
-  const wsRef = useRef<WebSocket | null>(null);
+  const sourceNodeRef = useRef<MediaStreamAudioSourceNode | null>(null);
+  
+  const nextAudioStartTimeRef = useRef(0);
+  const audioBufferSources = useRef(new Set<AudioBufferSourceNode>());
 
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  const startInterview = async () => {
-    if (isSessionLive) return;
-
-    if (!user) {
-      toast({ title: 'Not Logged In', description: 'Please log in to start an interview.', variant: 'destructive' });
-      router.push('/login');
-      return;
+  const stopAllPlayback = useCallback(() => {
+    if (!outputAudioContextRef.current) return;
+    for (const source of audioBufferSources.current.values()) {
+        source.stop();
     }
+    audioBufferSources.current.clear();
+    nextAudioStartTimeRef.current = 0;
+  }, []);
 
-    const usage = await checkAndIncrementUsage(user.uid);
-    if (!usage.success) {
-      toast({ title: 'Usage Limit Reached', description: usage.message, variant: 'destructive' });
-      router.push('/dashboard/pricing');
-      return;
-    }
+  const playAudio = useCallback(async (base64Audio: string) => {
+    if (!outputAudioContextRef.current) return;
+    const audioContext = outputAudioContextRef.current;
     
-    setStatus('Requesting device access...');
+    // Ensure the context is running
+    if (audioContext.state === 'suspended') {
+      await audioContext.resume();
+    }
+
+    const nextStartTime = Math.max(nextAudioStartTimeRef.current, audioContext.currentTime);
 
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
-      mediaStreamRef.current = stream;
-      if (userVideoEl.current) {
-        userVideoEl.current.srcObject = stream;
-        userVideoEl.current.play();
-      }
+        const audioBuffer = await decodeAudioData(
+            decode(base64Audio),
+            audioContext,
+            24000,
+            1
+        );
 
-      setStatus('Microphone access granted. Connecting...');
+        const source = audioContext.createBufferSource();
+        source.buffer = audioBuffer;
+        source.connect(audioContext.destination);
 
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const wsUrl = `${protocol}//${window.location.host}/api/gemini-live`;
-      wsRef.current = new WebSocket(wsUrl);
+        source.onended = () => {
+            audioBufferSources.current.delete(source);
+        };
+        source.start(nextStartTime);
+        nextAudioStartTimeRef.current = nextStartTime + audioBuffer.duration;
+        audioBufferSources.current.add(source);
 
-      wsRef.current.onopen = () => {
-        setIsSessionLive(true);
-        setElapsedTime(0);
-        timerIntervalRef.current = setInterval(() => setElapsedTime(prev => prev + 1), 1000);
-        setStatus('Waiting for Kathy to start...');
-        
-        const topic = searchParams.get('topic') || 'general software engineering';
-        const role = searchParams.get('role') || 'Software Engineer';
-        const company = searchParams.get('company') || 'Google';
-
-        wsRef.current?.send(JSON.stringify({
-          type: 'start_session',
-          topic,
-          role,
-          company,
-        }));
-      };
-
-      wsRef.current.onmessage = (event) => {
-        const message = JSON.parse(event.data);
-
-        if (message.type === 'ai_audio' && message.data) {
-          const audio = new Audio("data:audio/wav;base64," + message.data);
-          audio.play();
-        }
-        
-        if(message.type === 'user_transcript') {
-            setCurrentUserTranscription(prev => prev + message.text);
-        }
-        
-        if(message.type === 'ai_transcript') {
-            setIsRecording(false);
-            setStatus("Kathy is speaking...");
-            setCurrentAiTranscription(prev => prev + message.text);
-        }
-
-        if (message.type === 'turn_complete') {
-            const finalUserText = currentUserTranscription;
-            const finalAiText = currentAiTranscription;
-
-            if (finalUserText.trim()) {
-                transcriptRef.current.push({ speaker: 'user', text: finalUserText.trim() });
-            }
-            if (finalAiText.trim()) {
-                transcriptRef.current.push({ speaker: 'ai', text: finalAiText.trim() });
-            }
-
-            setCurrentUserTranscription('');
-            setCurrentAiTranscription('');
-
-            if (message.isModelTurn) {
-                setStatus("🔴 Your turn... Speak now.");
-                setIsRecording(true);
-            }
-        }
-        
-        if (message.type === 'error') {
-          setStatus(`Error: ${message.error}`);
-        }
-      };
-
-      wsRef.current.onerror = (error) => {
-        console.error('WebSocket Error:', error);
-        setStatus('Connection error. Please refresh.');
-      };
-
-      wsRef.current.onclose = () => {
-        if (isSessionLive) { // Prevent showing on initial failed connections if possible
-          endSession();
-        }
-        setIsSessionLive(false);
-        setStatus('Session Closed');
-      };
-
-      audioContextRef.current = new AudioContext({ sampleRate: 16000 });
-      const source = audioContextRef.current.createMediaStreamSource(stream);
-      scriptProcessorNodeRef.current = audioContextRef.current.createScriptProcessor(4096, 1, 1);
-
-      scriptProcessorNodeRef.current.onaudioprocess = (e) => {
-        if (isRecording && !isMuted && wsRef.current?.readyState === WebSocket.OPEN) {
-          const pcmData = e.inputBuffer.getChannelData(0);
-          wsRef.current.send(pcmData.buffer);
-        }
-      };
-      
-      source.connect(scriptProcessorNodeRef.current);
-      scriptProcessorNodeRef.current.connect(audioContextRef.current.destination);
-
-    } catch (err: any) {
-      setStatus(`Error starting interview: ${err.message}`);
-      endSession();
+    } catch (e) {
+      console.error("Error playing audio:", e);
     }
-  };
+  }, []);
+
+  const handleAIMessage = useCallback(async (message: LiveServerMessage) => {
+    const audio = message.serverContent?.modelTurn?.parts[0]?.inlineData;
+    if (audio) {
+      playAudio(audio.data);
+    }
+    if (message.serverContent?.interrupted) {
+      stopAllPlayback();
+    }
+    if (message.serverContent?.outputTranscription) {
+      setCurrentAiTranscription(prev => prev + message.serverContent.outputTranscription.text);
+      setStatus("Kathy is speaking...");
+    }
+    if (message.serverContent?.inputTranscription) {
+      setCurrentUserTranscription(prev => prev + message.serverContent.inputTranscription.text);
+    }
+    if (message.serverContent?.turnComplete) {
+       if (currentAiTranscription.trim()) {
+           transcriptRef.current.push({ speaker: 'ai', text: currentAiTranscription.trim() });
+       }
+       if (currentUserTranscription.trim()) {
+           transcriptRef.current.push({ speaker: 'user', text: currentUserTranscription.trim() });
+       }
+       setCurrentUserTranscription('');
+       setCurrentAiTranscription('');
+       setStatus("🔴 Your turn... Speak now.");
+    }
+  }, [playAudio, stopAllPlayback, currentAiTranscription, currentUserTranscription]);
 
   const endSession = useCallback(async (shouldNavigate = true) => {
     if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
     
-    setIsSessionLive(false);
-    setIsRecording(false);
+    setIsInterviewing(false);
     if(shouldNavigate) setStatus('Interview ended. Navigating to results...');
 
-    wsRef.current?.close();
+    sessionRef.current?.close();
+    sessionRef.current = null;
 
     scriptProcessorNodeRef.current?.disconnect();
-    audioContextRef.current?.close();
+    sourceNodeRef.current?.disconnect();
     
     mediaStreamRef.current?.getTracks().forEach((t) => t.stop());
+    mediaStreamRef.current = null;
     
     if (userVideoEl.current) userVideoEl.current.srcObject = null;
 
@@ -313,6 +267,126 @@ export default function LiveInterviewPage() {
     }
   }, [user, params, searchParams, router, toast]);
 
+  const connectToGemini = useCallback(async () => {
+    if (!clientRef.current) {
+        setStatus("Error: Gemini client not initialized.");
+        return;
+    }
+
+    try {
+        const topic = searchParams.get('topic') || 'general software engineering';
+        const role = searchParams.get('role') || 'Software Engineer';
+        const company = searchParams.get('company') || undefined;
+
+        let systemInstruction = `You are Kathy, an expert technical interviewer at Talxify. You are interviewing a candidate for the role of "${role}" on the topic of "${topic}". Your tone must be professional, encouraging, and clear. Start with a friendly introduction, then ask your first question. Always wait for the user to finish speaking.`;
+        if (company) {
+            systemInstruction += ` The candidate is interested in ${company}, so you can tailor behavioral questions to their leadership principles if applicable.`;
+        }
+
+        const newSession = await clientRef.current.live.connect({
+            model: 'gemini-2.5-flash-native-audio-preview-09-2025',
+            callbacks: {
+                onopen: () => setStatus('Waiting for Kathy to start...'),
+                onmessage: handleAIMessage,
+                onerror: (e) => setStatus(`Error: ${e.message}`),
+                onclose: (e) => {
+                    if (isInterviewing) {
+                        setStatus('Session Closed: ' + e.reason);
+                        endSession();
+                    }
+                },
+            },
+            config: {
+                responseModalities: [Modality.AUDIO, Modality.TEXT],
+                speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Orus' } } },
+                inputAudioTranscription: {},
+                outputAudioTranscription: {},
+                systemInstruction: systemInstruction,
+            },
+        });
+        sessionRef.current = newSession;
+        // Prompt AI to speak first
+        newSession.sendRealtimeInput({});
+
+    } catch (e: any) {
+        console.error("Connection to Gemini failed:", e);
+        setStatus(`Error: ${e.message}`);
+    }
+  }, [handleAIMessage, isInterviewing, endSession, searchParams]);
+
+  const startInterview = async () => {
+    if (isInterviewing) return;
+
+    if (!user) {
+        toast({ title: 'Not Logged In', description: 'Please log in to start an interview.', variant: 'destructive' });
+        router.push('/login');
+        return;
+    }
+    
+    const usage = await checkAndIncrementUsage(user.uid);
+    if (!usage.success) {
+      toast({ title: 'Usage Limit Reached', description: usage.message, variant: 'destructive' });
+      router.push('/dashboard/pricing');
+      return;
+    }
+
+    await inputAudioContextRef.current?.resume();
+    await outputAudioContextRef.current?.resume();
+
+    setStatus('Requesting device access...');
+
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+        mediaStreamRef.current = stream;
+        
+        if (userVideoEl.current) {
+            userVideoEl.current.srcObject = stream;
+            userVideoEl.current.play();
+        }
+
+        setIsInterviewing(true);
+        setElapsedTime(0);
+        timerIntervalRef.current = setInterval(() => setElapsedTime(prev => prev + 1), 1000);
+        
+        await connectToGemini();
+        
+        const inputCtx = inputAudioContextRef.current!;
+        sourceNodeRef.current = inputCtx.createMediaStreamSource(stream);
+
+        const bufferSize = 4096;
+        scriptProcessorNodeRef.current = inputCtx.createScriptProcessor(bufferSize, 1, 1);
+
+        scriptProcessorNodeRef.current.onaudioprocess = (event) => {
+            if (!sessionRef.current || isMuted) return;
+            const pcmData = event.inputBuffer.getChannelData(0);
+            sessionRef.current.sendRealtimeInput({ media: createBlob(pcmData) });
+        };
+        
+        sourceNodeRef.current.connect(scriptProcessorNodeRef.current);
+        scriptProcessorNodeRef.current.connect(inputCtx.destination);
+    } catch (err: any) {
+        setStatus(`Error starting interview: ${err.message}`);
+        endSession(false);
+    }
+  };
+
+  useEffect(() => {
+    // @ts-ignore
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    inputAudioContextRef.current = new AudioContext({ sampleRate: 16000 });
+    outputAudioContextRef.current = new AudioContext({ sampleRate: 24000 });
+    
+    if (!process.env.NEXT_PUBLIC_GEMINI_API_KEY) {
+        setStatus("Error: Gemini API Key not configured.");
+        return;
+    }
+    clientRef.current = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY });
+    
+    return () => {
+        endSession(false);
+    }
+  }, []);
+  
   const toggleMute = () => setIsMuted(prev => !prev);
   const toggleVideo = () => {
     const nextVideoOn = !isVideoOn;
@@ -327,8 +401,8 @@ export default function LiveInterviewPage() {
         <div className="absolute inset-0 thermal-gradient-bg z-0"/>
         <InterviewHeader status={status} elapsedTime={elapsedTime}/>
         <main className="flex-1 relative z-10 flex items-center justify-center">
-            <AIPanel isInterviewing={isSessionLive} />
-             {!isSessionLive && status !== 'Ready to Start' && !status.toLowerCase().includes('error') && (
+            <AIPanel isInterviewing={isInterviewing} />
+             {!isInterviewing && status !== 'Ready to Start' && !status.toLowerCase().includes('error') && (
                  <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30">
                     <div className="flex flex-col items-center gap-4">
                         <Loader2 className="h-12 w-12 animate-spin text-primary"/>
@@ -336,7 +410,7 @@ export default function LiveInterviewPage() {
                     </div>
                  </div>
              )}
-             {!isSessionLive && status === 'Ready to Start' && (
+             {!isInterviewing && status === 'Ready to Start' && (
                 <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30">
                     <Button onClick={startInterview} size="lg" className="h-16 rounded-full px-8">
                     <Play className="mr-3 h-6 w-6"/>
@@ -347,16 +421,18 @@ export default function LiveInterviewPage() {
         </main>
         <UserVideo videoRef={userVideoEl} isVideoOn={isVideoOn} />
         <CaptionDisplay userText={currentUserTranscription} aiText={currentAiTranscription}/>
-        {isSessionLive && (
+        {isInterviewing && (
           <ControlBar 
               onMuteToggle={toggleMute}
               onVideoToggle={toggleVideo}
               onEndCall={() => endSession()}
               isMuted={isMuted}
               isVideoOn={isVideoOn}
-              isSessionLive={isSessionLive}
+              isSessionLive={isInterviewing}
           />
         )}
     </div>
   );
 }
+
+    
