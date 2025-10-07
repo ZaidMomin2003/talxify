@@ -200,7 +200,7 @@ export default function LiveInterviewPage() {
     nextStartTimeRef.current += audioBuffer.duration;
     audioSourcesRef.current.add(source);
   }, []);
-
+  
   const handleMessage = useCallback((message: LiveServerMessage) => {
     const audio = message.serverContent?.modelTurn?.parts[0]?.inlineData;
     if (audio) playAudio(audio.data);
@@ -280,7 +280,7 @@ export default function LiveInterviewPage() {
             },
         },
         config: {
-            responseModalities: [Modality.AUDIO, Modality.TEXT],
+            responseModalities: [Modality.AUDIO],
             speechConfig: {
                 voiceConfig: { prebuiltVoiceConfig: { voiceName: selectedVoice } },
             },
@@ -342,16 +342,12 @@ export default function LiveInterviewPage() {
 
   const startRecording = async () => {
     if (isRecording) return;
-    if (!inputAudioContextRef.current || !outputAudioContextRef.current) {
-        updateError("Audio contexts not ready.");
-        return;
-    }
     
-    await inputAudioContextRef.current.resume();
-    await outputAudioContextRef.current.resume();
-    updateStatus('Requesting device access...');
-
     try {
+      await inputAudioContextRef.current!.resume();
+      await outputAudioContextRef.current!.resume();
+      updateStatus('Requesting device access...');
+
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
       mediaStreamRef.current = stream;
       if (userVideoEl.current) { userVideoEl.current.srcObject = stream; userVideoEl.current.play(); }
@@ -463,15 +459,15 @@ export default function LiveInterviewPage() {
         <InterviewHeader status={status} elapsedTime={elapsedTime}/>
         <main className="flex-1 relative flex items-center justify-center z-10">
             <AIPanel isInterviewing={isRecording} />
+             {isSessionReady && !isRecording && (
+                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30">
+                    <Button onClick={startRecording} size="lg" className="h-16 rounded-full px-8">
+                    <Play className="mr-3 h-6 w-6"/>
+                    Start Interview
+                    </Button>
+                </div>
+            )}
         </main>
-         {isSessionReady && !isRecording && (
-          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30">
-            <Button onClick={startRecording} size="lg" className="h-16 rounded-full px-8">
-              <Play className="mr-3 h-6 w-6"/>
-              Start Interview
-            </Button>
-          </div>
-        )}
         <UserVideo videoRef={userVideoEl} isVideoOn={isVideoOn} />
         <CaptionDisplay userText={currentUserTranscription} aiText={currentAiTranscription}/>
         {isRecording && (
@@ -487,3 +483,4 @@ export default function LiveInterviewPage() {
     </div>
   );
 }
+
