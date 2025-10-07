@@ -154,7 +154,11 @@ export default function LiveInterviewPage() {
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const updateStatus = (msg: string) => { setStatus(msg);};
-  const updateError = (msg: string) => { setStatus(`Error: ${msg}`); console.error(msg); };
+  const updateError = (msg: string, e?: ErrorEvent | CloseEvent) => {
+    const detailedMessage = e ? `${msg} | Details: ${JSON.stringify(e)}` : msg;
+    setStatus(`Error: ${msg}`);
+    console.error(detailedMessage, e);
+  };
   
    useEffect(() => {
     if (isRecording) {
@@ -253,11 +257,11 @@ export default function LiveInterviewPage() {
             onopen: () => updateStatus('Session Opened. Ready for interview.'),
             onmessage: handleMessage,
             onerror: (e: ErrorEvent) => {
-                updateError(e.message);
+                updateError(`Session Error: ${e.message}`, e);
                 if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
             },
             onclose: (e: CloseEvent) => {
-                updateStatus('Session Closed: ' + e.reason);
+                updateError('Session Closed: ' + e.reason, e);
                 if (timerIntervalRef.current) {
                     clearInterval(timerIntervalRef.current);
                     timerIntervalRef.current = null;
@@ -265,7 +269,7 @@ export default function LiveInterviewPage() {
             },
         },
         config: {
-            responseModalities: [Modality.AUDIO, Modality.TEXT],
+            responseModalities: [Modality.AUDIO],
             speechConfig: {
                 voiceConfig: { prebuiltVoiceConfig: { voiceName: selectedVoice } },
             },
