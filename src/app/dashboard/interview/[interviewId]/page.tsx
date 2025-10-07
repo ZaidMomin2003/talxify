@@ -85,7 +85,7 @@ const CaptionDisplay = ({ userText, aiText }: { userText: string; aiText: string
   if (!text) return null;
   return (
     <div className="absolute bottom-28 left-1/2 -translate-x-1/2 w-full max-w-4xl px-4">
-      <div className="bg-background/60 backdrop-blur-md rounded-lg p-4 text-center text-foreground text-lg shadow-lg border">
+      <div className="bg-background/60 backdrop-blur-md rounded-lg p-4 text-center text-lg shadow-lg border">
          {aiText ? (
             <><b>Kathy:</b> {aiText}</>
           ) : (
