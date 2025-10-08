@@ -484,12 +484,12 @@ function DashboardLayoutContent({
       <Sidebar>
         <SidebarHeader>
            <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-              <Bot size={28} />
+            <div className="relative flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-primary via-purple-500 to-blue-500 text-primary-foreground shadow-lg">
+                <Bot size={28} />
             </div>
             <div className="flex flex-col">
-              <h1 className="text-2xl font-headline font-bold">Talxify</h1>
-              <span className="text-xs -mt-1 text-muted-foreground">AI Job Assistant</span>
+                <h1 className="text-xl font-bold tracking-tighter">Talxify</h1>
+                <span className="text-xs -mt-1 text-muted-foreground">AI Job Assistant</span>
             </div>
           </div>
         </SidebarHeader>
