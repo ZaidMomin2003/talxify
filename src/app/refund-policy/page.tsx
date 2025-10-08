@@ -13,7 +13,7 @@ export default function RefundPolicyPage() {
           <CardHeader className="text-center border-b pb-6">
             <CircleDollarSign className="mx-auto h-12 w-12 text-primary mb-4" />
             <h1 className="font-headline text-4xl font-bold">Refund and Cancellation Policy</h1>
-            <p className="text-muted-foreground">Effective Date: August 05, 2025</p>
+            <p className="text-muted-foreground">Effective Date: August 06, 2024</p>
           </CardHeader>
           <CardContent className="prose prose-stone dark:prose-invert max-w-none space-y-6 p-6 md:p-8">
             <p>
@@ -43,7 +43,7 @@ export default function RefundPolicyPage() {
             <p>
               If you have any questions about this policy, please contact our support team before making a purchase.
               <br />
-              <strong>Email:</strong> <a href="mailto:hi@contact.talxify.space" className="text-primary">hi@contact.talxify.space</a>
+              <strong>Email:</strong> <a href="mailto:hii@talxify.space" className="text-primary">hii@talxify.space</a>
               <br />
               <strong>Phone:</strong> +91 8431326909
             </p>

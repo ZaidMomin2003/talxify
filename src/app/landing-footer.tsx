@@ -75,8 +75,12 @@ export default function LandingFooter() {
         </div>
 
         {/* Bottom Bar */}
-        <div className="mt-12 border-t border-border/50 pt-8 flex flex-col items-center justify-between gap-4 md:flex-row">
-          <p className="text-sm text-muted-foreground">
+        <div className="mt-12 border-t border-border/50 pt-8 flex flex-col items-center justify-between gap-6 md:flex-row">
+           <div className="text-xs text-muted-foreground text-center md:text-left">
+                <p className="font-semibold text-foreground">Disclaimer</p>
+                <p>Talxify is an AI-powered educational tool for interview preparation. It does not guarantee job offers or interview success. AI-generated content may contain errors; please verify important information.</p>
+            </div>
+          <p className="text-sm text-muted-foreground text-center md:text-right">
             © {new Date().getFullYear()} Talxify, Inc. All rights reserved.
           </p>
         </div>
