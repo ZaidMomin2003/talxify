@@ -484,7 +484,7 @@ function DashboardLayoutContent({
       <Sidebar>
         <SidebarHeader>
            <div className="flex items-center gap-3">
-            <div className="relative flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-primary via-purple-500 to-blue-500 text-primary-foreground shadow-lg">
+            <div className="relative flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-primary via-purple-500 to-blue-500 text-primary-foreground shadow-lg animate-vivid-gradient [background-size:200%_200%]">
                 <Bot size={28} />
             </div>
             <div className="flex flex-col">
