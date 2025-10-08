@@ -488,7 +488,7 @@ function DashboardLayoutContent({
                 <Bot size={28} />
             </div>
             <div className="flex flex-col">
-                <h1 className="text-xl font-bold tracking-tighter">Talxify</h1>
+                <h1 className="text-2xl font-bold tracking-tighter">Talxify</h1>
                 <span className="text-xs -mt-1 text-muted-foreground">AI Job Assistant</span>
             </div>
           </div>
