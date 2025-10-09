@@ -48,7 +48,7 @@ const AIPanel = ({ isInterviewing }: { isInterviewing: boolean; }) => {
           <AvatarFallback>AI</AvatarFallback>
         </Avatar>
       </div>
-      <p className="mt-6 text-2xl font-bold font-headline text-foreground">Kathy</p>
+      <p className="mt-6 text-2xl font-bold font-headline text-foreground">Mark</p>
       <p className="text-muted-foreground">AI Interviewer</p>
     </div>
   );
@@ -86,7 +86,7 @@ const CaptionDisplay = ({ userText, aiText }: { userText: string; aiText: string
     <div className="absolute bottom-28 left-1/2 -translate-x-1/2 w-full max-w-4xl px-4">
       <div className="bg-background/60 backdrop-blur-md rounded-lg p-4 text-center text-lg shadow-lg border">
          {aiText ? (
-            <><b>Kathy:</b> {aiText}</>
+            <><b>Mark:</b> {aiText}</>
           ) : (
             <><b>You:</b> {userText}</>
           )}
@@ -203,7 +203,18 @@ export default function LiveInterviewPage() {
       const role = searchParams.get('role') || 'Software Engineer';
       const company = searchParams.get('company') || undefined;
 
-      let systemInstruction = `You are Kathy, an expert technical interviewer at Talxify. You are interviewing a candidate for the role of "${role}" on the topic of "${topic}". Start with a friendly introduction, then ask your first question. Always wait for the user to finish speaking. Your speech should be concise.`;
+      let systemInstruction = `You are Mark, an expert technical interviewer at Talxify. You are friendly, engaging, and your responses should feel natural. You can use conversational filler like 'um' or 'ah', and expressions like laughing or gasping where appropriate to sound more human.
+
+Your task is to conduct a 6-question interview with a candidate for the role of "${role}" focusing on the topic of "${topic}".
+
+The interview structure MUST be as follows:
+1.  Start with a friendly introduction.
+2.  Ask 2 basic, foundational questions about the topic.
+3.  Ask 2 scenario-based questions where the user has to apply their knowledge.
+4.  Ask 2 difficult, in-depth questions to test their expertise.
+5.  After the 6th question is answered, provide a brief, encouraging, voice-based summary of their performance. Mention one thing they did well and one area to focus on for improvement. Keep this summary concise, under 45 seconds.
+
+Always wait for the user to finish speaking before you start. Your speech should be clear and concise.`;
       if (company) {
           systemInstruction += ` The candidate is interested in ${company}, so you can tailor behavioral questions to their leadership principles if applicable.`;
       }
@@ -214,7 +225,7 @@ export default function LiveInterviewPage() {
         const newSession = await client.live.connect({
           model: 'gemini-2.5-flash-native-audio-preview-09-2025',
           callbacks: {
-            onopen: () => setStatus('Waiting for Kathy to start...'),
+            onopen: () => setStatus('Waiting for Mark to start...'),
             onmessage: (message: LiveServerMessage) => {
               if (message.serverContent?.interrupted) stopAllPlayback();
 
@@ -223,7 +234,7 @@ export default function LiveInterviewPage() {
               
               if (message.serverContent?.outputTranscription) {
                 setCurrentAiTranscription(prev => prev + message.serverContent.outputTranscription.text);
-                setStatus("Kathy is speaking...");
+                setStatus("Mark is speaking...");
               }
               if (message.serverContent?.inputTranscription) {
                 setCurrentUserTranscription(prev => prev + message.serverContent.inputTranscription.text);
@@ -238,7 +249,13 @@ export default function LiveInterviewPage() {
             },
             onerror: (e) => {
                 let errorMessage = 'An unknown error occurred';
-                if (e instanceof CloseEvent) errorMessage = `Session closed unexpectedly. Code: ${e.code}, Reason: ${e.reason}`;
+                if (e instanceof CloseEvent) {
+                    if (e.reason.includes("Generative Language API has not been used")) {
+                        errorMessage = "The Generative Language API is not enabled for this project. Please enable it in your Google Cloud console.";
+                    } else {
+                        errorMessage = `Session closed unexpectedly. Code: ${e.code}, Reason: ${e.reason}`;
+                    }
+                }
                 else if (e instanceof Error) errorMessage = e.message;
                 else errorMessage = JSON.stringify(e);
                 setStatus(`Error: ${errorMessage}`);

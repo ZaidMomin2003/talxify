@@ -18,7 +18,7 @@ const TranscriptEntrySchema = z.object({
 });
 
 const GenerateInterviewFeedbackInputSchema = z.object({
-  transcript: z.array(TranscriptEntrySchema).describe("The full transcript of the interview, alternating between the AI interviewer (Kathy) and the user."),
+  transcript: z.array(TranscriptEntrySchema).describe("The full transcript of the interview, alternating between the AI interviewer (Mark) and the user."),
   topic: z.string().describe("The main topic of the interview (e.g., 'React Hooks')."),
   role: z.string().describe("The role the user was interviewing for (e.g., 'Frontend Developer')."),
   company: z.string().optional().describe("The target company for the interview, if specified (e.g., 'Google').")
@@ -54,8 +54,8 @@ const prompt = ai.definePrompt({
   name: 'generateInterviewFeedbackPrompt',
   input: { schema: GenerateInterviewFeedbackInputSchema },
   output: { schema: GenerateInterviewFeedbackOutputSchema },
-  prompt: `You are an expert interview coach for software developers, acting as the AI behind "Kathy," the interviewer from Talxify.
-  Your task is to analyze the provided interview transcript and provide comprehensive, constructive, and encouraging feedback.
+  prompt: `You are an expert interview coach for software developers, analyzing a mock interview conducted by your AI colleague, Mark.
+  Your task is to provide comprehensive, constructive, and encouraging feedback based on the provided transcript. The user's goal is to improve and land a job.
 
   The user was interviewing for a {{role}} role on the topic of {{topic}}.
   {{#if company}}
@@ -63,23 +63,25 @@ const prompt = ai.definePrompt({
   {{/if}}
 
   Please analyze the entire transcript and provide the following:
-  1.  **Overall Score**: An integer score from 0 to 100 representing the user's overall performance.
+  1.  **Overall Score**: An integer score from 0 to 100 representing the user's overall performance across all 6 questions.
   2.  **Likelihood to Crack**: A percentage (0-100) estimating the candidate's likelihood of passing a real-world interview based on this performance.
   3.  **English Proficiency**: A score from 0-100 evaluating the candidate's English grammar, clarity, and vocabulary.
   4.  **Confidence Score**: A score from 0-100 based on the candidate's tone, use of filler words, and the directness of their answers.
-  5.  **Summary**: A concise, 2-3 sentence summary of the user's performance.
-  6.  **Strengths**: A list of 2-3 key strengths the user displayed.
-  7.  **Areas for Improvement**: A list of the 2-3 most critical areas for improvement.
-  8.  **Question-by-Question Feedback**: For each question Kathy asked, provide:
+  5.  **Summary**: A concise, 2-3 sentence summary of the user's performance. Start with encouragement, then highlight their main strength and the most critical area for improvement.
+  6.  **Strengths**: A list of 2-3 key strengths the user displayed during the interview.
+  7.  **Areas for Improvement**: A list of the 2-3 most important areas for the user to work on.
+  8.  **Question-by-Question Feedback**: For each of the 6 questions Mark asked, provide:
       - The question text.
       - The user's answer.
-      - Specific, actionable feedback on the answer. For technical questions, comment on correctness and depth. For behavioral questions, evaluate the structure (e.g., STAR method). Consider the target company's known preferences.
-      - A well-structured, ideal answer.
+      - Specific, actionable feedback on the answer. For technical questions, comment on correctness and depth. For behavioral questions, evaluate the structure (e.g., STAR method).
+      - A well-structured, ideal answer that serves as a model.
       - A score for that specific answer (0-100).
+  
+  Do not provide feedback on Mark's final voice-based summary; focus only on the user's answers to the 6 main questions.
 
   Here is the interview transcript:
   {{#each transcript}}
-    **{{#if (eq speaker "ai")}}Kathy{{else}}You{{/if}}**: {{text}}
+    **{{#if (eq speaker "ai")}}Mark{{else}}You{{/if}}**: {{text}}
   {{/each}}
   `,
 });
