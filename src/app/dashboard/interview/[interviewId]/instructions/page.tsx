@@ -5,7 +5,7 @@ import React, { useState } from 'react';
 import { useSearchParams, useParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ShieldCheck, MessageSquare, Bot, ArrowRight, Video, Building, BarChartHorizontal, Sparkles, Wifi } from 'lucide-react';
+import { ShieldCheck, MessageSquare, Bot, ArrowRight, Video, Building, BarChartHorizontal, Sparkles, Wifi, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 export default function InterviewInstructionsPage() {
     const searchParams = useSearchParams();
     const params = useParams();
+    const router = useRouter();
     
     const interviewId = params.interviewId as string;
     const topic = searchParams.get('topic') || 'Not specified';
@@ -22,14 +23,19 @@ export default function InterviewInstructionsPage() {
     
     const [company, setCompany] = useState(searchParams.get('company') || '');
     const [difficulty, setDifficulty] = useState('moderate');
+    const [isNavigating, setIsNavigating] = useState(false);
 
-    const startUrl = new URLSearchParams({
-        topic,
-        role: role || '',
-        level: level || '',
-        company,
-        difficulty,
-    });
+    const handleStart = () => {
+        setIsNavigating(true);
+        const startUrl = new URLSearchParams({
+            topic,
+            role: role || '',
+            level: level || '',
+            company,
+            difficulty,
+        });
+        router.push(`/dashboard/interview/${interviewId}?${startUrl.toString()}`);
+    }
 
     return (
         <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
@@ -134,8 +140,13 @@ export default function InterviewInstructionsPage() {
                         </div>
 
                         <div className="text-center pt-4">
-                            <Button asChild size="lg">
-                                <Link href={`/dashboard/interview/${interviewId}?${startUrl.toString()}`}>Start Interview</Link>
+                            <Button onClick={handleStart} size="lg" disabled={isNavigating}>
+                                {isNavigating ? (
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                ) : (
+                                    <ArrowRight className="mr-2 h-4 w-4" />
+                                )}
+                                Start Interview
                             </Button>
                         </div>
                     </CardContent>
