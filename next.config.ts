@@ -14,11 +14,11 @@ const nextConfig: NextConfig = {
     remotePatterns: [
         {
             protocol: 'https',
-            hostname: 'res.cloudinary.com',
+            hostname: 'drive.google.com',
         },
         {
             protocol: 'https',
-            hostname: 'placehold.co',
+            hostname: 'res.cloudinary.com',
         },
         {
             protocol: 'https',
