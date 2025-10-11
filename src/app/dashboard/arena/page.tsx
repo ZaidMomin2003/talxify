@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -223,6 +224,15 @@ export default function ArenaPage() {
     const isFreePlan = !plan || plan === 'free' || isExpired;
     // Allow free users to access Day 1. If they have completed Day 1 (completedDays >= 1), they hit the paywall.
     const trialExpired = isFreePlan && completedDays >= 1;
+    
+    const neonColors = [
+        'border-blue-500 shadow-blue-500/20 hover:shadow-blue-500/40',
+        'border-green-500 shadow-green-500/20 hover:shadow-green-500/40',
+        'border-yellow-500 shadow-yellow-500/20 hover:shadow-yellow-500/40',
+        'border-red-500 shadow-red-500/20 hover:shadow-red-500/40',
+        'border-purple-500 shadow-purple-500/20 hover:shadow-purple-500/40',
+        'border-pink-500 shadow-pink-500/20 hover:shadow-pink-500/40',
+    ];
 
   return (
     <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
@@ -242,7 +252,7 @@ export default function ArenaPage() {
             {trialExpired ? (
                 <UpgradeCard />
             ) : (
-                syllabus.map((day) => {
+                syllabus.map((day, index) => {
                     const isUnlocked = day.day <= completedDays + 1;
                     const isCompleted = day.day <= completedDays;
                     const dayStatus = dailyTaskStatus[day.day] || { learn: false, quiz: false, interview: false };
@@ -256,7 +266,8 @@ export default function ArenaPage() {
                                 <Card 
                                     className={cn(
                                         "text-center transition-all duration-300 transform cursor-pointer",
-                                        "hover:-translate-y-1 hover:shadow-primary/20 hover:border-primary/50",
+                                        "hover:-translate-y-1 hover:shadow-primary/20",
+                                        isUnlocked && interviewIsScheduled && neonColors[index % neonColors.length],
                                         !isUnlocked && "bg-muted/50 text-muted-foreground hover:shadow-none hover:border-border",
                                         isCompleted && "bg-green-500/10 border-green-500/50"
                                     )}
