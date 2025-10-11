@@ -134,13 +134,14 @@ export default function LiveInterviewPage() {
   const [elapsedTime, setElapsedTime] = useState(0);
   
   const transcriptRef = useRef<TranscriptEntry[]>([]);
-  const finalTranscriptRef = useRef<TranscriptEntry[] | null>(null);
   const userVideoEl = useRef<HTMLVideoElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const audioQueueRef = useRef<string[]>([]);
   const isPlayingRef = useRef(false);
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const flowRef = useRef<any>(null);
+
 
   const processAudioQueue = useCallback(async () => {
     if (isPlayingRef.current || audioQueueRef.current.length === 0) {
@@ -171,6 +172,57 @@ export default function LiveInterviewPage() {
         isPlayingRef.current = false;
     }
   }, []);
+
+  const endSession = useCallback(async (shouldNavigate = true) => {
+    if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+    
+    setIsSessionLive(false);
+    if (shouldNavigate) setStatus('Interview ended. Navigating to results...');
+
+    flowRef.current?.close();
+    flowRef.current = null;
+
+    mediaRecorderRef.current?.stop();
+    mediaRecorderRef.current = null;
+    
+    const stream = userVideoEl.current?.srcObject as MediaStream;
+    stream?.getTracks().forEach(track => track.stop());
+    
+    if (userVideoEl.current) userVideoEl.current.srcObject = null;
+    
+    const finalTranscript = transcriptRef.current;
+    
+    if (shouldNavigate && user) {
+        const interviewId = params.interviewId as string;
+        
+        if (finalTranscript.length === 0) {
+            finalTranscript.push({ speaker: 'ai', text: 'Interview session ended before any exchange.' });
+        }
+
+        const activity: InterviewActivity = {
+            id: interviewId,
+            type: 'interview',
+            timestamp: new Date().toISOString(),
+            transcript: finalTranscript,
+            feedback: "Feedback will be generated on the results page.",
+            details: {
+                topic: searchParams.get('topic') || 'General',
+                role: searchParams.get('role') || undefined,
+                level: searchParams.get('level') || undefined,
+                company: searchParams.get('company') || undefined,
+            }
+        };
+        
+        try {
+            await addActivity(user.uid, activity);
+            router.push(`/dashboard/interview/${interviewId}/results`);
+        } catch (error) {
+            console.error("Failed to save activity:", error);
+            toast({ title: "Could not save interview results", variant: "destructive" });
+            router.push('/dashboard');
+        }
+    }
+  }, [user, params.interviewId, searchParams, router, toast]);
 
   const startInterview = useCallback(async () => {
     if (isSessionLive) return;
@@ -220,10 +272,12 @@ export default function LiveInterviewPage() {
 
     try {
         const flow = await interviewFlow.stream(interviewParams);
+        flowRef.current = flow; // Store flow in ref to access it in endSession
+        
         mediaRecorderRef.current = new MediaRecorder(stream, { mimeType: 'audio/webm' });
 
         mediaRecorderRef.current.ondataavailable = async (event) => {
-            if (event.data.size > 0) {
+            if (event.data.size > 0 && flowRef.current) {
                 const reader = new FileReader();
                 reader.onloadend = () => {
                     const base64Audio = (reader.result as string).split(',')[1];
@@ -243,90 +297,38 @@ export default function LiveInterviewPage() {
                 audioQueueRef.current.push(chunk.aiAudio);
                 processAudioQueue();
             }
-             if (chunk.transcript) {
-                 // The flow now only sends the full transcript at the end, not during turns.
-                 // We build it client side from text chunks.
-             }
         }
         
-        // This part runs after the stream has finished.
+        // This part runs AFTER the stream has finished.
         const finalOutput = await flow.output();
         if (finalOutput?.transcript) {
-            finalTranscriptRef.current = finalOutput.transcript;
+            transcriptRef.current = finalOutput.transcript;
         }
+
+        // Once the AI flow is naturally finished, end the session and navigate.
+        endSession();
 
     } catch (err: any) {
         console.error('Error with interview flow:', err);
         setStatus('Error: Could not start interview.');
         toast({ title: 'Connection Error', description: 'Failed to connect to the interview service.', variant: 'destructive' });
         setIsSessionLive(false);
-    } finally {
-        endSession();
+        if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
     }
-  }, [isSessionLive, user, toast, router, searchParams, processAudioQueue]);
-
-  const endSession = useCallback((shouldNavigate = true) => {
-    if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
-    
-    setIsSessionLive(false);
-    if(shouldNavigate) setStatus('Interview ended. Navigating to results...');
-
-    mediaRecorderRef.current?.stop();
-    mediaRecorderRef.current = null;
-    
-    const stream = userVideoEl.current?.srcObject as MediaStream;
-    stream?.getTracks().forEach(track => track.stop());
-    
-    if (userVideoEl.current) userVideoEl.current.srcObject = null;
-    
-    // Use the final transcript from the ref if available
-    const finalTranscript = finalTranscriptRef.current || transcriptRef.current;
-
-    if (shouldNavigate && user) {
-        const interviewId = params.interviewId as string;
-        
-        if (finalTranscript.length === 0) {
-            finalTranscript.push({ speaker: 'ai', text: 'Interview session ended before any exchange.' });
-        }
-
-        const activity: InterviewActivity = {
-            id: interviewId,
-            type: 'interview',
-            timestamp: new Date().toISOString(),
-            transcript: finalTranscript,
-            feedback: "Feedback will be generated on the results page.",
-            details: {
-                topic: searchParams.get('topic') || 'General',
-                role: searchParams.get('role') || undefined,
-                level: searchParams.get('level') || undefined,
-                company: searchParams.get('company') || undefined,
-            }
-        };
-        
-        addActivity(user.uid, activity)
-            .then(() => {
-                router.push(`/dashboard/interview/${interviewId}/results`);
-            })
-            .catch((error) => {
-                console.error("Failed to save activity:", error);
-                toast({ title: "Could not save interview results", variant: "destructive" });
-                router.push('/dashboard');
-            });
-    }
-  }, [user, params.interviewId, searchParams, router, toast]);
+  }, [isSessionLive, user, toast, router, searchParams, processAudioQueue, endSession]);
 
   useEffect(() => {
-    // When a text chunk comes in, add it to the live transcript ref
+    // This effect is for capturing the transcript as it's being generated.
+    // It does not handle the final transcript from the flow's output.
     if (currentAiTranscription.trim()) {
-        transcriptRef.current.push({ speaker: 'ai', text: currentAiTranscription.trim() });
-        setCurrentAiTranscription('');
+      transcriptRef.current.push({ speaker: 'ai', text: currentAiTranscription.trim() });
+      setCurrentAiTranscription('');
     }
-     if (currentUserTranscription.trim()) {
-        transcriptRef.current.push({ speaker: 'user', text: currentUserTranscription.trim() });
-        setCurrentUserTranscription('');
+    if (currentUserTranscription.trim()) {
+      transcriptRef.current.push({ speaker: 'user', text: currentUserTranscription.trim() });
+      setCurrentUserTranscription('');
     }
   }, [currentAiTranscription, currentUserTranscription]);
-
   
   const toggleMute = () => {
     const stream = userVideoEl.current?.srcObject as MediaStream;
