@@ -357,14 +357,16 @@ export default function PortfolioPage() {
             </div>
              <div>
                 <Label htmlFor="slug">Portfolio URL</Label>
-                <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground p-2 rounded-l-md bg-muted border border-r-0 whitespace-nowrap">
-                       talxify.space/portfolio/
-                    </span>
-                    <Input id="slug" value={portfolio.personalInfo.slug} onChange={handleSlugChange} className="rounded-l-none" />
-                     <Button onClick={handleCheckSlug} disabled={isCheckingSlug}>
+                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                    <div className="flex items-center">
+                        <span className="text-sm text-muted-foreground p-2 rounded-l-md bg-muted border border-r-0 whitespace-nowrap">
+                        talxify.space/portfolio/
+                        </span>
+                        <Input id="slug" value={portfolio.personalInfo.slug} onChange={handleSlugChange} className="rounded-l-none rounded-r-none sm:rounded-r-md" />
+                    </div>
+                    <Button onClick={handleCheckSlug} disabled={isCheckingSlug} className="w-full sm:w-auto shrink-0">
                         {isCheckingSlug ? <Loader2 className="h-4 w-4 animate-spin"/> : 'Check Availability'}
-                     </Button>
+                    </Button>
                 </div>
                  {slugMessage && (
                     <div className={cn("flex items-center gap-2 text-sm mt-2", 
