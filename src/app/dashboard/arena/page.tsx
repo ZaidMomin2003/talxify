@@ -6,7 +6,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription as DialogDescriptionComponent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Swords, Lock, PlayCircle, BookOpen, Code, Briefcase, CheckCircle, Loader2, Gem, Eye, RefreshCw, Trophy, History, ShieldQuestion, Target, BrainCircuit, BarChart, ArrowRight } from "lucide-react";
+import { Swords, Lock, PlayCircle, BookOpen, Code, Briefcase, CheckCircle, Loader2, Gem, Eye, RefreshCw, Trophy, History, ShieldQuestion, Target, BrainCircuit, BarChart, ArrowRight, Sparkles } from "lucide-react";
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
@@ -237,16 +237,20 @@ export default function ArenaPage() {
   return (
     <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
       <div className="max-w-6xl mx-auto">
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-3 text-3xl font-headline">
-              <Swords className="h-8 w-8" /> 60-Day Interview Prep Arena
-            </CardTitle>
-            <CardDescription>
+        <div className="relative mb-8 overflow-hidden rounded-xl bg-gradient-to-br from-primary/80 via-blue-500/80 to-purple-600/80 p-8 text-center text-primary-foreground shadow-2xl">
+          <div className="absolute inset-0 bg-dot-pattern opacity-20"></div>
+          <div className="relative z-10">
+            <div className="mx-auto mb-4 w-fit rounded-full bg-white/20 p-4">
+              <Swords className="h-10 w-10" />
+            </div>
+            <h1 className="font-headline text-4xl font-bold">
+              60-Day Interview Prep Arena
+            </h1>
+            <p className="mt-2 text-lg text-primary-foreground/80">
               Complete daily tasks based on your personalized syllabus to sharpen your skills. Complete one day to unlock the next.
-            </CardDescription>
-          </CardHeader>
-        </Card>
+            </p>
+          </div>
+        </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
             {trialExpired ? (
@@ -365,5 +369,3 @@ export default function ArenaPage() {
     </main>
   );
 }
-
-    
