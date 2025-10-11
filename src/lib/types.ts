@@ -10,7 +10,12 @@ import { type serverTimestamp } from "firebase/firestore";
 // A generic type for any activity stored in the user's document
 export type StoredActivity = QuizResult | InterviewActivity | NoteGenerationActivity;
 
-export type TranscriptEntry = { speaker: 'user' | 'ai'; text: string };
+export const TranscriptEntrySchema = z.object({
+  speaker: z.enum(['user', 'ai']),
+  text: z.string(),
+});
+export type TranscriptEntry = z.infer<typeof TranscriptEntrySchema>;
+
 
 // The base interface that all activity types extend
 export interface BaseActivity {
@@ -326,3 +331,26 @@ export interface WaitlistSubmission {
     email: string;
     timestamp: any;
 }
+
+
+// --- Interview Flow Schemas ---
+export const InterviewFlowInputSchema = z.object({
+  topic: z.string(),
+  role: z.string(),
+  company: z.string().optional(),
+  history: z.array(TranscriptEntrySchema).optional(),
+});
+
+export const InterviewFlowStateSchema = z.object({
+  status: z.string().optional(),
+  aiText: z.string().optional(),
+  userText: z.string().optional(),
+  aiAudio: z.string().optional(),
+});
+export type InterviewFlowState = z.infer<typeof InterviewFlowStateSchema>;
+
+
+export const InterviewFlowOutputSchema = z.object({
+  transcript: z.array(TranscriptEntrySchema),
+});
+export type InterviewFlowOutput = z.infer<typeof InterviewFlowOutputSchema>;
