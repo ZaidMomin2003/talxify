@@ -11,7 +11,24 @@ const nextConfig: NextConfig = {
     ignoreDuringBuilds: true,
   },
   images: {
-    domains: ["res.cloudinary.com", "placehold.co", "blocks.mvp-subha.me", "randomuser.me", "drive.google.com", "lh3.googleusercontent.com"],
+    remotePatterns: [
+        {
+            protocol: 'https',
+            hostname: 'res.cloudinary.com',
+        },
+        {
+            protocol: 'https',
+            hostname: 'picsum.photos',
+        },
+        {
+            protocol: 'https',
+            hostname: 'randomuser.me',
+        },
+        {
+            protocol: 'https',
+            hostname: 'lh3.googleusercontent.com',
+        },
+    ]
   },
   allowedDevOrigins: [
     "https://*.cloudworkstations.dev",
