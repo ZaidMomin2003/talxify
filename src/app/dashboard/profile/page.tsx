@@ -158,9 +158,9 @@ export default function ProfilePage() {
                         <CardDescription>Manage your account settings and preferences.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <Button variant="outline" onClick={() => router.push('/onboarding')}>
-                            <RefreshCw className="mr-2 h-4 w-4"/>
-                            Redo Onboarding & Regenerate Syllabus
+                        <Button variant="outline" onClick={() => router.push('/onboarding')} className="h-auto whitespace-normal">
+                            <RefreshCw className="mr-2 h-4 w-4 shrink-0"/>
+                            <span>Redo Onboarding & Regenerate Syllabus</span>
                         </Button>
                          <p className="text-sm text-muted-foreground mt-2">
                            Generate a new 60-day learning plan based on different roles or companies. Your stats will not be affected.
