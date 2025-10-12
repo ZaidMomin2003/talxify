@@ -88,6 +88,7 @@ export default function ArenaPage() {
     const [activity, setActivity] = useState<StoredActivity[]>([]);
     const [userData, setUserData] = useState<UserData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [isNavigating, setIsNavigating] = useState<string | null>(null);
     const [dialogOpen, setDialogOpen] = useState<number | null>(null);
 
     const fetchSyllabusAndActivity = useCallback(async () => {
@@ -189,9 +190,11 @@ export default function ArenaPage() {
 
 
     const handleStartChallenge = (day: number, type: 'learn' | 'quiz' | 'interview') => {
+        setIsNavigating(`${day}-${type}`);
         const topic = syllabus.find(d => d.day === day)?.topic;
         if (!topic) {
              console.error(`No topic found for day ${day}`);
+             setIsNavigating(null);
              return;
         }
 
@@ -312,8 +315,8 @@ export default function ArenaPage() {
                                                 <p className="font-semibold text-foreground">Learn: {day.topic}</p>
                                                 <p className="text-xs text-muted-foreground">Study the core concepts of today's topic.</p>
                                             </div>
-                                            <Button size="sm" onClick={() => handleStartChallenge(day.day, 'learn')} disabled={!isUnlocked} className="w-24">
-                                                {dayStatus.learn ? <><Eye className="mr-2 h-4 w-4"/>View</> : isUnlocked ? 'Start' : <Lock className="h-4 w-4" />}
+                                            <Button size="sm" onClick={() => handleStartChallenge(day.day, 'learn')} disabled={!isUnlocked || isNavigating === `${day.day}-learn`} className="w-24">
+                                                {isNavigating === `${day.day}-learn` ? <Loader2 className="animate-spin" /> : dayStatus.learn ? <><Eye className="mr-2 h-4 w-4"/>View</> : isUnlocked ? 'Start' : <Lock className="h-4 w-4" />}
                                             </Button>
                                         </div>
                                     )}
@@ -325,8 +328,8 @@ export default function ArenaPage() {
                                                 <p className="text-xs text-muted-foreground">{isFinalDay ? "Adaptive quiz on all topics." : `Master ${day.topic}.`}</p>
                                             </div>
                                              <DialogTrigger asChild>
-                                                <Button size="sm" disabled={!isUnlocked} className="w-24">
-                                                    {dayStatus.quiz ? <><RefreshCw className="mr-2 h-4 w-4"/>Retake</> : isUnlocked ? 'Start' : <Lock className="h-4 w-4" />}
+                                                <Button size="sm" disabled={!isUnlocked || isNavigating === `${day.day}-quiz`} className="w-24">
+                                                    {isNavigating === `${day.day}-quiz` ? <Loader2 className="animate-spin" /> : dayStatus.quiz ? <><RefreshCw className="mr-2 h-4 w-4"/>Retake</> : isUnlocked ? 'Start' : <Lock className="h-4 w-4" />}
                                                 </Button>
                                             </DialogTrigger>
                                         </div>
@@ -347,8 +350,8 @@ export default function ArenaPage() {
                                                     </Link>
                                                 </Button>
                                              )}
-                                             <Button size="sm" onClick={() => handleStartChallenge(day.day, 'interview')} disabled={!isUnlocked} className="w-24">
-                                                {dayStatus.isInterviewInProgress 
+                                             <Button size="sm" onClick={() => handleStartChallenge(day.day, 'interview')} disabled={!isUnlocked || isNavigating === `${day.day}-interview`} className="w-24">
+                                                {isNavigating === `${day.day}-interview` ? <Loader2 className="animate-spin" /> : dayStatus.isInterviewInProgress 
                                                     ? <><History className="mr-2 h-4 w-4"/>Resume</>
                                                     : dayStatus.interview 
                                                         ? <><RefreshCw className="mr-2 h-4 w-4"/>Retake</>
