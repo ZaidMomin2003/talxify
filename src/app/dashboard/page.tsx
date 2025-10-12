@@ -101,12 +101,17 @@ export default function DashboardPage() {
     
     const quizTaken = completedQuizzes.length > 0;
     
-    const perfData = [...completedInterviews]
-        .sort((a,b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
-        .map((result, index) => ({
-            name: `Interview #${index + 1}`,
-            score: result.analysis?.overallScore ?? 0,
-        }));
+    const izanamiSessions = allActivity
+        .filter((a): a is QuizResult => a.type === 'quiz' && a.details.difficulty === 'Izanami Mode' && a.analysis.length > 0)
+        .sort((a,b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+
+    const perfData = izanamiSessions.map((result, index) => {
+        const score = result.analysis.reduce((sum, item) => sum + item.score, 0) / result.analysis.length * 100;
+        return {
+            name: `Session #${index + 1}`,
+            score: Math.round(score),
+        }
+    });
 
 
     // Arena progress calculation
@@ -261,9 +266,9 @@ export default function DashboardPage() {
         <div className="lg:col-span-2">
           <Card className="h-full">
               <CardHeader>
-                  <CardTitle>Performance Over Time</CardTitle>
+                  <CardTitle>Code Izanami Performance</CardTitle>
                   <CardDescription>
-                      Your overall interview scores over time. Complete more interviews to see your progress!
+                      Your scores from adaptive coding gym sessions over time. Keep practicing to see your progress!
                   </CardDescription>
               </CardHeader>
               <CardContent className="h-[300px] w-full pr-6">
@@ -292,7 +297,7 @@ export default function DashboardPage() {
                       <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
                           <BarChart className="w-12 h-12 mb-4" />
                           <p className="font-semibold">No performance data yet</p>
-                          <p className="text-sm">Take a mock interview to see your progress.</p>
+                          <p className="text-sm">Complete a 'Code Izanami' session in the Arena to see your progress.</p>
                       </div>
                   )}
               </CardContent>
@@ -441,5 +446,3 @@ export default function DashboardPage() {
     </main>
   );
 }
-
-    
