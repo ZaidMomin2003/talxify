@@ -121,7 +121,7 @@ export default function DashboardPage() {
     const status: { [day: number]: { learn: boolean; quiz: boolean; interview: boolean; } } = {};
 
     syllabus.forEach(day => {
-        status[day.day] = { learn: boolean, quiz: boolean, interview: boolean };
+        status[day.day] = { learn: false, quiz: false, interview: false };
     });
 
     activity.forEach(act => {
@@ -448,4 +448,3 @@ export default function DashboardPage() {
   );
 }
 
-    
