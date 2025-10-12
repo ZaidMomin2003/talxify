@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { Button } from "@/components/ui/button";
@@ -101,14 +102,14 @@ export default function DashboardPage() {
     
     const quizTaken = completedQuizzes.length > 0;
     
-    const izanamiSessions = allActivity
-        .filter((a): a is QuizResult => a.type === 'quiz' && a.details.difficulty === 'Izanami Mode' && a.analysis.length > 0)
+    const allQuizSessions = allActivity
+        .filter((a): a is QuizResult => a.type === 'quiz' && a.analysis && a.analysis.length > 0)
         .sort((a,b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
 
-    const perfData = izanamiSessions.map((result, index) => {
+    const perfData = allQuizSessions.map((result, index) => {
         const score = result.analysis.reduce((sum, item) => sum + item.score, 0) / result.analysis.length * 100;
         return {
-            name: `Session #${index + 1}`,
+            name: `Quiz #${index + 1}`,
             score: Math.round(score),
         }
     });
@@ -120,7 +121,7 @@ export default function DashboardPage() {
     const status: { [day: number]: { learn: boolean; quiz: boolean; interview: boolean; } } = {};
 
     syllabus.forEach(day => {
-        status[day.day] = { learn: false, quiz: false, interview: false };
+        status[day.day] = { learn: boolean, quiz: boolean, interview: boolean };
     });
 
     activity.forEach(act => {
@@ -266,9 +267,9 @@ export default function DashboardPage() {
         <div className="lg:col-span-2">
           <Card className="h-full">
               <CardHeader>
-                  <CardTitle>Code Izanami Performance</CardTitle>
+                  <CardTitle>Quiz Performance</CardTitle>
                   <CardDescription>
-                      Your scores from adaptive coding gym sessions over time. Keep practicing to see your progress!
+                      Your scores from all coding quizzes over time. Keep practicing to see your progress!
                   </CardDescription>
               </CardHeader>
               <CardContent className="h-[300px] w-full pr-6">
@@ -297,7 +298,7 @@ export default function DashboardPage() {
                       <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
                           <BarChart className="w-12 h-12 mb-4" />
                           <p className="font-semibold">No performance data yet</p>
-                          <p className="text-sm">Complete a 'Code Izanami' session in the Arena to see your progress.</p>
+                          <p className="text-sm">Complete a quiz from the Arena to see your progress.</p>
                       </div>
                   )}
               </CardContent>
@@ -446,3 +447,5 @@ export default function DashboardPage() {
     </main>
   );
 }
+
+    
