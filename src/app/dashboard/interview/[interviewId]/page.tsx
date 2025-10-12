@@ -334,11 +334,11 @@ export default function LiveInterviewPage() {
     }
   }, [session, user, toast, router, isInterviewing]);
 
-  const endSession = useCallback((shouldNavigate = true) => {
+  const endSession = useCallback(async (shouldNavigate = true) => {
     if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
     
     setIsInterviewing(false);
-    if(shouldNavigate) setStatus('Interview ended. Navigating to results...');
+    if(shouldNavigate) setStatus('Interview ended. Saving results...');
 
     session?.close();
     setSession(null);
@@ -373,12 +373,12 @@ export default function LiveInterviewPage() {
         };
         
         try {
-            addActivity(user.uid, activity);
+            await addActivity(user.uid, activity);
+            router.push(`/dashboard/interview/${interviewId}/results`);
         } catch (error) {
             console.error("Failed to save activity:", error);
             toast({ title: "Could not save interview results", variant: "destructive" });
-        } finally {
-            router.push(`/dashboard/interview/${interviewId}/results`);
+            setStatus('Error saving results. Please go to dashboard.');
         }
     }
   }, [user, router, toast, session, params.interviewId, searchParams]);

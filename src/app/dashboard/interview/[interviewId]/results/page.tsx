@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -96,40 +97,26 @@ export default function InterviewResultsPage() {
             const currentInterview = allActivity.find(a => a.id === interviewId && a.type === 'interview') as InterviewActivity | undefined || null;
             
             if (!currentInterview) {
-                // This might happen on first load after redirect.
-                // Give Firestore a moment to catch up.
-                await new Promise(resolve => setTimeout(resolve, 1500));
-                const freshActivity = await getActivity(user.uid);
-                const freshInterview = freshActivity.find(a => a.id === interviewId && a.type === 'interview') as InterviewActivity | undefined || null;
-                if (!freshInterview) {
-                    setIsLoading(false);
-                    return;
-                }
-                setInterviewData(freshInterview);
-            } else {
-                setInterviewData(currentInterview);
-            }
-
-            const finalInterviewData = interviewData || currentInterview;
-            if (!finalInterviewData) {
-                setIsLoading(false);
+                 setIsLoading(false);
                 return;
             }
             
-            if (finalInterviewData.analysis && Object.keys(finalInterviewData.analysis).length > 0) {
-                setAnalysis(finalInterviewData.analysis);
+            setInterviewData(currentInterview);
+            
+            if (currentInterview.analysis && Object.keys(currentInterview.analysis).length > 0) {
+                setAnalysis(currentInterview.analysis);
             } else {
                  setIsAnalyzing(true);
                  try {
                     const feedback = await generateInterviewFeedback({
-                        transcript: finalInterviewData.transcript,
-                        topic: finalInterviewData.details.topic,
-                        role: finalInterviewData.details.role || 'Software Engineer',
-                        company: finalInterviewData.details.company,
+                        transcript: currentInterview.transcript,
+                        topic: currentInterview.details.topic,
+                        role: currentInterview.details.role || 'Software Engineer',
+                        company: currentInterview.details.company,
                     });
                     setAnalysis(feedback);
                     
-                    const updatedInterview: InterviewActivity = { ...finalInterviewData, analysis: feedback };
+                    const updatedInterview: InterviewActivity = { ...currentInterview, analysis: feedback };
                     await updateActivity(user.uid, updatedInterview);
                     setInterviewData(updatedInterview);
 
@@ -144,7 +131,7 @@ export default function InterviewResultsPage() {
         } finally {
             setIsLoading(false);
         }
-    }, [user, params.interviewId, interviewData]);
+    }, [user, params.interviewId]);
 
 
     useEffect(() => {
