@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -207,7 +206,6 @@ export default function ArenaPage() {
             const params = new URLSearchParams({ topic });
             router.push(`/dashboard/interview/${meetingId}/instructions?${params.toString()}`);
         }
-        setDialogOpen(null);
     }
 
     if (isLoading) {
@@ -268,7 +266,7 @@ export default function ArenaPage() {
                     const interviewIsScheduled = isFinalDay || (day.day - 1) % 3 === 0;
 
                     return (
-                        <Dialog key={day.day} open={dialogOpen === day.day} onOpenChange={(open) => setDialogOpen(open ? day.day : null)}>
+                        <Dialog key={day.day} open={dialogOpen === day.day} onOpenChange={(open) => !open && setDialogOpen(null)}>
                             <DialogTrigger asChild>
                                 <Card 
                                     className={cn(
@@ -315,7 +313,7 @@ export default function ArenaPage() {
                                                 <p className="font-semibold text-foreground">Learn: {day.topic}</p>
                                                 <p className="text-xs text-muted-foreground">Study the core concepts of today's topic.</p>
                                             </div>
-                                            <Button size="sm" onClick={() => handleStartChallenge(day.day, 'learn')} disabled={!isUnlocked || isNavigating === `${day.day}-learn`} className="w-24">
+                                            <Button size="sm" onClick={() => handleStartChallenge(day.day, 'learn')} disabled={!isUnlocked || !!isNavigating} className="w-24">
                                                 {isNavigating === `${day.day}-learn` ? <Loader2 className="animate-spin" /> : dayStatus.learn ? <><Eye className="mr-2 h-4 w-4"/>View</> : isUnlocked ? 'Start' : <Lock className="h-4 w-4" />}
                                             </Button>
                                         </div>
@@ -328,7 +326,7 @@ export default function ArenaPage() {
                                                 <p className="text-xs text-muted-foreground">{isFinalDay ? "Adaptive quiz on all topics." : `Master ${day.topic}.`}</p>
                                             </div>
                                              <DialogTrigger asChild>
-                                                <Button size="sm" disabled={!isUnlocked || isNavigating === `${day.day}-quiz`} className="w-24">
+                                                <Button size="sm" disabled={!isUnlocked || !!isNavigating} className="w-24">
                                                     {isNavigating === `${day.day}-quiz` ? <Loader2 className="animate-spin" /> : dayStatus.quiz ? <><RefreshCw className="mr-2 h-4 w-4"/>Retake</> : isUnlocked ? 'Start' : <Lock className="h-4 w-4" />}
                                                 </Button>
                                             </DialogTrigger>
@@ -350,7 +348,7 @@ export default function ArenaPage() {
                                                     </Link>
                                                 </Button>
                                              )}
-                                             <Button size="sm" onClick={() => handleStartChallenge(day.day, 'interview')} disabled={!isUnlocked || isNavigating === `${day.day}-interview`} className="w-24">
+                                             <Button size="sm" onClick={() => handleStartChallenge(day.day, 'interview')} disabled={!isUnlocked || !!isNavigating} className="w-24">
                                                 {isNavigating === `${day.day}-interview` ? <Loader2 className="animate-spin" /> : dayStatus.isInterviewInProgress 
                                                     ? <><History className="mr-2 h-4 w-4"/>Resume</>
                                                     : dayStatus.interview 
