@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
@@ -148,19 +149,15 @@ export default function LiveInterviewPage() {
   const audioBufferSources = useRef(new Set<AudioBufferSourceNode>());
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
   
-  useEffect(() => {
-    // This effect runs only ONCE on component mount to initialize everything.
-    
-    // 1. Initialize Audio Contexts
-    // @ts-ignore
-    const AudioContext = window.AudioContext || window.webkitAudioContext;
-    inputAudioContextRef.current = new AudioContext({ sampleRate: 16000 });
-    outputAudioContextRef.current = new AudioContext({ sampleRate: 24000 });
-    outputGainNodeRef.current = outputAudioContextRef.current.createGain();
-    outputGainNodeRef.current.connect(outputAudioContextRef.current.destination);
+    const stopAllPlayback = useCallback(() => {
+        for (const source of audioBufferSources.current.values()) {
+            source.stop();
+        }
+        audioBufferSources.current.clear();
+        nextAudioStartTimeRef.current = 0;
+    }, []);
 
-    // 2. Define session functions
-    const playAudio = async (base64Audio: string) => {
+    const playAudio = useCallback(async (base64Audio: string) => {
         const audioContext = outputAudioContextRef.current;
         const gainNode = outputGainNodeRef.current;
         if (!audioContext || !gainNode) return;
@@ -181,101 +178,107 @@ export default function LiveInterviewPage() {
         } catch (e) {
             console.error("Error playing audio:", e);
         }
-    };
+    }, []);
 
-    const stopAllPlayback = () => {
-        for (const source of audioBufferSources.current.values()) {
-            source.stop();
+    const initSession = useCallback(async () => {
+        if (!process.env.NEXT_PUBLIC_GEMINI_API_KEY) {
+            setStatus("Error: Gemini API Key not configured.");
+            return;
         }
-        audioBufferSources.current.clear();
-        nextAudioStartTimeRef.current = 0;
-    };
+        const client = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY });
 
-    const initSession = async () => {
-      if (!process.env.NEXT_PUBLIC_GEMINI_API_KEY) {
-          setStatus("Error: Gemini API Key not configured.");
-          return;
-      }
-      const client = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY });
+        const topic = searchParams.get('topic') || 'general software engineering';
+        const role = searchParams.get('role') || 'Software Engineer';
+        const company = searchParams.get('company') || undefined;
 
-      const topic = searchParams.get('topic') || 'general software engineering';
-      const role = searchParams.get('role') || 'Software Engineer';
-      const company = searchParams.get('company') || undefined;
+        let systemInstruction = `You are Kathy, an expert technical interviewer at Talxify. You are interviewing a candidate for the role of "${role}" on the topic of "${topic}". Start with a friendly introduction, then ask your first question. Always wait for the user to finish speaking. Your speech should be concise.`;
+        if (company) {
+            systemInstruction += ` The candidate is interested in ${company}, so you can tailor behavioral questions to their leadership principles if applicable.`;
+        }
 
-      let systemInstruction = `You are Kathy, an expert technical interviewer at Talxify. You are interviewing a candidate for the role of "${role}" on the topic of "${topic}". Start with a friendly introduction, then ask your first question. Always wait for the user to finish speaking. Your speech should be concise.`;
-      if (company) {
-          systemInstruction += ` The candidate is interested in ${company}, so you can tailor behavioral questions to their leadership principles if applicable.`;
-      }
+        setStatus('Connecting to AI...');
 
-      setStatus('Connecting to AI...');
+        try {
+            const newSession = await client.live.connect({
+            model: 'gemini-2.5-flash-native-audio-preview-09-2025',
+            callbacks: {
+                onopen: () => setStatus('Ready to start'),
+                onmessage: (message: LiveServerMessage) => {
+                if (message.serverContent?.interrupted) stopAllPlayback();
 
-      try {
-        const newSession = await client.live.connect({
-          model: 'gemini-2.5-flash-native-audio-preview-09-2025',
-          callbacks: {
-            onopen: () => setStatus('Waiting for Kathy to start...'),
-            onmessage: (message: LiveServerMessage) => {
-              if (message.serverContent?.interrupted) stopAllPlayback();
-
-              const audio = message.serverContent?.modelTurn?.parts[0]?.inlineData;
-              if (audio) playAudio(audio.data);
-              
-              if (message.serverContent?.outputTranscription) {
-                setCurrentAiTranscription(prev => prev + message.serverContent.outputTranscription.text);
-                setStatus("Kathy is speaking...");
-              }
-              if (message.serverContent?.inputTranscription) {
-                setCurrentUserTranscription(prev => prev + message.serverContent.inputTranscription.text);
-              }
-              if (message.serverContent?.turnComplete) {
-                if (currentAiTranscription.trim()) transcriptRef.current.push({ speaker: 'ai', text: currentAiTranscription.trim() });
-                if (currentUserTranscription.trim()) transcriptRef.current.push({ speaker: 'user', text: currentUserTranscription.trim() });
-                setCurrentUserTranscription('');
-                setCurrentAiTranscription('');
-                setStatus("🔴 Your turn... Speak now.");
-              }
+                const audio = message.serverContent?.modelTurn?.parts[0]?.inlineData;
+                if (audio) playAudio(audio.data);
+                
+                if (message.serverContent?.outputTranscription) {
+                    setCurrentAiTranscription(prev => prev + message.serverContent.outputTranscription.text);
+                    setStatus("Kathy is speaking...");
+                }
+                if (message.serverContent?.inputTranscription) {
+                    setCurrentUserTranscription(prev => prev + message.serverContent.inputTranscription.text);
+                }
+                if (message.serverContent?.turnComplete) {
+                    if (currentAiTranscription.trim()) transcriptRef.current.push({ speaker: 'ai', text: currentAiTranscription.trim() });
+                    if (currentUserTranscription.trim()) transcriptRef.current.push({ speaker: 'user', text: currentUserTranscription.trim() });
+                    setCurrentUserTranscription('');
+                    setCurrentAiTranscription('');
+                    setStatus("🔴 Your turn... Speak now.");
+                }
+                },
+                onerror: (e) => {
+                    let errorMessage = 'An unknown error occurred';
+                    if (e instanceof CloseEvent) errorMessage = `Session closed unexpectedly. Code: ${e.code}, Reason: ${e.reason}`;
+                    else if (e instanceof Error) errorMessage = e.message;
+                    else errorMessage = JSON.stringify(e);
+                    setStatus(`Error: ${errorMessage}`);
+                    console.error("Session Error:", e);
+                },
+                onclose: (e) => setStatus('Session Closed: ' + e.reason),
             },
-            onerror: (e) => {
-                let errorMessage = 'An unknown error occurred';
-                if (e instanceof CloseEvent) errorMessage = `Session closed unexpectedly. Code: ${e.code}, Reason: ${e.reason}`;
-                else if (e instanceof Error) errorMessage = e.message;
-                else errorMessage = JSON.stringify(e);
-                setStatus(`Error: ${errorMessage}`);
-                console.error("Session Error:", e);
+            config: {
+                responseModalities: [Modality.AUDIO],
+                speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Orus' } } },
+                inputAudioTranscription: {},
+                outputAudioTranscription: {},
+                systemInstruction: systemInstruction,
             },
-            onclose: (e) => setStatus('Session Closed: ' + e.reason),
-          },
-          config: {
-            responseModalities: [Modality.AUDIO],
-            speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Orus' } } },
-            inputAudioTranscription: {},
-            outputAudioTranscription: {},
-            systemInstruction: systemInstruction,
-          },
-        });
-        setSession(newSession); // <-- Set the session in state once ready
-      } catch (e: any) {
-        console.error("Connection to Gemini failed:", e);
-        setStatus(`Error: ${e.message}`);
-      }
-    };
-    
-    initSession();
+            });
+            setSession(newSession);
+        } catch (e: any) {
+            console.error("Connection to Gemini failed:", e);
+            setStatus(`Error: ${e.message}`);
+        }
+    }, [searchParams, playAudio, stopAllPlayback, currentAiTranscription, currentUserTranscription]);
 
-    // 3. Cleanup function
-    return () => {
-      mediaStreamRef.current?.getTracks().forEach((t) => t.stop());
-      session?.close();
-      inputAudioContextRef.current?.close();
-      outputAudioContextRef.current?.close();
-      if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
-    };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // <-- Empty dependency array ensures this runs only once.
+    useEffect(() => {
+        // Initialize Audio Contexts on mount
+        // @ts-ignore
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        inputAudioContextRef.current = new AudioContext({ sampleRate: 16000 });
+        outputAudioContextRef.current = new AudioContext({ sampleRate: 24000 });
+        outputGainNodeRef.current = outputAudioContextRef.current.createGain();
+        outputGainNodeRef.current.connect(outputAudioContextRef.current.destination);
+        
+        initSession();
+
+        return () => {
+            // Full cleanup on component unmount
+            session?.close();
+            mediaStreamRef.current?.getTracks().forEach((t) => t.stop());
+            scriptProcessorNodeRef.current?.disconnect();
+            sourceNodeRef.current?.disconnect();
+            inputAudioContextRef.current?.close();
+            outputAudioContextRef.current?.close();
+            if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+        };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
 
   const startInterview = useCallback(async () => {
-    if (isInterviewing || !session) return; // Prevent multiple starts
+    if (isInterviewing || !session || status !== 'Ready to start') {
+        toast({ title: 'Not Ready', description: `Cannot start interview. Current status: ${status}`, variant: 'destructive' });
+        return;
+    }
     if (!user) {
         toast({ title: 'Not Logged In', description: 'Please log in to start an interview.', variant: 'destructive' });
         router.push('/login');
@@ -312,7 +315,7 @@ export default function LiveInterviewPage() {
         scriptProcessorNodeRef.current = inputCtx.createScriptProcessor(bufferSize, 1, 1);
 
         scriptProcessorNodeRef.current.onaudioprocess = (event) => {
-            if (session) { // Check if session is valid before sending
+            if (session) {
                 const pcmData = event.inputBuffer.getChannelData(0);
                 session.sendRealtimeInput({ media: createBlob(pcmData) });
             }
@@ -330,7 +333,7 @@ export default function LiveInterviewPage() {
         setStatus(`Error starting interview: ${err.message}`);
         console.error('Error starting interview:', err);
     }
-  }, [session, user, toast, router, isInterviewing]);
+  }, [session, user, toast, router, isInterviewing, status]);
 
   const endSession = useCallback(async (shouldNavigate = true) => {
     if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
@@ -361,7 +364,7 @@ export default function LiveInterviewPage() {
             type: 'interview',
             timestamp: new Date().toISOString(),
             transcript: transcriptRef.current,
-            feedback: "Feedback will be generated on the results page.", // Placeholder
+            feedback: "Feedback will be generated on the results page.",
             details: {
                 topic: searchParams.get('topic') || 'General',
                 role: searchParams.get('role') || undefined,
@@ -406,9 +409,9 @@ export default function LiveInterviewPage() {
             <AIPanel isInterviewing={isInterviewing} />
              {!isInterviewing && (
                 <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30">
-                    <Button onClick={startInterview} size="lg" className="h-16 rounded-full px-8" disabled={!session || isInterviewing}>
-                        {!session ? <Loader2 className="mr-3 h-6 w-6 animate-spin"/> : <Play className="mr-3 h-6 w-6"/>}
-                        {!session ? 'Connecting...' : 'Start Interview'}
+                    <Button onClick={startInterview} size="lg" className="h-16 rounded-full px-8" disabled={status !== 'Ready to start' || isInterviewing}>
+                        {status !== 'Ready to start' ? <Loader2 className="mr-3 h-6 w-6 animate-spin"/> : <Play className="mr-3 h-6 w-6"/>}
+                        {status !== 'Ready to start' ? status : 'Start Interview'}
                     </Button>
                 </div>
             )}
@@ -428,3 +431,5 @@ export default function LiveInterviewPage() {
     </div>
   );
 }
+
+    
