@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
@@ -14,6 +12,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { GoogleGenAI, LiveServerMessage, Modality, Session } from '@google/genai';
 import { createBlob, decode, decodeAudioData } from '@/lib/utils';
+import { summarizeUserFeedback } from '@/ai/flows/summarize-user-feedback';
 
 // --- Sub-components for better structure ---
 
@@ -363,7 +362,7 @@ export default function LiveInterviewPage() {
             type: 'interview',
             timestamp: new Date().toISOString(),
             transcript: transcriptRef.current,
-            feedback: "Feedback will be generated on the results page.",
+            feedback: "Awaiting summary generation.",
             details: {
                 topic: searchParams.get('topic') || 'General',
                 role: searchParams.get('role') || undefined,
@@ -374,11 +373,20 @@ export default function LiveInterviewPage() {
         
         try {
             await addActivity(user.uid, activity);
-            router.push(`/dashboard/interview/${interviewId}/results`);
+            
+            const fullTranscript = transcriptRef.current.map(t => `${t.speaker}: ${t.text}`).join('\n');
+            const summaryResult = await summarizeUserFeedback({ feedback: fullTranscript });
+
+            toast({
+                title: "Interview Complete",
+                description: summaryResult.summary,
+                duration: 10000,
+            });
+            router.push('/dashboard');
         } catch (error) {
-            console.error("Failed to save activity:", error);
-            toast({ title: "Could not save interview results", variant: "destructive" });
-            setStatus('Error saving results. Please go to dashboard.');
+            console.error("Failed to save activity or generate summary:", error);
+            toast({ title: "Could not save interview results", description: "There was an error saving your interview. Please check your dashboard later.", variant: "destructive" });
+            router.push('/dashboard');
         }
     }
   }, [user, router, toast, session, params.interviewId, searchParams]);
@@ -430,5 +438,3 @@ export default function LiveInterviewPage() {
     </div>
   );
 }
-
-    
