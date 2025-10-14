@@ -12,7 +12,6 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { GoogleGenAI, LiveServerMessage, Modality, Session } from '@google/genai';
 import { createBlob, decode, decodeAudioData } from '@/lib/utils';
-import { summarizeUserFeedback } from '@/ai/flows/summarize-user-feedback';
 
 // --- Sub-components for better structure ---
 
@@ -362,7 +361,7 @@ export default function LiveInterviewPage() {
             type: 'interview',
             timestamp: new Date().toISOString(),
             transcript: transcriptRef.current,
-            feedback: "Awaiting summary generation.",
+            feedback: "Feedback will be generated on the results page.", // Placeholder
             details: {
                 topic: searchParams.get('topic') || 'General',
                 role: searchParams.get('role') || undefined,
@@ -373,18 +372,9 @@ export default function LiveInterviewPage() {
         
         try {
             await addActivity(user.uid, activity);
-            
-            const fullTranscript = transcriptRef.current.map(t => `${t.speaker}: ${t.text}`).join('\n');
-            const summaryResult = await summarizeUserFeedback({ feedback: fullTranscript });
-
-            toast({
-                title: "Interview Complete",
-                description: summaryResult.summary,
-                duration: 10000,
-            });
-            router.push('/dashboard');
+            router.push(`/dashboard/interview/${interviewId}/results`);
         } catch (error) {
-            console.error("Failed to save activity or generate summary:", error);
+            console.error("Failed to save activity:", error);
             toast({ title: "Could not save interview results", description: "There was an error saving your interview. Please check your dashboard later.", variant: "destructive" });
             router.push('/dashboard');
         }
