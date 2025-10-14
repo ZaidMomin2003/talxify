@@ -88,7 +88,7 @@ export default function ArenaPage() {
     const [userData, setUserData] = useState<UserData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isNavigating, setIsNavigating] = useState<string | null>(null);
-    const [dialogOpen, setDialogOpen] = useState<number | null>(null);
+    const [dialogOpenDay, setDialogOpenDay] = useState<number | null>(null);
 
     const fetchSyllabusAndActivity = useCallback(async () => {
         if (user) {
@@ -266,34 +266,36 @@ export default function ArenaPage() {
                     const interviewIsScheduled = isFinalDay || (day.day - 1) % 3 === 0;
 
                     return (
-                        <Dialog key={day.day} open={dialogOpen === day.day} onOpenChange={(open) => !open && setDialogOpen(null)}>
+                        <Dialog key={day.day} open={dialogOpenDay === day.day} onOpenChange={(open) => !open && setDialogOpenDay(null)}>
                             <DialogTrigger asChild>
-                                <Card 
-                                    className={cn(
-                                        "text-center transition-all duration-300 transform cursor-pointer",
-                                        "hover:-translate-y-1 hover:shadow-primary/20",
-                                        isUnlocked && interviewIsScheduled && neonColors[index % neonColors.length],
-                                        !isUnlocked && "bg-muted/50 text-muted-foreground hover:shadow-none hover:border-border",
-                                        isCompleted && "bg-green-500/10 border-green-500/50"
-                                    )}
-                                >
-                                    <CardHeader>
-                                        <CardTitle className="flex flex-col items-center gap-2">
-                                            {isFinalDay ? <Trophy className="h-6 w-6 mb-2 text-yellow-500" /> : !isUnlocked && <Lock className="h-6 w-6 mb-2" />}
-                                            Day {day.day}
-                                        </CardTitle>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <p className="text-xs font-semibold text-primary truncate" title={day.topic}>{day.topic}</p>
-                                        {isCompleted ? (
-                                            <div className="mt-2 flex items-center justify-center gap-2 text-sm font-semibold text-green-600">
-                                                <CheckCircle className="h-4 w-4"/> Completed
-                                            </div>
-                                        ) : (
-                                            <p className="text-sm font-semibold mt-2">{isUnlocked ? (isFinalDay ? 'Final Challenge' : 'Start Challenge') : 'Locked'}</p>
+                                <div role="button" onClick={() => isUnlocked && setDialogOpenDay(day.day)} className="h-full">
+                                    <Card 
+                                        className={cn(
+                                            "text-center transition-all duration-300 transform h-full flex flex-col",
+                                            isUnlocked && "cursor-pointer hover:-translate-y-1 hover:shadow-primary/20",
+                                            isUnlocked && interviewIsScheduled && neonColors[index % neonColors.length],
+                                            !isUnlocked && "bg-muted/50 text-muted-foreground hover:shadow-none hover:border-border",
+                                            isCompleted && "bg-green-500/10 border-green-500/50"
                                         )}
-                                    </CardContent>
-                                </Card>
+                                    >
+                                        <CardHeader className="flex-1">
+                                            <CardTitle className="flex flex-col items-center gap-2">
+                                                {isFinalDay ? <Trophy className="h-6 w-6 mb-2 text-yellow-500" /> : !isUnlocked && <Lock className="h-6 w-6 mb-2" />}
+                                                Day {day.day}
+                                            </CardTitle>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <p className="text-xs font-semibold text-primary truncate" title={day.topic}>{day.topic}</p>
+                                            {isCompleted ? (
+                                                <div className="mt-2 flex items-center justify-center gap-2 text-sm font-semibold text-green-600">
+                                                    <CheckCircle className="h-4 w-4"/> Completed
+                                                </div>
+                                            ) : (
+                                                <p className="text-sm font-semibold mt-2">{isUnlocked ? (isFinalDay ? 'Final Challenge' : 'Start Challenge') : 'Locked'}</p>
+                                            )}
+                                        </CardContent>
+                                    </Card>
+                                </div>
                             </DialogTrigger>
                             <DialogContent>
                                 <DialogHeader>
