@@ -353,11 +353,24 @@ export default function LiveInterviewPage() {
     if (userVideoEl.current) userVideoEl.current.srcObject = null;
 
     if (shouldNavigate && user) {
+        if (transcriptRef.current.length === 0) {
+            router.push('/dashboard');
+            return;
+        }
+        
         const interviewId = params.interviewId as string;
         
-        if (transcriptRef.current.length === 0) {
-            transcriptRef.current.push({ speaker: 'ai', text: 'Interview session ended before any conversation was recorded.' });
-        }
+        const details: InterviewActivity['details'] = {
+            topic: searchParams.get('topic') || 'General',
+        };
+        
+        const role = searchParams.get('role');
+        const level = searchParams.get('level');
+        const company = searchParams.get('company');
+
+        if (role) details.role = role;
+        if (level) details.level = level;
+        if (company) details.company = company;
 
         const activity: InterviewActivity = {
             id: interviewId,
@@ -365,12 +378,7 @@ export default function LiveInterviewPage() {
             timestamp: new Date().toISOString(),
             transcript: transcriptRef.current,
             feedback: "Feedback will be generated on the results page.",
-            details: {
-                topic: searchParams.get('topic') || 'General',
-                role: searchParams.get('role') || undefined,
-                level: searchParams.get('level') || undefined,
-                company: searchParams.get('company') || undefined,
-            }
+            details: details,
         };
         
         try {
@@ -435,3 +443,5 @@ export default function LiveInterviewPage() {
     </div>
   );
 }
+
+    

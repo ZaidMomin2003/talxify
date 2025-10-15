@@ -351,12 +351,12 @@ export default function DraftPage() {
     if (userVideoEl.current) userVideoEl.current.srcObject = null;
 
     if (shouldNavigate && user) {
-        const interviewId = 'draft_interview_' + Date.now();
-        
         if (transcriptRef.current.length === 0) {
-            transcriptRef.current.push({ speaker: 'ai', text: 'Interview session ended before any conversation was recorded.' });
+            router.push('/dashboard');
+            return;
         }
 
+        const interviewId = 'draft_interview_' + Date.now();
         const activity: InterviewActivity = {
             id: interviewId,
             type: 'interview',
@@ -425,3 +425,5 @@ export default function DraftPage() {
     </div>
   );
 }
+
+    
