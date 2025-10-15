@@ -356,10 +356,7 @@ export default function LiveInterviewPage() {
         const interviewId = params.interviewId as string;
         
         if (transcriptRef.current.length === 0) {
-            // If transcript is empty, just go back to the dashboard without saving
-            toast({ title: "Interview Ended", description: "Session ended before any conversation was recorded." });
-            router.push('/dashboard');
-            return;
+            transcriptRef.current.push({ speaker: 'ai', text: 'Interview session ended before any conversation was recorded.' });
         }
 
         const activity: InterviewActivity = {
@@ -438,5 +435,3 @@ export default function LiveInterviewPage() {
     </div>
   );
 }
-
-    

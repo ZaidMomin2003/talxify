@@ -354,7 +354,7 @@ export default function DraftPage() {
         const interviewId = 'draft_interview_' + Date.now();
         
         if (transcriptRef.current.length === 0) {
-            transcriptRef.current.push({ speaker: 'ai', text: 'Interview session ended before any exchange.' });
+            transcriptRef.current.push({ speaker: 'ai', text: 'Interview session ended before any conversation was recorded.' });
         }
 
         const activity: InterviewActivity = {
@@ -370,11 +370,10 @@ export default function DraftPage() {
         
         try {
             addActivity(user.uid, activity);
+            router.push(`/dashboard/interview/${interviewId}/results`);
         } catch (error) {
             console.error("Failed to save activity:", error);
             toast({ title: "Could not save interview results", variant: "destructive" });
-        } finally {
-            router.push(`/dashboard/interview/${interviewId}/results`);
         }
     }
   }, [user, router, toast, session]);
