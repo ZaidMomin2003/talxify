@@ -48,7 +48,7 @@ const AIPanel = ({ isInterviewing }: { isInterviewing: boolean; }) => {
           <AvatarFallback>AI</AvatarFallback>
         </Avatar>
       </div>
-      <p className="mt-6 text-2xl font-bold font-headline text-foreground">Kathy</p>
+      <p className="mt-6 text-2xl font-bold font-headline text-foreground">Mark</p>
       <p className="text-muted-foreground">AI Interviewer</p>
     </div>
   );
@@ -86,7 +86,7 @@ const CaptionDisplay = ({ userText, aiText }: { userText: string; aiText: string
     <div className="absolute bottom-28 left-1/2 -translate-x-1/2 w-full max-w-4xl px-4">
       <div className="bg-background/60 backdrop-blur-md rounded-lg p-4 text-center text-lg shadow-lg border">
          {aiText ? (
-            <><b>Kathy:</b> {aiText}</>
+            <><b>Mark:</b> {aiText}</>
           ) : (
             <><b>You:</b> {userText}</>
           )}
@@ -203,7 +203,7 @@ export default function DraftPage() {
       const role = 'Software Engineer';
       const company = undefined;
 
-      let systemInstruction = `You are Kathy, an expert technical interviewer at Talxify. You are interviewing a candidate for the role of "${role}" on the topic of "${topic}". Start with a friendly introduction, then ask your first question. Always wait for the user to finish speaking. Your speech should be concise.`;
+      let systemInstruction = `You are Mark, an expert technical interviewer at Talxify. You are interviewing a candidate for the role of "${role}" on the topic of "${topic}". Start with a friendly introduction, then ask your first question. Always wait for the user to finish speaking. Your speech should be concise.`;
       if (company) {
           systemInstruction += ` The candidate is interested in ${company}, so you can tailor behavioral questions to their leadership principles if applicable.`;
       }
@@ -214,7 +214,7 @@ export default function DraftPage() {
         const newSession = await client.live.connect({
           model: 'gemini-2.5-flash-native-audio-preview-09-2025',
           callbacks: {
-            onopen: () => setStatus('Waiting for Kathy to start...'),
+            onopen: () => setStatus('Waiting for Mark to start...'),
             onmessage: (message: LiveServerMessage) => {
               if (message.serverContent?.interrupted) stopAllPlayback();
 
@@ -223,7 +223,7 @@ export default function DraftPage() {
               
               if (message.serverContent?.outputTranscription) {
                 setCurrentAiTranscription(prev => prev + message.serverContent.outputTranscription.text);
-                setStatus("Kathy is speaking...");
+                setStatus("Mark is speaking...");
               }
               if (message.serverContent?.inputTranscription) {
                 setCurrentUserTranscription(prev => prev + message.serverContent.inputTranscription.text);
@@ -351,11 +351,6 @@ export default function DraftPage() {
     if (userVideoEl.current) userVideoEl.current.srcObject = null;
 
     if (shouldNavigate && user) {
-        if (transcriptRef.current.length === 0) {
-            router.push('/dashboard');
-            return;
-        }
-
         const interviewId = 'draft_interview_' + Date.now();
         const activity: InterviewActivity = {
             id: interviewId,
@@ -371,9 +366,14 @@ export default function DraftPage() {
         try {
             addActivity(user.uid, activity);
             router.push(`/dashboard/interview/${interviewId}/results`);
-        } catch (error) {
+        } catch (error: any) {
             console.error("Failed to save activity:", error);
-            toast({ title: "Could not save interview results", variant: "destructive" });
+            toast({ 
+                title: "Could not save interview results", 
+                description: `There was an error saving your interview: ${error.message}. Please check your dashboard later.`, 
+                variant: "destructive" 
+            });
+            router.push('/dashboard');
         }
     }
   }, [user, router, toast, session]);
@@ -425,5 +425,3 @@ export default function DraftPage() {
     </div>
   );
 }
-
-    
