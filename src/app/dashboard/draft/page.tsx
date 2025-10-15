@@ -248,7 +248,7 @@ export default function DraftPage() {
           },
           config: {
             responseModalities: [Modality.AUDIO],
-            speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Orus' } } },
+            speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Algenib' } } },
             inputAudioTranscription: {},
             outputAudioTranscription: {},
             systemInstruction: systemInstruction,

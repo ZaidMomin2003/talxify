@@ -236,7 +236,7 @@ export default function LiveInterviewPage() {
             },
             config: {
                 responseModalities: [Modality.AUDIO],
-                speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Orus' } } },
+                speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Algenib' } } },
                 inputAudioTranscription: {},
                 outputAudioTranscription: {},
                 systemInstruction: systemInstruction,
@@ -356,7 +356,10 @@ export default function LiveInterviewPage() {
         const interviewId = params.interviewId as string;
         
         if (transcriptRef.current.length === 0) {
-            transcriptRef.current.push({ speaker: 'ai', text: 'Interview session ended before any exchange.' });
+            // If transcript is empty, just go back to the dashboard without saving
+            toast({ title: "Interview Ended", description: "Session ended before any conversation was recorded." });
+            router.push('/dashboard');
+            return;
         }
 
         const activity: InterviewActivity = {
@@ -376,9 +379,13 @@ export default function LiveInterviewPage() {
         try {
             await addActivity(user.uid, activity);
             router.push(`/dashboard/interview/${interviewId}/results`);
-        } catch (error) {
+        } catch (error: any) {
             console.error("Failed to save activity:", error);
-            toast({ title: "Could not save interview results", description: "There was an error saving your interview. Please check your dashboard later.", variant: "destructive" });
+            toast({ 
+                title: "Could not save interview results", 
+                description: `There was an error saving your interview: ${error.message}. Please check your dashboard later.`, 
+                variant: "destructive" 
+            });
             router.push('/dashboard');
         }
     }
