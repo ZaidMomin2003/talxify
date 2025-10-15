@@ -25,21 +25,23 @@ const GenerateInterviewFeedbackInputSchema = z.object({
 });
 export type GenerateInterviewFeedbackInput = z.infer<typeof GenerateInterviewFeedbackInputSchema>;
 
+const QuestionFeedbackSchema = z.object({
+    question: z.string().describe("The question asked by the AI interviewer."),
+    userAnswer: z.string().describe("The user's answer to the question."),
+    feedback: z.string().describe("Specific, constructive feedback on the user's answer. Comment on technical accuracy, clarity, and structure. If a company was specified, evaluate the answer in that context (e.g., STAR method for behavioral questions at Amazon)."),
+    idealAnswer: z.string().describe("An example of a concise, ideal answer to the question."),
+    score: z.number().min(0).max(100).describe("A score for this specific answer from 0 to 100."),
+});
+
 const GenerateInterviewFeedbackOutputSchema = z.object({
-    overallScore: z.number().min(0).max(100).describe("An overall score for the interview from 0 to 100."),
+    overallScore: z.number().min(0).max(100).describe("An overall score for the interview from 0 to 100, based on an average of the question scores."),
     likelihoodToCrack: z.number().min(0).max(100).describe("The user's likelihood of cracking a real interview, as a percentage."),
     englishProficiency: z.number().min(0).max(100).describe("A score from 0-100 for the user's English proficiency, grammar, and clarity."),
     confidenceScore: z.number().min(0).max(100).describe("A score from 0-100 for the user's apparent confidence level."),
     summary: z.string().describe("A 2-3 sentence summary of the user's performance, highlighting their strengths and key areas for improvement."),
-    strengths: z.array(z.string()).describe("A bulleted list of specific strengths the user demonstrated."),
-    areasForImprovement: z.array(z.string()).describe("A bulleted list of the most important areas for the user to work on."),
-    questionFeedback: z.array(z.object({
-        question: z.string().describe("The question asked by the AI interviewer."),
-        userAnswer: z.string().describe("The user's answer to the question."),
-        feedback: z.string().describe("Specific, constructive feedback on the user's answer. Comment on technical accuracy, clarity, and structure. If a company was specified, evaluate the answer in that context (e.g., STAR method for behavioral questions at Amazon)."),
-        idealAnswer: z.string().describe("An example of a concise, ideal answer to the question."),
-        score: z.number().min(0).max(100).describe("A score for this specific answer from 0 to 100."),
-    })).describe("A detailed analysis of each question and answer pair.")
+    strengths: z.array(z.string()).describe("A bulleted list of 2-3 specific strengths the user demonstrated."),
+    areasForImprovement: z.array(z.string()).describe("A bulleted list of the 2-3 most important areas for the user to work on."),
+    questionFeedback: z.array(QuestionFeedbackSchema).describe("A detailed analysis of each question and answer pair.")
 });
 export type GenerateInterviewFeedbackOutput = z.infer<typeof GenerateInterviewFeedbackOutputSchema>;
 
@@ -47,6 +49,19 @@ export type GenerateInterviewFeedbackOutput = z.infer<typeof GenerateInterviewFe
 export async function generateInterviewFeedback(
   input: GenerateInterviewFeedbackInput
 ): Promise<GenerateInterviewFeedbackOutput> {
+  // If the transcript is empty or has less than 2 entries, it's not a real interview.
+  if (!input.transcript || input.transcript.length < 2) {
+      return {
+          overallScore: 0,
+          likelihoodToCrack: 0,
+          englishProficiency: 0,
+          confidenceScore: 0,
+          summary: "The interview was too short to provide a meaningful analysis. Try to engage in a conversation with the interviewer to get feedback.",
+          strengths: [],
+          areasForImprovement: ["Complete a longer interview to receive feedback."],
+          questionFeedback: [],
+      }
+  }
   return generateInterviewFeedbackFlow(input);
 }
 
@@ -63,21 +78,20 @@ const prompt = ai.definePrompt({
   {{/if}}
 
   Please analyze the entire transcript and provide the following:
-  1.  **Overall Score**: An integer score from 0 to 100 representing the user's overall performance across all 6 questions.
-  2.  **Likelihood to Crack**: A percentage (0-100) estimating the candidate's likelihood of passing a real-world interview based on this performance.
-  3.  **English Proficiency**: A score from 0-100 evaluating the candidate's English grammar, clarity, and vocabulary.
-  4.  **Confidence Score**: A score from 0-100 based on the candidate's tone, use of filler words, and the directness of their answers.
-  5.  **Summary**: A concise, 2-3 sentence summary of the user's performance. Start with encouragement, then highlight their main strength and the most critical area for improvement.
-  6.  **Strengths**: A list of 2-3 key strengths the user displayed during the interview.
-  7.  **Areas for Improvement**: A list of the 2-3 most important areas for the user to work on.
-  8.  **Question-by-Question Feedback**: For each of the 6 questions Mark asked, provide:
+  1.  **Question-by-Question Feedback**: For each question Mark asked, provide:
       - The question text.
       - The user's answer.
-      - Specific, actionable feedback on the answer. For technical questions, comment on correctness and depth. For behavioral questions, evaluate the structure (e.g., STAR method).
+      - Specific, actionable feedback on the answer.
       - A well-structured, ideal answer that serves as a model.
       - A score for that specific answer (0-100).
-  
-  Do not provide feedback on Mark's final voice-based summary; focus only on the user's answers to the 6 main questions.
+  2.  **Overall Scores**: Based on the entire conversation, provide:
+      - overallScore: An integer from 0 to 100, which should be the average of the individual question scores.
+      - likelihoodToCrack: An estimated percentage (0-100) of passing a real interview.
+      - englishProficiency: A score from 0-100 evaluating grammar and clarity.
+      - confidenceScore: A score from 0-100 based on tone and directness.
+  3.  **Summary**: A concise, 2-3 sentence summary of the performance.
+  4.  **Strengths**: A list of 2-3 key strengths.
+  5.  **Areas for Improvement**: A list of the 2-3 most important areas to work on.
 
   Here is the interview transcript:
   {{#each transcript}}
@@ -94,6 +108,19 @@ const generateInterviewFeedbackFlow = ai.defineFlow(
   },
   async (input) => {
     const { output } = await prompt(input);
-    return output!;
+    
+    if (!output) {
+      throw new Error("The AI failed to generate feedback. The output was empty.");
+    }
+    
+    // Basic validation to ensure the output structure is roughly correct
+    if (!output.summary || !output.questionFeedback) {
+        console.error("Incomplete feedback from AI", output);
+        throw new Error("The AI returned an incomplete feedback structure.");
+    }
+    
+    return output;
   }
 );
+
+    

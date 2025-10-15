@@ -26,7 +26,7 @@ function ResultsLoader() {
     )
 }
 
-function ResultsError() {
+function ResultsError({ message }: { message: string }) {
      return (
         <div className="flex h-screen w-full flex-col items-center justify-center p-4">
             <Card className="max-w-md w-full text-center shadow-lg">
@@ -36,7 +36,7 @@ function ResultsError() {
                     </div>
                     <CardTitle className="text-2xl font-bold">Analysis Failed</CardTitle>
                     <CardDescription>
-                        We couldn't find the interview or process the results. Please try again later or return to your dashboard.
+                        {message || "We couldn't find the interview or process the results. Please try again later or return to your dashboard."}
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -61,11 +61,6 @@ export default function InterviewResultsPage() {
     const [error, setError] = useState<string | null>(null);
 
     const generateFeedback = useCallback(async (activity: InterviewActivity) => {
-        if (!activity || !activity.transcript) {
-             setError("Not enough conversation to analyze.");
-             return;
-        }
-
         try {
             const feedbackResult = await generateInterviewFeedback({
                 transcript: activity.transcript,
@@ -132,7 +127,7 @@ export default function InterviewResultsPage() {
     }, [fetchInterviewData]);
 
     if (isLoading) return <ResultsLoader />;
-    if (error || !analysis || !interview) return <ResultsError />;
+    if (error || !analysis || !interview) return <ResultsError message={error || "Could not retrieve analysis."} />;
 
     return (
          <main className="p-4 sm:p-6 lg:p-8 overflow-auto bg-muted/30">
@@ -220,45 +215,49 @@ export default function InterviewResultsPage() {
                 </div>
 
                  {/* Question by Question Analysis */}
-                 <div>
-                    <h2 className="text-2xl font-bold font-headline mb-4">Question Analysis</h2>
-                    <Accordion type="single" collapsible className="w-full" defaultValue="item-0">
-                        {analysis.questionFeedback.map((item, index) => (
-                            <AccordionItem key={index} value={`item-${index}`}>
-                                <AccordionTrigger className="text-lg text-left hover:no-underline">
-                                    <div className="flex justify-between items-center w-full pr-4">
-                                        <span className="flex-1">Question {index + 1}: {item.question}</span>
-                                        <div className="flex items-center gap-2 shrink-0 ml-4">
-                                            <Badge variant={item.score > 75 ? 'default' : 'destructive'}>{item.score}%</Badge>
-                                        </div>
-                                    </div>
-                                </AccordionTrigger>
-                                <AccordionContent className="p-4 bg-background/50 rounded-b-md">
-                                    <div className="space-y-6">
-                                        <div>
-                                            <h4 className="font-semibold text-muted-foreground mb-2">Your Answer:</h4>
-                                            <blockquote className="border-l-4 pl-4 italic text-foreground">"{item.userAnswer}"</blockquote>
-                                        </div>
-                                         <div>
-                                            <h4 className="font-semibold text-muted-foreground mb-2">Feedback:</h4>
-                                            <div className="p-4 bg-muted/50 rounded-md prose prose-sm dark:prose-invert max-w-none text-foreground">
-                                                <p>{item.feedback}</p>
+                 {analysis.questionFeedback.length > 0 && (
+                    <div>
+                        <h2 className="text-2xl font-bold font-headline mb-4">Question Analysis</h2>
+                        <Accordion type="single" collapsible className="w-full" defaultValue="item-0">
+                            {analysis.questionFeedback.map((item, index) => (
+                                <AccordionItem key={index} value={`item-${index}`}>
+                                    <AccordionTrigger className="text-lg text-left hover:no-underline">
+                                        <div className="flex justify-between items-center w-full pr-4">
+                                            <span className="flex-1">Question {index + 1}: {item.question}</span>
+                                            <div className="flex items-center gap-2 shrink-0 ml-4">
+                                                <Badge variant={item.score > 75 ? 'default' : 'destructive'}>{item.score}%</Badge>
                                             </div>
                                         </div>
-                                        <div>
-                                            <h4 className="font-semibold text-muted-foreground mb-2">Ideal Answer Example:</h4>
-                                            <div className="p-4 bg-green-500/10 rounded-md prose prose-sm dark:prose-invert max-w-none text-foreground">
-                                                <p>{item.idealAnswer}</p>
+                                    </AccordionTrigger>
+                                    <AccordionContent className="p-4 bg-background/50 rounded-b-md">
+                                        <div className="space-y-6">
+                                            <div>
+                                                <h4 className="font-semibold text-muted-foreground mb-2">Your Answer:</h4>
+                                                <blockquote className="border-l-4 pl-4 italic text-foreground">"{item.userAnswer}"</blockquote>
+                                            </div>
+                                            <div>
+                                                <h4 className="font-semibold text-muted-foreground mb-2">Feedback:</h4>
+                                                <div className="p-4 bg-muted/50 rounded-md prose prose-sm dark:prose-invert max-w-none text-foreground">
+                                                    <p>{item.feedback}</p>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <h4 className="font-semibold text-muted-foreground mb-2">Ideal Answer Example:</h4>
+                                                <div className="p-4 bg-green-500/10 rounded-md prose prose-sm dark:prose-invert max-w-none text-foreground">
+                                                    <p>{item.idealAnswer}</p>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                </AccordionContent>
-                            </AccordionItem>
-                        ))}
-                    </Accordion>
-                </div>
+                                    </AccordionContent>
+                                </AccordionItem>
+                            ))}
+                        </Accordion>
+                    </div>
+                 )}
 
             </div>
         </main>
     );
 }
+
+    
