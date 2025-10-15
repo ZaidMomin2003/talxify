@@ -34,7 +34,6 @@ const QuestionFeedbackSchema = z.object({
 });
 
 const GenerateInterviewFeedbackOutputSchema = z.object({
-    overallScore: z.number().min(0).max(100).describe("An overall score for the interview from 0 to 100, based on an average of the question scores."),
     likelihoodToCrack: z.number().min(0).max(100).describe("The user's likelihood of cracking a real interview, as a percentage."),
     englishProficiency: z.number().min(0).max(100).describe("A score from 0-100 for the user's English proficiency, grammar, and clarity."),
     confidenceScore: z.number().min(0).max(100).describe("A score from 0-100 for the user's apparent confidence level."),
@@ -52,7 +51,6 @@ export async function generateInterviewFeedback(
   // If the transcript is empty or has less than 2 entries, it's not a real interview.
   if (!input.transcript || input.transcript.length < 2) {
       return {
-          overallScore: 0,
           likelihoodToCrack: 0,
           englishProficiency: 0,
           confidenceScore: 0,
@@ -85,7 +83,6 @@ const prompt = ai.definePrompt({
       - A well-structured, ideal answer that serves as a model.
       - A score for that specific answer (0-100).
   2.  **Overall Scores**: Based on the entire conversation, provide:
-      - overallScore: An integer from 0 to 100, which should be the average of the individual question scores.
       - likelihoodToCrack: An estimated percentage (0-100) of passing a real interview.
       - englishProficiency: A score from 0-100 evaluating grammar and clarity.
       - confidenceScore: A score from 0-100 based on tone and directness.
@@ -122,5 +119,3 @@ const generateInterviewFeedbackFlow = ai.defineFlow(
     return output;
   }
 );
-
-    

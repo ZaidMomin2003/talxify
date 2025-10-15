@@ -71,13 +71,18 @@ export default function InterviewResultsPage() {
 
             setAnalysis(feedbackResult);
 
+            // Calculate overall score here instead of relying on AI
+            const calculatedScore = feedbackResult.questionFeedback.length > 0 
+                ? Math.round(feedbackResult.questionFeedback.reduce((sum, q) => sum + q.score, 0) / feedbackResult.questionFeedback.length)
+                : 0;
+
             const updatedActivity: InterviewActivity = {
                 ...activity,
                 analysis: feedbackResult,
                 feedback: feedbackResult.summary,
                 details: {
                     ...activity.details,
-                    score: feedbackResult.overallScore,
+                    score: calculatedScore,
                 }
             };
             if(user) {
@@ -126,6 +131,14 @@ export default function InterviewResultsPage() {
         fetchInterviewData();
     }, [fetchInterviewData]);
 
+    const overallScore = useMemo(() => {
+        if (!analysis || !analysis.questionFeedback || analysis.questionFeedback.length === 0) {
+            return 0;
+        }
+        const total = analysis.questionFeedback.reduce((sum, q) => sum + q.score, 0);
+        return Math.round(total / analysis.questionFeedback.length);
+    }, [analysis]);
+
     if (isLoading) return <ResultsLoader />;
     if (error || !analysis || !interview) return <ResultsError message={error || "Could not retrieve analysis."} />;
 
@@ -147,7 +160,7 @@ export default function InterviewResultsPage() {
                             </div>
                             <div className="text-right">
                                 <p className="text-sm text-muted-foreground">Overall Score</p>
-                                <p className="text-5xl font-bold text-primary">{analysis.overallScore}<span className="text-2xl text-muted-foreground">/100</span></p>
+                                <p className="text-5xl font-bold text-primary">{overallScore}<span className="text-2xl text-muted-foreground">/100</span></p>
                             </div>
                         </div>
                     </CardHeader>
@@ -259,5 +272,3 @@ export default function InterviewResultsPage() {
         </main>
     );
 }
-
-    

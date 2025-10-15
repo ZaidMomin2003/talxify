@@ -48,7 +48,7 @@ export interface InterviewActivity extends BaseActivity {
     type: 'interview';
     transcript: TranscriptEntry[];
     feedback: string;
-    analysis?: GenerateInterviewFeedbackOutput;
+    analysis?: GenerateInterviewFeedbackOutput & { overallScore?: number };
     details: {
         topic: string;
         role?: string;
