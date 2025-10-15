@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -60,7 +61,7 @@ export default function InterviewResultsPage() {
     const [error, setError] = useState<string | null>(null);
 
     const generateFeedback = useCallback(async (activity: InterviewActivity) => {
-        if (!activity || !activity.transcript || activity.transcript.length < 2) {
+        if (!activity || !activity.transcript) {
              setError("Not enough conversation to analyze.");
              return;
         }
