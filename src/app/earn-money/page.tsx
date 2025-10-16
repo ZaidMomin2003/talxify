@@ -7,6 +7,7 @@ import LandingFooter from '../landing-footer';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, DollarSign, Edit, Headset, Percent, Handshake, Users, CheckCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import Link from 'next/link';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -35,6 +36,25 @@ const benefits = [
     { icon: DollarSign, text: 'Generous commission on every sale.' },
     { icon: Handshake, text: 'Partner with a growing EdTech brand.' },
     { icon: Users, text: 'Empower students and professionals in your network.' },
+];
+
+const faqs = [
+    {
+        question: "What is the commission per sale?",
+        answer: "You will earn a flat rate of ₹1000 INR for every single customer who signs up for our Pro plan using your unique affiliate code. There is no limit to how much you can earn."
+    },
+    {
+        question: "How and when do I get paid?",
+        answer: "We process payments through bank transfer or UPI. Once you've made a successful referral, you can request a payout from your affiliate dashboard. Payouts are typically processed within 24 hours of your request."
+    },
+    {
+        question: "Who is the ideal customer for Talxify?",
+        answer: "Talxify is perfect for computer science students, recent graduates, and professional developers who are preparing for technical interviews at top tech companies. Anyone looking to improve their interview skills can benefit."
+    },
+    {
+        question: "Are there any costs to join the affiliate program?",
+        answer: "No, the Talxify affiliate program is completely free to join. There are no hidden fees or charges. Our goal is to partner with individuals who are passionate about helping others succeed in their tech careers."
+    }
 ];
 
 export default function EarnMoneyPage() {
@@ -114,6 +134,24 @@ export default function EarnMoneyPage() {
                             ))}
                         </ul>
                     </div>
+                </section>
+
+                {/* FAQ Section */}
+                <section id="faq">
+                    <div className="text-center mb-12">
+                        <h2 className="text-4xl font-bold font-headline">Affiliate Program FAQs</h2>
+                        <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">Quick answers to common questions about our program.</p>
+                    </div>
+                     <Accordion type="single" collapsible className="w-full max-w-3xl mx-auto">
+                        {faqs.map((faq, index) => (
+                            <AccordionItem value={`item-${index}`} key={index}>
+                                <AccordionTrigger className="text-lg text-left">{faq.question}</AccordionTrigger>
+                                <AccordionContent className="text-base text-muted-foreground">
+                                    {faq.answer}
+                                </AccordionContent>
+                            </AccordionItem>
+                        ))}
+                    </Accordion>
                 </section>
 
                  {/* Sign-up Form Section */}
