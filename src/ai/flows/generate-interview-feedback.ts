@@ -5,38 +5,10 @@
  * @fileOverview A flow to analyze a user's mock interview performance.
  *
  * - generateInterviewFeedback - The main function to trigger the analysis.
- * - GenerateInterviewFeedbackInput - The input type for the analysis flow.
- * - GenerateInterviewFeedbackOutput - The output type for the analysis flow.
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
-
-const TranscriptEntrySchema = z.object({
-  speaker: z.enum(['user', 'ai']),
-  text: z.string(),
-});
-
-export const GenerateInterviewFeedbackInputSchema = z.object({
-  transcript: z.array(TranscriptEntrySchema).describe("The full transcript of the interview, alternating between the AI interviewer and the user."),
-  topic: z.string().describe("The main topic of the interview (e.g., 'React Hooks')."),
-  role: z.string().describe("The role the user was interviewing for (e.g., 'Frontend Developer')."),
-  company: z.string().optional().describe("The target company for the interview, if specified (e.g., 'Google').")
-});
-export type GenerateInterviewFeedbackInput = z.infer<typeof GenerateInterviewFeedbackInputSchema>;
-
-const ScoreAndFeedbackSchema = z.object({
-    score: z.number().min(1).max(10).describe("A score from 1 to 10 for this category."),
-    feedback: z.string().describe("Brief, constructive feedback for this category.")
-});
-
-export const GenerateInterviewFeedbackOutputSchema = z.object({
-    fluency: ScoreAndFeedbackSchema,
-    clarity: ScoreAndFeedbackSchema,
-    vocabulary: ScoreAndFeedbackSchema,
-    overall: ScoreAndFeedbackSchema,
-});
-export type GenerateInterviewFeedbackOutput = z.infer<typeof GenerateInterviewFeedbackOutputSchema>;
+import { GenerateInterviewFeedbackInputSchema, GenerateInterviewFeedbackOutputSchema, type GenerateInterviewFeedbackInput, type GenerateInterviewFeedbackOutput } from '@/lib/types';
 
 
 export async function generateInterviewFeedback(

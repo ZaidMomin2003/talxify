@@ -1,6 +1,6 @@
 
+
 import type { AnswerAnalysis } from "@/ai/flows/analyze-coding-answers";
-import type { GenerateInterviewFeedbackOutput } from "@/ai/flows/generate-interview-feedback";
 import type { GenerateStudyNotesOutput } from "@/ai/flows/generate-study-notes";
 import type { QuizState } from "@/app/dashboard/coding-quiz/quiz/page";
 import type { SyllabusDay } from "@/ai/flows/generate-syllabus";
@@ -42,6 +42,29 @@ export interface QuizResult extends BaseActivity {
     score: string | 'Pending';
   }
 }
+
+// --- Interview Feedback Schemas ---
+export const GenerateInterviewFeedbackInputSchema = z.object({
+  transcript: z.array(TranscriptEntrySchema).describe("The full transcript of the interview, alternating between the AI interviewer and the user."),
+  topic: z.string().describe("The main topic of the interview (e.g., 'React Hooks')."),
+  role: z.string().describe("The role the user was interviewing for (e.g., 'Frontend Developer')."),
+  company: z.string().optional().describe("The target company for the interview, if specified (e.g., 'Google').")
+});
+export type GenerateInterviewFeedbackInput = z.infer<typeof GenerateInterviewFeedbackInputSchema>;
+
+const ScoreAndFeedbackSchema = z.object({
+    score: z.number().min(1).max(10).describe("A score from 1 to 10 for this category."),
+    feedback: z.string().describe("Brief, constructive feedback for this category.")
+});
+
+export const GenerateInterviewFeedbackOutputSchema = z.object({
+    fluency: ScoreAndFeedbackSchema,
+    clarity: ScoreAndFeedbackSchema,
+    vocabulary: ScoreAndFeedbackSchema,
+    overall: ScoreAndFeedbackSchema,
+});
+export type GenerateInterviewFeedbackOutput = z.infer<typeof GenerateInterviewFeedbackOutputSchema>;
+
 
 // A specific type for completed mock interviews
 export interface InterviewActivity extends BaseActivity {
@@ -354,3 +377,4 @@ export const InterviewFlowOutputSchema = z.object({
   transcript: z.array(TranscriptEntrySchema),
 });
 export type InterviewFlowOutput = z.infer<typeof InterviewFlowOutputSchema>;
+
