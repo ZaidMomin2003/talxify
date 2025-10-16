@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
@@ -282,7 +281,7 @@ export default function LiveInterviewPage() {
             if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
         };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []); // <-- Empty dependency array ensures this runs only once.
+    }, []);
 
 
   const startInterview = useCallback(async () => {
@@ -350,7 +349,7 @@ export default function LiveInterviewPage() {
     if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
     
     setIsInterviewing(false);
-    if(shouldNavigate) setStatus('Interview ended. Saving results...');
+    if(shouldNavigate) setStatus('Interview ended. Saving transcript...');
 
     session?.close();
     setSession(null);
@@ -384,13 +383,13 @@ export default function LiveInterviewPage() {
             type: 'interview',
             timestamp: new Date().toISOString(),
             transcript: transcriptRef.current,
-            feedback: "Feedback will be generated on the results page.",
+            feedback: "Feedback has not been generated for this interview.",
             details: details,
         };
         
         try {
             await addActivity(user.uid, activity);
-            router.push(`/dashboard/interview/${interviewId}/results`);
+            router.push(`/dashboard/interview/${interviewId}/transcript`);
         } catch (error: any) {
             console.error("Failed to save activity:", error);
             toast({ 

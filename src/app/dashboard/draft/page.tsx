@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
@@ -337,7 +336,7 @@ export default function DraftPage() {
     if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
     
     setIsInterviewing(false);
-    if(shouldNavigate) setStatus('Interview ended. Saving results...');
+    if(shouldNavigate) setStatus('Interview ended. Saving transcript...');
 
     session?.close();
     setSession(null);
@@ -357,7 +356,7 @@ export default function DraftPage() {
             type: 'interview',
             timestamp: new Date().toISOString(),
             transcript: transcriptRef.current,
-            feedback: "Feedback will be generated on the results page.",
+            feedback: "Feedback has not been generated for this interview.",
             details: {
                 topic: 'Draft Session',
             }
@@ -365,7 +364,7 @@ export default function DraftPage() {
         
         try {
             await addActivity(user.uid, activity);
-            router.push(`/dashboard/interview/${interviewId}/results`);
+            router.push(`/dashboard/interview/${interviewId}/transcript`);
         } catch (error: any) {
             console.error("Failed to save activity:", error);
             toast({ 
