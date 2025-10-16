@@ -47,7 +47,7 @@ export default function InterviewInstructionsPage() {
                         </div>
                         <CardTitle className="font-headline text-4xl font-bold">Mock Interview Instructions</CardTitle>
                         <CardDescription className="text-lg">
-                            You're about to start a mock interview with Kathy, our AI interviewer.
+                            You're about to start a mock interview with Mark, our AI interviewer.
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-8 px-8 py-6">
@@ -88,7 +88,7 @@ export default function InterviewInstructionsPage() {
                                     </div>
                                     <div>
                                         <h3 className="font-semibold">Conversational AI</h3>
-                                        <p className="text-muted-foreground text-sm">Kathy will ask you technical and behavioral questions just like a real interviewer.</p>
+                                        <p className="text-muted-foreground text-sm">Mark will ask you technical and behavioral questions just like a real interviewer.</p>
                                     </div>
                                 </div>
                                 <div className="flex items-start gap-4">
