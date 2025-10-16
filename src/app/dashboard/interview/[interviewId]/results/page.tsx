@@ -77,7 +77,7 @@ export default function InterviewResultsPage() {
                 feedback: feedbackResult.overall.feedback,
                 details: {
                     ...activity.details,
-                    score: feedbackResult.overall.score, // Score is 1-10, will be scaled in UI
+                    score: feedbackResult.overall.score, // Score is 0-10, will be scaled in UI
                 }
             };
             if(user) {
@@ -128,7 +128,8 @@ export default function InterviewResultsPage() {
 
     const scoreOutOf100 = useMemo(() => {
         if (!analysis?.overall?.score) return 0;
-        return analysis.overall.score * 10;
+        // The score is out of 10, so multiply by 10 for a percentage score
+        return Math.round(analysis.overall.score * 10);
     }, [analysis]);
 
     if (isLoading) return <ResultsLoader />;
