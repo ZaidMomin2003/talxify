@@ -268,12 +268,12 @@ export default function ArenaPage() {
                     return (
                         <Dialog key={day.day} open={dialogOpenDay === day.day} onOpenChange={(open) => !open && setDialogOpenDay(null)}>
                             <DialogTrigger asChild>
-                                <div role="button" onClick={() => isUnlocked && setDialogOpenDay(day.day)} className="h-full">
+                                <div role="button" onClick={() => setDialogOpenDay(day.day)} className="h-full">
                                     <Card 
                                         className={cn(
-                                            "text-center transition-all duration-300 transform h-full flex flex-col",
-                                            isUnlocked && "cursor-pointer hover:-translate-y-1 hover:shadow-primary/20",
-                                            isUnlocked && interviewIsScheduled && neonColors[index % neonColors.length],
+                                            "text-center transition-all duration-300 transform h-full flex flex-col cursor-pointer",
+                                            "hover:-translate-y-1",
+                                            interviewIsScheduled ? neonColors[index % neonColors.length] : 'hover:shadow-primary/20',
                                             !isUnlocked && "bg-muted/50 text-muted-foreground hover:shadow-none hover:border-border",
                                             isCompleted && "bg-green-500/10 border-green-500/50"
                                         )}
@@ -372,3 +372,5 @@ export default function ArenaPage() {
     </main>
   );
 }
+
+    
