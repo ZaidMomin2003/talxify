@@ -6,8 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { useRouter, useParams } from 'next/navigation';
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useAuth } from '@/context/auth-context';
-import { getActivity, getUserData, updateActivity } from '@/lib/firebase-service';
-import type { InterviewActivity, StoredActivity } from '@/lib/types';
+import { getActivity, updateActivity } from '@/lib/firebase-service';
+import type { InterviewActivity } from '@/lib/types';
 import { generateInterviewFeedback, GenerateInterviewFeedbackOutput } from '@/ai/flows/generate-interview-feedback';
 import { AlertTriangle, BarChart3, Bot, BrainCircuit, CheckCircle, ChevronLeft, Flag, Gauge, Info, Loader2, MessageSquare, Percent, Sparkles, Star, TrendingUp, User as UserIcon } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -71,18 +71,13 @@ export default function InterviewResultsPage() {
 
             setAnalysis(feedbackResult);
 
-            // Calculate overall score here instead of relying on AI
-            const calculatedScore = feedbackResult.questionFeedback.length > 0 
-                ? Math.round(feedbackResult.questionFeedback.reduce((sum, q) => sum + q.score, 0) / feedbackResult.questionFeedback.length)
-                : 0;
-
             const updatedActivity: InterviewActivity = {
                 ...activity,
                 analysis: feedbackResult,
-                feedback: feedbackResult.summary,
+                feedback: feedbackResult.overall.feedback,
                 details: {
                     ...activity.details,
-                    score: calculatedScore,
+                    score: feedbackResult.overall.score, // Score is 1-10, will be scaled in UI
                 }
             };
             if(user) {
@@ -131,16 +126,19 @@ export default function InterviewResultsPage() {
         fetchInterviewData();
     }, [fetchInterviewData]);
 
-    const overallScore = useMemo(() => {
-        if (!analysis || !analysis.questionFeedback || analysis.questionFeedback.length === 0) {
-            return 0;
-        }
-        const total = analysis.questionFeedback.reduce((sum, q) => sum + q.score, 0);
-        return Math.round(total / analysis.questionFeedback.length);
+    const scoreOutOf100 = useMemo(() => {
+        if (!analysis?.overall?.score) return 0;
+        return analysis.overall.score * 10;
     }, [analysis]);
 
     if (isLoading) return <ResultsLoader />;
     if (error || !analysis || !interview) return <ResultsError message={error || "Could not retrieve analysis."} />;
+    
+    const communicationScores = [
+        { label: 'Fluency', score: analysis.fluency.score, feedback: analysis.fluency.feedback },
+        { label: 'Clarity', score: analysis.clarity.score, feedback: analysis.clarity.feedback },
+        { label: 'Vocabulary', score: analysis.vocabulary.score, feedback: analysis.vocabulary.feedback },
+    ];
 
     return (
          <main className="p-4 sm:p-6 lg:p-8 overflow-auto bg-muted/30">
@@ -155,116 +153,66 @@ export default function InterviewResultsPage() {
                         <div className="flex items-start justify-between gap-4">
                             <div>
                                  <Badge variant="secondary" className="mb-2">{interview.details.topic}</Badge>
-                                 <CardTitle className="text-3xl font-bold font-headline">Interview Performance Report</CardTitle>
-                                <CardDescription>A detailed breakdown of your mock interview performance.</CardDescription>
+                                 <CardTitle className="text-3xl font-bold font-headline">Communication Report</CardTitle>
+                                <CardDescription>A detailed breakdown of your English communication skills.</CardDescription>
                             </div>
                             <div className="text-right">
                                 <p className="text-sm text-muted-foreground">Overall Score</p>
-                                <p className="text-5xl font-bold text-primary">{overallScore}<span className="text-2xl text-muted-foreground">/100</span></p>
+                                <p className="text-5xl font-bold text-primary">{scoreOutOf100}<span className="text-2xl text-muted-foreground">/100</span></p>
                             </div>
                         </div>
                     </CardHeader>
                     <CardContent>
                         <div className="border-t pt-4">
                             <h3 className="font-semibold mb-2 flex items-center gap-2"><Sparkles className="w-4 h-4 text-primary"/> AI Summary</h3>
-                            <p className="text-muted-foreground">{analysis.summary}</p>
+                            <p className="text-muted-foreground">{analysis.overall.feedback}</p>
                         </div>
                     </CardContent>
                 </Card>
 
                 {/* Metrics Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2 text-lg"><TrendingUp className="w-5 h-5"/> Likelihood to Crack</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <p className="text-4xl font-bold">{analysis.likelihoodToCrack}%</p>
-                            <p className="text-sm text-muted-foreground">Based on overall performance</p>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2 text-lg"><UserIcon className="w-5 h-5"/> Confidence</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <p className="text-4xl font-bold">{analysis.confidenceScore}<span className="text-2xl text-muted-foreground">/100</span></p>
-                            <Progress value={analysis.confidenceScore} className="mt-2" />
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2 text-lg"><MessageSquare className="w-5 h-5"/> English Proficiency</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <p className="text-4xl font-bold">{analysis.englishProficiency}<span className="text-2xl text-muted-foreground">/100</span></p>
-                            <Progress value={analysis.englishProficiency} className="mt-2" />
-                        </CardContent>
-                    </Card>
+                    {communicationScores.map(item => (
+                        <Card key={item.label}>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2 text-lg">{item.label}</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <p className="text-4xl font-bold">{item.score}<span className="text-2xl text-muted-foreground">/10</span></p>
+                                <p className="text-sm text-muted-foreground mt-2">{item.feedback}</p>
+                            </CardContent>
+                        </Card>
+                    ))}
                 </div>
 
-                {/* Strengths and Improvements */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <Card className="bg-green-500/5 border-green-500/20">
-                         <CardHeader>
-                            <CardTitle className="flex items-center gap-3 text-green-600 dark:text-green-400"><Star className="w-5 h-5"/> Strengths</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <ul className="list-disc list-inside space-y-2 text-muted-foreground">
-                                {analysis.strengths.map((s, i) => <li key={i}>{s}</li>)}
-                            </ul>
-                        </CardContent>
-                    </Card>
-                     <Card className="bg-red-500/5 border-red-500/20">
-                         <CardHeader>
-                            <CardTitle className="flex items-center gap-3 text-red-600 dark:text-red-500"><Flag className="w-5 h-5"/> Areas for Improvement</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <ul className="list-disc list-inside space-y-2 text-muted-foreground">
-                                {analysis.areasForImprovement.map((a, i) => <li key={i}>{a}</li>)}
-                            </ul>
-                        </CardContent>
-                    </Card>
-                </div>
 
-                 {/* Question by Question Analysis */}
-                 {analysis.questionFeedback.length > 0 && (
+                 {/* Transcript Analysis */}
+                 {interview.transcript && interview.transcript.length > 0 && (
                     <div>
-                        <h2 className="text-2xl font-bold font-headline mb-4">Question Analysis</h2>
-                        <Accordion type="single" collapsible className="w-full" defaultValue="item-0">
-                            {analysis.questionFeedback.map((item, index) => (
-                                <AccordionItem key={index} value={`item-${index}`}>
-                                    <AccordionTrigger className="text-lg text-left hover:no-underline">
-                                        <div className="flex justify-between items-center w-full pr-4">
-                                            <span className="flex-1">Question {index + 1}: {item.question}</span>
-                                            <div className="flex items-center gap-2 shrink-0 ml-4">
-                                                <Badge variant={item.score > 75 ? 'default' : 'destructive'}>{item.score}%</Badge>
+                        <h2 className="text-2xl font-bold font-headline mb-4">Interview Transcript</h2>
+                        <Card>
+                           <CardContent className="p-6 max-h-96 overflow-y-auto">
+                                <div className="space-y-4">
+                                {interview.transcript.map((entry, index) => (
+                                    <div key={index} className={`flex items-start gap-3 ${entry.speaker === 'user' ? 'justify-end' : ''}`}>
+                                        {entry.speaker === 'ai' && (
+                                            <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                                                <Bot className="w-5 h-5"/>
                                             </div>
+                                        )}
+                                        <div className={`rounded-lg p-3 max-w-lg ${entry.speaker === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
+                                            <p>{entry.text}</p>
                                         </div>
-                                    </AccordionTrigger>
-                                    <AccordionContent className="p-4 bg-background/50 rounded-b-md">
-                                        <div className="space-y-6">
-                                            <div>
-                                                <h4 className="font-semibold text-muted-foreground mb-2">Your Answer:</h4>
-                                                <blockquote className="border-l-4 pl-4 italic text-foreground">"{item.userAnswer}"</blockquote>
+                                        {entry.speaker === 'user' && (
+                                            <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0">
+                                                <UserIcon className="w-5 h-5"/>
                                             </div>
-                                            <div>
-                                                <h4 className="font-semibold text-muted-foreground mb-2">Feedback:</h4>
-                                                <div className="p-4 bg-muted/50 rounded-md prose prose-sm dark:prose-invert max-w-none text-foreground">
-                                                    <p>{item.feedback}</p>
-                                                </div>
-                                            </div>
-                                            <div>
-                                                <h4 className="font-semibold text-muted-foreground mb-2">Ideal Answer Example:</h4>
-                                                <div className="p-4 bg-green-500/10 rounded-md prose prose-sm dark:prose-invert max-w-none text-foreground">
-                                                    <p>{item.idealAnswer}</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </AccordionContent>
-                                </AccordionItem>
-                            ))}
-                        </Accordion>
+                                        )}
+                                    </div>
+                                ))}
+                                </div>
+                           </CardContent>
+                        </Card>
                     </div>
                  )}
 
