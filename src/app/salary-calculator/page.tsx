@@ -4,7 +4,8 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { generateSalaryEstimation, GenerateSalaryEstimationInputSchema, GenerateSalaryEstimationOutput, GenerateSalaryEstimationInput } from '@/ai/flows/generate-salary-estimation';
+import { generateSalaryEstimation, type GenerateSalaryEstimationOutput } from '@/ai/flows/generate-salary-estimation';
+import { GenerateSalaryEstimationInputSchema, type GenerateSalaryEstimationInput } from '@/lib/types/salary';
 import LandingHeader from '../landing-header';
 import LandingFooter from '../landing-footer';
 import { Button } from '@/components/ui/button';
