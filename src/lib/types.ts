@@ -53,7 +53,7 @@ export const GenerateInterviewFeedbackInputSchema = z.object({
 export type GenerateInterviewFeedbackInput = z.infer<typeof GenerateInterviewFeedbackInputSchema>;
 
 const ScoreAndFeedbackSchema = z.object({
-    score: z.number().min(1).max(10).describe("A score from 1 to 10 for this category."),
+    score: z.number().min(0).max(10).describe("A score from 0 to 10 for this category. A score of 0 indicates analysis was not possible."),
     feedback: z.string().describe("Brief, constructive feedback for this category.")
 });
 
@@ -377,4 +377,3 @@ export const InterviewFlowOutputSchema = z.object({
   transcript: z.array(TranscriptEntrySchema),
 });
 export type InterviewFlowOutput = z.infer<typeof InterviewFlowOutputSchema>;
-
