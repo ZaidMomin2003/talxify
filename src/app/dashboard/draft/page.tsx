@@ -333,11 +333,11 @@ export default function DraftPage() {
     }
   }, [session, user, toast, router, isInterviewing]);
 
-  const endSession = useCallback((shouldNavigate = true) => {
+  const endSession = useCallback(async (shouldNavigate = true) => {
     if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
     
     setIsInterviewing(false);
-    if(shouldNavigate) setStatus('Interview ended. Navigating to results...');
+    if(shouldNavigate) setStatus('Interview ended. Saving results...');
 
     session?.close();
     setSession(null);
@@ -364,7 +364,7 @@ export default function DraftPage() {
         };
         
         try {
-            addActivity(user.uid, activity);
+            await addActivity(user.uid, activity);
             router.push(`/dashboard/interview/${interviewId}/results`);
         } catch (error: any) {
             console.error("Failed to save activity:", error);
