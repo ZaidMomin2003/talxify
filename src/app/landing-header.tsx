@@ -5,10 +5,10 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence, easeInOut } from 'framer-motion';
-import { Menu, X, ArrowRight, Bot, MessageSquare, Code, BrainCircuit, FileText, User, Swords, ChevronDown, Sparkles, UserRound, Check, DollarSign } from 'lucide-react';
+import { Menu, X, ArrowRight, Bot, MessageSquare, Code, BrainCircuit, FileText, User, Swords, ChevronDown, Sparkles, UserRound, Check, DollarSign, Building } from 'lucide-react';
 import { useAuth } from "@/context/auth-context";
 import { usePathname } from 'next/navigation';
-import { Book, Calculator } from "lucide-react";
+import { Book, Calculator, Info } from "lucide-react";
 
 interface NavItem {
   name: string;
@@ -19,8 +19,6 @@ const navItems: NavItem[] = [
   // Features and Pricing are now handled separately
   { name: 'Testimonials', href: '/#testimonials' },
   { name: 'FAQ', href: '/#faq' },
-  { name: 'About', href: '/about' },
-  { name: 'For Institutes', href: '/institutepartnership' },
 ];
 
 const featureItems = [
@@ -52,6 +50,11 @@ const toolsItems = [
     { name: 'Blog', href: '/blog', icon: Book, description: 'Read articles on career growth and interview tips.' },
 ];
 
+const aboutItems = [
+    { name: 'About Us', href: '/about', icon: Info, description: 'Learn about our mission and the team behind Talxify.' },
+    { name: 'For Institutes', href: '/institutepartnership', icon: Building, description: 'Partner with us to empower your students.' },
+]
+
 
 export default function LandingHeader() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -60,6 +63,7 @@ export default function LandingHeader() {
   const [isFeaturesMenuOpen, setIsFeaturesMenuOpen] = useState(false);
   const [isPricingMenuOpen, setIsPricingMenuOpen] = useState(false);
   const [isToolsMenuOpen, setIsToolsMenuOpen] = useState(false);
+  const [isAboutMenuOpen, setIsAboutMenuOpen] = useState(false);
   const { user, loading } = useAuth();
   const pathname = usePathname();
 
@@ -91,6 +95,7 @@ export default function LandingHeader() {
     setIsFeaturesMenuOpen(false);
     setIsPricingMenuOpen(false);
     setIsToolsMenuOpen(false);
+    setIsAboutMenuOpen(false);
   };
 
   const containerVariants = {
@@ -185,7 +190,7 @@ export default function LandingHeader() {
                     variants={itemVariants}
                 >
                     <div
-                      className={`relative flex items-center gap-1 rounded-lg px-4 py-2 text-sm font-medium transition-colors duration-200 text-foreground cursor-pointer hover:bg-destructive/10 hover:text-destructive`}
+                      className={`relative flex items-center gap-1 rounded-lg px-4 py-2 text-sm font-medium transition-colors duration-200 text-foreground cursor-pointer hover:bg-muted`}
                     >
                       <span>Features</span>
                       <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isFeaturesMenuOpen ? 'rotate-180' : ''}`} />
@@ -231,7 +236,7 @@ export default function LandingHeader() {
                     variants={itemVariants}
                 >
                     <div
-                      className={`relative flex items-center gap-1 rounded-lg px-4 py-2 text-sm font-medium transition-colors duration-200 text-foreground cursor-pointer hover:bg-destructive/10 hover:text-destructive`}
+                      className={`relative flex items-center gap-1 rounded-lg px-4 py-2 text-sm font-medium transition-colors duration-200 text-foreground cursor-pointer hover:bg-muted`}
                     >
                       <span>Pricing</span>
                       <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isPricingMenuOpen ? 'rotate-180' : ''}`} />
@@ -295,7 +300,7 @@ export default function LandingHeader() {
                     variants={itemVariants}
                 >
                     <div
-                      className={`relative flex items-center gap-1 rounded-lg px-4 py-2 text-sm font-medium transition-colors duration-200 text-foreground cursor-pointer hover:bg-destructive/10 hover:text-destructive`}
+                      className={`relative flex items-center gap-1 rounded-lg px-4 py-2 text-sm font-medium transition-colors duration-200 text-foreground cursor-pointer hover:bg-muted`}
                     >
                       <span>Tools</span>
                       <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isToolsMenuOpen ? 'rotate-180' : ''}`} />
@@ -334,6 +339,52 @@ export default function LandingHeader() {
                     </AnimatePresence>
                 </motion.div>
 
+                 <motion.div
+                    onMouseEnter={() => setIsAboutMenuOpen(true)}
+                    onMouseLeave={() => setIsAboutMenuOpen(false)}
+                    className="relative"
+                    variants={itemVariants}
+                >
+                    <div
+                      className={`relative flex items-center gap-1 rounded-lg px-4 py-2 text-sm font-medium transition-colors duration-200 text-foreground cursor-pointer hover:bg-muted`}
+                    >
+                      <span>About</span>
+                      <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isAboutMenuOpen ? 'rotate-180' : ''}`} />
+                    </div>
+                     <AnimatePresence>
+                        {isAboutMenuOpen && (
+                            <motion.div
+                                variants={megaMenuVariants}
+                                initial="hidden"
+                                animate="visible"
+                                exit="exit"
+                                className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-max origin-top"
+                            >
+                                <div className="bg-background border border-border rounded-xl shadow-lg p-4">
+                                     <div className="grid grid-cols-1 gap-2 w-64">
+                                        {aboutItems.map(item => (
+                                            <Link 
+                                                key={item.name} 
+                                                href={item.href} 
+                                                className="flex items-start gap-3 p-3 rounded-lg hover:bg-muted focus:bg-muted focus:outline-none transition-colors"
+                                                onClick={(e) => handleLinkClick(e, item.href)}
+                                            >
+                                                <div className="bg-primary/10 text-primary rounded-md p-2 mt-0.5">
+                                                    <item.icon className="w-5 h-5"/>
+                                                </div>
+                                                <div>
+                                                    <p className="font-semibold text-foreground">{item.name}</p>
+                                                    <p className="text-xs text-muted-foreground">{item.description}</p>
+                                                </div>
+                                            </Link>
+                                        ))}
+                                    </div>
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </motion.div>
+
 
               {navItems.map((item) => (
                 <motion.div
@@ -350,7 +401,7 @@ export default function LandingHeader() {
                   >
                     {hoveredItem === item.name && (
                       <motion.div
-                        className="bg-destructive/20 absolute inset-0 rounded-lg"
+                        className="bg-muted absolute inset-0 rounded-lg"
                         layoutId="navbar-hover"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
@@ -482,6 +533,24 @@ export default function LandingHeader() {
                             onClick={(e) => handleLinkClick(e, '/blog')}
                         >
                             Blog
+                        </Link>
+                    </motion.div>
+                     <motion.div variants={mobileItemVariants}>
+                        <Link
+                            href="/about"
+                            className="block rounded-lg px-4 py-3 font-medium transition-colors duration-200 hover:bg-muted"
+                            onClick={(e) => handleLinkClick(e, '/about')}
+                        >
+                            About
+                        </Link>
+                    </motion.div>
+                     <motion.div variants={mobileItemVariants}>
+                        <Link
+                            href="/institutepartnership"
+                            className="block rounded-lg px-4 py-3 font-medium transition-colors duration-200 hover:bg-muted"
+                            onClick={(e) => handleLinkClick(e, '/institutepartnership')}
+                        >
+                            For Institutes
                         </Link>
                     </motion.div>
                   {navItems.map((item) => (
