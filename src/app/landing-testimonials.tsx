@@ -3,8 +3,10 @@
 
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
-import { Star } from 'lucide-react';
+import { Star, User } from 'lucide-react';
 import { Marquee } from '@/components/ui/marquee';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+
 
 export function Highlight({
   children,
@@ -28,7 +30,6 @@ export function Highlight({
 export interface TestimonialCardProps {
   name: string;
   role: string;
-  img?: string;
   description: React.ReactNode;
   className?: string;
   [key: string]: any;
@@ -37,7 +38,6 @@ export interface TestimonialCardProps {
 export function TestimonialCard({
   description,
   name,
-  img,
   role,
   className,
   ...props // Capture the rest of the props
@@ -66,13 +66,9 @@ export function TestimonialCard({
       </div>
 
       <div className="flex w-full items-center justify-start gap-5 select-none">
-        <img
-          width={40}
-          height={40}
-          src={img || ''}
-          alt={name}
-          className="size-10 rounded-full ring-1 ring-primary/20 ring-offset-2"
-        />
+        <Avatar className="size-10 rounded-full ring-1 ring-primary/20 ring-offset-2">
+            <AvatarFallback>{name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+        </Avatar>
 
         <div>
           <p className="text-foreground font-medium">{name}</p>
@@ -84,68 +80,62 @@ export function TestimonialCard({
 }
 const testimonials = [
   {
-    name: 'Sarah L.',
-    role: 'Software Engineer at TechCorp',
-    img: 'https://randomuser.me/api/portraits/women/33.jpg',
+    name: 'Priya Sharma',
+    role: 'SDE at a Bangalore startup',
     description: (
       <p>
         Talxify was a game-changer for my prep.
-        The AI mock interviews felt incredibly realistic.
+        The AI mock interviews felt incredibly realistic and helped build my confidence.
       </p>
     ),
   },
   {
-    name: 'David C.',
-    role: 'Frontend Developer',
-    img: 'https://randomuser.me/api/portraits/men/22.jpg',
+    name: 'Rohan Gupta',
+    role: 'Frontend Developer at Wipro',
     description: (
       <p>
         The AI coding assistant is brilliant.
-        It helps you understand the logic.
+        It not only checks my solution but helps me understand the core logic.
       </p>
     ),
   },
   {
-    name: 'Emily T.',
-    role: 'CS Student at State University',
-    img: 'https://randomuser.me/api/portraits/women/44.jpg',
+    name: 'Ananya Reddy',
+    role: 'CS Student at IIT Bombay',
     description: (
       <p>
-        Getting relevant interview practice is tough.
+        Getting relevant interview practice is tough for campus placements.
         Talxify's targeted quizzes were perfect.
       </p>
     ),
   },
   {
-    name: 'Michael P.',
-    role: 'Backend Engineer',
-    img: 'https://randomuser.me/api/portraits/men/32.jpg',
+    name: 'Vikram Singh',
+    role: 'Backend Engineer at Infosys',
     description: (
       <p>
         I used Talxify to prepare for a senior role.
-        The system design questions were spot-on.
+        The system design questions were spot-on and very relevant to what I was asked.
       </p>
     ),
   },
   {
-    name: 'Jessica R.',
-    role: 'Full-Stack Developer',
-    img: 'https://randomuser.me/api/portraits/women/67.jpg',
+    name: 'Sneha Patel',
+    role: 'Full-Stack Developer, Pune',
     description: (
       <p>
         The portfolio builder is a fantastic bonus.
-        It automatically showcased my solved problems.
+        It automatically showcased my solved problems from the Arena.
       </p>
     ),
   },
   {
-    name: 'Kevin N.',
-    role: 'Data Scientist',
-    img: 'https://randomuser.me/api/portraits/men/55.jpg',
+    name: 'Aditya Kumar',
+    role: 'Data Scientist, Hyderabad',
     description: (
       <p>
         The variety of questions on Talxify is impressive.
-        It kept me challenged and well-prepared.
+        It kept me challenged and well-prepared for multiple company rounds.
       </p>
     ),
   },

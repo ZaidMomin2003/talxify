@@ -14,9 +14,8 @@ import LandingFooter from "../landing-footer";
 
 const testimonials = [
   {
-    name: 'Sarah L.',
-    role: 'Software Engineer at TechCorp',
-    img: 'https://randomuser.me/api/portraits/women/33.jpg',
+    name: 'Priya Sharma',
+    role: 'SDE at a Bangalore startup',
     description: (
       <p>
         Talxify was a game-changer for my prep.
@@ -25,9 +24,8 @@ const testimonials = [
     ),
   },
   {
-    name: 'David C.',
-    role: 'Frontend Developer',
-    img: 'https://randomuser.me/api/portraits/men/22.jpg',
+    name: 'Rohan Gupta',
+    role: 'Frontend Developer at Wipro',
     description: (
       <p>
         The AI coding assistant is brilliant.
@@ -36,20 +34,18 @@ const testimonials = [
     ),
   },
   {
-    name: 'Emily T.',
-    role: 'CS Student at State University',
-    img: 'https://randomuser.me/api/portraits/women/44.jpg',
+    name: 'Ananya Reddy',
+    role: 'CS Student at IIT Bombay',
     description: (
       <p>
-        Getting relevant interview practice is tough.
+        Getting relevant interview practice is tough for campus placements.
         Talxify's targeted quizzes were perfect.
       </p>
     ),
   },
   {
-    name: 'Michael P.',
-    role: 'Backend Engineer',
-    img: 'https://randomuser.me/api/portraits/men/32.jpg',
+    name: 'Vikram Singh',
+    role: 'Backend Engineer at Infosys',
     description: (
       <p>
         I used Talxify to prepare for a senior role.
