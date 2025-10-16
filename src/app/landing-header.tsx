@@ -53,6 +53,7 @@ const toolsItems = [
 const aboutItems = [
     { name: 'About Us', href: '/about', icon: Info, description: 'Learn about our mission and the team behind Talxify.' },
     { name: 'For Institutes', href: '/institutepartnership', icon: Building, description: 'Partner with us to empower your students.' },
+    { name: 'Earn Money', href: '/earn-money', icon: DollarSign, description: 'Join our affiliate program and earn for every sale.' },
 ]
 
 
@@ -551,6 +552,15 @@ export default function LandingHeader() {
                             onClick={(e) => handleLinkClick(e, '/institutepartnership')}
                         >
                             For Institutes
+                        </Link>
+                    </motion.div>
+                    <motion.div variants={mobileItemVariants}>
+                        <Link
+                            href="/earn-money"
+                            className="block rounded-lg px-4 py-3 font-medium transition-colors duration-200 hover:bg-muted"
+                            onClick={(e) => handleLinkClick(e, '/earn-money')}
+                        >
+                            Earn Money
                         </Link>
                     </motion.div>
                   {navItems.map((item) => (
