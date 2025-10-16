@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
@@ -149,17 +150,12 @@ export default function LiveInterviewPage() {
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
   
     useEffect(() => {
-        // This effect runs only ONCE on component mount to initialize everything.
-        
-        // 1. Initialize Audio Contexts
-        // @ts-ignore
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        const AudioContext = (window as any).AudioContext || (window as any).webkitAudioContext;
         inputAudioContextRef.current = new AudioContext({ sampleRate: 16000 });
         outputAudioContextRef.current = new AudioContext({ sampleRate: 24000 });
         outputGainNodeRef.current = outputAudioContextRef.current.createGain();
         outputGainNodeRef.current.connect(outputAudioContextRef.current.destination);
 
-        // 2. Define session functions
         const playAudio = async (base64Audio: string) => {
             const audioContext = outputAudioContextRef.current;
             const gainNode = outputGainNodeRef.current;
@@ -220,26 +216,32 @@ export default function LiveInterviewPage() {
                             const audio = message.serverContent?.modelTurn?.parts[0]?.inlineData;
                             if (audio) playAudio(audio.data);
                             
-                            let aiText = '';
                             if (message.serverContent?.outputTranscription) {
-                                aiText = message.serverContent.outputTranscription.text;
-                                setCurrentAiTranscription(prev => prev + aiText);
+                                const newText = message.serverContent.outputTranscription.text;
+                                setCurrentAiTranscription(prev => prev + newText);
                                 setStatus("Mark is speaking...");
+                                
+                                const lastEntry = transcriptRef.current[transcriptRef.current.length - 1];
+                                if (lastEntry && lastEntry.speaker === 'ai') {
+                                    lastEntry.text += newText;
+                                } else {
+                                    transcriptRef.current.push({ speaker: 'ai', text: newText });
+                                }
                             }
 
-                            let userText = '';
                             if (message.serverContent?.inputTranscription) {
-                                userText = message.serverContent.inputTranscription.text;
-                                setCurrentUserTranscription(prev => prev + userText);
+                                const newText = message.serverContent.inputTranscription.text;
+                                setCurrentUserTranscription(prev => prev + newText);
+                                
+                                const lastEntry = transcriptRef.current[transcriptRef.current.length - 1];
+                                if (lastEntry && lastEntry.speaker === 'user') {
+                                    lastEntry.text += newText;
+                                } else {
+                                    transcriptRef.current.push({ speaker: 'user', text: newText });
+                                }
                             }
 
                             if (message.serverContent?.turnComplete) {
-                                const finalAiText = currentAiTranscription.trim() + aiText.trim();
-                                if (finalAiText) transcriptRef.current.push({ speaker: 'ai', text: finalAiText });
-                                
-                                const finalUserText = currentUserTranscription.trim() + userText.trim();
-                                if (finalUserText) transcriptRef.current.push({ speaker: 'user', text: finalUserText });
-
                                 setCurrentUserTranscription('');
                                 setCurrentAiTranscription('');
                                 setStatus("🔴 Your turn... Speak now.");
@@ -272,7 +274,6 @@ export default function LiveInterviewPage() {
         
         initSession();
 
-        // 3. Cleanup function
         return () => {
             mediaStreamRef.current?.getTracks().forEach((t) => t.stop());
             session?.close();

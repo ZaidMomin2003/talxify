@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
@@ -221,15 +222,29 @@ export default function DraftPage() {
               if (audio) playAudio(audio.data);
               
               if (message.serverContent?.outputTranscription) {
-                setCurrentAiTranscription(prev => prev + message.serverContent.outputTranscription.text);
+                const newText = message.serverContent.outputTranscription.text;
+                setCurrentAiTranscription(prev => prev + newText);
                 setStatus("Mark is speaking...");
+
+                const lastEntry = transcriptRef.current[transcriptRef.current.length - 1];
+                if (lastEntry && lastEntry.speaker === 'ai') {
+                    lastEntry.text += newText;
+                } else {
+                    transcriptRef.current.push({ speaker: 'ai', text: newText });
+                }
               }
               if (message.serverContent?.inputTranscription) {
-                setCurrentUserTranscription(prev => prev + message.serverContent.inputTranscription.text);
+                const newText = message.serverContent.inputTranscription.text;
+                setCurrentUserTranscription(prev => prev + newText);
+                
+                const lastEntry = transcriptRef.current[transcriptRef.current.length - 1];
+                if (lastEntry && lastEntry.speaker === 'user') {
+                    lastEntry.text += newText;
+                } else {
+                    transcriptRef.current.push({ speaker: 'user', text: newText });
+                }
               }
               if (message.serverContent?.turnComplete) {
-                if (currentAiTranscription.trim()) transcriptRef.current.push({ speaker: 'ai', text: currentAiTranscription.trim() });
-                if (currentUserTranscription.trim()) transcriptRef.current.push({ speaker: 'user', text: currentUserTranscription.trim() });
                 setCurrentUserTranscription('');
                 setCurrentAiTranscription('');
                 setStatus("🔴 Your turn... Speak now.");
