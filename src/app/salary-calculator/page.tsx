@@ -23,7 +23,7 @@ const ResultPlaceholder = () => (
         <div className="absolute -top-1/4 -left-1/4 w-2/3 h-2/3 bg-blue-500/10 rounded-full blur-3xl" />
         <div className="relative z-10 text-center">
             <div className="mx-auto w-fit rounded-full bg-background/50 p-4 border mb-6">
-                 <BrainCircuit className="w-12 h-12 text-primary" />
+                 <DollarSign className="w-12 h-12 text-primary" />
             </div>
             <h3 className="text-xl font-bold text-foreground">Your Salary Estimate Awaits</h3>
             <p className="text-muted-foreground mt-2 max-w-xs">Fill in your details, and our AI will analyze market data to provide a personalized salary projection.</p>
