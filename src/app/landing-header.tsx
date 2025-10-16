@@ -8,6 +8,7 @@ import { motion, AnimatePresence, easeInOut } from 'framer-motion';
 import { Menu, X, ArrowRight, Bot, MessageSquare, Code, BrainCircuit, FileText, User, Swords, ChevronDown, Sparkles, UserRound, Check, DollarSign } from 'lucide-react';
 import { useAuth } from "@/context/auth-context";
 import { usePathname } from 'next/navigation';
+import { Book, Calculator } from "lucide-react";
 
 interface NavItem {
   name: string;
@@ -16,10 +17,8 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   // Features and Pricing are now handled separately
-  { name: 'Salary Calculator', href: '/salary-calculator' },
   { name: 'Testimonials', href: '/#testimonials' },
   { name: 'FAQ', href: '/#faq' },
-  { name: 'Blog', href: '/blog' },
   { name: 'About', href: '/about' },
   { name: 'For Institutes', href: '/institutepartnership' },
 ];
@@ -48,6 +47,11 @@ const proPlanFeatures = [
     'And everything in Free...',
 ];
 
+const toolsItems = [
+    { name: 'Salary Calculator', href: '/salary-calculator', icon: Calculator, description: 'Estimate your market value with our AI-powered tool.' },
+    { name: 'Blog', href: '/blog', icon: Book, description: 'Read articles on career growth and interview tips.' },
+];
+
 
 export default function LandingHeader() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -55,6 +59,7 @@ export default function LandingHeader() {
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const [isFeaturesMenuOpen, setIsFeaturesMenuOpen] = useState(false);
   const [isPricingMenuOpen, setIsPricingMenuOpen] = useState(false);
+  const [isToolsMenuOpen, setIsToolsMenuOpen] = useState(false);
   const { user, loading } = useAuth();
   const pathname = usePathname();
 
@@ -85,6 +90,7 @@ export default function LandingHeader() {
     setIsMobileMenuOpen(false);
     setIsFeaturesMenuOpen(false);
     setIsPricingMenuOpen(false);
+    setIsToolsMenuOpen(false);
   };
 
   const containerVariants = {
@@ -282,6 +288,52 @@ export default function LandingHeader() {
                     </AnimatePresence>
                 </motion.div>
 
+                <motion.div
+                    onMouseEnter={() => setIsToolsMenuOpen(true)}
+                    onMouseLeave={() => setIsToolsMenuOpen(false)}
+                    className="relative"
+                    variants={itemVariants}
+                >
+                    <div
+                      className={`relative flex items-center gap-1 rounded-lg px-4 py-2 text-sm font-medium transition-colors duration-200 text-foreground cursor-pointer hover:bg-destructive/10 hover:text-destructive`}
+                    >
+                      <span>Tools</span>
+                      <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isToolsMenuOpen ? 'rotate-180' : ''}`} />
+                    </div>
+                     <AnimatePresence>
+                        {isToolsMenuOpen && (
+                            <motion.div
+                                variants={megaMenuVariants}
+                                initial="hidden"
+                                animate="visible"
+                                exit="exit"
+                                className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-max origin-top"
+                            >
+                                <div className="bg-background border border-border rounded-xl shadow-lg p-4">
+                                     <div className="grid grid-cols-1 gap-2 w-64">
+                                        {toolsItems.map(item => (
+                                            <Link 
+                                                key={item.name} 
+                                                href={item.href} 
+                                                className="flex items-start gap-3 p-3 rounded-lg hover:bg-muted focus:bg-muted focus:outline-none transition-colors"
+                                                onClick={(e) => handleLinkClick(e, item.href)}
+                                            >
+                                                <div className="bg-primary/10 text-primary rounded-md p-2 mt-0.5">
+                                                    <item.icon className="w-5 h-5"/>
+                                                </div>
+                                                <div>
+                                                    <p className="font-semibold text-foreground">{item.name}</p>
+                                                    <p className="text-xs text-muted-foreground">{item.description}</p>
+                                                </div>
+                                            </Link>
+                                        ))}
+                                    </div>
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </motion.div>
+
 
               {navItems.map((item) => (
                 <motion.div
@@ -414,6 +466,24 @@ export default function LandingHeader() {
                         Pricing
                       </Link>
                    </motion.div>
+                   <motion.div variants={mobileItemVariants}>
+                        <Link
+                            href="/salary-calculator"
+                            className="block rounded-lg px-4 py-3 font-medium transition-colors duration-200 hover:bg-muted"
+                            onClick={(e) => handleLinkClick(e, '/salary-calculator')}
+                        >
+                            Salary Calculator
+                        </Link>
+                   </motion.div>
+                    <motion.div variants={mobileItemVariants}>
+                        <Link
+                            href="/blog"
+                            className="block rounded-lg px-4 py-3 font-medium transition-colors duration-200 hover:bg-muted"
+                            onClick={(e) => handleLinkClick(e, '/blog')}
+                        >
+                            Blog
+                        </Link>
+                    </motion.div>
                   {navItems.map((item) => (
                     <motion.div key={item.name} variants={mobileItemVariants}>
                       <Link
