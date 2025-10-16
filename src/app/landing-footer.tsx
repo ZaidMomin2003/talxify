@@ -35,6 +35,7 @@ export default function LandingFooter() {
               <ul className="space-y-3">
                 <li><Link href="/#features" className="text-muted-foreground hover:text-primary">Features</Link></li>
                 <li><Link href="/#pricing" className="text-muted-foreground hover:text-primary">Pricing</Link></li>
+                <li><Link href="/salary-calculator" className="text-muted-foreground hover:text-primary">Salary Calculator</Link></li>
                 <li><Link href="/#testimonials" className="text-muted-foreground hover:text-primary">Testimonials</Link></li>
                 <li><Link href="/dashboard" className="text-muted-foreground hover:text-primary">Dashboard</Link></li>
               </ul>

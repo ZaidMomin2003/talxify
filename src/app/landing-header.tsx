@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence, easeInOut } from 'framer-motion';
-import { Menu, X, ArrowRight, Bot, MessageSquare, Code, BrainCircuit, FileText, User, Swords, ChevronDown, Sparkles, UserRound, Check } from 'lucide-react';
+import { Menu, X, ArrowRight, Bot, MessageSquare, Code, BrainCircuit, FileText, User, Swords, ChevronDown, Sparkles, UserRound, Check, DollarSign } from 'lucide-react';
 import { useAuth } from "@/context/auth-context";
 import { usePathname } from 'next/navigation';
 
@@ -16,6 +16,7 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   // Features and Pricing are now handled separately
+  { name: 'Salary Calculator', href: '/salary-calculator' },
   { name: 'Testimonials', href: '/#testimonials' },
   { name: 'FAQ', href: '/#faq' },
   { name: 'Blog', href: '/blog' },
