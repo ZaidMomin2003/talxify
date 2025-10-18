@@ -4,7 +4,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useSearchParams, useRouter, useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Mic, MicOff, Video, VideoOff, Phone, BrainCircuit, Loader2, Play, Bot, User as UserIcon } from 'lucide-react';
+import { Mic, MicOff, Video, VideoOff, Phone, BrainCircuit, Loader2, Play } from 'lucide-react';
 import { addActivity, checkAndIncrementUsage } from '@/lib/firebase-service';
 import { useAuth } from '@/context/auth-context';
 import type { InterviewActivity, TranscriptEntry } from '@/lib/types';
@@ -13,7 +13,6 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { GoogleGenAI, LiveServerMessage, Modality, Session } from '@google/genai';
 import { createBlob, decode, decodeAudioData } from '@/lib/utils';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 // --- Sub-components for better structure ---
 
@@ -320,7 +319,7 @@ export default function LiveInterviewPage() {
     if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
     
     setIsInterviewing(false);
-    if(shouldNavigate) setStatus('Interview ended. Saving results...');
+    if(shouldNavigate) setStatus('Interview ended. Saving transcript...');
 
     session?.close();
     setSession(null);
@@ -354,7 +353,6 @@ export default function LiveInterviewPage() {
             type: 'interview',
             timestamp: new Date().toISOString(),
             transcript: transcriptRef.current,
-            // The 'feedback' field is now a summary, 'analysis' holds the detailed structure
             feedback: "Feedback has not been generated for this interview.",
             details: details,
         };
