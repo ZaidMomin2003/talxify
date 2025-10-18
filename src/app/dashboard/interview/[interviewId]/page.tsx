@@ -218,7 +218,6 @@ export default function LiveInterviewPage() {
                             
                             if (message.serverContent?.outputTranscription) {
                                 const newText = message.serverContent.outputTranscription.text;
-                                setCurrentAiTranscription(prev => prev + newText);
                                 setStatus("Mark is speaking...");
                                 
                                 const lastEntry = transcriptRef.current[transcriptRef.current.length - 1];
@@ -231,7 +230,6 @@ export default function LiveInterviewPage() {
 
                             if (message.serverContent?.inputTranscription) {
                                 const newText = message.serverContent.inputTranscription.text;
-                                setCurrentUserTranscription(prev => prev + newText);
                                 
                                 const lastEntry = transcriptRef.current[transcriptRef.current.length - 1];
                                 if (lastEntry && lastEntry.speaker === 'user') {
@@ -242,8 +240,6 @@ export default function LiveInterviewPage() {
                             }
 
                             if (message.serverContent?.turnComplete) {
-                                setCurrentUserTranscription('');
-                                setCurrentAiTranscription('');
                                 setStatus("🔴 Your turn... Speak now.");
                             }
                         },
@@ -350,7 +346,7 @@ export default function LiveInterviewPage() {
     if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
     
     setIsInterviewing(false);
-    if(shouldNavigate) setStatus('Interview ended. Saving transcript...');
+    if(shouldNavigate) setStatus('Interview ended. Saving results...');
 
     session?.close();
     setSession(null);
@@ -384,13 +380,14 @@ export default function LiveInterviewPage() {
             type: 'interview',
             timestamp: new Date().toISOString(),
             transcript: transcriptRef.current,
-            feedback: "Feedback has not been generated for this interview.",
+            // The 'feedback' field is now a summary, 'analysis' holds the detailed structure
+            feedback: "Feedback will be generated on the results page.",
             details: details,
         };
         
         try {
             await addActivity(user.uid, activity);
-            router.push(`/dashboard/interview/${interviewId}/transcript`);
+            router.push(`/dashboard/interview/${interviewId}/results`);
         } catch (error: any) {
             console.error("Failed to save activity:", error);
             toast({ 

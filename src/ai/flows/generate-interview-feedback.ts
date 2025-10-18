@@ -2,45 +2,69 @@
 'use server';
 
 /**
- * @fileOverview A flow to analyze a user's mock interview performance.
+ * @fileOverview A flow to analyze a user's mock interview performance using Genkit tools.
  *
  * - generateInterviewFeedback - The main function to trigger the analysis.
  */
 
 import { ai } from '@/ai/genkit';
-import { GenerateInterviewFeedbackInputSchema, GenerateInterviewFeedbackOutputSchema, type GenerateInterviewFeedbackInput, type GenerateInterviewFeedbackOutput } from '@/lib/types';
+import { GenerateInterviewFeedbackOutputSchema, type GenerateInterviewFeedbackInput } from '@/lib/types';
+import { z } from 'zod';
 
-
-export async function generateInterviewFeedback(
-  input: GenerateInterviewFeedbackInput
-): Promise<GenerateInterviewFeedbackOutput> {
-  // Directly call the flow, letting the AI handle all transcript lengths.
-  return generateInterviewFeedbackFlow(input);
-}
-
-const prompt = ai.definePrompt({
-  name: 'generateInterviewFeedbackPrompt',
-  input: { schema: GenerateInterviewFeedbackInputSchema },
-  output: { schema: GenerateInterviewFeedbackOutputSchema },
-  prompt: `You are an expert interview coach. Based on the following transcript of an interview for a {{role}} position focused on {{topic}}, please evaluate the candidate's English communication skills.
-
-Your task is to provide a score from 1 to 10 and brief, constructive feedback for each category (fluency, clarity, vocabulary) and for the overall performance.
-
-**CRITICAL INSTRUCTIONS:**
-1.  **If the candidate provides a poor answer or no answer at all**, your feedback MUST reflect this. State that the candidate struggled or did not provide a response, and assign a very low score (e.g., 1 or 2).
-2.  **If the transcript is empty or contains only the interviewer speaking**, you MUST return a score of 0 for all categories and state that the interview was too short to provide any meaningful analysis.
-3.  **If the candidate's response is good**, provide positive and constructive feedback with a corresponding high score.
-
-**Transcript:**
-{{#if transcript.length}}
-  {{#each transcript}}
-    **{{#if (eq speaker "ai")}}Interviewer{{else}}Candidate{{/if}}**: {{text}}
-  {{/each}}
-{{else}}
-  (The transcript is empty. The candidate did not participate.)
-{{/if}}
-  `,
+const GenerateInterviewFeedbackInputSchema = z.object({
+  transcript: z.array(z.object({
+    speaker: z.enum(['user', 'ai']),
+    text: z.string(),
+  })),
+  topic: z.string(),
+  role: z.string(),
+  company: z.string().optional(),
 });
+
+
+// Define the tool that the AI will be instructed to use.
+const recordFeedbackTool = ai.defineTool(
+  {
+    name: 'recordInterviewFeedback',
+    description: 'Records the detailed feedback for an interview performance.',
+    inputSchema: GenerateInterviewFeedbackOutputSchema,
+  },
+  async (input) => input // The tool simply returns the structured data.
+);
+
+
+// Define the prompt that uses the tool.
+const prompt = ai.definePrompt(
+  {
+    name: 'interviewFeedbackPrompt',
+    input: { schema: GenerateInterviewFeedbackInputSchema },
+    tools: [recordFeedbackTool], // Make the tool available to the AI
+    config: {
+      temperature: 0.3,
+    },
+    prompt: `You are an expert interview coach. Based on the following transcript for a {{role}} position focused on {{topic}}, your task is to provide a detailed evaluation of the candidate's English communication skills.
+
+Your evaluation MUST be provided by calling the \`recordInterviewFeedback\` tool.
+
+**Evaluation Criteria:**
+1.  **Fluency**: How naturally and smoothly did the candidate speak? Were there many unnatural pauses?
+2.  **Clarity**: How clear and easy to understand was the candidate's speech and explanations?
+3.  **Vocabulary**: Did the candidate use appropriate and varied vocabulary for a professional context?
+4.  **Overall**: A summary of their performance.
+
+**Critical Instructions:**
+-   **If the transcript is empty or contains no candidate response:** You MUST call the tool with a score of 0 for all categories and provide feedback explaining that no analysis was possible.
+-   **If the candidate gives a poor or irrelevant answer:** Your feedback MUST reflect this. Assign a low score (e.g., 1-3) and explain why the answer was weak.
+-   **Be honest and constructive.** Your goal is to help the user improve.
+
+**Interview Transcript:**
+{{#each transcript}}
+**{{#if (eq speaker "ai")}}Interviewer{{else}}Candidate{{/if}}**: {{text}}
+{{/each}}
+
+Now, call the \`recordInterviewFeedback\` tool with your complete evaluation.`,
+  }
+);
 
 const generateInterviewFeedbackFlow = ai.defineFlow(
   {
@@ -49,23 +73,25 @@ const generateInterviewFeedbackFlow = ai.defineFlow(
     outputSchema: GenerateInterviewFeedbackOutputSchema,
   },
   async (input) => {
-    // If the transcript is empty, we can short-circuit here to be safe,
-    // though the prompt also handles this.
-    if (!input.transcript || input.transcript.length === 0) {
-        return {
-          fluency: { score: 0, feedback: "No response from the candidate to analyze." },
-          clarity: { score: 0, feedback: "No response from the candidate to analyze." },
-          vocabulary: { score: 0, feedback: "No response from the candidate to analyze." },
-          overall: { score: 0, feedback: "The interview was too short to provide a meaningful analysis as the candidate did not speak." },
-        }
+    
+    const llmResponse = await prompt(input);
+    const toolRequest = llmResponse.toolRequests()[0];
+
+    if (!toolRequest) {
+      console.error("LLM did not call the tool. Response:", llmResponse.text());
+      throw new Error("The AI failed to generate feedback in the required format. No tool call was found.");
     }
     
-    const { output } = await prompt(input);
-    
-    if (!output) {
-      throw new Error("The AI failed to generate feedback. The output was empty.");
-    }
-    
-    return output;
+    // The arguments of the tool call are already validated against the schema.
+    const feedback = toolRequest.input;
+
+    return feedback;
   }
 );
+
+
+export async function generateInterviewFeedback(
+  input: GenerateInterviewFeedbackInput
+): Promise<GenerateInterviewFeedbackOutput> {
+  return generateInterviewFeedbackFlow(input);
+}

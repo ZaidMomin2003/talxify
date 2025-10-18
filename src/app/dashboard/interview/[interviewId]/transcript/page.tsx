@@ -5,9 +5,10 @@ import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
 import { getActivity } from '@/lib/firebase-service';
 import type { InterviewActivity, TranscriptEntry } from '@/lib/types';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Loader2, AlertTriangle, ChevronLeft, Bot, User } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Loader2, AlertTriangle, ChevronLeft, Bot, User, BarChart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 function TranscriptLoader() {
     return (
@@ -81,7 +82,9 @@ export default function TranscriptPage() {
     }, [fetchInterviewData]);
 
     if (isLoading) return <TranscriptLoader />;
-    if (error || !interview) return <TranscriptError message={error} />;
+    if (error || !interview) return <TranscriptError message={error || "Interview data is missing."} />;
+
+    const canViewResults = interview.feedback !== "Feedback has not been generated for this interview." || interview.analysis;
 
     return (
         <main className="p-4 sm:p-6 lg:p-8 bg-muted/30 min-h-screen">
@@ -94,12 +97,12 @@ export default function TranscriptPage() {
                     <CardHeader>
                         <CardTitle className="text-2xl font-bold font-headline">Interview Transcript</CardTitle>
                         <CardDescription>
-                            A record of your conversation with the AI interviewer for the topic: <span className="font-semibold text-primary">{interview.details.topic}</span>.
+                            A record of your conversation for the topic: <span className="font-semibold text-primary">{interview.details.topic}</span>.
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
                         {interview.transcript && interview.transcript.length > 0 ? (
-                             <div className="space-y-6">
+                             <div className="space-y-6 max-h-[60vh] overflow-y-auto pr-4">
                                 {interview.transcript.map((entry: TranscriptEntry, index: number) => (
                                     <div key={index} className={`flex items-start gap-4 ${entry.speaker === 'user' ? 'justify-end' : ''}`}>
                                         {entry.speaker === 'ai' && (
@@ -122,6 +125,14 @@ export default function TranscriptPage() {
                             <p className="text-muted-foreground text-center py-8">The transcript for this interview is empty.</p>
                         )}
                     </CardContent>
+                     <CardFooter>
+                        <Button asChild className="w-full" disabled={!canViewResults}>
+                            <Link href={`/dashboard/interview/${interviewId}/results`}>
+                                <BarChart className="mr-2 h-4 w-4" />
+                                View Performance Report
+                            </Link>
+                        </Button>
+                    </CardFooter>
                 </Card>
             </div>
         </main>

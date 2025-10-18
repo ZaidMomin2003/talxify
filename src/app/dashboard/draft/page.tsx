@@ -153,8 +153,7 @@ export default function DraftPage() {
     // This effect runs only ONCE on component mount to initialize everything.
     
     // 1. Initialize Audio Contexts
-    // @ts-ignore
-    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    const AudioContext = (window as any).AudioContext || (window as any).webkitAudioContext;
     inputAudioContextRef.current = new AudioContext({ sampleRate: 16000 });
     outputAudioContextRef.current = new AudioContext({ sampleRate: 24000 });
     outputGainNodeRef.current = outputAudioContextRef.current.createGain();
@@ -223,7 +222,6 @@ export default function DraftPage() {
               
               if (message.serverContent?.outputTranscription) {
                 const newText = message.serverContent.outputTranscription.text;
-                setCurrentAiTranscription(prev => prev + newText);
                 setStatus("Mark is speaking...");
 
                 const lastEntry = transcriptRef.current[transcriptRef.current.length - 1];
@@ -235,7 +233,6 @@ export default function DraftPage() {
               }
               if (message.serverContent?.inputTranscription) {
                 const newText = message.serverContent.inputTranscription.text;
-                setCurrentUserTranscription(prev => prev + newText);
                 
                 const lastEntry = transcriptRef.current[transcriptRef.current.length - 1];
                 if (lastEntry && lastEntry.speaker === 'user') {
@@ -245,8 +242,6 @@ export default function DraftPage() {
                 }
               }
               if (message.serverContent?.turnComplete) {
-                setCurrentUserTranscription('');
-                setCurrentAiTranscription('');
                 setStatus("🔴 Your turn... Speak now.");
               }
             },
@@ -379,7 +374,7 @@ export default function DraftPage() {
         
         try {
             await addActivity(user.uid, activity);
-            router.push(`/dashboard/interview/${interviewId}/transcript`);
+            router.push(`/dashboard/interview/${interviewId}/results`);
         } catch (error: any) {
             console.error("Failed to save activity:", error);
             toast({ 
