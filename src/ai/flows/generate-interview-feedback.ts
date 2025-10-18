@@ -1,4 +1,3 @@
-
 'use server';
 
 /**
@@ -8,7 +7,7 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { GenerateInterviewFeedbackOutputSchema, type GenerateInterviewFeedbackInput } from '@/lib/types';
+import { GenerateInterviewFeedbackOutputSchema } from '@/lib/types';
 import { z } from 'zod';
 
 const GenerateInterviewFeedbackInputSchema = z.object({
@@ -20,6 +19,7 @@ const GenerateInterviewFeedbackInputSchema = z.object({
   role: z.string(),
   company: z.string().optional(),
 });
+export type GenerateInterviewFeedbackInput = z.infer<typeof GenerateInterviewFeedbackInputSchema>;
 
 
 // Define the tool that the AI will be instructed to use.
@@ -37,8 +37,14 @@ const recordFeedbackTool = ai.defineTool(
 const prompt = ai.definePrompt(
   {
     name: 'interviewFeedbackPrompt',
-    input: { schema: GenerateInterviewFeedbackInputSchema },
-    tools: [recordFeedbackTool], // Make the tool available to the AI
+    // We now expect a pre-formatted string for the transcript
+    input: { schema: z.object({
+      formattedTranscript: z.string(),
+      topic: z.string(),
+      role: z.string(),
+      company: z.string().optional(),
+    }) },
+    tools: [recordFeedbackTool],
     config: {
       temperature: 0.3,
     },
@@ -53,14 +59,12 @@ Your evaluation MUST be provided by calling the \`recordInterviewFeedback\` tool
 4.  **Overall**: A summary of their performance.
 
 **Critical Instructions:**
--   **If the transcript is empty or contains no candidate response:** You MUST call the tool with a score of 0 for all categories and provide feedback explaining that no analysis was possible.
+-   **If the transcript shows the candidate did not speak or gave no meaningful answers:** You MUST call the tool with a score of 0 for all categories and provide feedback explaining that no analysis was possible.
 -   **If the candidate gives a poor or irrelevant answer:** Your feedback MUST reflect this. Assign a low score and explain why the answer was weak.
 -   **Be honest and constructive.** Your goal is to help the user improve.
 
 **Interview Transcript:**
-{{#each transcript}}
-**{{#if (eq speaker "ai")}}Interviewer{{else}}Candidate{{/if}}**: {{text}}
-{{/each}}
+{{{formattedTranscript}}}
 
 Now, call the \`recordInterviewFeedback\` tool with your complete evaluation.`,
   }
@@ -74,7 +78,6 @@ const generateInterviewFeedbackFlow = ai.defineFlow(
   },
   async (input) => {
     
-    // If the transcript is very short or empty, return a zero score immediately.
     if (!input.transcript || input.transcript.filter(t => t.speaker === 'user').length === 0) {
       return {
         fluency: { score: 0, feedback: "No response from the candidate to analyze." },
@@ -84,15 +87,23 @@ const generateInterviewFeedbackFlow = ai.defineFlow(
       };
     }
 
-    const llmResponse = await prompt(input);
+    // Pre-process the transcript into a simple string (Fix 2)
+    const formattedTranscript = input.transcript
+      .map(entry => `**${entry.speaker === 'ai' ? 'Interviewer' : 'Candidate'}**: ${entry.text}`)
+      .join('\n');
+
+    const llmResponse = await prompt({
+      ...input,
+      formattedTranscript, // Pass the formatted string to the prompt
+    });
+
     const toolRequest = llmResponse.toolRequests()?.[0];
 
-    if (!toolRequest) {
-      console.error("LLM did not call the tool. Response:", llmResponse.text());
+    if (!toolRequest || !toolRequest.input) {
+      console.error("LLM did not call the tool or tool input is invalid. Response:", llmResponse.text());
       throw new Error("The AI failed to generate feedback in the required format. This might be a temporary issue. Please try again.");
     }
     
-    // The arguments of the tool call are already validated against the schema.
     const feedback = toolRequest.input;
 
     return feedback;

@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
@@ -219,24 +218,33 @@ export default function LiveInterviewPage() {
                             if (message.serverContent?.outputTranscription) {
                                 const newText = message.serverContent.outputTranscription.text;
                                 setStatus("Mark is speaking...");
-                                
-                                const lastEntry = transcriptRef.current[transcriptRef.current.length - 1];
-                                if (lastEntry && lastEntry.speaker === 'ai') {
-                                    lastEntry.text += newText;
-                                } else {
-                                    transcriptRef.current.push({ speaker: 'ai', text: newText });
+                                setCurrentAiTranscription(prev => prev + newText);
+
+                                if (message.serverContent.outputTranscription.partial === false) {
+                                    const lastEntry = transcriptRef.current[transcriptRef.current.length - 1];
+                                    if (lastEntry && lastEntry.speaker === 'ai') {
+                                        lastEntry.text = currentAiTranscription + newText;
+                                    } else {
+                                        transcriptRef.current.push({ speaker: 'ai', text: newText });
+                                    }
+                                    setCurrentAiTranscription(''); // Clear for next turn
                                 }
                             }
 
                             if (message.serverContent?.inputTranscription) {
                                 const newText = message.serverContent.inputTranscription.text;
-                                
-                                const lastEntry = transcriptRef.current[transcriptRef.current.length - 1];
-                                if (lastEntry && lastEntry.speaker === 'user') {
-                                    lastEntry.text += newText;
-                                } else {
-                                    transcriptRef.current.push({ speaker: 'user', text: newText });
-                                }
+                                setStatus("🔴 Your turn... Speak now.");
+                                setCurrentUserTranscription(prev => prev + newText);
+
+                                 if (message.serverContent.inputTranscription.partial === false) {
+                                    const lastEntry = transcriptRef.current[transcriptRef.current.length - 1];
+                                    if (lastEntry && lastEntry.speaker === 'user') {
+                                        lastEntry.text = currentUserTranscription + newText;
+                                    } else {
+                                        transcriptRef.current.push({ speaker: 'user', text: newText });
+                                    }
+                                    setCurrentUserTranscription(''); // Clear for next turn
+                                 }
                             }
 
                             if (message.serverContent?.turnComplete) {

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -8,7 +7,6 @@ import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useAuth } from '@/context/auth-context';
 import { getActivity, updateActivity } from '@/lib/firebase-service';
 import type { InterviewActivity, GenerateInterviewFeedbackOutput } from '@/lib/types';
-import { generateInterviewFeedback } from '@/ai/flows/generate-interview-feedback';
 import { AlertTriangle, BarChart3, Bot, BrainCircuit, CheckCircle, ChevronLeft, Flag, Gauge, Info, Loader2, MessageSquare, Percent, Sparkles, Star, TrendingUp, User as UserIcon } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -62,13 +60,22 @@ export default function InterviewResultsPage() {
 
     const generateFeedback = useCallback(async (activity: InterviewActivity) => {
         try {
-            const feedbackResult = await generateInterviewFeedback({
+            const res = await fetch('/api/interview-feedback', {
+              method: 'POST',
+              body: JSON.stringify({
                 transcript: activity.transcript,
                 topic: activity.details.topic,
                 role: activity.details.role || 'Software Engineer',
                 company: activity.details.company || undefined,
+              }),
             });
+            
+            if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(errorData.error || 'Failed to fetch feedback from API.');
+            }
 
+            const feedbackResult = await res.json();
             setAnalysis(feedbackResult);
 
             const updatedActivity: InterviewActivity = {
