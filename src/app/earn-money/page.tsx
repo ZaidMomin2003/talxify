@@ -168,43 +168,6 @@ export default function EarnMoneyPage() {
                     </Card>
                 </section>
 
-                {/* Sign-up Form Section */}
-                <section id="signup-form">
-                    <div className="text-center mb-12">
-                        <h2 className="text-4xl font-bold font-headline">Join the Affiliate Program</h2>
-                        <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">Fill out the form below to start your application.</p>
-                    </div>
-                     <Card className="max-w-2xl mx-auto shadow-lg">
-                        <CardContent className="p-8">
-                            <form onSubmit={handleSubmit} className="space-y-6">
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                                    <div className="space-y-2">
-                                        <Label htmlFor="name">Full Name</Label>
-                                        <Input id="name" placeholder="John Doe" required />
-                                    </div>
-                                     <div className="space-y-2">
-                                        <Label htmlFor="email">Email Address</Label>
-                                        <Input id="email" type="email" placeholder="john.doe@example.com" required />
-                                    </div>
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="phone">Phone / WhatsApp (Optional)</Label>
-                                    <Input id="phone" placeholder="+91 12345 67890" />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="about">Tell us about yourself</Label>
-                                    <textarea id="about" placeholder="Why are you interested in becoming a Talxify affiliate? (Optional)" className="w-full min-h-[100px] rounded-md border border-input bg-transparent px-3 py-2 text-sm" />
-                                </div>
-                                <div className="pt-4">
-                                    <Button type="submit" size="lg" className="w-full">
-                                        Submit Application
-                                        <ArrowRight className="ml-2 h-4 w-4"/>
-                                    </Button>
-                                </div>
-                            </form>
-                        </CardContent>
-                    </Card>
-                </section>
             </main>
 
             <LandingFooter />
