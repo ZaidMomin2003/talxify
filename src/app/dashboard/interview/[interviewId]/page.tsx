@@ -4,7 +4,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useSearchParams, useRouter, useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Mic, MicOff, Video, VideoOff, Phone, BrainCircuit, Loader2, Play } from 'lucide-react';
+import { Mic, MicOff, Video, VideoOff, Phone, BrainCircuit, Loader2, Play, Bot, User as UserIcon } from 'lucide-react';
 import { addActivity, checkAndIncrementUsage } from '@/lib/firebase-service';
 import { useAuth } from '@/context/auth-context';
 import type { InterviewActivity, TranscriptEntry } from '@/lib/types';
@@ -13,6 +13,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { GoogleGenAI, LiveServerMessage, Modality, Session } from '@google/genai';
 import { createBlob, decode, decodeAudioData } from '@/lib/utils';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 // --- Sub-components for better structure ---
 
@@ -79,22 +80,6 @@ const UserVideo = ({ videoRef, isVideoOn }: { videoRef: React.RefObject<HTMLVide
   );
 };
 
-const CaptionDisplay = ({ userText, aiText }: { userText: string; aiText: string; }) => {
-  const text = aiText || userText;
-  if (!text) return null;
-  return (
-    <div className="absolute bottom-28 left-1/2 -translate-x-1/2 w-full max-w-4xl px-4">
-      <div className="bg-background/60 backdrop-blur-md rounded-lg p-4 text-center text-lg shadow-lg border">
-         {aiText ? (
-            <><b>Mark:</b> {aiText}</>
-          ) : (
-            <><b>You:</b> {userText}</>
-          )}
-      </div>
-    </div>
-  );
-};
-
 const ControlBar = ({ onMuteToggle, onVideoToggle, onEndCall, isMuted, isVideoOn, isSessionLive }: {
   onMuteToggle: () => void;
   onVideoToggle: () => void;
@@ -128,8 +113,6 @@ export default function LiveInterviewPage() {
 
   const [isInterviewing, setIsInterviewing] = useState(false);
   const [status, setStatus] = useState('Initializing...');
-  const [currentAiTranscription, setCurrentAiTranscription] = useState('');
-  const [currentUserTranscription, setCurrentUserTranscription] = useState('');
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOn, setIsVideoOn] = useState(true);
   const [elapsedTime, setElapsedTime] = useState(0);
@@ -217,24 +200,16 @@ export default function LiveInterviewPage() {
                             if (audio) playAudio(audio.data);
                             
                             if (message.serverContent?.outputTranscription) {
-                                const newText = message.serverContent.outputTranscription.text;
                                 setStatus("Mark is speaking...");
-                                setCurrentAiTranscription(prev => prev + newText);
-
                                 if (message.serverContent.outputTranscription.partial === false) {
-                                    transcriptRef.current.push({ speaker: 'ai', text: currentAiTranscription + newText });
-                                    setCurrentAiTranscription(''); // Clear for next turn
+                                    transcriptRef.current.push({ speaker: 'ai', text: message.serverContent.outputTranscription.text });
                                 }
                             }
 
                             if (message.serverContent?.inputTranscription) {
-                                const newText = message.serverContent.inputTranscription.text;
                                 setStatus("🔴 Your turn... Speak now.");
-                                setCurrentUserTranscription(prev => prev + newText);
-
                                  if (message.serverContent.inputTranscription.partial === false) {
-                                    transcriptRef.current.push({ speaker: 'user', text: currentUserTranscription + newText });
-                                    setCurrentUserTranscription(''); // Clear for next turn
+                                    transcriptRef.current.push({ speaker: 'user', text: message.serverContent.inputTranscription.text });
                                  }
                             }
 
@@ -380,13 +355,13 @@ export default function LiveInterviewPage() {
             timestamp: new Date().toISOString(),
             transcript: transcriptRef.current,
             // The 'feedback' field is now a summary, 'analysis' holds the detailed structure
-            feedback: "Feedback will be generated on the results page.",
+            feedback: "Feedback has not been generated for this interview.",
             details: details,
         };
         
         try {
             await addActivity(user.uid, activity);
-            router.push(`/dashboard/interview/${interviewId}/results`);
+            router.push(`/dashboard/interview/${interviewId}/transcript`);
         } catch (error: any) {
             console.error("Failed to save activity:", error);
             toast({ 
@@ -432,7 +407,6 @@ export default function LiveInterviewPage() {
             )}
         </main>
         <UserVideo videoRef={userVideoEl} isVideoOn={isVideoOn} />
-        <CaptionDisplay userText={currentUserTranscription} aiText={currentAiTranscription}/>
         {isInterviewing && (
           <ControlBar 
               onMuteToggle={toggleMute}
