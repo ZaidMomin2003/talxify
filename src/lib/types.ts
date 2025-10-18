@@ -1,5 +1,4 @@
 
-
 import type { AnswerAnalysis } from "@/ai/flows/analyze-coding-answers";
 import type { GenerateStudyNotesOutput } from "@/ai/flows/generate-study-notes";
 import type { QuizState } from "@/app/dashboard/coding-quiz/quiz/page";
@@ -52,16 +51,14 @@ export const GenerateInterviewFeedbackInputSchema = z.object({
 });
 export type GenerateInterviewFeedbackInput = z.infer<typeof GenerateInterviewFeedbackInputSchema>;
 
-const CategoryScoreSchema = z.object({
-    category: z.string().describe("The name of the category being scored (e.g., 'Communication')."),
-    score: z.number().min(0).max(100).describe("A score from 0 to 100 for this category."),
-    comment: z.string().describe("Brief, constructive feedback for this category.")
-});
-
 export const GenerateInterviewFeedbackOutputSchema = z.object({
-    feedback: z.string().describe("An overall summary of the candidate's performance."),
-    overallScore: z.number().min(0).max(100).describe("A single, overall score from 0 to 100."),
-    categoryScores: z.array(CategoryScoreSchema).describe("An array of scores for different categories.")
+  crackingChance: z.number().min(0).max(100).describe("An estimated percentage (0-100) representing the candidate's likelihood of passing a real interview based on this performance."),
+  fluencyScore: z.number().min(0).max(100).describe("A score (0-100) for the candidate's language fluency and smoothness of speech."),
+  knowledgeScore: z.number().min(0).max(100).describe("A score (0-100) for the candidate's technical knowledge and accuracy."),
+  confidenceScore: z.number().min(0).max(100).describe("A score (0-100) for the candidate's perceived confidence and poise."),
+  strongConcepts: z.array(z.string()).describe("A list of topics or concepts the candidate demonstrated strong understanding of."),
+  weakConcepts: z.array(z.string()).describe("A list of topics or concepts where the candidate showed weakness."),
+  summary: z.string().describe("A detailed summary of the candidate's overall performance, highlighting strengths, weaknesses, and providing specific, actionable advice for improvement.")
 });
 export type GenerateInterviewFeedbackOutput = z.infer<typeof GenerateInterviewFeedbackOutputSchema>;
 
@@ -377,4 +374,3 @@ export const InterviewFlowOutputSchema = z.object({
   transcript: z.array(TranscriptEntrySchema),
 });
 export type InterviewFlowOutput = z.infer<typeof InterviewFlowOutputSchema>;
-

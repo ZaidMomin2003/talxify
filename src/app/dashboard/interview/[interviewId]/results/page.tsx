@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -7,10 +8,9 @@ import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useAuth } from '@/context/auth-context';
 import { getActivity, updateActivity } from '@/lib/firebase-service';
 import type { InterviewActivity, GenerateInterviewFeedbackOutput } from '@/lib/types';
-import { AlertTriangle, BarChart3, Bot, BrainCircuit, CheckCircle, ChevronLeft, Flag, Gauge, Info, Loader2, MessageSquare, Percent, Sparkles, Star, TrendingUp, User as UserIcon } from 'lucide-react';
+import { AlertTriangle, BarChart3, Bot, BrainCircuit, Check, CheckCircle, ChevronLeft, Flag, Gauge, Info, Loader2, MessageSquare, Percent, Sparkles, Star, Target, TrendingUp, User as UserIcon } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 function ResultsLoader() {
     return (
@@ -47,6 +47,45 @@ function ResultsError({ message }: { message: string }) {
     );
 }
 
+const ScoreGauge = ({ score, label }: { score: number, label: string }) => {
+    const circumference = 2 * Math.PI * 45; // 2 * pi * radius
+    const offset = circumference - (score / 100) * circumference;
+
+    return (
+        <Card className="flex flex-col items-center justify-center text-center p-4">
+            <div className="relative w-32 h-32">
+                <svg className="w-full h-full" viewBox="0 0 100 100">
+                    <circle
+                        className="text-muted/50"
+                        strokeWidth="10"
+                        stroke="currentColor"
+                        fill="transparent"
+                        r="45"
+                        cx="50"
+                        cy="50"
+                    />
+                    <circle
+                        className="text-primary"
+                        strokeWidth="10"
+                        strokeDasharray={circumference}
+                        strokeDashoffset={offset}
+                        strokeLinecap="round"
+                        stroke="currentColor"
+                        fill="transparent"
+                        r="45"
+                        cx="50"
+                        cy="50"
+                        transform="rotate(-90 50 50)"
+                    />
+                </svg>
+                <span className="absolute inset-0 flex items-center justify-center text-2xl font-bold">{score}</span>
+            </div>
+            <p className="mt-2 text-sm font-semibold text-muted-foreground">{label}</p>
+        </Card>
+    );
+};
+
+
 export default function InterviewResultsPage() {
     const router = useRouter();
     const params = useParams();
@@ -62,6 +101,7 @@ export default function InterviewResultsPage() {
         try {
             const res = await fetch('/api/interview-feedback', {
               method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 transcript: activity.transcript,
                 topic: activity.details.topic,
@@ -81,10 +121,10 @@ export default function InterviewResultsPage() {
             const updatedActivity: InterviewActivity = {
                 ...activity,
                 analysis: feedbackResult,
-                feedback: feedbackResult.feedback,
+                feedback: feedbackResult.summary,
                 details: {
                     ...activity.details,
-                    score: feedbackResult.overallScore,
+                    score: feedbackResult.crackingChance,
                 }
             };
             if(user) {
@@ -133,16 +173,11 @@ export default function InterviewResultsPage() {
         fetchInterviewData();
     }, [fetchInterviewData]);
 
-    const scoreOutOf100 = useMemo(() => {
-        if (!analysis?.overallScore) return 0;
-        return Math.round(analysis.overallScore);
-    }, [analysis]);
-
     if (isLoading) return <ResultsLoader />;
     if (error || !analysis || !interview) return <ResultsError message={error || "Could not retrieve analysis."} />;
     
     return (
-         <main className="p-4 sm:p-6 lg:p-8 overflow-auto bg-muted/30">
+         <main className="p-4 sm:p-6 lg:p-8 overflow-auto bg-muted/30 min-h-screen">
             <div className="max-w-6xl mx-auto space-y-8">
                  <Button variant="outline" size="sm" onClick={() => router.push('/dashboard/arena')} className="mb-4">
                     <ChevronLeft className="mr-2 h-4 w-4"/> Back to Arena
@@ -157,35 +192,64 @@ export default function InterviewResultsPage() {
                                  <CardTitle className="text-3xl font-bold font-headline">Performance Report</CardTitle>
                                 <CardDescription>A detailed breakdown of your interview skills.</CardDescription>
                             </div>
-                            <div className="text-right">
-                                <p className="text-sm text-muted-foreground">Overall Score</p>
-                                <p className="text-5xl font-bold text-primary">{scoreOutOf100}<span className="text-2xl text-muted-foreground">/100</span></p>
+                            <div className="text-right flex-shrink-0">
+                                <p className="text-sm text-muted-foreground">Chance of Cracking</p>
+                                <p className="text-5xl font-bold text-primary">{analysis.crackingChance}<span className="text-2xl text-muted-foreground">%</span></p>
                             </div>
                         </div>
                     </CardHeader>
+                </Card>
+                
+                {/* Metrics Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                    <ScoreGauge score={analysis.fluencyScore} label="Fluency" />
+                    <ScoreGauge score={analysis.knowledgeScore} label="Technical Knowledge" />
+                    <ScoreGauge score={analysis.confidenceScore} label="Confidence" />
+                </div>
+
+                {/* Summary */}
+                 <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-3"><Sparkles className="w-5 h-5 text-primary"/> AI Summary & Action Plan</CardTitle>
+                    </CardHeader>
                     <CardContent>
-                        <div className="border-t pt-4">
-                            <h3 className="font-semibold mb-2 flex items-center gap-2"><Sparkles className="w-4 h-4 text-primary"/> AI Summary</h3>
-                            <p className="text-muted-foreground">{analysis.feedback}</p>
-                        </div>
+                        <p className="text-muted-foreground whitespace-pre-wrap">{analysis.summary}</p>
                     </CardContent>
                 </Card>
 
-                {/* Metrics Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {analysis.categoryScores.map(item => (
-                        <Card key={item.category}>
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2 text-lg">{item.category}</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <p className="text-4xl font-bold">{item.score}<span className="text-2xl text-muted-foreground">/100</span></p>
-                                <p className="text-sm text-muted-foreground mt-2">{item.comment}</p>
-                            </CardContent>
-                        </Card>
-                    ))}
+                {/* Strengths and Weaknesses */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-3"><TrendingUp className="w-5 h-5 text-green-500"/> Strong Concepts</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <ul className="space-y-2">
+                                {analysis.strongConcepts.map((concept, i) => (
+                                    <li key={i} className="flex items-center gap-2">
+                                        <CheckCircle className="w-4 h-4 text-green-500"/>
+                                        <span className="text-muted-foreground">{concept}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </CardContent>
+                    </Card>
+                     <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-3"><Target className="w-5 h-5 text-destructive"/> Areas for Improvement</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                             <ul className="space-y-2">
+                                {analysis.weakConcepts.map((concept, i) => (
+                                    <li key={i} className="flex items-center gap-2">
+                                        <AlertTriangle className="w-4 h-4 text-destructive"/>
+                                        <span className="text-muted-foreground">{concept}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </CardContent>
+                    </Card>
                 </div>
-
 
                  {/* Transcript Analysis */}
                  {interview.transcript && interview.transcript.length > 0 && (

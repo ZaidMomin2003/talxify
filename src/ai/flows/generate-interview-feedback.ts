@@ -20,44 +20,39 @@ const prompt = ai.definePrompt({
     company: z.string().optional(),
   }) },
   output: { schema: GenerateInterviewFeedbackOutputSchema },
-  prompt: `You are an AI interview coach. Analyze the given interview transcript and provide structured feedback.
+  prompt: `
+You are an expert AI interview coach. Your task is to analyze the provided interview transcript and provide a detailed, structured evaluation.
 
-Follow this strict JSON structure:
+Follow this strict JSON format for your entire response. Do not include any text outside of the JSON object.
+
+\`\`\`json
 {
-  "feedback": "Overall summary of candidate performance. If the transcript is very short or the candidate did not speak, state that a full analysis is not possible due to the brief interaction.",
-  "overallScore": number (0–100),
-  "categoryScores": [
-    {
-      "category": "Communication",
-      "score": number (0–100),
-      "comment": "Feedback on communication (clarity, fluency, professionalism)."
-    },
-    {
-      "category": "Technical Knowledge",
-      "score": number (0–100),
-      "comment": "Feedback on technical understanding, accuracy, and depth of answers."
-    },
-    {
-      "category": "Confidence",
-      "score": number (0–100),
-      "comment": "Feedback on confidence, poise, and handling of difficult questions."
-    }
-  ]
+  "crackingChance": <A percentage (0-100) representing the candidate's likelihood of passing a real interview based on this performance. Be realistic.>,
+  "fluencyScore": <A score (0-100) for the candidate's language fluency and smoothness of speech.>,
+  "knowledgeScore": <A score (0-100) for the candidate's technical knowledge, accuracy, and depth of answers.>,
+  "confidenceScore": <A score (0-100) for the candidate's perceived confidence and poise.>,
+  "strongConcepts": ["A list of topics or concepts the candidate demonstrated strong understanding of."],
+  "weakConcepts": ["A list of topics or concepts where the candidate showed weakness."],
+  "summary": "A detailed summary of the candidate's overall performance, highlighting strengths, weaknesses, and providing specific, actionable advice for improvement."
 }
+\`\`\`
 
-- If the candidate's responses are empty or extremely brief, provide a low score (under 10) and explain that the analysis is limited due to lack of input. Do not give a zero score unless there is absolutely no candidate speech.
-- Do not include any extra text outside the JSON. Only output valid JSON. Do not explain your answer outside of the JSON fields.
+**Guidelines:**
+- If the candidate's responses are empty or extremely brief, provide a low `crackingChance` (under 10) and explain in the `summary` that a full analysis is not possible due to lack of input.
+- Be critical but constructive. Your goal is to help the candidate improve.
+- Base your scores on the entirety of the conversation.
+
 ---
-Interview Details:
+**Interview Details:**
 - Topic: {{topic}}
 - Role: {{role}}
 - Company: {{company}}
 
-Interview Transcript:
+**Interview Transcript:**
 {{{formattedTranscript}}}
 `,
   config: {
-    temperature: 0.3,
+    temperature: 0.4,
   }
 });
 
@@ -75,13 +70,13 @@ const generateInterviewFeedbackFlow = ai.defineFlow(
       
     if (!formattedTranscript || input.transcript.filter(t => t.speaker === 'user').length === 0) {
       return {
-        feedback: "A full analysis was not possible as the candidate did not provide any responses during the interview.",
-        overallScore: 0,
-        categoryScores: [
-            { category: "Communication", score: 0, comment: "No response from the candidate to analyze." },
-            { category: "Technical Knowledge", score: 0, comment: "No response from the candidate to analyze." },
-            { category: "Confidence", score: 0, comment: "No response from the candidate to analyze." },
-        ]
+        crackingChance: 0,
+        fluencyScore: 0,
+        knowledgeScore: 0,
+        confidenceScore: 0,
+        strongConcepts: [],
+        weakConcepts: ['N/A'],
+        summary: "A full analysis was not possible as the candidate did not provide any responses during the interview. To get feedback, please try the interview again and answer the questions to the best of your ability."
       };
     }
 
