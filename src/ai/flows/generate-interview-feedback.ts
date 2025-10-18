@@ -46,6 +46,7 @@ const prompt = ai.definePrompt(
     }) },
     tools: [recordFeedbackTool],
     config: {
+      model: 'googleai/gemini-2.5-pro',
       temperature: 0.3,
     },
     prompt: `You are an expert interview coach. Based on the following transcript for a {{role}} position focused on {{topic}}, your task is to provide a detailed evaluation of the candidate's English communication skills.
