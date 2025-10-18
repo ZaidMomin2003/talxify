@@ -54,12 +54,12 @@ Your evaluation MUST be provided by calling the \`recordInterviewFeedback\` tool
 
 **Critical Instructions:**
 -   **If the transcript is empty or contains no candidate response:** You MUST call the tool with a score of 0 for all categories and provide feedback explaining that no analysis was possible.
--   **If the candidate gives a poor or irrelevant answer:** Your feedback MUST reflect this. Assign a low score (e.g., 1-3) and explain why the answer was weak.
+-   **If the candidate gives a poor or irrelevant answer:** Your feedback MUST reflect this. Assign a low score and explain why the answer was weak.
 -   **Be honest and constructive.** Your goal is to help the user improve.
 
 **Interview Transcript:**
 {{#each transcript}}
-**{{#if (eq speaker 'ai')}}Interviewer{{else}}Candidate{{/if}}**: {{text}}
+**{{#if (eq speaker "ai")}}Interviewer{{else}}Candidate{{/if}}**: {{text}}
 {{/each}}
 
 Now, call the \`recordInterviewFeedback\` tool with your complete evaluation.`,
@@ -74,12 +74,13 @@ const generateInterviewFeedbackFlow = ai.defineFlow(
   },
   async (input) => {
     
-    if (!input.transcript || input.transcript.length === 0) {
+    // If the transcript is very short or empty, return a zero score immediately.
+    if (!input.transcript || input.transcript.filter(t => t.speaker === 'user').length === 0) {
       return {
-        fluency: { score: 0, feedback: "No transcript available to analyze." },
-        clarity: { score: 0, feedback: "No transcript available to analyze." },
-        vocabulary: { score: 0, feedback: "No transcript available to analyze." },
-        overall: { score: 0, feedback: "The interview was too short to provide a meaningful analysis as no conversation was recorded." }
+        fluency: { score: 0, feedback: "No response from the candidate to analyze." },
+        clarity: { score: 0, feedback: "No response from the candidate to analyze." },
+        vocabulary: { score: 0, feedback: "No response from the candidate to analyze." },
+        overall: { score: 0, feedback: "The interview was too short to provide a meaningful analysis as the candidate did not speak." }
       };
     }
 
@@ -88,7 +89,7 @@ const generateInterviewFeedbackFlow = ai.defineFlow(
 
     if (!toolRequest) {
       console.error("LLM did not call the tool. Response:", llmResponse.text());
-      throw new Error("The AI failed to generate feedback in the required format. No tool call was found.");
+      throw new Error("The AI failed to generate feedback in the required format. This might be a temporary issue. Please try again.");
     }
     
     // The arguments of the tool call are already validated against the schema.
