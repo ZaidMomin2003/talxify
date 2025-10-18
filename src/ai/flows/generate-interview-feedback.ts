@@ -59,7 +59,7 @@ Your evaluation MUST be provided by calling the \`recordInterviewFeedback\` tool
 
 **Interview Transcript:**
 {{#each transcript}}
-**{{#if (eq speaker "ai")}}Interviewer{{else}}Candidate{{/if}}**: {{text}}
+**{{#if (eq speaker 'ai')}}Interviewer{{else}}Candidate{{/if}}**: {{text}}
 {{/each}}
 
 Now, call the \`recordInterviewFeedback\` tool with your complete evaluation.`,
@@ -74,8 +74,17 @@ const generateInterviewFeedbackFlow = ai.defineFlow(
   },
   async (input) => {
     
+    if (!input.transcript || input.transcript.length === 0) {
+      return {
+        fluency: { score: 0, feedback: "No transcript available to analyze." },
+        clarity: { score: 0, feedback: "No transcript available to analyze." },
+        vocabulary: { score: 0, feedback: "No transcript available to analyze." },
+        overall: { score: 0, feedback: "The interview was too short to provide a meaningful analysis as no conversation was recorded." }
+      };
+    }
+
     const llmResponse = await prompt(input);
-    const toolRequest = llmResponse.toolRequests()[0];
+    const toolRequest = llmResponse.toolRequests()?.[0];
 
     if (!toolRequest) {
       console.error("LLM did not call the tool. Response:", llmResponse.text());
