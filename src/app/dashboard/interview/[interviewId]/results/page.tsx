@@ -81,10 +81,10 @@ export default function InterviewResultsPage() {
             const updatedActivity: InterviewActivity = {
                 ...activity,
                 analysis: feedbackResult,
-                feedback: feedbackResult.overall.feedback,
+                feedback: feedbackResult.feedback,
                 details: {
                     ...activity.details,
-                    score: feedbackResult.overall.score, // Score is 0-10, will be scaled in UI
+                    score: feedbackResult.overallScore,
                 }
             };
             if(user) {
@@ -134,20 +134,13 @@ export default function InterviewResultsPage() {
     }, [fetchInterviewData]);
 
     const scoreOutOf100 = useMemo(() => {
-        if (!analysis?.overall?.score) return 0;
-        // The score is out of 10, so multiply by 10 for a percentage score
-        return Math.round(analysis.overall.score * 10);
+        if (!analysis?.overallScore) return 0;
+        return Math.round(analysis.overallScore);
     }, [analysis]);
 
     if (isLoading) return <ResultsLoader />;
     if (error || !analysis || !interview) return <ResultsError message={error || "Could not retrieve analysis."} />;
     
-    const communicationScores = [
-        { label: 'Fluency', score: analysis.fluency.score, feedback: analysis.fluency.feedback },
-        { label: 'Clarity', score: analysis.clarity.score, feedback: analysis.clarity.feedback },
-        { label: 'Vocabulary', score: analysis.vocabulary.score, feedback: analysis.vocabulary.feedback },
-    ];
-
     return (
          <main className="p-4 sm:p-6 lg:p-8 overflow-auto bg-muted/30">
             <div className="max-w-6xl mx-auto space-y-8">
@@ -161,8 +154,8 @@ export default function InterviewResultsPage() {
                         <div className="flex items-start justify-between gap-4">
                             <div>
                                  <Badge variant="secondary" className="mb-2">{interview.details.topic}</Badge>
-                                 <CardTitle className="text-3xl font-bold font-headline">Communication Report</CardTitle>
-                                <CardDescription>A detailed breakdown of your English communication skills.</CardDescription>
+                                 <CardTitle className="text-3xl font-bold font-headline">Performance Report</CardTitle>
+                                <CardDescription>A detailed breakdown of your interview skills.</CardDescription>
                             </div>
                             <div className="text-right">
                                 <p className="text-sm text-muted-foreground">Overall Score</p>
@@ -173,21 +166,21 @@ export default function InterviewResultsPage() {
                     <CardContent>
                         <div className="border-t pt-4">
                             <h3 className="font-semibold mb-2 flex items-center gap-2"><Sparkles className="w-4 h-4 text-primary"/> AI Summary</h3>
-                            <p className="text-muted-foreground">{analysis.overall.feedback}</p>
+                            <p className="text-muted-foreground">{analysis.feedback}</p>
                         </div>
                     </CardContent>
                 </Card>
 
                 {/* Metrics Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {communicationScores.map(item => (
-                        <Card key={item.label}>
+                    {analysis.categoryScores.map(item => (
+                        <Card key={item.category}>
                             <CardHeader>
-                                <CardTitle className="flex items-center gap-2 text-lg">{item.label}</CardTitle>
+                                <CardTitle className="flex items-center gap-2 text-lg">{item.category}</CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <p className="text-4xl font-bold">{item.score}<span className="text-2xl text-muted-foreground">/10</span></p>
-                                <p className="text-sm text-muted-foreground mt-2">{item.feedback}</p>
+                                <p className="text-4xl font-bold">{item.score}<span className="text-2xl text-muted-foreground">/100</span></p>
+                                <p className="text-sm text-muted-foreground mt-2">{item.comment}</p>
                             </CardContent>
                         </Card>
                     ))}

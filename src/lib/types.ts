@@ -52,16 +52,16 @@ export const GenerateInterviewFeedbackInputSchema = z.object({
 });
 export type GenerateInterviewFeedbackInput = z.infer<typeof GenerateInterviewFeedbackInputSchema>;
 
-const ScoreAndFeedbackSchema = z.object({
-    score: z.number().min(0).max(10).describe("A score from 0 to 10 for this category. A score of 0 indicates analysis was not possible."),
-    feedback: z.string().describe("Brief, constructive feedback for this category.")
+const CategoryScoreSchema = z.object({
+    category: z.string().describe("The name of the category being scored (e.g., 'Communication')."),
+    score: z.number().min(0).max(100).describe("A score from 0 to 100 for this category."),
+    comment: z.string().describe("Brief, constructive feedback for this category.")
 });
 
 export const GenerateInterviewFeedbackOutputSchema = z.object({
-    fluency: ScoreAndFeedbackSchema,
-    clarity: ScoreAndFeedbackSchema,
-    vocabulary: ScoreAndFeedbackSchema,
-    overall: ScoreAndFeedbackSchema,
+    feedback: z.string().describe("An overall summary of the candidate's performance."),
+    overallScore: z.number().min(0).max(100).describe("A single, overall score from 0 to 100."),
+    categoryScores: z.array(CategoryScoreSchema).describe("An array of scores for different categories.")
 });
 export type GenerateInterviewFeedbackOutput = z.infer<typeof GenerateInterviewFeedbackOutputSchema>;
 
@@ -77,7 +77,7 @@ export interface InterviewActivity extends BaseActivity {
         role?: string;
         level?: string;
         company?: string;
-        score?: number; // e.g., 0-10
+        score?: number; // e.g., 0-100
     }
 }
 
