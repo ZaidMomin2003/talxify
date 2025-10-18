@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -23,7 +24,7 @@ const prompt = ai.definePrompt({
 
 Follow this strict JSON structure:
 {
-  "feedback": "Overall summary of candidate performance.",
+  "feedback": "Overall summary of candidate performance. If the transcript is very short or the candidate did not speak, state that a full analysis is not possible due to the brief interaction.",
   "overallScore": number (0–100),
   "categoryScores": [
     {
@@ -44,7 +45,8 @@ Follow this strict JSON structure:
   ]
 }
 
-Do not include any extra text outside the JSON. Only output valid JSON. Do not explain your answer.
+- If the candidate's responses are empty or extremely brief, provide a low score (under 10) and explain that the analysis is limited due to lack of input. Do not give a zero score unless there is absolutely no candidate speech.
+- Do not include any extra text outside the JSON. Only output valid JSON. Do not explain your answer outside of the JSON fields.
 ---
 Interview Details:
 - Topic: {{topic}}
@@ -67,9 +69,13 @@ const generateInterviewFeedbackFlow = ai.defineFlow(
   },
   async (input) => {
     
-    if (!input.transcript || input.transcript.filter(t => t.speaker === 'user').length === 0) {
+    const formattedTranscript = input.transcript
+      .map(entry => `**${entry.speaker === 'ai' ? 'Interviewer' : 'Candidate'}**: ${entry.text}`)
+      .join('\n');
+      
+    if (!formattedTranscript || input.transcript.filter(t => t.speaker === 'user').length === 0) {
       return {
-        feedback: "The interview was too short to provide a meaningful analysis as the candidate did not speak.",
+        feedback: "A full analysis was not possible as the candidate did not provide any responses during the interview.",
         overallScore: 0,
         categoryScores: [
             { category: "Communication", score: 0, comment: "No response from the candidate to analyze." },
@@ -78,10 +84,6 @@ const generateInterviewFeedbackFlow = ai.defineFlow(
         ]
       };
     }
-
-    const formattedTranscript = input.transcript
-      .map(entry => `**${entry.speaker === 'ai' ? 'Interviewer' : 'Candidate'}**: ${entry.text}`)
-      .join('\n');
 
     const { output } = await prompt({
       topic: input.topic,

@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
@@ -221,12 +222,7 @@ export default function LiveInterviewPage() {
                                 setCurrentAiTranscription(prev => prev + newText);
 
                                 if (message.serverContent.outputTranscription.partial === false) {
-                                    const lastEntry = transcriptRef.current[transcriptRef.current.length - 1];
-                                    if (lastEntry && lastEntry.speaker === 'ai') {
-                                        lastEntry.text = currentAiTranscription + newText;
-                                    } else {
-                                        transcriptRef.current.push({ speaker: 'ai', text: newText });
-                                    }
+                                    transcriptRef.current.push({ speaker: 'ai', text: currentAiTranscription + newText });
                                     setCurrentAiTranscription(''); // Clear for next turn
                                 }
                             }
@@ -237,12 +233,7 @@ export default function LiveInterviewPage() {
                                 setCurrentUserTranscription(prev => prev + newText);
 
                                  if (message.serverContent.inputTranscription.partial === false) {
-                                    const lastEntry = transcriptRef.current[transcriptRef.current.length - 1];
-                                    if (lastEntry && lastEntry.speaker === 'user') {
-                                        lastEntry.text = currentUserTranscription + newText;
-                                    } else {
-                                        transcriptRef.current.push({ speaker: 'user', text: newText });
-                                    }
+                                    transcriptRef.current.push({ speaker: 'user', text: currentUserTranscription + newText });
                                     setCurrentUserTranscription(''); // Clear for next turn
                                  }
                             }
