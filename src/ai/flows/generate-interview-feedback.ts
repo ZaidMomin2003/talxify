@@ -46,7 +46,6 @@ const prompt = ai.definePrompt(
     }) },
     tools: [recordFeedbackTool],
     config: {
-      model: 'googleai/gemini-2.5-pro',
       temperature: 0.3,
     },
     prompt: `You are an expert interview coach. Based on the following transcript for a {{role}} position focused on {{topic}}, your task is to provide a detailed evaluation of the candidate's English communication skills.
@@ -76,6 +75,7 @@ const generateInterviewFeedbackFlow = ai.defineFlow(
     name: 'generateInterviewFeedbackFlow',
     inputSchema: GenerateInterviewFeedbackInputSchema,
     outputSchema: GenerateInterviewFeedbackOutputSchema,
+    model: 'googleai/gemini-2.5-pro',
   },
   async (input) => {
     
@@ -88,7 +88,7 @@ const generateInterviewFeedbackFlow = ai.defineFlow(
       };
     }
 
-    // Pre-process the transcript into a simple string (Fix 2)
+    // Pre-process the transcript into a simple string
     const formattedTranscript = input.transcript
       .map(entry => `**${entry.speaker === 'ai' ? 'Interviewer' : 'Candidate'}**: ${entry.text}`)
       .join('\n');
