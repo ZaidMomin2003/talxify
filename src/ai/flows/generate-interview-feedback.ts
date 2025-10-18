@@ -97,10 +97,10 @@ const generateInterviewFeedbackFlow = ai.defineFlow(
       formattedTranscript, // Pass the formatted string to the prompt
     });
 
-    const toolRequest = llmResponse.toolRequests()?.[0];
+    const toolRequest = llmResponse.toolRequests?.[0];
 
     if (!toolRequest || !toolRequest.input) {
-      console.error("LLM did not call the tool or tool input is invalid. Response:", llmResponse.text());
+      console.error("LLM did not call the tool or tool input is invalid. Response:", llmResponse.text);
       throw new Error("The AI failed to generate feedback in the required format. This might be a temporary issue. Please try again.");
     }
     
