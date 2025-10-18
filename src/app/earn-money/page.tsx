@@ -12,6 +12,7 @@ import Link from 'next/link';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
+import CalEmbed from './cal-embed';
 
 
 const steps = [
@@ -136,7 +137,7 @@ export default function EarnMoneyPage() {
                     </div>
                 </section>
 
-                {/* FAQ Section */}
+                 {/* FAQ Section */}
                 <section id="faq">
                     <div className="text-center mb-12">
                         <h2 className="text-4xl font-bold font-headline">Affiliate Program FAQs</h2>
@@ -153,8 +154,21 @@ export default function EarnMoneyPage() {
                         ))}
                     </Accordion>
                 </section>
+                
+                {/* Calendly Embed Section */}
+                <section id="schedule-call">
+                    <div className="text-center mb-12">
+                        <h2 className="text-4xl font-bold font-headline">Connect With Us</h2>
+                        <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">Schedule a 30-minute call with our partnership team to get started.</p>
+                    </div>
+                    <Card className="max-w-4xl mx-auto shadow-lg overflow-hidden">
+                        <CardContent className="p-0">
+                           <CalEmbed />
+                        </CardContent>
+                    </Card>
+                </section>
 
-                 {/* Sign-up Form Section */}
+                {/* Sign-up Form Section */}
                 <section id="signup-form">
                     <div className="text-center mb-12">
                         <h2 className="text-4xl font-bold font-headline">Join the Affiliate Program</h2>
