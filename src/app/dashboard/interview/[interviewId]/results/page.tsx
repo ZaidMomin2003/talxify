@@ -196,13 +196,13 @@ export default function InterviewResultsPage() {
                 {/* Header */}
                 <Card>
                     <CardHeader>
-                        <div className="flex items-start justify-between gap-4">
+                        <div className="flex flex-col-reverse sm:flex-row items-center sm:items-start sm:justify-between gap-4 text-center sm:text-left">
                             <div>
                                  <Badge variant="secondary" className="mb-2">{interview.details.topic}</Badge>
                                  <CardTitle className="text-3xl font-bold font-headline">Performance Report</CardTitle>
                                 <CardDescription>A detailed breakdown of your interview skills.</CardDescription>
                             </div>
-                            <div className="text-right flex-shrink-0">
+                            <div className="flex-shrink-0">
                                 <p className="text-sm text-muted-foreground">Chance of Cracking</p>
                                 <p className="text-5xl font-bold text-primary">{analysis.crackingChance}<span className="text-2xl text-muted-foreground">%</span></p>
                             </div>
