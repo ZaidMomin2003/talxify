@@ -1,3 +1,4 @@
+
 'use server';
 
 import { initializeApp, getApps, App, cert } from 'firebase-admin/app';
@@ -12,6 +13,26 @@ if (!getApps().length) {
   });
 }
 const db = getFirestore();
+
+export async function getAllUserSlugs(): Promise<string[]> {
+    try {
+        const usersCollection = db.collection('users');
+        const snapshot = await usersCollection.select('portfolio.personalInfo.slug').get();
+        if (snapshot.empty) {
+            return [];
+        }
+
+        const slugs = snapshot.docs
+            .map(doc => doc.data()?.portfolio?.personalInfo?.slug)
+            .filter(slug => typeof slug === 'string' && slug.length > 0);
+
+        return slugs;
+    } catch (error) {
+        console.error("Error fetching all user slugs:", error);
+        return [];
+    }
+}
+
 
 export async function getAllUsersAdmin(): Promise<UserData[]> {
     try {

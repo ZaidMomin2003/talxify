@@ -1,6 +1,6 @@
 
 import React from "react";
-import { getUserBySlug } from "../../zaidmin/actions";
+import { getUserBySlug, getAllUserSlugs } from "../../zaidmin/actions";
 import { initialPortfolioData } from "@/lib/initial-data";
 import PortfolioComponent from "./portfolio-component";
 import type { Metadata } from 'next';
@@ -31,6 +31,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
+
+export async function generateStaticParams() {
+  const slugs = await getAllUserSlugs();
+  return slugs.map((slug) => ({
+    slug: slug,
+  }));
+}
+
+
 // This page now fetches data on the server
 export default async function PortfolioPage({ params }: { params: { slug:string } }) {
     const userData = await getUserBySlug(params.slug);
@@ -55,5 +64,3 @@ export default async function PortfolioPage({ params }: { params: { slug:string 
         <PortfolioComponent userData={portfolioData}/>
     )
 }
-
-    
