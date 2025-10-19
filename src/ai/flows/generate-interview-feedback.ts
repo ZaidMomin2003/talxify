@@ -39,7 +39,6 @@ Follow this strict JSON format for your entire response.
 \`\`\`
 
 **Guidelines:**
-- If the candidate's responses are empty or extremely brief, provide a low 'crackingChance' (under 10) and explain in the 'summary' that a full analysis is not possible due to lack of input.
 - Be critical but constructive. Your goal is to help the candidate improve.
 - Base your scores on the entirety of the conversation.
 
@@ -69,18 +68,6 @@ const generateInterviewFeedbackFlow = ai.defineFlow(
       .map(entry => `**${entry.speaker === 'ai' ? 'Interviewer' : 'Candidate'}**: ${entry.text}`)
       .join('\n');
       
-    if (!formattedTranscript || input.transcript.filter(t => t.speaker === 'user').length === 0) {
-      return {
-        crackingChance: 0,
-        fluencyScore: 0,
-        knowledgeScore: 0,
-        confidenceScore: 0,
-        strongConcepts: [],
-        weakConcepts: ['N/A'],
-        summary: "A full analysis was not possible as the candidate did not provide any responses during the interview. To get feedback, please try the interview again and answer the questions to the best of your ability."
-      };
-    }
-
     try {
         const { output } = await prompt({
             topic: input.topic,
