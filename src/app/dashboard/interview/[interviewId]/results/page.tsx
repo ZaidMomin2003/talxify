@@ -47,17 +47,24 @@ function ResultsError({ message }: { message: string }) {
     );
 }
 
-const ScoreGauge = ({ score, label }: { score: number, label: string }) => {
+const ScoreGauge = ({ score, label, icon: Icon }: { score: number, label: string, icon: React.ElementType }) => {
     const circumference = 2 * Math.PI * 45; // 2 * pi * radius
     const offset = circumference - (score / 100) * circumference;
 
     return (
-        <Card className="flex flex-col items-center justify-center text-center p-4">
-            <div className="relative w-32 h-32">
+        <Card className="relative flex flex-col items-center justify-center text-center p-6 overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-50"></div>
+            <div className="relative w-36 h-36">
                 <svg className="w-full h-full" viewBox="0 0 100 100">
+                    <defs>
+                        <linearGradient id="gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" stopColor="hsl(var(--primary))" />
+                            <stop offset="100%" stopColor="hsl(var(--primary) / 0.5)" />
+                        </linearGradient>
+                    </defs>
                     <circle
-                        className="text-muted/50"
-                        strokeWidth="10"
+                        className="text-muted/20"
+                        strokeWidth="8"
                         stroke="currentColor"
                         fill="transparent"
                         r="45"
@@ -65,22 +72,25 @@ const ScoreGauge = ({ score, label }: { score: number, label: string }) => {
                         cy="50"
                     />
                     <circle
-                        className="text-primary"
-                        strokeWidth="10"
+                        strokeWidth="8"
                         strokeDasharray={circumference}
                         strokeDashoffset={offset}
                         strokeLinecap="round"
-                        stroke="currentColor"
+                        stroke="url(#gradient)"
                         fill="transparent"
                         r="45"
                         cx="50"
                         cy="50"
                         transform="rotate(-90 50 50)"
+                        className="transition-all duration-1000 ease-out"
                     />
                 </svg>
-                <span className="absolute inset-0 flex items-center justify-center text-2xl font-bold">{score}</span>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <Icon className="w-6 h-6 text-muted-foreground mb-1"/>
+                    <span className="text-4xl font-bold">{score}<span className="text-xl text-muted-foreground">%</span></span>
+                </div>
             </div>
-            <p className="mt-2 text-sm font-semibold text-muted-foreground">{label}</p>
+            <p className="mt-3 text-base font-semibold text-foreground">{label}</p>
         </Card>
     );
 };
@@ -202,9 +212,9 @@ export default function InterviewResultsPage() {
                 
                 {/* Metrics Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                    <ScoreGauge score={analysis.fluencyScore} label="Fluency" />
-                    <ScoreGauge score={analysis.knowledgeScore} label="Technical Knowledge" />
-                    <ScoreGauge score={analysis.confidenceScore} label="Confidence" />
+                    <ScoreGauge score={analysis.fluencyScore} label="Fluency" icon={MessageSquare} />
+                    <ScoreGauge score={analysis.knowledgeScore} label="Technical Knowledge" icon={BrainCircuit} />
+                    <ScoreGauge score={analysis.confidenceScore} label="Confidence" icon={Star} />
                 </div>
 
                 {/* Summary */}
