@@ -39,7 +39,7 @@ Follow this strict JSON format for your entire response.
 \`\`\`
 
 **Guidelines:**
-- If the candidate's responses are empty or extremely brief, provide a low \`crackingChance\` (under 10) and explain in the \`summary\` that a full analysis is not possible due to lack of input.
+- If the candidate's responses are empty or extremely brief, provide a low 'crackingChance' (under 10) and explain in the 'summary' that a full analysis is not possible due to lack of input.
 - Be critical but constructive. Your goal is to help the candidate improve.
 - Base your scores on the entirety of the conversation.
 
