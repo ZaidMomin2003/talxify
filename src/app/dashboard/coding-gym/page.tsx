@@ -8,8 +8,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Textarea } from '@/components/ui/textarea';
 import { generateCodingQuestions, GenerateCodingQuestionsInput, CodingQuestion } from '@/ai/flows/generate-coding-questions';
 import { analyzeCodingAnswers, AnswerAnalysis } from '@/ai/flows/analyze-coding-answers';
-import { Progress } from '@/components/ui/progress';
-import { Loader2, Sparkles, CheckCircle, XCircle, ChevronLeft, ChevronRight, Trophy } from 'lucide-react';
+import { Loader2, Sparkles, CheckCircle, XCircle, ChevronLeft, Trophy, Timer } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { addActivity, checkAndIncrementUsage } from '@/lib/firebase-service';
@@ -20,6 +19,12 @@ import type { QuizResult } from '@/lib/types';
 
 type Difficulty = 'easy' | 'moderate' | 'difficult';
 type QuizStatus = 'generating' | 'answering' | 'analyzing' | 'feedback' | 'finished';
+
+function formatTime(seconds: number) {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+}
 
 function CodingGymComponent() {
   const router = useRouter();
@@ -33,10 +38,26 @@ function CodingGymComponent() {
   const [difficulty, setDifficulty] = useState<Difficulty>('easy');
   const [status, setStatus] = useState<QuizStatus>('generating');
   const [quizSubmissions, setQuizSubmissions] = useState<{question: CodingQuestion; userAnswer: string; analysis: AnswerAnalysis}[]>([]);
-  
+  const [consecutiveHardCorrect, setConsecutiveHardCorrect] = useState(0);
+  const [questionCount, setQuestionCount] = useState(0);
+  const [timer, setTimer] = useState(0);
+
   const topic = useMemo(() => searchParams.get('topic') || '', [searchParams]);
-  const SOFT_LIMIT = 10;
-  const questionCount = quizSubmissions.length + (status !== 'generating' && status !== 'finished' ? 1 : 0);
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null = null;
+    if (status === 'answering') {
+        interval = setInterval(() => {
+            setTimer(prev => prev + 1);
+        }, 1000);
+    } else {
+        if(interval) clearInterval(interval);
+    }
+    return () => {
+        if(interval) clearInterval(interval);
+    };
+  }, [status]);
+
 
   const fetchNextQuestion = useCallback(async (currentDifficulty: Difficulty) => {
     if (!user) {
@@ -44,9 +65,10 @@ function CodingGymComponent() {
        return;
     }
     setStatus('generating');
+    setTimer(0);
 
     // Only check usage on the very first question of a new session
-    if (quizSubmissions.length === 0) {
+    if (questionCount === 0) {
         const usageCheck = await checkAndIncrementUsage(user.uid);
         if (!usageCheck.success) {
             toast({ title: "Usage Limit Reached", description: usageCheck.message, variant: "destructive" });
@@ -73,9 +95,10 @@ function CodingGymComponent() {
           setQuestion(result.questions[0]);
           setUserAnswer('');
           setAnalysis(null);
+          setQuestionCount(prev => prev + 1);
           setStatus('answering');
       } else {
-           toast({ title: 'No More Questions', description: `The AI could not generate more ${currentDifficulty} questions for this topic.`, variant: 'destructive' });
+           toast({ title: 'No More Questions', description: `The AI could not generate more ${currentDifficulty} questions for this topic. Finishing session.`, variant: 'destructive' });
            setStatus('finished');
            if (quizSubmissions.length > 0) saveQuizToActivity(quizSubmissions);
       }
@@ -84,7 +107,7 @@ function CodingGymComponent() {
       toast({ title: 'Error', description: 'Failed to generate the next question. Please try again.', variant: 'destructive' });
       router.back();
     }
-  }, [topic, router, toast, user, quizSubmissions]);
+  }, [topic, router, toast, user, quizSubmissions, questionCount]);
 
   useEffect(() => {
     fetchNextQuestion('easy');
@@ -109,14 +132,25 @@ function CodingGymComponent() {
             const newSubmissions = [...quizSubmissions, { question, userAnswer, analysis: currentAnalysis }];
             setQuizSubmissions(newSubmissions);
             
-            if (newSubmissions.length >= SOFT_LIMIT) {
-                setStatus('finished');
-                saveQuizToActivity(newSubmissions);
-            } else {
-                if (currentAnalysis.score > 0.75) {
-                    if (difficulty === 'easy') setDifficulty('moderate');
-                    else if (difficulty === 'moderate') setDifficulty('difficult');
+            // Difficulty and completion logic
+            if (currentAnalysis.isCorrect) {
+                 if (difficulty === 'difficult') {
+                    const newCount = consecutiveHardCorrect + 1;
+                    if (newCount >= 2) {
+                        setStatus('finished');
+                        saveQuizToActivity(newSubmissions);
+                    }
+                    setConsecutiveHardCorrect(newCount);
+                } else if (difficulty === 'easy') {
+                    setDifficulty('moderate');
+                    setConsecutiveHardCorrect(0);
+                } else if (difficulty === 'moderate') {
+                    setDifficulty('difficult');
+                    setConsecutiveHardCorrect(0);
                 }
+            } else {
+                setConsecutiveHardCorrect(0);
+                 if (difficulty === 'difficult') setDifficulty('moderate');
             }
         }
     } catch(err) {
@@ -160,25 +194,25 @@ function CodingGymComponent() {
     fetchNextQuestion(difficulty);
   }
 
-  const progress = (quizSubmissions.length / SOFT_LIMIT) * 100;
-
   return (
     <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
       <div className="max-w-4xl mx-auto">
          {/* Header & Progress */}
          <div className="mb-6">
-            <div className="flex justify-between items-center mb-2">
+            <div className="flex justify-between items-center mb-4">
                 <Button variant="outline" size="sm" onClick={() => router.push('/dashboard/arena')}><ChevronLeft className="mr-2"/> Back to Arena</Button>
                 <div className="text-center">
                     <h1 className="font-headline text-2xl font-bold">Code Izanami</h1>
                     <p className="text-muted-foreground text-sm capitalize">{topic}</p>
                 </div>
-                <Badge className="capitalize" variant={difficulty === 'easy' ? 'default' : difficulty === 'moderate' ? 'secondary' : 'destructive'}>{difficulty}</Badge>
+                 <div className="flex items-center gap-4">
+                    <Badge className="capitalize" variant={difficulty === 'easy' ? 'default' : difficulty === 'moderate' ? 'secondary' : 'destructive'}>{difficulty}</Badge>
+                    <div className="flex items-center gap-2 text-muted-foreground font-mono">
+                        <Timer className="h-4 w-4"/>
+                        <span>{formatTime(timer)}</span>
+                    </div>
+                </div>
             </div>
-            <Progress value={progress} className="w-full" />
-            <p className="text-sm text-muted-foreground mt-2 text-center">
-                Question {questionCount > SOFT_LIMIT ? SOFT_LIMIT : questionCount} of {SOFT_LIMIT}
-            </p>
         </div>
 
         {/* Main Card */}
@@ -193,8 +227,8 @@ function CodingGymComponent() {
             {status === 'answering' && question && (
                 <>
                 <CardHeader>
-                    <CardTitle className="text-xl font-semibold">Question {questionCount}</CardTitle>
-                    <CardDescription className="prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: question.questionText }} />
+                    <CardTitle className="text-xl font-semibold text-foreground">Question {questionCount}</CardTitle>
+                    <CardDescription className="prose dark:prose-invert max-w-none text-foreground text-lg" dangerouslySetInnerHTML={{ __html: question.questionText }} />
                 </CardHeader>
                 <CardContent className="flex-grow flex flex-col">
                     <Textarea
@@ -218,7 +252,7 @@ function CodingGymComponent() {
             )}
 
             {status === 'feedback' && analysis && (
-                 <CardContent className="p-6 space-y-4">
+                 <CardContent className="p-6 space-y-6">
                     <div className={cn("p-4 rounded-lg border flex items-center gap-4", analysis.isCorrect ? "bg-green-500/10 border-green-500/50" : "bg-red-500/10 border-red-500/50")}>
                         {analysis.isCorrect ? <CheckCircle className="w-8 h-8 text-green-500"/> : <XCircle className="w-8 h-8 text-red-500"/>}
                         <div>
@@ -228,9 +262,7 @@ function CodingGymComponent() {
                     </div>
                     <div>
                         <h3 className="font-semibold text-foreground mb-2">AI Feedback:</h3>
-                        <div className="p-4 bg-background rounded-md border prose prose-sm dark:prose-invert max-w-none">
-                            <p>{analysis.feedback}</p>
-                        </div>
+                        <div className="p-4 bg-background rounded-md border prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: analysis.feedback }}/>
                     </div>
                     {!analysis.isCorrect && (
                         <div>
@@ -239,7 +271,7 @@ function CodingGymComponent() {
                         </div>
                     )}
                      <div className="text-center pt-4">
-                        <Button onClick={handleNext} size="lg">Next Question <ChevronRight className="ml-2"/></Button>
+                        <Button onClick={handleNext} size="lg">Next Question <ChevronLeft className="ml-2 rotate-180"/></Button>
                     </div>
                 </CardContent>
             )}
