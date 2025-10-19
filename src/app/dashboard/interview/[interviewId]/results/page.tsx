@@ -11,6 +11,7 @@ import type { InterviewActivity, GenerateInterviewFeedbackOutput } from '@/lib/t
 import { AlertTriangle, BarChart3, Bot, BrainCircuit, Check, CheckCircle, ChevronLeft, Flag, Gauge, Info, Loader2, MessageSquare, Percent, Sparkles, Star, Target, TrendingUp, User as UserIcon } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { cn } from '@/lib/utils';
 
 function ResultsLoader() {
     return (
@@ -47,19 +48,19 @@ function ResultsError({ message }: { message: string }) {
     );
 }
 
-const ScoreGauge = ({ score, label, icon: Icon }: { score: number, label: string, icon: React.ElementType }) => {
+const ScoreGauge = ({ score, label, icon: Icon, color }: { score: number, label: string, icon: React.ElementType, color: string }) => {
     const circumference = 2 * Math.PI * 45; // 2 * pi * radius
     const offset = circumference - (score / 100) * circumference;
 
     return (
-        <Card className="relative flex flex-col items-center justify-center text-center p-6 overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-50"></div>
+        <Card className={cn("relative flex flex-col items-center justify-center text-center p-6 overflow-hidden", color)}>
+            <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-current/5 via-transparent to-transparent opacity-50"></div>
             <div className="relative w-36 h-36">
                 <svg className="w-full h-full" viewBox="0 0 100 100">
                     <defs>
-                        <linearGradient id="gradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                            <stop offset="0%" stopColor="hsl(var(--primary))" />
-                            <stop offset="100%" stopColor="hsl(var(--primary) / 0.5)" />
+                        <linearGradient id={`gradient-${label}`} x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" stopColor="currentColor" />
+                            <stop offset="100%" stopColor="currentColor" stopOpacity={0.5} />
                         </linearGradient>
                     </defs>
                     <circle
@@ -76,7 +77,7 @@ const ScoreGauge = ({ score, label, icon: Icon }: { score: number, label: string
                         strokeDasharray={circumference}
                         strokeDashoffset={offset}
                         strokeLinecap="round"
-                        stroke="url(#gradient)"
+                        stroke={`url(#gradient-${label})`}
                         fill="transparent"
                         r="45"
                         cx="50"
@@ -197,12 +198,12 @@ export default function InterviewResultsPage() {
                 <Card>
                     <CardHeader>
                         <div className="flex flex-col-reverse sm:flex-row items-center sm:items-start sm:justify-between gap-4 text-center sm:text-left">
-                            <div>
+                            <div className="sm:text-left text-center w-full">
                                  <Badge variant="secondary" className="mb-2">{interview.details.topic}</Badge>
                                  <CardTitle className="text-3xl font-bold font-headline">Performance Report</CardTitle>
                                 <CardDescription>A detailed breakdown of your interview skills.</CardDescription>
                             </div>
-                            <div className="flex-shrink-0">
+                            <div className="flex-shrink-0 text-center sm:text-right">
                                 <p className="text-sm text-muted-foreground">Chance of Cracking</p>
                                 <p className="text-5xl font-bold text-primary">{analysis.crackingChance}<span className="text-2xl text-muted-foreground">%</span></p>
                             </div>
@@ -212,9 +213,9 @@ export default function InterviewResultsPage() {
                 
                 {/* Metrics Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                    <ScoreGauge score={analysis.fluencyScore} label="Fluency" icon={MessageSquare} />
-                    <ScoreGauge score={analysis.knowledgeScore} label="Technical Knowledge" icon={BrainCircuit} />
-                    <ScoreGauge score={analysis.confidenceScore} label="Confidence" icon={Star} />
+                    <ScoreGauge score={analysis.fluencyScore} label="Fluency" icon={MessageSquare} color="text-blue-500" />
+                    <ScoreGauge score={analysis.knowledgeScore} label="Technical Knowledge" icon={BrainCircuit} color="text-yellow-500" />
+                    <ScoreGauge score={analysis.confidenceScore} label="Confidence" icon={Star} color="text-pink-500" />
                 </div>
 
                 {/* Summary */}
