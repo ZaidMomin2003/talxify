@@ -58,6 +58,13 @@ const FocusChecklistItem = ({ icon, text, isCompleted }: { icon: React.ElementTy
     </div>
 );
 
+const getOverallScore = (analysis: QuizResult['analysis']) => {
+    if (!analysis || analysis.length === 0) return 0;
+    const totalScore = analysis.reduce((sum, item) => sum + item.score, 0);
+    return Math.round((totalScore / analysis.length) * 100);
+};
+
+
 export default function DashboardPage() {
   const router = useRouter();
   const { user } = useAuth();
@@ -80,11 +87,6 @@ export default function DashboardPage() {
 
   const allActivity = userData?.activity || [];
   
-  const getOverallScore = (analysis: QuizResult['analysis']) => {
-    if (!analysis || analysis.length === 0) return 0;
-    const totalScore = analysis.reduce((sum, item) => sum + item.score, 0);
-    return Math.round((totalScore / analysis.length) * 100);
-  };
 
   const { questionsSolved, interviewsCompleted, recentQuizzes, averageScore, hasTakenQuiz, performanceData, completedDays, dailyTaskStatus } = useMemo(() => {
     const quizzes = allActivity.filter(item => item.type === 'quiz') as QuizResult[];
@@ -109,7 +111,6 @@ export default function DashboardPage() {
     const quizTaken = completedQuizzes.length > 0;
     
     const allSessions = [
-        ...completedQuizzes.map(q => ({ type: 'Quiz', timestamp: q.timestamp, score: getOverallScore(q.analysis) })),
         ...completedInterviews.map(i => ({ type: 'Interview', timestamp: i.timestamp, score: i.analysis!.crackingChance }))
     ].sort((a,b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
 
