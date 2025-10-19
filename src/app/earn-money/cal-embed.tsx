@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import Cal, { getCalApi } from "@calcom/embed-react";
@@ -9,6 +10,7 @@ export default function CalEmbed() {
     (async function () {
       const cal = await getCalApi({"namespace":"30min"});
       cal("ui", {"cssVarsPerTheme":{"light":{"cal-brand":"#595858"},"dark":{"cal-brand":"#a60808"}},"hideEventTypeDetails":false,"layout":"month_view"});
+      cal("hide", ["event-meta-hosts", "book-a-meeting"]);
     })();
   }, [])
   return <Cal namespace="30min"

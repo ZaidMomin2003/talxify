@@ -1,4 +1,5 @@
 
+
 import { blogPosts } from '@/lib/blog-data';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -31,8 +32,8 @@ export default function BlogPage() {
                              <Image 
                                 src={latestPost.imageUrl} 
                                 alt={latestPost.title}
-                                layout="fill"
-                                objectFit="cover"
+                                fill
+                                style={{objectFit:"cover"}}
                                 className="transition-transform duration-500 group-hover:scale-105"
                                 data-ai-hint="abstract blog image"
                             />
@@ -60,8 +61,8 @@ export default function BlogPage() {
                                      <Image 
                                         src={post.imageUrl} 
                                         alt={post.title}
-                                        layout="fill"
-                                        objectFit="cover"
+                                        fill
+                                        style={{objectFit:"cover"}}
                                         className="transition-transform duration-500 group-hover:scale-105"
                                         data-ai-hint="abstract blog image"
                                     />

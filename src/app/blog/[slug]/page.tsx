@@ -1,4 +1,5 @@
 
+
 import { blogPosts } from '@/lib/blog-data';
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
@@ -30,6 +31,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     openGraph: {
         title: post.title,
         description: post.description,
+        type: 'article',
+        publishedTime: new Date(post.date).toISOString(),
+        authors: [post.author],
         images: [
             {
                 url: post.imageUrl,
@@ -38,6 +42,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
                 alt: post.title,
             },
         ],
+    },
+    twitter: {
+        card: 'summary_large_image',
+        title: post.title,
+        description: post.description,
+        images: [post.imageUrl],
     },
   }
 }
@@ -67,8 +77,8 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
                 <Image 
                     src={post.imageUrl} 
                     alt={post.title}
-                    layout="fill"
-                    objectFit="cover"
+                    fill
+                    style={{objectFit:"cover"}}
                     priority
                     data-ai-hint="abstract blog image"
                     className="opacity-80"
@@ -108,8 +118,8 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
                                      <Image 
                                         src={related.imageUrl} 
                                         alt={related.title}
-                                        layout="fill"
-                                        objectFit="cover"
+                                        fill
+                                        style={{objectFit:"cover"}}
                                         className="transition-transform duration-300 group-hover:scale-105"
                                         data-ai-hint="abstract blog image"
                                     />

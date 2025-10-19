@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -105,10 +106,12 @@ export default function AppHero() {
       </div>
 
       <div className="fadein-blur relative z-0 mx-auto mb-10 h-[300px] w-[300px] lg:absolute lg:top-1/2 lg:right-1/2 lg:mx-0 lg:mb-0 lg:h-[500px] lg:w-[500px] lg:translate-x-1/2 lg:-translate-y-2/3">
-        <img
+        <Image
           src="/hero.webp"
           alt="Talxify platform visualization"
           className="h-full w-full object-contain drop-shadow-[0_0_35px_#3358ea85] transition-all duration-1000 hover:scale-110"
+           width={500}
+          height={500}
         />
         <motion.div variants={tooltipVariants} className="absolute top-4 -left-4 rounded-lg border border-red-500/30 bg-black/80 p-2 backdrop-blur-md lg:top-1/4 lg:-left-20">
           <div className="flex items-center gap-2">
