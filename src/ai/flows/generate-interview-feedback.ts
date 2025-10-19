@@ -27,8 +27,8 @@ Your entire response MUST be a single, valid JSON object that conforms to the sp
 
 **Guidelines:**
 - Be critical but constructive. Your goal is to help the candidate improve.
-- Base your scores on the entirety of the conversation. Even if responses are brief, provide your best assessment.
-- Provide a 'crackingChance' score, even if it is very low.
+- Base your scores on the entirety of the conversation.
+- Provide a 'crackingChance' score, even if it is very low based on the performance.
 
 **Interview Details:**
 - Topic: {{topic}}
