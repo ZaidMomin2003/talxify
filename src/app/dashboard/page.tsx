@@ -80,6 +80,12 @@ export default function DashboardPage() {
 
   const allActivity = userData?.activity || [];
   
+  const getOverallScore = (analysis: QuizResult['analysis']) => {
+    if (!analysis || analysis.length === 0) return 0;
+    const totalScore = analysis.reduce((sum, item) => sum + item.score, 0);
+    return Math.round((totalScore / analysis.length) * 100);
+  };
+
   const { questionsSolved, interviewsCompleted, recentQuizzes, averageScore, hasTakenQuiz, performanceData, completedDays, dailyTaskStatus } = useMemo(() => {
     const quizzes = allActivity.filter(item => item.type === 'quiz') as QuizResult[];
     const interviews = allActivity.filter(item => item.type === 'interview') as InterviewActivity[];
@@ -176,12 +182,6 @@ export default function DashboardPage() {
         quiz.difficulty.toLowerCase().includes(searchQuery.toLowerCase())
     );
   }, [recentQuizzes, searchQuery]);
-
-  const getOverallScore = (analysis: QuizResult['analysis']) => {
-    if (!analysis || analysis.length === 0) return 0;
-    const totalScore = analysis.reduce((sum, item) => sum + item.score, 0);
-    return Math.round((totalScore / analysis.length) * 100);
-  };
 
   const handleRetakeQuiz = (quiz: QuizResult) => {
      const params = new URLSearchParams({
