@@ -25,24 +25,11 @@ You are an expert AI interview coach. Your task is to analyze the provided inter
 
 Your entire response MUST be a single, valid JSON object that conforms to the specified schema. Do not include any text, markdown, or any characters outside of the JSON object.
 
-Follow this strict JSON format for your entire response.
-\`\`\`json
-{
-  "crackingChance": <A percentage (0-100) representing the candidate's likelihood of passing a real interview based on this performance. Be realistic.>,
-  "fluencyScore": <A score (0-100) for the candidate's language fluency and smoothness of speech.>,
-  "knowledgeScore": <A score (0-100) for the candidate's technical knowledge, accuracy, and depth of answers.>,
-  "confidenceScore": <A score (0-100) for the candidate's perceived confidence and poise.>,
-  "strongConcepts": ["A list of topics or concepts the candidate demonstrated strong understanding of."],
-  "weakConcepts": ["A list of topics or concepts where the candidate showed weakness."],
-  "summary": "A detailed summary of the candidate's overall performance, highlighting strengths, weaknesses, and providing specific, actionable advice for improvement."
-}
-\`\`\`
-
 **Guidelines:**
 - Be critical but constructive. Your goal is to help the candidate improve.
-- Base your scores on the entirety of the conversation.
+- Base your scores on the entirety of the conversation. Even if responses are brief, provide your best assessment.
+- Provide a 'crackingChance' score, even if it is very low.
 
----
 **Interview Details:**
 - Topic: {{topic}}
 - Role: {{role}}
@@ -77,8 +64,7 @@ const generateInterviewFeedbackFlow = ai.defineFlow(
         });
 
         if (!output) {
-            console.error("LLM did not produce valid JSON output.");
-            throw new Error("The AI failed to generate feedback in the required format.");
+            throw new Error("The AI model returned an empty response.");
         }
         
         return output;
