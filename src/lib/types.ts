@@ -97,14 +97,15 @@ export interface OnboardingData {
     companies: string[];
 }
 
-export interface IcebreakerData {
-    isIcebreaker: boolean;
-    name?: string;
-    college?: string;
-    city?: string;
-    skills?: string[];
-    hobbies?: string[];
-}
+export const IcebreakerDataSchema = z.object({
+    isIcebreaker: z.boolean().describe("Whether the text was identified as a self-introduction."),
+    name: z.string().optional().describe("The candidate's first name."),
+    college: z.string().optional().describe("The candidate's college or university."),
+    city: z.string().optional().describe("The city the candidate is from."),
+    skills: z.array(z.string()).optional().describe("A list of technical skills mentioned."),
+    hobbies: z.array(z.string()).optional().describe("A list of hobbies mentioned."),
+});
+export type IcebreakerData = z.infer<typeof IcebreakerDataSchema>;
 
 export interface TodoItem {
     id: string;

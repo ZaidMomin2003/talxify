@@ -5,7 +5,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useSearchParams, useRouter, useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Mic, MicOff, Video, VideoOff, Phone, BrainCircuit, Loader2, Play } from 'lucide-react';
-import { addActivity, checkAndIncrementUsage } from '@/lib/firebase-service';
+import { addActivity, checkAndIncrementUsage, updateUserFromIcebreaker } from '@/lib/firebase-service';
 import { useAuth } from '@/context/auth-context';
 import type { InterviewActivity, TranscriptEntry } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
@@ -13,9 +13,10 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { GoogleGenAI, LiveServerMessage, Modality, Session } from '@google/genai';
 import { createBlob, decode, decodeAudioData } from '@/lib/utils';
+import { extractIcebreakerInfo } from '@/ai/flows/extract-icebreaker-info';
+
 
 // --- Sub-components for better structure ---
-
 const InterviewHeader = ({ status, elapsedTime }: { status: string; elapsedTime: number }) => {
   const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
@@ -116,6 +117,7 @@ export default function LiveInterviewPage() {
   const [isVideoOn, setIsVideoOn] = useState(true);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [session, setSession] = useState<Session | null>(null);
+  const candidateName = useRef<string | null>(null);
   
   const transcriptRef = useRef<TranscriptEntry[]>([]);
   const userVideoEl = useRef<HTMLVideoElement>(null);
@@ -131,6 +133,24 @@ export default function LiveInterviewPage() {
   const audioBufferSources = useRef(new Set<AudioBufferSourceNode>());
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
   
+  const getSystemInstruction = useCallback((name: string | null = null) => {
+    const topic = searchParams.get('topic') || 'general software engineering';
+    const role = searchParams.get('role') || 'Software Engineer';
+    const company = searchParams.get('company') || undefined;
+
+    if (name) {
+      let instruction = `You are Mark, an expert interviewer. Continue the interview with ${name}. Ask your next question about ${topic} for the ${role} role. Your speech should be concise. Do not repeat questions.`;
+      if (company) {
+        instruction += ` Keep the ${company} company style in mind.`
+      }
+      return instruction;
+    }
+    
+    // Initial icebreaker prompt
+    let systemInstruction = `You are Mark, an expert technical interviewer at Talxify. Your first task is to start the interview with a friendly icebreaker. Ask the candidate to introduce themselves. Specifically ask for their name, where they are from, their college, and a few of their skills and hobbies. Keep your introduction very brief and direct. Your speech should be concise.`;
+    return systemInstruction;
+  }, [searchParams]);
+
     useEffect(() => {
         const AudioContext = (window as any).AudioContext || (window as any).webkitAudioContext;
         inputAudioContextRef.current = new AudioContext({ sampleRate: 16000 });
@@ -169,24 +189,37 @@ export default function LiveInterviewPage() {
             nextAudioStartTimeRef.current = 0;
         };
 
+        const handleTurnComplete = async () => {
+          // This block runs after the user has finished speaking their first turn (the introduction).
+          if (transcriptRef.current.length === 2 && !candidateName.current) {
+            setStatus("Analyzing introduction...");
+            const userIntroText = transcriptRef.current.find(t => t.speaker === 'user')?.text || '';
+            
+            if (userIntroText) {
+              const icebreakerData = await extractIcebreakerInfo(userIntroText);
+              if (icebreakerData.isIcebreaker && icebreakerData.name) {
+                candidateName.current = icebreakerData.name;
+                toast({ title: `Nice to meet you, ${icebreakerData.name}!` });
+                 if(user) {
+                  await updateUserFromIcebreaker(user.uid, icebreakerData);
+                }
+              }
+            }
+            
+            // Re-initialize session with the new context
+            await session?.reinitialize({ systemInstruction: getSystemInstruction(candidateName.current) });
+          }
+          setStatus("🔴 Your turn... Speak now.");
+        }
+
         const initSession = async () => {
             if (!process.env.NEXT_PUBLIC_GEMINI_API_KEY) {
                 setStatus("Error: Gemini API Key not configured.");
                 return;
             }
             const client = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY });
-
-            const topic = searchParams.get('topic') || 'general software engineering';
-            const role = searchParams.get('role') || 'Software Engineer';
-            const company = searchParams.get('company') || undefined;
-
-            let systemInstruction = `You are Mark, an expert technical interviewer at Talxify. You are interviewing a candidate for the role of "${role}" on the topic of "${topic}". Start with a friendly introduction, then ask your first question. Always wait for the user to finish speaking. Your speech should be concise.`;
-            if (company) {
-                systemInstruction = `You are Mark, an expert technical interviewer from ${company}. You are interviewing a candidate for the role of "${role}" on the topic of "${topic}". Start with a friendly introduction where you mention you are from ${company}. Ask questions in the style of ${company} (e.g., STAR method for Amazon, open-ended system design for Google). Always wait for the user to finish speaking. Your speech should be concise.`;
-            }
-
             setStatus('Connecting to AI...');
-
+            
             try {
                 const newSession = await client.live.connect({
                     model: 'gemini-2.5-flash-native-audio-preview-09-2025',
@@ -198,22 +231,34 @@ export default function LiveInterviewPage() {
                             const audio = message.serverContent?.modelTurn?.parts[0]?.inlineData;
                             if (audio) playAudio(audio.data);
                             
+                            const lastEntry = transcriptRef.current[transcriptRef.current.length - 1];
+
                             if (message.serverContent?.outputTranscription) {
+                                const newText = message.serverContent.outputTranscription.text;
                                 setStatus("Mark is speaking...");
-                                if (message.serverContent.outputTranscription.partial === false) {
-                                    transcriptRef.current.push({ speaker: 'ai', text: message.serverContent.outputTranscription.text });
+                                if (lastEntry?.speaker === 'ai' && message.serverContent.outputTranscription.partial) {
+                                    // This is a partial update to the AI's speech, we don't add to transcript yet.
+                                } else if (lastEntry?.speaker === 'ai' && !message.serverContent.outputTranscription.partial) {
+                                     lastEntry.text += ` ${newText}`;
+                                } else if (!lastEntry || lastEntry.speaker !== 'ai') {
+                                    transcriptRef.current.push({ speaker: 'ai', text: newText });
                                 }
                             }
 
                             if (message.serverContent?.inputTranscription) {
+                                const newText = message.serverContent.inputTranscription.text;
                                 setStatus("🔴 Your turn... Speak now.");
-                                 if (message.serverContent.inputTranscription.partial === false) {
-                                    transcriptRef.current.push({ speaker: 'user', text: message.serverContent.inputTranscription.text });
-                                 }
+                                if (lastEntry?.speaker === 'user' && message.serverContent.inputTranscription.partial) {
+                                     // This is a partial update to the user's speech
+                                } else if (lastEntry?.speaker === 'user' && !message.serverContent.inputTranscription.partial) {
+                                    lastEntry.text += ` ${newText}`;
+                                } else if (!lastEntry || lastEntry.speaker !== 'user') {
+                                     transcriptRef.current.push({ speaker: 'user', text: newText });
+                                }
                             }
 
                             if (message.serverContent?.turnComplete) {
-                                setStatus("🔴 Your turn... Speak now.");
+                                handleTurnComplete();
                             }
                         },
                         onerror: (e) => {
@@ -231,7 +276,7 @@ export default function LiveInterviewPage() {
                         speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Algenib' } } },
                         inputAudioTranscription: {},
                         outputAudioTranscription: {},
-                        systemInstruction: systemInstruction,
+                        systemInstruction: getSystemInstruction(),
                     },
                 });
                 setSession(newSession);
@@ -359,7 +404,7 @@ export default function LiveInterviewPage() {
         
         try {
             await addActivity(user.uid, activity);
-            router.push(`/dashboard/interview/${interviewId}/transcript`);
+            router.push(`/dashboard/interview/${interviewId}/results`);
         } catch (error: any) {
             console.error("Failed to save activity:", error);
             toast({ 
