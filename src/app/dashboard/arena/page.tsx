@@ -121,13 +121,15 @@ export default function ArenaPage() {
     }, [user, fetchSyllabusAndActivity]);
     
     const { completedDays, dailyTaskStatus } = useMemo(() => {
-        const status: { [day: number]: { learn: boolean; quiz: boolean; interview: boolean; interviewId?: string, isInterviewInProgress?: boolean } } = {};
+        const status: { [day: number]: { learn: boolean; quiz: boolean; interview: boolean; quizId?: string; interviewId?: string, isInterviewInProgress?: boolean } } = {};
 
         syllabus.forEach(day => {
             status[day.day] = { learn: false, quiz: false, interview: false };
         });
+        
+        const sortedActivity = [...activity].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
-        activity.forEach(act => {
+        sortedActivity.forEach(act => {
             const actTopic = act.details.topic.toLowerCase();
             const matchedDay = syllabus.find(d => {
                 const syllabusTopic = d.topic.toLowerCase();
@@ -137,16 +139,24 @@ export default function ArenaPage() {
 
             if (matchedDay && status[matchedDay.day]) {
                  if (act.type === 'note-generation') status[matchedDay.day].learn = true;
-                 if (act.type === 'quiz') status[matchedDay.day].quiz = true;
-                 if (act.type === 'interview') {
-                    const interviewAct = act as InterviewActivity;
-                    // Check if feedback is still pending to determine 'in progress'
-                    if (interviewAct.feedback === "Feedback has not been generated for this interview.") {
-                         status[matchedDay.day].isInterviewInProgress = true;
-                    } else {
-                        status[matchedDay.day].interview = true;
+                 if (act.type === 'quiz') {
+                    // Only set quiz status if it hasn't been set yet for this day (to get the latest)
+                    if (!status[matchedDay.day].quiz) {
+                        status[matchedDay.day].quiz = true;
+                        status[matchedDay.day].quizId = act.id;
                     }
-                    status[matchedDay.day].interviewId = interviewAct.id;
+                 }
+                 if (act.type === 'interview') {
+                    if (!status[matchedDay.day].interview) {
+                        const interviewAct = act as InterviewActivity;
+                        // Check if feedback is still pending to determine 'in progress'
+                        if (interviewAct.feedback === "Feedback has not been generated for this interview.") {
+                            status[matchedDay.day].isInterviewInProgress = true;
+                        } else {
+                            status[matchedDay.day].interview = true;
+                        }
+                        status[matchedDay.day].interviewId = interviewAct.id;
+                    }
                  }
             }
         });
@@ -317,11 +327,20 @@ export default function ArenaPage() {
                                                 <p className="font-semibold text-foreground">{isFinalDay ? "Code Izanami: Final Exam" : "Code Izanami"}</p>
                                                 <p className="text-xs text-muted-foreground">{isFinalDay ? "Adaptive quiz on all topics." : `Master ${day.topic}.`}</p>
                                             </div>
-                                             <DialogTrigger asChild>
-                                                <Button size="sm" disabled={!isUnlocked || !!isNavigating} className="w-24">
-                                                    {isNavigating === `${day.day}-quiz` ? <Loader2 className="animate-spin" /> : dayStatus.quiz ? <><RefreshCw className="mr-2 h-4 w-4"/>Retake</> : isUnlocked ? 'Start' : <Lock className="h-4 w-4" />}
-                                                </Button>
-                                            </DialogTrigger>
+                                            <div className="flex flex-col sm:flex-row gap-2">
+                                                {dayStatus.quiz && dayStatus.quizId && (
+                                                    <Button asChild size="sm" variant="outline" className="w-24">
+                                                        <Link href={`/dashboard/coding-quiz/analysis?id=${dayStatus.quizId}`}>
+                                                            <BarChart className="mr-2 h-4 w-4"/>Result
+                                                        </Link>
+                                                    </Button>
+                                                )}
+                                                <DialogTrigger asChild>
+                                                    <Button size="sm" disabled={!isUnlocked || !!isNavigating} className="w-24">
+                                                        {isNavigating === `${day.day}-quiz` ? <Loader2 className="animate-spin" /> : dayStatus.quiz ? <><RefreshCw className="mr-2 h-4 w-4"/>Retake</> : isUnlocked ? 'Start' : <Lock className="h-4 w-4" />}
+                                                    </Button>
+                                                </DialogTrigger>
+                                            </div>
                                         </div>
                                         <QuizStartDialog day={day.day} topic={day.topic} isFinalDay={isFinalDay} onStart={() => handleStartChallenge(day.day, 'quiz')} />
                                     </Dialog>
@@ -333,7 +352,7 @@ export default function ArenaPage() {
                                             <p className="text-xs text-muted-foreground">{day.day === 1 ? "A friendly chat to get to know you." : (isFinalDay ? "A 20-minute interview on all learned concepts." : "Practice your interview skills.")}</p>
                                         </div>
                                         <div className="flex flex-col sm:flex-row gap-2">
-                                             {dayStatus.interview && (
+                                             {dayStatus.interview && dayStatus.interviewId && (
                                                 <Button asChild size="sm" variant="outline" className="w-24">
                                                     <Link href={`/dashboard/interview/${dayStatus.interviewId}/results`}>
                                                         <BarChart className="mr-2 h-4 w-4"/>Result
