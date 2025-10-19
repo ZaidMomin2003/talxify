@@ -131,32 +131,35 @@ export default function ArenaPage() {
 
         sortedActivity.forEach(act => {
             const actTopic = act.details.topic.toLowerCase();
+            // Use find to match syllabus day based on topic inclusion
             const matchedDay = syllabus.find(d => {
                 const syllabusTopic = d.topic.toLowerCase();
-                // More flexible matching
+                // Special handling for icebreaker
+                if (act.type === 'interview' && (act.details.topic.toLowerCase().includes('icebreaker') || syllabusTopic.includes('icebreaker'))) {
+                    return d.day === 1;
+                }
                 return syllabusTopic.includes(actTopic) || actTopic.includes(syllabusTopic);
             });
 
             if (matchedDay && status[matchedDay.day]) {
-                 if (act.type === 'note-generation') status[matchedDay.day].learn = true;
-                 if (act.type === 'quiz') {
-                    // Only set quiz status if it hasn't been set yet for this day (to get the latest)
-                    if (!status[matchedDay.day].quiz) {
-                        status[matchedDay.day].quiz = true;
-                        status[matchedDay.day].quizId = act.id;
-                    }
+                 if (act.type === 'note-generation') {
+                    status[matchedDay.day].learn = true;
                  }
-                 if (act.type === 'interview') {
-                    if (!status[matchedDay.day].interview) {
-                        const interviewAct = act as InterviewActivity;
-                        // Check if feedback is still pending to determine 'in progress'
-                        if (interviewAct.feedback === "Feedback has not been generated for this interview.") {
-                            status[matchedDay.day].isInterviewInProgress = true;
-                        } else {
-                            status[matchedDay.day].interview = true;
-                        }
-                        status[matchedDay.day].interviewId = interviewAct.id;
+                 if (act.type === 'quiz' && !status[matchedDay.day].quiz) {
+                    status[matchedDay.day].quiz = true;
+                    status[matchedDay.day].quizId = act.id;
+                 }
+                 if (act.type === 'interview' && !status[matchedDay.day].interviewId) {
+                    const interviewAct = act as InterviewActivity;
+                     // An interview is considered "in progress" if feedback hasn't been generated yet.
+                    if (interviewAct.feedback === "Feedback has not been generated for this interview.") {
+                        status[matchedDay.day].isInterviewInProgress = true;
+                    } else {
+                        // Once feedback is present, it's fully complete.
+                        status[matchedDay.day].interview = true;
+                        status[matchedDay.day].isInterviewInProgress = false;
                     }
+                    status[matchedDay.day].interviewId = interviewAct.id;
                  }
             }
         });
@@ -167,8 +170,8 @@ export default function ArenaPage() {
             if (!dayStatus) continue;
 
             const isFinalDay = i === 60;
-            // Day 1 has a special interview, no 'learn' task required
-            const learnRequired = !isFinalDay;
+            // Day 1's learn task is optional as it's an intro
+            const learnRequired = !isFinalDay && i !== 1;
             // Every 3rd day, starting from Day 1, plus the final day has an interview
             const interviewRequired = isFinalDay || (i - 1) % 3 === 0;
             
@@ -204,7 +207,15 @@ export default function ArenaPage() {
             const meetingId = user!.uid + "_" + Date.now();
             const topicForInterview = day === 1 ? 'Icebreaker Introduction' : topic;
             const params = new URLSearchParams({ topic: topicForInterview });
-            router.push(`/dashboard/interview/${meetingId}/instructions?${params.toString()}`);
+            
+            const existingInterviewId = dailyTaskStatus[day]?.interviewId;
+            if (dailyTaskStatus[day]?.isInterviewInProgress && existingInterviewId) {
+                // If interview is in progress, navigate to results to await feedback
+                router.push(`/dashboard/interview/${existingInterviewId}/results`);
+            } else {
+                // Otherwise, start a new one
+                router.push(`/dashboard/interview/${meetingId}/instructions?${params.toString()}`);
+            }
         }
     }
 
@@ -346,27 +357,23 @@ export default function ArenaPage() {
                                     </Dialog>
                                     {interviewIsScheduled && (
                                     <div className="flex items-center gap-4 p-3 rounded-lg bg-muted/50">
-                                        {dayStatus.interview ? <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" /> : <Briefcase className="h-5 w-5 text-green-500 flex-shrink-0" />}
+                                        {(dayStatus.interview || dayStatus.isInterviewInProgress) ? <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" /> : <Briefcase className="h-5 w-5 text-green-500 flex-shrink-0" />}
                                         <div className="flex-1">
                                             <p className="font-semibold text-foreground">{day.day === 1 ? "Icebreaker Interview" : isFinalDay ? "Final Comprehensive Interview" : "Take a Mock Interview"}</p>
                                             <p className="text-xs text-muted-foreground">{day.day === 1 ? "A friendly chat to get to know you." : (isFinalDay ? "A 20-minute interview on all learned concepts." : "Practice your interview skills.")}</p>
                                         </div>
                                         <div className="flex flex-col sm:flex-row gap-2">
-                                             {dayStatus.interview && dayStatus.interviewId && (
+                                             {(dayStatus.interview || dayStatus.isInterviewInProgress) && dayStatus.interviewId ? (
                                                 <Button asChild size="sm" variant="outline" className="w-24">
                                                     <Link href={`/dashboard/interview/${dayStatus.interviewId}/results`}>
                                                         <BarChart className="mr-2 h-4 w-4"/>Result
                                                     </Link>
                                                 </Button>
-                                             )}
+                                             ) : (
                                              <Button size="sm" onClick={() => handleStartChallenge(day.day, 'interview')} disabled={!isUnlocked || !!isNavigating} className="w-24">
-                                                {isNavigating === `${day.day}-interview` ? <Loader2 className="animate-spin" /> : dayStatus.isInterviewInProgress 
-                                                    ? <><History className="mr-2 h-4 w-4"/>Resume</>
-                                                    : dayStatus.interview 
-                                                        ? <><RefreshCw className="mr-2 h-4 w-4"/>Retake</>
-                                                        : isUnlocked ? 'Start' : <Lock className="h-4 w-4" />
-                                                }
+                                                {isNavigating === `${day.day}-interview` ? <Loader2 className="animate-spin" /> : isUnlocked ? 'Start' : <Lock className="h-4 w-4" />}
                                             </Button>
+                                             )}
                                         </div>
                                     </div>
                                     )}
@@ -381,3 +388,5 @@ export default function ArenaPage() {
     </main>
   );
 }
+
+    
