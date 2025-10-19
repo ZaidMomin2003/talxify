@@ -64,6 +64,9 @@ export const updateUserFromIcebreaker = async (userId: string, icebreakerData: I
     const userRef = doc(db, 'users', userId);
     const updateData: { [key: string]: any } = {};
 
+    if (icebreakerData.name) {
+        updateData['portfolio.personalInfo.name'] = icebreakerData.name;
+    }
     if (icebreakerData.city) {
         updateData['portfolio.personalInfo.address'] = icebreakerData.city;
     }

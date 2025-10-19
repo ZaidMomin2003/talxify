@@ -9,10 +9,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, User, KeyRound, ShieldAlert, Trash2, RefreshCw } from 'lucide-react';
-import { updatePassword, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
+import { Loader2, User, KeyRound, ShieldAlert, Trash2, RefreshCw, Edit, Save, X } from 'lucide-react';
+import { updatePassword, EmailAuthProvider, reauthenticateWithCredential, updateProfile } from 'firebase/auth';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { deleteUserDocument, getUserData } from '@/lib/firebase-service';
+import { deleteUserDocument, getUserData, updatePortfolio } from '@/lib/firebase-service';
 import type { UserData, InterviewActivity, QuizResult } from '@/lib/types';
 
 
@@ -22,6 +22,8 @@ export default function ProfilePage() {
     const { toast } = useToast();
 
     const [userData, setUserData] = useState<UserData | null>(null);
+    const [isEditingName, setIsEditingName] = useState(false);
+    const [displayName, setDisplayName] = useState(user?.displayName || '');
     const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
@@ -33,6 +35,7 @@ export default function ProfilePage() {
         if (user) {
             const data = await getUserData(user.uid);
             setUserData(data);
+            setDisplayName(user.displayName || '');
         }
     }, [user]);
 
@@ -102,6 +105,29 @@ export default function ProfilePage() {
         }
         return lastCompletedDay;
     }, [userData]);
+
+
+    const handleNameUpdate = async () => {
+        if (!user || !displayName.trim()) {
+            toast({ title: "Name is required", variant: "destructive" });
+            return;
+        }
+        setIsUpdating(true);
+        try {
+            await updateProfile(user, { displayName: displayName.trim() });
+            if (userData?.portfolio) {
+                const updatedPortfolio = { ...userData.portfolio };
+                updatedPortfolio.personalInfo.name = displayName.trim();
+                await updatePortfolio(user.uid, updatedPortfolio);
+            }
+            toast({ title: "Success", description: "Your name has been updated." });
+            setIsEditingName(false);
+        } catch (error: any) {
+            toast({ title: "Error", description: "Could not update your name.", variant: "destructive" });
+        } finally {
+            setIsUpdating(false);
+        }
+    };
 
 
     const handlePasswordUpdate = async (e: React.FormEvent) => {
@@ -181,7 +207,23 @@ export default function ProfilePage() {
                     <CardContent className="space-y-4">
                         <div className="space-y-1">
                             <Label>Full Name</Label>
-                            <Input value={user.displayName || 'Not set'} disabled />
+                            <div className="flex items-center gap-2">
+                                <Input value={displayName} onChange={(e) => setDisplayName(e.target.value)} disabled={!isEditingName} />
+                                {isEditingName ? (
+                                    <>
+                                        <Button size="icon" onClick={handleNameUpdate} disabled={isUpdating}>
+                                            {isUpdating ? <Loader2 className="animate-spin" /> : <Save />}
+                                        </Button>
+                                        <Button size="icon" variant="ghost" onClick={() => { setIsEditingName(false); setDisplayName(user.displayName || ''); }}>
+                                            <X />
+                                        </Button>
+                                    </>
+                                ) : (
+                                    <Button size="icon" variant="outline" onClick={() => setIsEditingName(true)}>
+                                        <Edit />
+                                    </Button>
+                                )}
+                            </div>
                         </div>
                          <div className="space-y-1">
                             <Label>Email</Label>
