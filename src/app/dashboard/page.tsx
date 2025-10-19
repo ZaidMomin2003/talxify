@@ -84,7 +84,7 @@ export default function DashboardPage() {
     const quizzes = allActivity.filter(item => item.type === 'quiz') as QuizResult[];
     const interviews = allActivity.filter(item => item.type === 'interview') as InterviewActivity[];
     const completedQuizzes = quizzes.filter(item => item.analysis.length > 0);
-    const completedInterviews = interviews.filter(item => item.analysis && item.analysis.overallScore);
+    const completedInterviews = interviews.filter(item => item.analysis && item.analysis.crackingChance !== undefined);
 
     const solved = completedQuizzes.reduce((acc, quiz) => acc + quiz.quizState.length, 0);
 
@@ -93,7 +93,7 @@ export default function DashboardPage() {
         return sum + quizAvg * 100;
     }, 0);
 
-    const totalInterviewScore = completedInterviews.reduce((sum, interview) => sum + (interview.analysis?.overallScore || 0), 0);
+    const totalInterviewScore = completedInterviews.reduce((sum, interview) => sum + (interview.analysis?.crackingChance || 0), 0);
 
     const totalActivities = completedQuizzes.length + completedInterviews.length;
     const totalScore = totalQuizScore + totalInterviewScore;
@@ -102,17 +102,15 @@ export default function DashboardPage() {
     
     const quizTaken = completedQuizzes.length > 0;
     
-    const allQuizSessions = allActivity
-        .filter((a): a is QuizResult => a.type === 'quiz' && a.analysis && a.analysis.length > 0)
-        .sort((a,b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+    const allSessions = [
+        ...completedQuizzes.map(q => ({ type: 'Quiz', timestamp: q.timestamp, score: getOverallScore(q.analysis) })),
+        ...completedInterviews.map(i => ({ type: 'Interview', timestamp: i.timestamp, score: i.analysis!.crackingChance }))
+    ].sort((a,b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
 
-    const perfData = allQuizSessions.map((result, index) => {
-        const score = result.analysis.reduce((sum, item) => sum + item.score, 0) / result.analysis.length * 100;
-        return {
-            name: `Quiz #${index + 1}`,
-            score: Math.round(score),
-        }
-    });
+    const perfData = allSessions.map((session, index) => ({
+        name: `${session.type} #${index + 1}`,
+        score: session.score,
+    }));
 
 
     // Arena progress calculation
@@ -267,9 +265,9 @@ export default function DashboardPage() {
         <div className="lg:col-span-2">
           <Card className="h-full">
               <CardHeader>
-                  <CardTitle>Quiz Performance</CardTitle>
+                  <CardTitle>Performance Over Time</CardTitle>
                   <CardDescription>
-                      Your scores from all coding quizzes over time. Keep practicing to see your progress!
+                      Your scores from quizzes and interviews over time. Keep practicing to see your progress!
                   </CardDescription>
               </CardHeader>
               <CardContent className="h-[300px] w-full pr-6">
@@ -298,7 +296,7 @@ export default function DashboardPage() {
                       <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
                           <BarChart className="w-12 h-12 mb-4" />
                           <p className="font-semibold">No performance data yet</p>
-                          <p className="text-sm">Complete a quiz from the Arena to see your progress.</p>
+                          <p className="text-sm">Complete a quiz or interview to see your progress.</p>
                       </div>
                   )}
               </CardContent>
@@ -447,4 +445,3 @@ export default function DashboardPage() {
     </main>
   );
 }
-
