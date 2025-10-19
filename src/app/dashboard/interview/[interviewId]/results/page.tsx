@@ -51,6 +51,7 @@ function ResultsError({ message }: { message: string }) {
 const ScoreGauge = ({ score, label, icon: Icon, color }: { score: number, label: string, icon: React.ElementType, color: string }) => {
     const circumference = 2 * Math.PI * 45; // 2 * pi * radius
     const offset = circumference - (score / 100) * circumference;
+    const gradientId = `gradient-${label.replace(/\s+/g, '-')}`;
 
     return (
         <Card className={cn("relative flex flex-col items-center justify-center text-center p-6 overflow-hidden", color)}>
@@ -58,7 +59,7 @@ const ScoreGauge = ({ score, label, icon: Icon, color }: { score: number, label:
             <div className="relative w-36 h-36">
                 <svg className="w-full h-full" viewBox="0 0 100 100">
                     <defs>
-                        <linearGradient id={`gradient-${label}`} x1="0%" y1="0%" x2="0%" y2="100%">
+                        <linearGradient id={gradientId} x1="0%" y1="0%" x2="0%" y2="100%">
                             <stop offset="0%" stopColor="currentColor" />
                             <stop offset="100%" stopColor="currentColor" stopOpacity={0.5} />
                         </linearGradient>
@@ -77,7 +78,7 @@ const ScoreGauge = ({ score, label, icon: Icon, color }: { score: number, label:
                         strokeDasharray={circumference}
                         strokeDashoffset={offset}
                         strokeLinecap="round"
-                        stroke={`url(#gradient-${label})`}
+                        stroke={`url(#${gradientId})`}
                         fill="transparent"
                         r="45"
                         cx="50"
