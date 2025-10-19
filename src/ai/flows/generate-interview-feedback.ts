@@ -23,8 +23,9 @@ const prompt = ai.definePrompt({
   prompt: `
 You are an expert AI interview coach. Your task is to analyze the provided interview transcript and provide a detailed, structured evaluation.
 
-Follow this strict JSON format for your entire response. Do not include any text outside of the JSON object.
+Your entire response MUST be a single, valid JSON object that conforms to the specified schema. Do not include any text, markdown, or any characters outside of the JSON object.
 
+Follow this strict JSON format for your entire response.
 \`\`\`json
 {
   "crackingChance": <A percentage (0-100) representing the candidate's likelihood of passing a real interview based on this performance. Be realistic.>,
@@ -38,7 +39,7 @@ Follow this strict JSON format for your entire response. Do not include any text
 \`\`\`
 
 **Guidelines:**
-- If the candidate's responses are empty or extremely brief, provide a low `crackingChance` (under 10) and explain in the `summary` that a full analysis is not possible due to lack of input.
+- If the candidate's responses are empty or extremely brief, provide a low \`crackingChance\` (under 10) and explain in the \`summary\` that a full analysis is not possible due to lack of input.
 - Be critical but constructive. Your goal is to help the candidate improve.
 - Base your scores on the entirety of the conversation.
 
@@ -80,19 +81,33 @@ const generateInterviewFeedbackFlow = ai.defineFlow(
       };
     }
 
-    const { output } = await prompt({
-      topic: input.topic,
-      role: input.role,
-      company: input.company,
-      formattedTranscript,
-    });
+    try {
+        const { output } = await prompt({
+            topic: input.topic,
+            role: input.role,
+            company: input.company,
+            formattedTranscript,
+        });
 
-    if (!output) {
-      console.error("LLM did not produce valid JSON output.");
-      throw new Error("The AI failed to generate feedback in the required format. This might be a temporary issue. Please try again.");
+        if (!output) {
+            console.error("LLM did not produce valid JSON output.");
+            throw new Error("The AI failed to generate feedback in the required format.");
+        }
+        
+        return output;
+    } catch (e: any) {
+         console.error("Error in generateInterviewFeedbackFlow:", e);
+         // Fallback to a structured error object to prevent client-side JSON parsing errors
+         return {
+            crackingChance: 0,
+            fluencyScore: 0,
+            knowledgeScore: 0,
+            confidenceScore: 0,
+            strongConcepts: [],
+            weakConcepts: ['Error'],
+            summary: `The AI failed to generate feedback. The error was: ${e.message || 'Unknown error'}. This is often a temporary issue with the AI model. Please try again later.`
+        };
     }
-    
-    return output;
   }
 );
 
