@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useEffect, useState, useMemo, useCallback, Suspense } from 'react';
+import React, { useEffect, useState, useMemo, useCallback, Suspense, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,7 +18,7 @@ import type { QuizResult } from '@/lib/types';
 
 
 type Difficulty = 'easy' | 'moderate' | 'difficult';
-type QuizStatus = 'generating' | 'answering' | 'analyzing' | 'feedback' | 'finished';
+type QuizStatus = 'idle' |'generating' | 'answering' | 'analyzing' | 'feedback' | 'finished';
 
 function formatTime(seconds: number) {
     const minutes = Math.floor(seconds / 60);
@@ -36,11 +36,12 @@ function CodingGymComponent() {
   const [analysis, setAnalysis] = useState<AnswerAnalysis | null>(null);
   const [userAnswer, setUserAnswer] = useState('');
   const [difficulty, setDifficulty] = useState<Difficulty>('easy');
-  const [status, setStatus] = useState<QuizStatus>('generating');
+  const [status, setStatus] = useState<QuizStatus>('idle');
   const [quizSubmissions, setQuizSubmissions] = useState<{question: CodingQuestion; userAnswer: string; analysis: AnswerAnalysis}[]>([]);
   const [consecutiveHardCorrect, setConsecutiveHardCorrect] = useState(0);
   const [questionCount, setQuestionCount] = useState(0);
   const [timer, setTimer] = useState(0);
+  const hasStartedRef = useRef(false);
 
   const topic = useMemo(() => searchParams.get('topic') || '', [searchParams]);
 
@@ -110,7 +111,10 @@ function CodingGymComponent() {
   }, [topic, router, toast, user, quizSubmissions, questionCount]);
 
   useEffect(() => {
-    fetchNextQuestion('easy');
+    if (!hasStartedRef.current) {
+        hasStartedRef.current = true;
+        fetchNextQuestion('easy');
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   
@@ -191,7 +195,12 @@ function CodingGymComponent() {
   };
 
   const handleNext = () => {
-    fetchNextQuestion(difficulty);
+    if (questionCount >= 10) {
+        setStatus('finished');
+        if (quizSubmissions.length > 0) saveQuizToActivity(quizSubmissions);
+    } else {
+        fetchNextQuestion(difficulty);
+    }
   }
 
   return (
@@ -217,7 +226,7 @@ function CodingGymComponent() {
 
         {/* Main Card */}
         <Card className="shadow-lg min-h-[60vh] flex flex-col">
-            {status === 'generating' && (
+            {(status === 'generating' || status === 'idle') && (
                  <CardContent className="flex flex-col items-center justify-center flex-grow text-center">
                     <Loader2 className="h-12 w-12 animate-spin text-primary mb-4"/>
                     <p className="text-lg text-muted-foreground">Generating next question...</p>
@@ -285,7 +294,7 @@ function CodingGymComponent() {
                     </p>
                     <div className="mt-4 p-4 rounded-lg bg-muted border w-full max-w-xs">
                         <p className="text-sm text-muted-foreground">Overall Score</p>
-                        <p className="text-4xl font-bold text-primary">{Math.round(quizSubmissions.reduce((sum, s) => sum + s.analysis.score, 0) / quizSubmissions.length * 100)}%</p>
+                        <p className="text-4xl font-bold text-primary">{Math.round(quizSubmissions.reduce((sum, s) => sum + s.analysis.score, 0) / (quizSubmissions.length || 1) * 100)}%</p>
                     </div>
                     <Button onClick={() => router.push('/dashboard/arena')} className="mt-6">Back to Arena</Button>
                 </CardContent>

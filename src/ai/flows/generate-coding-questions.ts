@@ -59,7 +59,7 @@ Here is an example of a good, well-defined question: "{{example}}"
 {{/if}}
 
 Each question you generate must be a clear, self-contained problem that a developer can solve in {{language}}. Ensure you generate the exact number of questions requested.
-IMPORTANT: Format the entire question text as a valid HTML string. Use tags like <strong> for bold text, <ul> and <li> for lists, and <code> for inline code. Use <pre><code>...</code></pre> for code blocks. This HTML will be rendered directly in the browser.
+IMPORTANT: Format the entire question text as a valid HTML string. Use tags like <strong> for bold text, <ul> and <li> for lists, and <code> for inline code. For multi-line code blocks, wrap the code in <pre><code>...</code></pre> tags. This HTML will be rendered directly in the browser.
 `,
 });
 
