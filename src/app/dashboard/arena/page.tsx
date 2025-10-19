@@ -127,37 +127,26 @@ export default function ArenaPage() {
             status[day.day] = { learn: false, quiz: false, interview: false };
         });
 
-        // A map to quickly find a day by its topic, case-insensitive
-        const dayTopicMap = new Map(syllabus.map(d => [d.topic.toLowerCase(), d.day]));
-
         activity.forEach(act => {
             const actTopic = act.details.topic.toLowerCase();
-            let matchedDay = -1;
+            const matchedDay = syllabus.find(d => {
+                const syllabusTopic = d.topic.toLowerCase();
+                // More flexible matching
+                return syllabusTopic.includes(actTopic) || actTopic.includes(syllabusTopic);
+            });
 
-            // Direct topic match
-            if (dayTopicMap.has(actTopic)) {
-                matchedDay = dayTopicMap.get(actTopic)!;
-            } else {
-                 // Fallback for partial matches if needed, can be complex
-                 // For now, we rely on exact topic matches for simplicity and reliability
-                 if (act.type === 'interview') {
-                     if (actTopic.includes('icebreaker') && dayTopicMap.has('icebreaker introduction')) matchedDay = dayTopicMap.get('icebreaker introduction')!;
-                     if (actTopic.includes('final') && dayTopicMap.has('final comprehensive review')) matchedDay = dayTopicMap.get('final comprehensive review')!;
-                 }
-            }
-            
-            if (matchedDay !== -1 && status[matchedDay]) {
-                 if (act.type === 'note-generation') status[matchedDay].learn = true;
-                 if (act.type === 'quiz') status[matchedDay].quiz = true;
+            if (matchedDay && status[matchedDay.day]) {
+                 if (act.type === 'note-generation') status[matchedDay.day].learn = true;
+                 if (act.type === 'quiz') status[matchedDay.day].quiz = true;
                  if (act.type === 'interview') {
                     const interviewAct = act as InterviewActivity;
                     // Check if feedback is still pending to determine 'in progress'
-                    if (interviewAct.feedback === "Feedback will be generated on the results page.") {
-                         status[matchedDay].isInterviewInProgress = true;
+                    if (interviewAct.feedback === "Feedback has not been generated for this interview.") {
+                         status[matchedDay.day].isInterviewInProgress = true;
                     } else {
-                        status[matchedDay].interview = true;
+                        status[matchedDay.day].interview = true;
                     }
-                    status[matchedDay].interviewId = interviewAct.id;
+                    status[matchedDay.day].interviewId = interviewAct.id;
                  }
             }
         });
@@ -168,8 +157,8 @@ export default function ArenaPage() {
             if (!dayStatus) continue;
 
             const isFinalDay = i === 60;
-            // Day 1 has a special interview, no 'learn' task
-            const learnRequired = !isFinalDay;
+            // Day 1 has a special interview, no 'learn' task required
+            const learnRequired = i !== 1 && !isFinalDay;
             // Every 3rd day, starting from Day 1, plus the final day has an interview
             const interviewRequired = isFinalDay || (i - 1) % 3 === 0;
             
@@ -203,7 +192,8 @@ export default function ArenaPage() {
             router.push(`/dashboard/coding-gym?topic=${encodeURIComponent(topic)}`);
         } else if (type === 'interview') {
             const meetingId = user!.uid + "_" + Date.now();
-            const params = new URLSearchParams({ topic });
+            const topicForInterview = day === 1 ? 'Icebreaker Introduction' : topic;
+            const params = new URLSearchParams({ topic: topicForInterview });
             router.push(`/dashboard/interview/${meetingId}/instructions?${params.toString()}`);
         }
     }
@@ -262,7 +252,7 @@ export default function ArenaPage() {
                     const isCompleted = day.day <= completedDays;
                     const dayStatus = dailyTaskStatus[day.day] || { learn: false, quiz: false, interview: false };
                     const isFinalDay = day.day === 60;
-                    const learnRequired = !isFinalDay;
+                    const learnRequired = day.day !== 1 && !isFinalDay;
                     const interviewIsScheduled = isFinalDay || (day.day - 1) % 3 === 0;
 
                     return (
@@ -372,5 +362,3 @@ export default function ArenaPage() {
     </main>
   );
 }
-
-    
