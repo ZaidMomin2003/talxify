@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,25 +12,97 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, User, KeyRound, ShieldAlert, Trash2, RefreshCw } from 'lucide-react';
 import { updatePassword, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { deleteUserDocument } from '@/lib/firebase-service';
+import { deleteUserDocument, getUserData } from '@/lib/firebase-service';
+import type { UserData, InterviewActivity, QuizResult } from '@/lib/types';
+
 
 export default function ProfilePage() {
     const { user, loading: authLoading, logout } = useAuth();
     const router = useRouter();
     const { toast } = useToast();
 
+    const [userData, setUserData] = useState<UserData | null>(null);
     const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [isUpdating, setIsUpdating] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const [deleteConfirmText, setDeleteConfirmText] = useState("");
+    
+    const fetchUserData = useCallback(async () => {
+        if (user) {
+            const data = await getUserData(user.uid);
+            setUserData(data);
+        }
+    }, [user]);
 
     useEffect(() => {
         if (!authLoading && !user) {
             router.push('/login');
+            return;
         }
-    }, [user, authLoading, router]);
+        if(user) {
+            fetchUserData();
+        }
+    }, [user, authLoading, router, fetchUserData]);
+    
+    const completedDays = useMemo(() => {
+        if (!userData || !userData.syllabus || !userData.activity) return 0;
+        
+        const { syllabus, activity } = userData;
+        const status: { [day: number]: { learn: boolean; quiz: boolean; interview: boolean; } } = {};
+
+        syllabus.forEach(day => {
+            status[day.day] = { learn: false, quiz: false, interview: false };
+        });
+
+        const sortedActivity = [...activity].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
+        sortedActivity.forEach(act => {
+            const actTopic = act.details.topic.toLowerCase();
+            const matchedDay = syllabus.find(d => {
+                const syllabusTopic = d.topic.toLowerCase();
+                if (act.type === 'interview' && (actTopic.includes('icebreaker') || syllabusTopic.includes('icebreaker'))) {
+                    return d.day === 1;
+                }
+                return syllabusTopic.includes(actTopic) || actTopic.includes(syllabusTopic);
+            });
+
+            if (matchedDay && status[matchedDay.day]) {
+                 if (act.type === 'note-generation') {
+                    status[matchedDay.day].learn = true;
+                 }
+                 if (act.type === 'quiz' && (act as QuizResult).analysis?.length > 0) {
+                    status[matchedDay.day].quiz = true;
+                 }
+                 if (act.type === 'interview' && (act as InterviewActivity).analysis) {
+                    status[matchedDay.day].interview = true;
+                 }
+            }
+        });
+
+        let lastCompletedDay = 0;
+        for (let i = 1; i <= syllabus.length; i++) {
+            const dayStatus = status[i];
+            if (!dayStatus) continue;
+
+            const isFinalDay = i === 60;
+            const learnRequired = !isFinalDay && i !== 1;
+            const interviewRequired = isFinalDay || (i - 1) % 3 === 0;
+            
+            const isDayComplete = dayStatus.quiz && 
+                                  (!learnRequired || dayStatus.learn) && 
+                                  (!interviewRequired || dayStatus.interview);
+
+            if (isDayComplete) {
+                lastCompletedDay = i;
+            } else {
+                break;
+            }
+        }
+        return lastCompletedDay;
+    }, [userData]);
+
 
     const handlePasswordUpdate = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -94,7 +166,6 @@ export default function ProfilePage() {
         );
     }
     
-    // Determine if the user signed in with a social provider
     const isSocialLogin = user.providerData.some(
         provider => provider.providerId === 'google.com' || provider.providerId === 'github.com'
     );
@@ -152,21 +223,24 @@ export default function ProfilePage() {
                     </CardContent>
                 </Card>
 
-                 <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-3"><RefreshCw className="h-6 w-6"/> Account Actions</CardTitle>
-                        <CardDescription>Manage your account settings and preferences.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <Button variant="outline" onClick={() => router.push('/onboarding')} className="h-auto whitespace-normal">
-                            <RefreshCw className="mr-2 h-4 w-4 shrink-0"/>
-                            <span>Redo Onboarding & Regenerate Syllabus</span>
-                        </Button>
-                         <p className="text-sm text-muted-foreground mt-2">
-                           Generate a new 60-day learning plan based on different roles or companies. Your stats will not be affected.
-                        </p>
-                    </CardContent>
-                </Card>
+                {completedDays < 1 && (
+                     <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-3"><RefreshCw className="h-6 w-6"/> Account Actions</CardTitle>
+                            <CardDescription>Manage your account settings and preferences.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <Button variant="outline" onClick={() => router.push('/onboarding')} className="h-auto whitespace-normal">
+                                <RefreshCw className="mr-2 h-4 w-4 shrink-0"/>
+                                <span>Redo Onboarding & Regenerate Syllabus</span>
+                            </Button>
+                            <p className="text-sm text-muted-foreground mt-2">
+                            Generate a new 60-day learning plan based on different roles or companies. Your stats will not be affected. This option is only available on Day 1.
+                            </p>
+                        </CardContent>
+                    </Card>
+                )}
+
 
                  <Card className="border-destructive">
                     <CardHeader>
