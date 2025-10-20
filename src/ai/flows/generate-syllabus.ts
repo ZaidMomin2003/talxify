@@ -40,7 +40,7 @@ const prompt = ai.definePrompt({
   input: {schema: GenerateSyllabusInputSchema},
   output: {schema: GenerateSyllabusOutputSchema},
   config: {
-    model: 'googleai/gemini-2.5-pro',
+    model: 'googleai/gemini-2.5-flash-preview-09-2025',
      safetySettings: [
         {
             category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
