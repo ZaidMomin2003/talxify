@@ -31,9 +31,9 @@ const freePlan = {
 
 const proPlan = {
     name: 'Pro',
-    priceInr: 4999,
-    discountedPriceInr: 3999,
-    priceUsd: 100,
+    priceInr: 7999,
+    discountedPriceInr: 6999,
+    priceUsd: 99,
 };
 
 const proFeatures = [

@@ -27,8 +27,8 @@ const freePlan = {
 const proPlan = {
     name: 'Pro',
     originalPriceInr: '₹9999',
-    priceInr: '₹4999',
-    priceUsd: '$100',
+    priceInr: '₹7999',
+    priceUsd: '$99',
     period: '/60 days',
 };
 
