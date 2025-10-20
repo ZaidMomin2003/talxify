@@ -1,4 +1,5 @@
 
+
 import type { AnswerAnalysis } from "@/ai/flows/analyze-coding-answers";
 import type { GenerateStudyNotesOutput } from "@/ai/flows/generate-study-notes";
 import type { QuizState } from "@/app/dashboard/coding-quiz/quiz/page";
@@ -152,6 +153,10 @@ export interface Subscription {
         count: number;
     };
     aiEnhancementsUsage?: {
+        date: string;
+        count: number;
+    };
+    interviewUsage?: {
         date: string;
         count: number;
     };

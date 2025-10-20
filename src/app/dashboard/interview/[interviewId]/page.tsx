@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
@@ -310,7 +311,7 @@ export default function LiveInterviewPage() {
         return;
     }
     
-    const usage = await checkAndIncrementUsage(user.uid);
+    const usage = await checkAndIncrementUsage(user.uid, 'interview');
     if (!usage.success) {
       toast({ title: 'Usage Limit Reached', description: usage.message, variant: 'destructive' });
       router.push('/dashboard/pricing');

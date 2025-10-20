@@ -129,7 +129,7 @@ export const updateSubscription = async (userId: string, plan: 'pro-60d'): Promi
   await setDoc(userRef, { subscription: subscriptionData }, { merge: true });
 };
 
-export const checkAndIncrementUsage = async (userId: string, usageType: 'general' | 'aiEnhancements' = 'general'): Promise<{ success: boolean; message: string; }> => {
+export const checkAndIncrementUsage = async (userId: string, usageType: 'general' | 'aiEnhancements' | 'interview' = 'general'): Promise<{ success: boolean; message: string; }> => {
     const userRef = doc(db, 'users', userId);
 
     try {
@@ -148,9 +148,20 @@ export const checkAndIncrementUsage = async (userId: string, usageType: 'general
                 usageAllowed = true;
                 return;
             }
-
-            const dailyLimit = usageType === 'aiEnhancements' ? 2 : 5;
-            const usageField = usageType === 'aiEnhancements' ? 'aiEnhancementsUsage' : 'usage';
+            
+            let dailyLimit = 5;
+            let usageField = 'usage';
+            let usageName = 'activities'
+            
+            if (usageType === 'aiEnhancements') {
+                dailyLimit = 2;
+                usageField = 'aiEnhancementsUsage';
+                usageName = 'AI enhancements';
+            } else if (usageType === 'interview') {
+                dailyLimit = 5;
+                usageField = 'interviewUsage';
+                usageName = 'interviews';
+            }
             
             const usageData = userData.subscription?.[usageField];
             const today = format(new Date(), 'yyyy-MM-dd');
@@ -161,7 +172,7 @@ export const checkAndIncrementUsage = async (userId: string, usageType: 'general
                     usageAllowed = true;
                 } else {
                     usageAllowed = false;
-                    message = `You have reached your daily limit of ${dailyLimit} ${usageType === 'aiEnhancements' ? 'AI enhancements' : 'activities'} for the free plan. Upgrade to Pro for unlimited access.`;
+                    message = `You have reached your daily limit of ${dailyLimit} ${usageName} for the free plan. Upgrade to Pro for unlimited access.`;
                 }
             } else {
                 transaction.set(userRef, { subscription: { [usageField]: { date: today, count: 1 } } }, { merge: true });
