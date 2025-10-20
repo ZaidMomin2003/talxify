@@ -347,7 +347,7 @@ function DashboardLayoutContent({
 
     // Process interview results
     const interviewResults = userData.activity.filter(
-        (item): item is InterviewActivity => item.type === 'interview' && item.analysis?.overallScore !== undefined
+        (item): item is InterviewActivity => item.type === 'interview' && item.analysis?.crackingChance !== undefined
     );
 
     interviewResults.forEach(result => {
@@ -355,7 +355,7 @@ function DashboardLayoutContent({
         if (!conceptScores[topic]) {
             conceptScores[topic] = { totalScore: 0, count: 0 };
         }
-        conceptScores[topic].totalScore += result.analysis!.overallScore;
+        conceptScores[topic].totalScore += result.analysis!.crackingChance;
         conceptScores[topic].count += 1;
     });
 
@@ -401,7 +401,7 @@ function DashboardLayoutContent({
     { href: "/dashboard", label: "Dashboard", icon: LayoutGrid },
     { href: "/dashboard/arena", label: "Arena", icon: Swords },
     { href: "/dashboard/resume-builder", label: "Resume Builder", icon: FileText, isFree: true, isTesting: true },
-    { href: "/dashboard/portfolio", label: "Portfolio Builder", icon: User },
+    { href: "/dashboard/portfolio", label: "Portfolio Builder", icon: User, isPro: true },
   ];
   
   const recentActivity = userData?.activity?.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()) || [];
