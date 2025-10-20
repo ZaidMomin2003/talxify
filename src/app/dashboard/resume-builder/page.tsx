@@ -92,16 +92,6 @@ const ResumePreview = React.forwardRef<HTMLDivElement, { resumeData: typeof init
                                 {resumeData.skills.map(skill => <li key={skill.name}>{skill.name}</li>)}
                             </ul>
                         </div>
-                            <div>
-                            <h3 className="font-bold text-base mb-2 uppercase tracking-wider">Education</h3>
-                            {resumeData.education.map((edu, i) => (
-                                <div key={i} className="text-xs">
-                                    <p className="font-bold">{edu.year}</p>
-                                    <p>{edu.degree}</p>
-                                    <p className="font-semibold">{edu.institution}</p>
-                                </div>
-                            ))}
-                        </div>
                         <div>
                             <h3 className="font-bold text-base mb-2 uppercase tracking-wider">Languages</h3>
                             {resumeData.languages.map((lang, i) => (
@@ -125,24 +115,40 @@ const ResumePreview = React.forwardRef<HTMLDivElement, { resumeData: typeof init
                     </div>
                 </div>
                 {/* Right Column */}
-                    <div className="p-6 flex flex-col" style={{ width: '65%' }}>
+                <div className="p-6 flex flex-col" style={{ width: '65%' }}>
                     <h1 className="text-4xl font-bold mb-1" style={{color: resumeData.themeColor}}>{resumeData.personalInfo.name}</h1>
                     <p className="text-lg font-semibold text-gray-500 mb-6">{resumeData.personalInfo.profession}</p>
-                    <div className="border-l-2 pl-4" style={{ borderColor: resumeData.themeColor }}>
-                        <h2 className="text-base font-bold uppercase tracking-widest text-gray-700 mb-2">Summary</h2>
-                        <p className="text-xs text-gray-600 leading-relaxed mb-6">{resumeData.personalInfo.summary}</p>
-                    
-                        <h2 className="text-base font-bold uppercase tracking-widest text-gray-700 mb-2">Experience</h2>
-                        <div className="space-y-4">
-                        {resumeData.experience.map((exp, i) =>(
-                            <div key={i}>
-                                <h3 className="font-bold text-sm">{exp.company} - <span className="font-normal">{exp.role}</span></h3>
-                                <p className="text-xs text-gray-500 font-semibold mb-1">{exp.duration}</p>
-                                <ul className="list-disc list-inside text-xs text-gray-600 leading-snug space-y-1 pl-2">
-                                    {exp.description.split('\n').map((item, key) => item.trim() && <li key={key}>{item.replace(/^- /, '')}</li>)}
-                                </ul>
+                    <div className="border-l-2 pl-4 space-y-6" style={{ borderColor: resumeData.themeColor }}>
+                        <div>
+                            <h2 className="text-base font-bold uppercase tracking-widest text-gray-700 mb-2">Summary</h2>
+                            <p className="text-xs text-gray-600 leading-relaxed">{resumeData.personalInfo.summary}</p>
+                        </div>
+                        
+                        <div>
+                            <h2 className="text-base font-bold uppercase tracking-widest text-gray-700 mb-2">Education</h2>
+                             <div className="space-y-4">
+                                {resumeData.education.map((edu, i) => (
+                                    <div key={i}>
+                                        <h3 className="font-bold text-sm">{edu.institution}</h3>
+                                        <p className="text-xs text-gray-500 font-semibold mb-1">{edu.degree} - {edu.year}</p>
+                                    </div>
+                                ))}
                             </div>
-                        ))}
+                        </div>
+
+                        <div>
+                            <h2 className="text-base font-bold uppercase tracking-widest text-gray-700 mb-2">Experience</h2>
+                            <div className="space-y-4">
+                            {resumeData.experience.map((exp, i) =>(
+                                <div key={i}>
+                                    <h3 className="font-bold text-sm">{exp.company} - <span className="font-normal">{exp.role}</span></h3>
+                                    <p className="text-xs text-gray-500 font-semibold mb-1">{exp.duration}</p>
+                                    <ul className="list-disc list-inside text-xs text-gray-600 leading-snug space-y-1 pl-2">
+                                        {exp.description.split('\n').map((item, key) => item.trim() && <li key={key}>{item.replace(/^- /, '')}</li>)}
+                                    </ul>
+                                </div>
+                            ))}
+                            </div>
                         </div>
                     </div>
                 </div>
