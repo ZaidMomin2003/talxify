@@ -333,7 +333,7 @@ export default function ArenaPage() {
                                                 <p className="font-semibold text-foreground">Learn: {day.topic}</p>
                                                 <p className="text-xs text-muted-foreground">Study the core concepts of today's topic.</p>
                                             </div>
-                                            <Button size="sm" onClick={() => handleStartChallenge(day.day, 'learn')} disabled={!isUnlocked || !!isNavigating} className="w-24">
+                                            <Button onClick={() => handleStartChallenge(day.day, 'learn')} disabled={!isUnlocked || !!isNavigating} className="w-28">
                                                 {isNavigating === `${day.day}-learn` ? <Loader2 className="animate-spin" /> : dayStatus.learn ? <><Eye className="mr-2 h-4 w-4"/>View</> : isUnlocked ? 'Start' : <Lock className="h-4 w-4" />}
                                             </Button>
                                         </div>
@@ -347,14 +347,14 @@ export default function ArenaPage() {
                                             </div>
                                             <div className="flex flex-col sm:flex-row gap-2">
                                                 {dayStatus.quiz && dayStatus.quizId && (
-                                                    <Button asChild size="sm" variant="outline" className="w-24">
+                                                    <Button asChild variant="outline" className="w-28">
                                                         <Link href={`/dashboard/coding-quiz/analysis?id=${dayStatus.quizId}`}>
                                                             <BarChart className="mr-2 h-4 w-4"/>Result
                                                         </Link>
                                                     </Button>
                                                 )}
                                                 <DialogTrigger asChild>
-                                                    <Button size="sm" disabled={!isUnlocked || !!isNavigating} className="w-24">
+                                                    <Button disabled={!isUnlocked || !!isNavigating} className="w-28">
                                                         {isNavigating === `${day.day}-quiz` ? <Loader2 className="animate-spin" /> : dayStatus.quiz ? <><RefreshCw className="mr-2 h-4 w-4"/>Retake</> : isUnlocked ? 'Start' : <Lock className="h-4 w-4" />}
                                                     </Button>
                                                 </DialogTrigger>
@@ -371,14 +371,14 @@ export default function ArenaPage() {
                                         </div>
                                         <div className="flex flex-col sm:flex-row gap-2">
                                              {(dayStatus.interview || dayStatus.isInterviewInProgress) && dayStatus.interviewId && (
-                                                <Button asChild size="sm" variant="outline" className="w-24">
+                                                <Button asChild variant="outline" className="w-28">
                                                     <Link href={`/dashboard/interview/${dayStatus.interviewId}/results`}>
                                                         <BarChart className="mr-2 h-4 w-4"/>Result
                                                     </Link>
                                                 </Button>
                                              )}
                                              
-                                             <Button size="sm" onClick={() => handleStartChallenge(day.day, 'interview')} disabled={!isUnlocked || !!isNavigating}>
+                                             <Button onClick={() => handleStartChallenge(day.day, 'interview')} disabled={!isUnlocked || !!isNavigating} className="w-28">
                                                 {isNavigating === `${day.day}-interview` ? <Loader2 className="animate-spin" /> : 
                                                     (dayStatus.interview || dayStatus.interviewAttempts > 0) ? <><RefreshCw className="mr-2 h-4 w-4"/>Retake</> : 
                                                     isUnlocked ? 'Start' : <Lock className="h-4 w-4" />}
