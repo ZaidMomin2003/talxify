@@ -160,9 +160,10 @@ export default function CodingQuizAnalysisPage() {
                 </div>
                 <div>
                     <h3 className="font-semibold text-foreground mb-2">AI Feedback:</h3>
-                    <div className="p-4 bg-background rounded-md prose prose-sm dark:prose-invert max-w-none">
-                       <p>{analysis[index].feedback}</p>
-                    </div>
+                    <div 
+                      className="p-4 bg-background rounded-md prose prose-sm dark:prose-invert max-w-none"
+                      dangerouslySetInnerHTML={{ __html: analysis[index].feedback }}
+                    />
                 </div>
                 {!analysis[index].isCorrect && (
                     <div>
