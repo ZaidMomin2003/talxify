@@ -13,7 +13,7 @@ import { FileText, PlusCircle, Trash2, Mail, Phone, Linkedin, Github, Globe, Dow
 import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/auth-context';
-import { getUserData, checkAndIncrementResumeExports } from '@/lib/firebase-service';
+import { getUserData, checkAndIncrementResumeExports, checkAndIncrementUsage } from '@/lib/firebase-service';
 import type { UserData, ResumeData } from '@/lib/types';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
@@ -168,6 +168,30 @@ export default function ResumeBuilderPage() {
             if (user) {
                 const data = await getUserData(user.uid);
                 setUserData(data);
+
+                // Pre-fill resume data from user's portfolio if available
+                if (data?.portfolio) {
+                    const portfolio = data.portfolio;
+                    setResumeData({
+                        personalInfo: {
+                            name: portfolio.personalInfo.name || initialResumeState.personalInfo.name,
+                            profession: portfolio.personalInfo.profession || initialResumeState.personalInfo.profession,
+                            email: portfolio.personalInfo.email || initialResumeState.personalInfo.email,
+                            phone: portfolio.personalInfo.phone || initialResumeState.personalInfo.phone,
+                            address: portfolio.personalInfo.address || initialResumeState.personalInfo.address,
+                            linkedin: portfolio.socials.linkedin || initialResumeState.personalInfo.linkedin,
+                            github: portfolio.socials.github || initialResumeState.personalInfo.github,
+                            website: portfolio.socials.website || initialResumeState.personalInfo.website,
+                            summary: portfolio.personalInfo.bio || initialResumeState.personalInfo.summary,
+                        },
+                        themeColor: portfolio.themeColor || initialResumeState.themeColor,
+                        experience: portfolio.experience.map(e => ({ company: e.company, role: e.role, duration: e.duration, description: e.description })) || initialResumeState.experience,
+                        education: portfolio.education.map(e => ({ institution: e.institution, degree: e.degree, year: e.year })) || initialResumeState.education,
+                        skills: portfolio.skills.map(s => ({ name: s.skill })) || initialResumeState.skills,
+                        languages: portfolio.skills.map(s => ({ name: s.skill, proficiency: 'Proficient', level: s.expertise })) || initialResumeState.languages,
+                        hobbies: portfolio.hobbies || initialResumeState.hobbies,
+                    });
+                }
             }
             setIsLoading(false);
         };
@@ -229,6 +253,17 @@ export default function ResumeBuilderPage() {
     };
 
     const handleEnhanceAndDownload = async () => {
+        if (!user) {
+            toast({ title: "Please log in", variant: "destructive"});
+            return;
+        }
+        
+        const usageCheck = await checkAndIncrementUsage(user.uid, 'aiEnhancements');
+        if (!usageCheck.success) {
+            toast({ title: "Usage Limit Reached", description: usageCheck.message, variant: 'destructive' });
+            return;
+        }
+
         setIsEnhancing(true);
         try {
             // Map the current state to the format expected by the AI flow
@@ -236,7 +271,7 @@ export default function ResumeBuilderPage() {
                 personalInfo: resumeData.personalInfo,
                 experience: resumeData.experience,
                 education: resumeData.education,
-                skills: resumeData.skills,
+                skills: resumeData.skills.map(s => ({ skill: s.name, expertise: 80 })), // map to expected format
                 languages: resumeData.languages,
                 hobbies: resumeData.hobbies,
             };
@@ -342,6 +377,7 @@ export default function ResumeBuilderPage() {
                                         resumeData.themeColor === color.hex ? "border-ring scale-110" : "border-transparent"
                                         )}
                                         style={{ backgroundColor: color.hex }}
+                                        aria-label={`Select ${color.name} theme`}
                                     />
                                     <label>{color.name}</label>
                                     </div>
@@ -354,15 +390,15 @@ export default function ResumeBuilderPage() {
                         <CardHeader><CardTitle>Personal Information</CardTitle></CardHeader>
                         <CardContent className="space-y-4">
                             <div className="grid grid-cols-2 gap-4">
-                                <Input placeholder="Full Name" value={resumeData.personalInfo.name} onChange={(e) => handleInfoChange('name', e.target.value)} />
-                                <Input placeholder="Profession" value={resumeData.personalInfo.profession} onChange={(e) => handleInfoChange('profession', e.target.value)} />
+                                <Input aria-label="Full Name" placeholder="Full Name" value={resumeData.personalInfo.name} onChange={(e) => handleInfoChange('name', e.target.value)} />
+                                <Input aria-label="Profession" placeholder="Profession" value={resumeData.personalInfo.profession} onChange={(e) => handleInfoChange('profession', e.target.value)} />
                             </div>
-                             <Input placeholder="Email" value={resumeData.personalInfo.email} onChange={(e) => handleInfoChange('email', e.target.value)} />
-                             <Input placeholder="Phone" value={resumeData.personalInfo.phone} onChange={(e) => handleInfoChange('phone', e.target.value)} />
-                             <Input placeholder="Address" value={resumeData.personalInfo.address} onChange={(e) => handleInfoChange('address', e.target.value)} />
-                             <Input placeholder="LinkedIn Profile URL" value={resumeData.personalInfo.linkedin} onChange={(e) => handleInfoChange('linkedin', e.target.value)} />
-                             <Input placeholder="GitHub Profile URL" value={resumeData.personalInfo.github} onChange={(e) => handleInfoChange('github', e.target.value)} />
-                            <Textarea placeholder="Professional Summary" value={resumeData.personalInfo.summary} onChange={(e) => handleInfoChange('summary', e.target.value)} />
+                             <Input aria-label="Email" placeholder="Email" value={resumeData.personalInfo.email} onChange={(e) => handleInfoChange('email', e.target.value)} />
+                             <Input aria-label="Phone" placeholder="Phone" value={resumeData.personalInfo.phone} onChange={(e) => handleInfoChange('phone', e.target.value)} />
+                             <Input aria-label="Address" placeholder="Address" value={resumeData.personalInfo.address} onChange={(e) => handleInfoChange('address', e.target.value)} />
+                             <Input aria-label="LinkedIn Profile URL" placeholder="LinkedIn Profile URL" value={resumeData.personalInfo.linkedin} onChange={(e) => handleInfoChange('linkedin', e.target.value)} />
+                             <Input aria-label="GitHub Profile URL" placeholder="GitHub Profile URL" value={resumeData.personalInfo.github} onChange={(e) => handleInfoChange('github', e.target.value)} />
+                            <Textarea aria-label="Professional Summary" placeholder="Professional Summary" value={resumeData.personalInfo.summary} onChange={(e) => handleInfoChange('summary', e.target.value)} />
                         </CardContent>
                     </Card>
 
@@ -371,8 +407,8 @@ export default function ResumeBuilderPage() {
                         <CardContent className="space-y-4">
                             {resumeData.skills.map((skill, index) => (
                                 <div key={index} className="flex items-center gap-2">
-                                    <Input placeholder="e.g., React" value={skill.name} onChange={(e) => handleSectionChange('skills', index, 'name', e.target.value)} />
-                                    <Button variant="ghost" size="icon" onClick={() => handleRemoveItem('skills', index)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
+                                    <Input aria-label={`Skill ${index + 1}`} placeholder="e.g., React" value={skill.name} onChange={(e) => handleSectionChange('skills', index, 'name', e.target.value)} />
+                                    <Button variant="ghost" size="icon" onClick={() => handleRemoveItem('skills', index)} aria-label={`Remove skill ${index + 1}`}><Trash2 className="w-4 h-4 text-destructive" /></Button>
                                 </div>
                             ))}
                             <Button variant="outline" className="w-full" onClick={() => handleAddItem('skills')}><PlusCircle className="mr-2"/> Add Skill</Button>
@@ -384,10 +420,10 @@ export default function ResumeBuilderPage() {
                         <CardContent className="space-y-4">
                             {resumeData.education.map((edu, index) => (
                                 <div key={index} className="p-4 border rounded-lg space-y-3 relative">
-                                    <Button variant="ghost" size="icon" className="absolute top-1 right-1" onClick={() => handleRemoveItem('education', index)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
-                                    <Input placeholder="Institution Name" value={edu.institution} onChange={(e) => handleSectionChange('education', index, 'institution', e.target.value)} />
-                                    <Input placeholder="Degree / Certificate" value={edu.degree} onChange={(e) => handleSectionChange('education', index, 'degree', e.target.value)} />
-                                    <Input placeholder="Year of Completion" value={edu.year} onChange={(e) => handleSectionChange('education', index, 'year', e.target.value)} />
+                                    <Button variant="ghost" size="icon" className="absolute top-1 right-1" onClick={() => handleRemoveItem('education', index)} aria-label={`Remove education ${index + 1}`}><Trash2 className="w-4 h-4 text-destructive" /></Button>
+                                    <Input aria-label={`Institution ${index + 1}`} placeholder="Institution Name" value={edu.institution} onChange={(e) => handleSectionChange('education', index, 'institution', e.target.value)} />
+                                    <Input aria-label={`Degree ${index + 1}`} placeholder="Degree / Certificate" value={edu.degree} onChange={(e) => handleSectionChange('education', index, 'degree', e.target.value)} />
+                                    <Input aria-label={`Year of Completion ${index + 1}`} placeholder="Year of Completion" value={edu.year} onChange={(e) => handleSectionChange('education', index, 'year', e.target.value)} />
                                 </div>
                             ))}
                             <Button variant="outline" className="w-full" onClick={() => handleAddItem('education')}><PlusCircle className="mr-2"/> Add Education</Button>
@@ -399,9 +435,9 @@ export default function ResumeBuilderPage() {
                         <CardContent className="space-y-4">
                             {resumeData.languages.map((lang, index) => (
                                 <div key={index} className="p-4 border rounded-lg space-y-3 relative">
-                                    <Button variant="ghost" size="icon" className="absolute top-1 right-1" onClick={() => handleRemoveItem('languages', index)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
-                                    <Input placeholder="Language" value={lang.name} onChange={(e) => handleSectionChange('languages', index, 'name', e.target.value)} />
-                                    <Input placeholder="Proficiency (e.g., Proficient)" value={lang.proficiency} onChange={(e) => handleSectionChange('languages', index, 'proficiency', e.target.value)} />
+                                    <Button variant="ghost" size="icon" className="absolute top-1 right-1" onClick={() => handleRemoveItem('languages', index)} aria-label={`Remove language ${index + 1}`}><Trash2 className="w-4 h-4 text-destructive" /></Button>
+                                    <Input aria-label={`Language ${index + 1}`} placeholder="Language" value={lang.name} onChange={(e) => handleSectionChange('languages', index, 'name', e.target.value)} />
+                                    <Input aria-label={`Proficiency ${index + 1}`} placeholder="Proficiency (e.g., Proficient)" value={lang.proficiency} onChange={(e) => handleSectionChange('languages', index, 'proficiency', e.target.value)} />
                                     <Slider defaultValue={[lang.level]} max={100} step={1} onValueChange={(value) => handleSectionChange('languages', index, 'level', value[0])} />
                                 </div>
                             ))}
@@ -414,8 +450,8 @@ export default function ResumeBuilderPage() {
                         <CardContent className="space-y-4">
                             {resumeData.hobbies.map((hobby, index) => (
                                 <div key={index} className="flex items-center gap-2">
-                                    <Input placeholder="e.g., Recreational Football" value={hobby.name} onChange={(e) => handleSectionChange('hobbies', index, 'name', e.target.value)} />
-                                    <Button variant="ghost" size="icon" onClick={() => handleRemoveItem('hobbies', index)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
+                                    <Input aria-label={`Hobby ${index + 1}`} placeholder="e.g., Recreational Football" value={hobby.name} onChange={(e) => handleSectionChange('hobbies', index, 'name', e.target.value)} />
+                                    <Button variant="ghost" size="icon" onClick={() => handleRemoveItem('hobbies', index)} aria-label={`Remove hobby ${index + 1}`}><Trash2 className="w-4 h-4 text-destructive" /></Button>
                                 </div>
                             ))}
                             <Button variant="outline" className="w-full" onClick={() => handleAddItem('hobbies')}><PlusCircle className="mr-2"/> Add Hobby</Button>
@@ -427,11 +463,11 @@ export default function ResumeBuilderPage() {
                         <CardContent className="space-y-4">
                             {resumeData.experience.map((exp, index) => (
                                 <div key={index} className="p-4 border rounded-lg space-y-3 relative">
-                                    <Button variant="ghost" size="icon" className="absolute top-1 right-1" onClick={() => handleRemoveItem('experience', index)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
-                                    <Input placeholder="Company Name" value={exp.company} onChange={(e) => handleSectionChange('experience', index, 'company', e.target.value)} />
-                                    <Input placeholder="Role / Position" value={exp.role} onChange={(e) => handleSectionChange('experience', index, 'role', e.target.value)} />
-                                    <Input placeholder="Duration (e.g., Jan 2022 - Present)" value={exp.duration} onChange={(e) => handleSectionChange('experience', index, 'duration', e.target.value)} />
-                                    <Textarea placeholder="Description of responsibilities and achievements..." value={exp.description} onChange={(e) => handleSectionChange('experience', index, 'description', e.target.value)} />
+                                    <Button variant="ghost" size="icon" className="absolute top-1 right-1" onClick={() => handleRemoveItem('experience', index)} aria-label={`Remove experience ${index + 1}`}><Trash2 className="w-4 h-4 text-destructive" /></Button>
+                                    <Input aria-label={`Company ${index + 1}`} placeholder="Company Name" value={exp.company} onChange={(e) => handleSectionChange('experience', index, 'company', e.target.value)} />
+                                    <Input aria-label={`Role ${index + 1}`} placeholder="Role / Position" value={exp.role} onChange={(e) => handleSectionChange('experience', index, 'role', e.target.value)} />
+                                    <Input aria-label={`Duration ${index + 1}`} placeholder="Duration (e.g., Jan 2022 - Present)" value={exp.duration} onChange={(e) => handleSectionChange('experience', index, 'duration', e.target.value)} />
+                                    <Textarea aria-label={`Description ${index + 1}`} placeholder="Description of responsibilities and achievements..." value={exp.description} onChange={(e) => handleSectionChange('experience', index, 'description', e.target.value)} />
                                 </div>
                             ))}
                             <Button variant="outline" className="w-full" onClick={() => handleAddItem('experience')}><PlusCircle className="mr-2"/> Add Experience</Button>

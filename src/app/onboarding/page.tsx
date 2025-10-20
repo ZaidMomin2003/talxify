@@ -44,7 +44,7 @@ export default function OnboardingPage() {
   const [direction, setDirection] = useState(1);
   const [isProcessing, setIsProcessing] = useState(false);
   const [formData, setFormData] = useState<OnboardingData>({
-    name: user?.displayName || '',
+    name: '',
     university: '',
     major: '',
     roles: [],
@@ -53,12 +53,23 @@ export default function OnboardingPage() {
   const [customRole, setCustomRole] = useState('');
   const [customCompany, setCustomCompany] = useState('');
 
+  const storageKey = 'onboardingFormData';
 
+  // Load from session storage on mount
   useEffect(() => {
-    if (user && user.displayName && !formData.name) {
+    const savedData = sessionStorage.getItem(storageKey);
+    if (savedData) {
+      setFormData(JSON.parse(savedData));
+    } else if (user?.displayName) {
       setFormData(prev => ({ ...prev, name: user.displayName! }));
     }
-  }, [user, formData.name]);
+  }, [user]);
+
+  // Save to session storage on change
+  useEffect(() => {
+    sessionStorage.setItem(storageKey, JSON.stringify(formData));
+  }, [formData]);
+
 
   const handleNext = () => {
     setDirection(1);
@@ -116,6 +127,8 @@ export default function OnboardingPage() {
         const syllabusResult = await generateSyllabus(syllabusInput);
         
         await updateUserOnboardingData(user.uid, formData, syllabusResult.syllabus);
+        
+        sessionStorage.removeItem(storageKey); // Clear session storage on success
         
         toast({ title: "Onboarding Complete!", description: "Your personalized learning plan is ready." });
         router.push('/dashboard/arena');

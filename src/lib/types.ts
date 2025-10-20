@@ -56,6 +56,7 @@ export const GenerateInterviewFeedbackOutputSchema = z.object({
   fluencyScore: z.number().min(0).max(100).describe("A score (0-100) for the candidate's language fluency and smoothness of speech."),
   knowledgeScore: z.number().min(0).max(100).describe("A score (0-100) for the candidate's technical knowledge and accuracy."),
   confidenceScore: z.number().min(0).max(100).describe("A score (0-100) for the candidate's perceived confidence and poise."),
+  overallScore: z.number().min(0).max(100).describe("A weighted average score (0-100) of all other scores."),
   strongConcepts: z.array(z.string()).describe("A list of topics or concepts the candidate demonstrated strong understanding of."),
   weakConcepts: z.array(z.string()).describe("A list of topics or concepts where the candidate showed weakness."),
   summary: z.string().describe("A detailed summary of the candidate's overall performance, highlighting strengths, weaknesses, and providing specific, actionable advice for improvement.")
@@ -148,6 +149,10 @@ export interface Subscription {
     endDate: string | null;
     usage?: {
         date: string; // YYYY-MM-DD
+        count: number;
+    };
+    aiEnhancementsUsage?: {
+        date: string;
         count: number;
     };
     resumeExports?: {
@@ -270,7 +275,7 @@ const EducationSchema = z.object({
   year: z.string(),
 });
 
-const SkillSchema = z.object({ name: z.string() });
+const SkillSchema = z.object({ skill: z.string(), expertise: z.number() });
 const LanguageSchema = z.object({ name: z.string(), proficiency: z.string(), level: z.number() });
 const HobbySchema = z.object({ name: z.string() });
 
@@ -280,7 +285,7 @@ export const ResumeDataInputSchema = z.object({
     profession: z.string(),
     email: z.string(),
     phone: z.string(),
-    address: z.string(),
+    address: z.string().optional(),
     linkedin: z.string(),
     github: z.string(),
     website: z.string(),

@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState } from 'react';
@@ -105,25 +106,26 @@ export default function LoginPage() {
       toast({ title: "Email required", description: "Please enter your email address.", variant: "destructive" });
       return;
     }
-    // Simple check for social login emails
-    if (resetEmail.endsWith('@gmail.com') || resetEmail.endsWith('@google.com') || resetEmail.includes('github')) {
-        toast({
-            title: "Social Login Detected",
-            description: "It looks like you might use Google or GitHub to sign in. Please use that method or manage your password through your provider.",
-            duration: 7000
-        });
-        return;
-    }
-
+    
     setResetLoading(true);
     try {
       await sendPasswordResetEmail(auth, resetEmail);
-      toast({ title: "Password Reset Email Sent", description: "Check your inbox for instructions to reset your password." });
+      toast({ 
+          title: "Password Reset Email Sent", 
+          description: "If an account exists for this email, you will receive instructions to reset your password. Please also check your spam folder.",
+          duration: 7000
+      });
       setIsForgotPassOpen(false);
       setResetEmail("");
     } catch (error: any) {
       console.error(error);
-      toast({ title: "Error", description: error.message || "Failed to send password reset email.", variant: "destructive" });
+       // We show a generic message even on error to prevent email enumeration.
+       toast({ 
+          title: "Password Reset Email Sent", 
+          description: "If an account exists for this email, you will receive instructions to reset your password. Please also check your spam folder.",
+          duration: 7000
+      });
+      setIsForgotPassOpen(false);
     } finally {
       setResetLoading(false);
     }
@@ -220,7 +222,7 @@ export default function LoginPage() {
                       placeholder="Enter your password"
                       autoComplete="current-password"
                     />
-                    <button type="button" className="absolute inset-y-0 right-0 flex items-center pr-3" onClick={() => setShowPassword(!showPassword)}>
+                    <button type="button" aria-label="Toggle password visibility" className="absolute inset-y-0 right-0 flex items-center pr-3" onClick={() => setShowPassword(!showPassword)}>
                       {showPassword ? <EyeOff className="h-5 w-5 text-muted-foreground" /> : <Eye className="h-5 w-5 text-muted-foreground" />}
                     </button>
                   </div>
@@ -269,7 +271,7 @@ export default function LoginPage() {
         <DialogHeader>
           <DialogTitle>Reset Password</DialogTitle>
           <DialogDescription>
-            Enter your email address below and we'll send you a link to reset your password.
+            Enter your email address below. If an account is associated with it, we'll send a link to reset your password.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-2">

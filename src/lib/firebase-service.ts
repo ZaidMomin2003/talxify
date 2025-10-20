@@ -8,6 +8,7 @@ import type { UserData, Portfolio, StoredActivity, OnboardingData, SurveySubmiss
 import { initialPortfolioData } from './initial-data';
 import type { SyllabusDay } from '@/ai/flows/generate-syllabus';
 import { format, differenceInHours } from 'date-fns';
+import { getUserBySlug } from '@/app/zaidmin/actions';
 
 // --- User Data ---
 
@@ -62,6 +63,9 @@ export const updateUserOnboardingData = async (userId: string, onboardingData: O
 
 export const updateUserFromIcebreaker = async (userId: string, icebreakerData: IcebreakerData): Promise<void> => {
     const userRef = doc(db, 'users', userId);
+    const userData = await getUserData(userId);
+    if (!userData) return;
+
     const updateData: { [key: string]: any } = {};
 
     if (icebreakerData.name) {
@@ -70,7 +74,7 @@ export const updateUserFromIcebreaker = async (userId: string, icebreakerData: I
     if (icebreakerData.city) {
         updateData['portfolio.personalInfo.address'] = icebreakerData.city;
     }
-    if (icebreakerData.college) {
+    if (icebreakerData.college && !userData.portfolio.education.some(e => e.institution === icebreakerData.college)) {
         updateData['portfolio.education'] = arrayUnion({
             institution: icebreakerData.college,
             degree: 'Degree',
@@ -78,17 +82,17 @@ export const updateUserFromIcebreaker = async (userId: string, icebreakerData: I
         });
     }
     if (icebreakerData.hobbies && icebreakerData.hobbies.length > 0) {
-        // Filter out any potential undefined/null values from hobbies before mapping
-        const validHobbies = icebreakerData.hobbies.filter(h => h).map(h => ({ name: h }));
-        if (validHobbies.length > 0) {
-             updateData['portfolio.hobbies'] = arrayUnion(...validHobbies);
+        const existingHobbies = new Set(userData.portfolio.hobbies.map(h => h.name));
+        const newHobbies = icebreakerData.hobbies.filter(h => h && !existingHobbies.has(h)).map(h => ({ name: h }));
+        if (newHobbies.length > 0) {
+            updateData['portfolio.hobbies'] = arrayUnion(...newHobbies);
         }
     }
     if (icebreakerData.skills && icebreakerData.skills.length > 0) {
-        // Filter out any potential undefined/null values from skills before mapping
-        const validSkills = icebreakerData.skills.filter(s => s).map(s => ({ skill: s, expertise: 50 }));
-        if (validSkills.length > 0) {
-            updateData['portfolio.skills'] = arrayUnion(...validSkills);
+        const existingSkills = new Set(userData.portfolio.skills.map(s => s.skill));
+        const newSkills = icebreakerData.skills.filter(s => s && !existingSkills.has(s)).map(s => ({ skill: s, expertise: 50 }));
+        if (newSkills.length > 0) {
+            updateData['portfolio.skills'] = arrayUnion(...newSkills);
         }
     }
     
@@ -125,10 +129,54 @@ export const updateSubscription = async (userId: string, plan: 'pro-60d'): Promi
   await setDoc(userRef, { subscription: subscriptionData }, { merge: true });
 };
 
-export const checkAndIncrementUsage = async (userId: string): Promise<{ success: boolean; message: string; }> => {
-    // Temporarily disable usage limits
-    return { success: true, message: "" };
+export const checkAndIncrementUsage = async (userId: string, usageType: 'general' | 'aiEnhancements' = 'general'): Promise<{ success: boolean; message: string; }> => {
+    const userRef = doc(db, 'users', userId);
+
+    try {
+        let usageAllowed = false;
+        let message = '';
+        await runTransaction(db, async (transaction) => {
+            const userDoc = await transaction.get(userRef);
+            if (!userDoc.exists()) {
+                throw new Error("User document does not exist!");
+            }
+
+            const userData = userDoc.data() as UserData;
+            const isPro = userData.subscription?.plan?.startsWith('pro') && userData.subscription.endDate && new Date(userData.subscription.endDate) > new Date();
+            
+            if (isPro) {
+                usageAllowed = true;
+                return;
+            }
+
+            const dailyLimit = usageType === 'aiEnhancements' ? 2 : 5;
+            const usageField = usageType === 'aiEnhancements' ? 'aiEnhancementsUsage' : 'usage';
+            
+            const usageData = userData.subscription?.[usageField];
+            const today = format(new Date(), 'yyyy-MM-dd');
+
+            if (usageData && usageData.date === today) {
+                if (usageData.count < dailyLimit) {
+                    transaction.update(userRef, { [`subscription.${usageField}.count`]: increment(1) });
+                    usageAllowed = true;
+                } else {
+                    usageAllowed = false;
+                    message = `You have reached your daily limit of ${dailyLimit} ${usageType === 'aiEnhancements' ? 'AI enhancements' : 'activities'} for the free plan. Upgrade to Pro for unlimited access.`;
+                }
+            } else {
+                transaction.set(userRef, { subscription: { [usageField]: { date: today, count: 1 } } }, { merge: true });
+                usageAllowed = true;
+            }
+        });
+        
+        return { success: usageAllowed, message };
+
+    } catch (e) {
+        console.error(`${usageType} usage transaction failed: `, e);
+        return { success: false, message: `An error occurred while checking your usage limit. Please try again.` };
+    }
 }
+
 
 export const checkAndIncrementResumeExports = async (userId: string): Promise<{ success: boolean; message: string; }> => {
     const userRef = doc(db, 'users', userId);
@@ -182,6 +230,13 @@ export const getPortfolio = async (userId: string): Promise<Portfolio | null> =>
 
 export const updatePortfolio = async (userId: string, portfolio: Partial<Portfolio>): Promise<void> => {
   const userRef = doc(db, 'users', userId);
+  // Check for slug uniqueness before updating
+  if (portfolio.personalInfo?.slug) {
+      const existingUser = await getUserBySlug(portfolio.personalInfo.slug);
+      if (existingUser && existingUser.id !== userId) {
+          throw new Error("This portfolio URL is already taken. Please choose another.");
+      }
+  }
   await setDoc(userRef, { portfolio }, { merge: true });
 };
 

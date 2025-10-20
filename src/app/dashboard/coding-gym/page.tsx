@@ -44,6 +44,50 @@ function CodingGymComponent() {
   const hasStartedRef = useRef(false);
 
   const topic = useMemo(() => searchParams.get('topic') || '', [searchParams]);
+  const storageKey = useMemo(() => `izanami_session_${user?.uid}_${topic}`, [user, topic]);
+
+  useEffect(() => {
+    // Load saved session from localStorage
+    const savedSession = localStorage.getItem(storageKey);
+    if (savedSession) {
+      try {
+        const data = JSON.parse(savedSession);
+        setQuestion(data.question);
+        setAnalysis(data.analysis);
+        setUserAnswer(data.userAnswer);
+        setDifficulty(data.difficulty);
+        setStatus(data.status);
+        setQuizSubmissions(data.quizSubmissions);
+        setConsecutiveHardCorrect(data.consecutiveHardCorrect);
+        setQuestionCount(data.questionCount);
+        setTimer(data.timer);
+        hasStartedRef.current = true;
+      } catch (e) {
+        // If parsing fails, start fresh
+        localStorage.removeItem(storageKey);
+        if (!hasStartedRef.current) fetchNextQuestion('easy');
+      }
+    } else {
+      if (!hasStartedRef.current) fetchNextQuestion('easy');
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const saveSessionState = useCallback(() => {
+    const sessionState = {
+        question, analysis, userAnswer, difficulty, status, quizSubmissions, consecutiveHardCorrect, questionCount, timer
+    };
+    if(status !== 'finished' && status !== 'idle') {
+        localStorage.setItem(storageKey, JSON.stringify(sessionState));
+    } else {
+        localStorage.removeItem(storageKey);
+    }
+  }, [question, analysis, userAnswer, difficulty, status, quizSubmissions, consecutiveHardCorrect, questionCount, timer, storageKey]);
+  
+  useEffect(() => {
+    saveSessionState();
+  }, [saveSessionState]);
+
 
   useEffect(() => {
     let interval: NodeJS.Timeout | null = null;
@@ -65,6 +109,7 @@ function CodingGymComponent() {
        router.push('/login');
        return;
     }
+    hasStartedRef.current = true;
     setStatus('generating');
     setTimer(0);
 
@@ -109,14 +154,7 @@ function CodingGymComponent() {
       router.back();
     }
   }, [topic, router, toast, user, quizSubmissions, questionCount]);
-
-  useEffect(() => {
-    if (!hasStartedRef.current) {
-        hasStartedRef.current = true;
-        fetchNextQuestion('easy');
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  
   
 
   const handleSubmitAnswer = async () => {
@@ -188,6 +226,7 @@ function CodingGymComponent() {
 
     try {
       await addActivity(user.uid, quizResult);
+      localStorage.removeItem(storageKey);
       toast({ title: "Progress Saved", description: "Your Code Izanami session has been saved to your activity."});
     } catch (err) {
       console.error("Failed to save Izanami results:", err);

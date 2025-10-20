@@ -1,4 +1,5 @@
 
+
 import React from "react";
 import { getUserBySlug, getAllUserSlugs } from "../../zaidmin/actions";
 import { initialPortfolioData } from "@/lib/initial-data";
@@ -13,12 +14,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const userData = await getUserBySlug(params.slug);
   const portfolio = userData?.portfolio ?? initialPortfolioData.portfolio;
 
+  const title = `${portfolio.personalInfo.name} - ${portfolio.personalInfo.profession}`;
+  const description = portfolio.personalInfo.bio;
+
   return {
-    title: `${portfolio.personalInfo.name} - ${portfolio.personalInfo.profession}`,
-    description: portfolio.personalInfo.bio,
+    title: title,
+    description: description,
     openGraph: {
-        title: `${portfolio.personalInfo.name} - ${portfolio.personalInfo.profession}`,
-        description: portfolio.personalInfo.bio,
+        title: title,
+        description: description,
         images: [
             {
                 url: portfolio.personalInfo.bannerUrl || 'https://placehold.co/1200x630.png',
@@ -28,6 +32,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
             },
         ],
     },
+    twitter: {
+        card: 'summary_large_image',
+        title: title,
+        description: description,
+        images: [portfolio.personalInfo.bannerUrl || 'https://placehold.co/1200x630.png'],
+    }
   }
 }
 

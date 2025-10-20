@@ -187,13 +187,14 @@ export default function AppHero() {
             </motion.div>
             <motion.div variants={itemVariants} className="mx-auto flex items-center gap-3 rounded-full border border-slate-800 bg-slate-900/50 px-3 py-1 backdrop-blur-sm lg:mx-0 lg:ml-auto">
               <div className="flex -space-x-2">
-                {[12, 32, 45, 11, 23].map((i) => (
+                {Array.from({ length: 5 }).map((_, i) => (
                     <Image key={i}
-                        src={`https://randomuser.me/api/portraits/thumb/men/${i}.jpg`}
-                        alt={`user ${i}`}
+                        src={`https://picsum.photos/seed/${10 + i}/24/24`}
+                        alt={`user ${i + 1}`}
                         width={24}
                         height={24}
                         className="h-6 w-6 rounded-full border-2 border-slate-900"
+                        data-ai-hint="person face"
                     />
                 ))}
               </div>

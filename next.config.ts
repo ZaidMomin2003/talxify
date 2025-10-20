@@ -14,11 +14,11 @@ const nextConfig: NextConfig = {
     remotePatterns: [
         {
             protocol: 'https',
-            hostname: 'drive.google.com',
+            hostname: 'res.cloudinary.com',
         },
         {
             protocol: 'https',
-            hostname: 'res.cloudinary.com',
+            hostname: 'picsum.photos',
         },
         {
             protocol: 'https',
@@ -27,6 +27,10 @@ const nextConfig: NextConfig = {
         {
             protocol: 'https',
             hostname: 'lh3.googleusercontent.com',
+        },
+        {
+          protocol: 'https',
+          hostname: 'drive.google.com',
         },
     ]
   },
@@ -48,5 +52,3 @@ const nextConfig: NextConfig = {
 };
 
 export default nextConfig;
-
-    

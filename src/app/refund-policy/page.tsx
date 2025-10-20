@@ -4,8 +4,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CircleDollarSign } from 'lucide-react';
 import Link from 'next/link';
+import { format } from 'date-fns';
 
 export default function RefundPolicyPage() {
+  const effectiveDate = format(new Date(), 'MMMM dd, yyyy');
+
   return (
     <main className="flex-1 bg-background py-12 sm:py-16 lg:py-20">
       <div className="container mx-auto max-w-4xl px-4 md:px-6">
@@ -13,7 +16,7 @@ export default function RefundPolicyPage() {
           <CardHeader className="text-center border-b pb-6">
             <CircleDollarSign className="mx-auto h-12 w-12 text-primary mb-4" />
             <h1 className="font-headline text-4xl font-bold">Refund and Cancellation Policy</h1>
-            <p className="text-muted-foreground">Effective Date: August 06, 2024</p>
+            <p className="text-muted-foreground">Effective Date: {effectiveDate}</p>
           </CardHeader>
           <CardContent className="prose prose-stone dark:prose-invert max-w-none space-y-6 p-6 md:p-8">
             <p>
