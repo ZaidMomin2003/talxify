@@ -3,7 +3,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check, Star, Loader2, UserRound, Sparkles, Info, Ticket, Paypal } from 'lucide-react';
+import { Check, Star, Loader2, UserRound, Sparkles, Info, Ticket, CreditCard } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import React, { useState } from 'react';
 import { createOrder, verifyPayment } from '@/app/actions/razorpay';
@@ -149,6 +149,8 @@ export default function PricingPage() {
 
             const order = await response.json();
             if (order.id) {
+                // We need to set the custom_id on the server when creating the order
+                // For now, this will just redirect
                 window.location.href = order.links.find((link: any) => link.rel === 'approve').href;
             } else {
                 throw new Error(order.error || 'Failed to create PayPal order.');
@@ -302,7 +304,7 @@ export default function PricingPage() {
                                     {loadingPlan === 'paypal' ? (
                                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                     ) : (
-                                        <><Paypal className="mr-2 h-4 w-4"/> Pay with PayPal</>
+                                        <><CreditCard className="mr-2 h-4 w-4"/> Pay with PayPal</>
                                     )}
                                 </Button>
                             )}
