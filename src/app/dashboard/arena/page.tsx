@@ -282,8 +282,6 @@ export default function ArenaPage() {
                     const isFinalDay = day.day === 60;
                     const learnRequired = !isFinalDay;
                     const interviewIsScheduled = isFinalDay || (day.day - 1) % 3 === 0;
-                    const interviewAttemptsLeft = 5 - dayStatus.interviewAttempts;
-
 
                     return (
                         <Dialog key={day.day} open={dialogOpenDay === day.day} onOpenChange={(open) => !open && setDialogOpenDay(null)}>
@@ -370,7 +368,6 @@ export default function ArenaPage() {
                                         <div className="flex-1">
                                             <p className="font-semibold text-foreground">{day.day === 1 ? "Icebreaker Interview" : isFinalDay ? "Final Comprehensive Interview" : "Take a Mock Interview"}</p>
                                             <p className="text-xs text-muted-foreground">{day.day === 1 ? "A friendly chat to get to know you." : (isFinalDay ? "A 20-minute interview on all learned concepts." : "Practice your interview skills.")}</p>
-                                            {dayStatus.interviewAttempts > 0 && <Badge variant="secondary" className="mt-1">{interviewAttemptsLeft} attempt{interviewAttemptsLeft !== 1 ? 's' : ''} left</Badge>}
                                         </div>
                                         <div className="flex flex-col sm:flex-row gap-2">
                                              {(dayStatus.interview || dayStatus.isInterviewInProgress) && dayStatus.interviewId && (
@@ -381,7 +378,7 @@ export default function ArenaPage() {
                                                 </Button>
                                              )}
                                              
-                                             <Button size="sm" onClick={() => handleStartChallenge(day.day, 'interview')} disabled={!isUnlocked || !!isNavigating || interviewAttemptsLeft <= 0}>
+                                             <Button size="sm" onClick={() => handleStartChallenge(day.day, 'interview')} disabled={!isUnlocked || !!isNavigating}>
                                                 {isNavigating === `${day.day}-interview` ? <Loader2 className="animate-spin" /> : 
                                                     (dayStatus.interview || dayStatus.interviewAttempts > 0) ? <><RefreshCw className="mr-2 h-4 w-4"/>Retake</> : 
                                                     isUnlocked ? 'Start' : <Lock className="h-4 w-4" />}
