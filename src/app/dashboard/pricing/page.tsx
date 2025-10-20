@@ -244,23 +244,21 @@ export default function PricingPage() {
                                     </li>
                                 ))}
                             </ul>
-                            {currency === 'inr' && (
-                                 <div className="space-y-2 pt-4 border-t">
-                                    <Label htmlFor="coupon" className="flex items-center gap-2 text-muted-foreground"><Ticket className="h-4 w-4"/> Have a coupon?</Label>
-                                    <div className="flex gap-2">
-                                        <Input 
-                                            id="coupon" 
-                                            placeholder="Enter FIRST1000"
-                                            value={couponCode}
-                                            onChange={(e) => setCouponCode(e.target.value)}
-                                            disabled={isCouponApplied}
-                                        />
-                                        <Button onClick={handleApplyCoupon} disabled={isCouponApplied}>
-                                            {isCouponApplied ? 'Applied' : 'Apply'}
-                                        </Button>
-                                    </div>
+                            <div className="space-y-2 pt-4 border-t">
+                                <Label htmlFor="coupon" className="flex items-center gap-2 text-muted-foreground"><Ticket className="h-4 w-4"/> Have a coupon?</Label>
+                                <div className="flex gap-2">
+                                    <Input 
+                                        id="coupon" 
+                                        placeholder="Enter coupon code"
+                                        value={couponCode}
+                                        onChange={(e) => setCouponCode(e.target.value)}
+                                        disabled={isCouponApplied}
+                                    />
+                                    <Button onClick={handleApplyCoupon} disabled={isCouponApplied}>
+                                        {isCouponApplied ? 'Applied' : 'Apply'}
+                                    </Button>
                                 </div>
-                            )}
+                            </div>
                         </CardContent>
                         <CardFooter>
                             <Button
