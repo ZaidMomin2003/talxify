@@ -3,7 +3,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check, Star, Loader2, UserRound, Sparkles, Info, Ticket } from 'lucide-react';
+import { Check, Star, Loader2, UserRound, Sparkles, Info, Ticket, Paypal } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import React, { useState } from 'react';
 import { createOrder, verifyPayment } from '@/app/actions/razorpay';
@@ -76,22 +76,13 @@ export default function PricingPage() {
         }
     };
 
-
-    const handlePayment = async () => {
+    const handleRazorpayPayment = async () => {
         if (!user) {
             toast({ title: "Authentication Error", description: "You must be logged in to make a purchase.", variant: "destructive" });
             return;
         }
 
-        if (currency === 'usd') {
-            toast({
-                title: 'Coming Soon!',
-                description: 'International payments will be available shortly. Please check back later.',
-            });
-            return;
-        }
-
-        setLoadingPlan(proPlan.name);
+        setLoadingPlan('razorpay');
 
         try {
             const order = await createOrder(finalPriceInr);
@@ -142,6 +133,33 @@ export default function PricingPage() {
             setLoadingPlan(null);
         }
     };
+
+    const handlePaypalPayment = async () => {
+        if (!user) {
+            toast({ title: "Authentication Error", description: "You must be logged in.", variant: "destructive" });
+            return;
+        }
+        setLoadingPlan('paypal');
+        try {
+            const response = await fetch('/api/paypal/create-order', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ amount: proPlan.priceUsd }),
+            });
+
+            const order = await response.json();
+            if (order.id) {
+                window.location.href = order.links.find((link: any) => link.rel === 'approve').href;
+            } else {
+                throw new Error(order.error || 'Failed to create PayPal order.');
+            }
+        } catch (error: any) {
+            console.error(error);
+            toast({ title: "PayPal Error", description: error.message, variant: "destructive" });
+        } finally {
+            setLoadingPlan(null);
+        }
+    }
 
     return (
         <>
@@ -261,18 +279,33 @@ export default function PricingPage() {
                             </div>
                         </CardContent>
                         <CardFooter>
-                            <Button
-                                className="w-full"
-                                size="lg"
-                                onClick={handlePayment}
-                                disabled={loadingPlan === proPlan.name}
-                            >
-                                {loadingPlan === proPlan.name ? (
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                ) : (
-                                    'Upgrade to Pro'
-                                )}
-                            </Button>
+                            {currency === 'inr' ? (
+                                <Button
+                                    className="w-full"
+                                    size="lg"
+                                    onClick={handleRazorpayPayment}
+                                    disabled={loadingPlan === 'razorpay'}
+                                >
+                                    {loadingPlan === 'razorpay' ? (
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    ) : (
+                                        'Upgrade to Pro'
+                                    )}
+                                </Button>
+                            ) : (
+                                 <Button
+                                    className="w-full"
+                                    size="lg"
+                                    onClick={handlePaypalPayment}
+                                    disabled={loadingPlan === 'paypal'}
+                                >
+                                    {loadingPlan === 'paypal' ? (
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    ) : (
+                                        <><Paypal className="mr-2 h-4 w-4"/> Pay with PayPal</>
+                                    )}
+                                </Button>
+                            )}
                         </CardFooter>
                     </Card>
                 </div>
