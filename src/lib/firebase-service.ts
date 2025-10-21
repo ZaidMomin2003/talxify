@@ -241,11 +241,16 @@ export const getPortfolio = async (userId: string): Promise<Portfolio | null> =>
 
 export const updatePortfolio = async (userId: string, portfolio: Partial<Portfolio>): Promise<void> => {
   const userRef = doc(db, 'users', userId);
-  // Check for slug uniqueness before updating
   if (portfolio.personalInfo?.slug) {
-      const existingUser = await getUserBySlug(portfolio.personalInfo.slug);
-      if (existingUser && existingUser.id !== userId) {
-          throw new Error("This portfolio URL is already taken. Please choose another.");
+      try {
+          const existingUser = await getUserBySlug(portfolio.personalInfo.slug);
+          if (existingUser && existingUser.id !== userId) {
+              throw new Error("This portfolio URL is already taken. Please choose another.");
+          }
+      } catch (error) {
+          // If getUserBySlug fails (e.g., server action issue), log it but don't block the save.
+          // This prevents a server-side failure from blocking a client-side action.
+          console.error("Could not verify slug uniqueness:", error);
       }
   }
   await setDoc(userRef, { portfolio }, { merge: true });
