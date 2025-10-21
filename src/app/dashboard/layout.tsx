@@ -555,7 +555,7 @@ function DashboardLayoutContent({
            <div className="p-2 space-y-2">
             <Dialog open={isHelpOpen} onOpenChange={setIsHelpOpen}>
               <DialogTrigger asChild>
-                 <div className="group cursor-pointer rounded-lg border-2 border-dashed border-border p-4 text-center hover:border-primary hover:bg-primary/5 transition-all">
+                 <div className="hidden md:block group cursor-pointer rounded-lg border-2 border-dashed border-border p-4 text-center hover:border-primary hover:bg-primary/5 transition-all">
                     <div className="flex justify-center mb-2">
                         <div className="rounded-full bg-primary/10 p-3 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
                             <Rocket className="h-6 w-6" />
