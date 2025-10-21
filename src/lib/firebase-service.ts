@@ -2,13 +2,34 @@
 
 'use client';
 
-import { doc, getDoc, setDoc, updateDoc, arrayUnion, collection, getDocs, addDoc, serverTimestamp, runTransaction, deleteDoc, increment, arrayRemove } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, arrayUnion, collection, getDocs, addDoc, serverTimestamp, runTransaction, deleteDoc, increment, arrayRemove, Timestamp } from 'firebase/firestore';
 import { db } from './firebase';
 import type { UserData, Portfolio, StoredActivity, OnboardingData, SurveySubmission, IcebreakerData, TodoItem } from './types';
 import { initialPortfolioData } from './initial-data';
 import type { SyllabusDay } from '@/ai/flows/generate-syllabus';
 import { format, differenceInHours } from 'date-fns';
 import { getUserBySlug } from '@/app/zaidmin/actions';
+
+
+// Helper function to convert Firestore Timestamps to ISO strings
+const convertTimestamps = (data: any): any => {
+    if (!data) return data;
+    if (Array.isArray(data)) {
+        return data.map(item => convertTimestamps(item));
+    }
+    if (typeof data === 'object' && data !== null) {
+        if (data instanceof Timestamp) {
+            return data.toDate().toISOString();
+        }
+        const newData: { [key: string]: any } = {};
+        for (const key in data) {
+            newData[key] = convertTimestamps(data[key]);
+        }
+        return newData;
+    }
+    return data;
+};
+
 
 // --- User Data ---
 
@@ -41,7 +62,9 @@ export const getUserData = async (userId: string): Promise<UserData | null> => {
   const userRef = doc(db, 'users', userId);
   const docSnap = await getDoc(userRef);
   if (docSnap.exists()) {
-    return { id: docSnap.id, ...docSnap.data() } as UserData;
+    const data = docSnap.data();
+    const serializableData = convertTimestamps(data);
+    return { id: docSnap.id, ...serializableData } as UserData;
   }
   return null;
 };
@@ -163,7 +186,7 @@ export const checkAndIncrementUsage = async (userId: string, usageType: 'general
                 usageName = 'interviews';
             }
             
-            const usageData = userData.subscription?.[usageField];
+            const usageData = userData.subscription?.[usageField as keyof UserData['subscription']];
             const today = format(new Date(), 'yyyy-MM-dd');
 
             if (usageData && usageData.date === today) {

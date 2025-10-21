@@ -113,7 +113,7 @@ export interface TodoItem {
     id: string;
     text: string;
     completed: boolean;
-    createdAt: any; // Can be serverTimestamp or string
+    createdAt?: any; // Can be serverTimestamp or string
 }
 
 
