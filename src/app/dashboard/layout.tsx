@@ -57,6 +57,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 
 function TodoListPopup({ todos, userId, onDataRefresh }: { todos: TodoItem[], userId: string, onDataRefresh: () => void }) {
@@ -540,6 +541,14 @@ function DashboardLayoutContent({
                 </SidebarMenuButton>
               </SidebarMenuItem>
             ))}
+             <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={pathname.startsWith('/dashboard/draft')}>
+                    <Link href="/dashboard/draft">
+                        <FlaskConical />
+                        <span>Draft</span>
+                    </Link>
+                </SidebarMenuButton>
+             </SidebarMenuItem>
           </SidebarMenu>
           <SidebarSeparator />
           <SidebarGroup>
