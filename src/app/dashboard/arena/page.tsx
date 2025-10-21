@@ -57,14 +57,14 @@ function QuizStartDialog({ day, topic, isFinalDay, onStart }: { day: number, top
                     </div>
                 </div>
                 <div className="flex items-start gap-4 p-3 rounded-lg bg-muted/50">
-                    <BrainCircuit className="h-5 w-5 text-blue-500 flex-shrink-0 mt-1" />
+                    <Trophy className="h-5 w-5 text-green-500 flex-shrink-0 mt-1" />
                     <div>
-                        <p className="font-semibold text-foreground">10 Question Limit</p>
-                        <p className="text-xs text-muted-foreground">The workout consists of 10 questions to test your mastery of the topic.</p>
+                        <p className="font-semibold text-foreground">Winning Condition</p>
+                        <p className="text-xs text-muted-foreground">The workout ends when you correctly answer two "difficult" questions in a row.</p>
                     </div>
                 </div>
                 <div className="flex items-start gap-4 p-3 rounded-lg bg-muted/50">
-                    <BarChart className="h-5 w-5 text-green-500 flex-shrink-0 mt-1" />
+                    <BarChart className="h-5 w-5 text-blue-500 flex-shrink-0 mt-1" />
                     <div>
                         <p className="font-semibold text-foreground">Instant Analysis</p>
                         <p className="text-xs text-muted-foreground">After each question, you'll get instant AI feedback on your code and the correct solution.</p>
