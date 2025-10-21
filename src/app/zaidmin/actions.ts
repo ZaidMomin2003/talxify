@@ -2,7 +2,7 @@
 'use server';
 
 import { initializeApp, getApps, App, cert } from 'firebase-admin/app';
-import { getFirestore, Filter } from 'firebase-admin/firestore';
+import { getFirestore, Filter, Timestamp } from 'firebase-admin/firestore';
 import { adminConfig } from '@/lib/firebase-admin-config';
 import type { UserData, SurveySubmission } from '@/lib/types';
 
@@ -13,6 +13,26 @@ if (!getApps().length) {
   });
 }
 const db = getFirestore();
+
+// Helper function to recursively convert Firestore Timestamps to serializable strings
+const convertTimestamps = (data: any): any => {
+    if (!data) return data;
+    if (Array.isArray(data)) {
+        return data.map(item => convertTimestamps(item));
+    }
+    if (typeof data === 'object' && data !== null) {
+        if (data instanceof Timestamp) {
+            return data.toDate().toISOString();
+        }
+        const newData: { [key: string]: any } = {};
+        for (const key in data) {
+            newData[key] = convertTimestamps(data[key]);
+        }
+        return newData;
+    }
+    return data;
+};
+
 
 export async function getAllUserSlugs(): Promise<string[]> {
     try {
@@ -45,17 +65,16 @@ export async function getAllUsersAdmin(): Promise<UserData[]> {
 
         const users: UserData[] = [];
         snapshot.forEach(doc => {
-            // A basic validation to ensure the document looks like a UserData object
              const data = doc.data();
             if (data && data.portfolio && data.subscription) {
-                users.push(data as UserData);
+                 const serializableData = convertTimestamps(data);
+                users.push(serializableData as UserData);
             }
         });
 
         return users;
     } catch (error) {
         console.error("Error fetching all users from Firestore with Admin SDK:", error);
-        // In a real app, you might want to throw the error or handle it differently
         return [];
     }
 }
@@ -63,8 +82,6 @@ export async function getAllUsersAdmin(): Promise<UserData[]> {
 export async function getUserBySlug(slug: string): Promise<UserData | null> {
     try {
         const usersCollection = db.collection('users');
-        // Use a where clause to directly query for the document with the matching slug.
-        // This is much more efficient than fetching all documents.
         const q = usersCollection.where(
             'portfolio.personalInfo.slug',
             '==',
@@ -78,9 +95,13 @@ export async function getUserBySlug(slug: string): Promise<UserData | null> {
             return null;
         }
 
-        // Since slug should be unique, we expect at most one document.
         const userDoc = snapshot.docs[0];
-        return userDoc.data() as UserData;
+        const userData = userDoc.data();
+        
+        // Convert all timestamps before returning
+        const serializableData = convertTimestamps(userData);
+
+        return serializableData as UserData;
 
     } catch (error) {
         console.error("Error fetching user by slug from Firestore with Admin SDK:", error);
@@ -98,7 +119,9 @@ export async function getSurveySubmissions(): Promise<SurveySubmission[]> {
 
         const submissions: SurveySubmission[] = [];
         snapshot.forEach(doc => {
-            submissions.push({ id: doc.id, ...doc.data() } as SurveySubmission);
+            const data = doc.data();
+            const serializableData = convertTimestamps(data);
+            submissions.push({ id: doc.id, ...serializableData } as SurveySubmission);
         });
 
         return submissions;
