@@ -94,7 +94,7 @@ export default function DashboardPage() {
     const completedQuizzes = quizzes.filter(item => item.analysis.length > 0);
     const completedInterviews = interviews.filter(item => item.analysis && item.analysis.crackingChance !== undefined);
 
-    const solved = completedQuizzes.reduce((acc, quiz) => acc + quiz.quizState.length, 0);
+    const solved = quizzes.reduce((acc, quiz) => acc + quiz.quizState.length, 0);
 
     const totalQuizScore = completedQuizzes.reduce((sum, quiz) => {
         const quizAvg = quiz.analysis.reduce((s, a) => s + a.score, 0) / Math.max(quiz.analysis.length, 1);
