@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import LandingProductFeatures from "./landing-product-features";
 import LandingHowItWorks from "./landing-how-it-works";
 import Image from "next/image";
+import LandingValueProposition from "./landing-value-prop";
 
 
 export default function LandingPage() {
@@ -88,6 +89,7 @@ export default function LandingPage() {
             </div>
         </section>
         
+        <LandingValueProposition />
         <LandingProductFeatures />
         <LandingFeatures />
         <LandingTestimonials />
