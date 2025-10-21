@@ -114,11 +114,10 @@ export default function LandingValueProposition() {
                 <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
               </Link>
             </Button>
-            <p className="text-xs text-muted-foreground mt-4">7-Day Money-Back Guarantee</p>
+            <p className="text-xs text-muted-foreground mt-4">10x your chance of cracking the interview.</p>
           </motion.div>
         </div>
       </div>
     </section>
   );
 }
-
