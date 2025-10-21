@@ -46,7 +46,7 @@ const generateSyllabusChunkPrompt = ai.definePrompt({
   input: {schema: SyllabusChunkInputSchema},
   output: {schema: GenerateSyllabusOutputSchema},
   config: {
-    model: 'googleai/gemini-1.5-flash-latest',
+    model: 'googleai/gemini-2.5-pro',
      safetySettings: [
         {
             category: 'HARM_CATEGORY_DANGEROUS_CONTENT',

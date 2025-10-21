@@ -541,14 +541,6 @@ function DashboardLayoutContent({
                 </SidebarMenuButton>
               </SidebarMenuItem>
             ))}
-             <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive={pathname.startsWith('/dashboard/draft')}>
-                    <Link href="/dashboard/draft">
-                        <FlaskConical />
-                        <span>Draft</span>
-                    </Link>
-                </SidebarMenuButton>
-             </SidebarMenuItem>
           </SidebarMenu>
           <SidebarSeparator />
           <SidebarGroup>
