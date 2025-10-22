@@ -1,10 +1,11 @@
 
-
 import React from "react";
 import { getUserBySlug, getAllUserSlugs } from "../../zaidmin/actions";
 import { initialPortfolioData } from "@/lib/initial-data";
 import PortfolioComponent from "./portfolio-component";
 import type { Metadata } from 'next';
+
+export const dynamic = 'force-dynamic';
 
 type Props = {
   params: { slug: string }
