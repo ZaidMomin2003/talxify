@@ -48,6 +48,20 @@ const proFeatures = [
     'Priority Support',
 ];
 
+const PaymentMethods = () => (
+    <div className="border-t pt-6">
+        <p className="text-center text-xs text-muted-foreground mb-3">We accept all major payment methods</p>
+        <div className="flex flex-wrap justify-center items-center gap-4 opacity-70">
+            <img src="https://www.svgrepo.com/show/303202/visa-logo.svg" alt="Visa" className="h-5" />
+            <img src="https://www.svgrepo.com/show/303203/mastercard-logo.svg" alt="Mastercard" className="h-5" />
+            <img src="https://www.svgrepo.com/show/303408/american-express-logo.svg" alt="American Express" className="h-5" />
+            <img src="https://www.svgrepo.com/show/354123/npci-logogram.svg" alt="UPI" className="h-6" />
+            <img src="https://www.svgrepo.com/show/303252/paypal-logo.svg" alt="PayPal" className="h-5" />
+             <p className="text-sm font-semibold">EMI</p>
+        </div>
+    </div>
+);
+
 
 export default function PricingPage() {
     const { user } = useAuth();
@@ -264,50 +278,55 @@ export default function PricingPage() {
                                     </li>
                                 ))}
                             </ul>
-                            <div className="space-y-2 pt-4 border-t">
-                                <Label htmlFor="coupon" className="flex items-center gap-2 text-muted-foreground"><Ticket className="h-4 w-4"/> Have a coupon?</Label>
-                                <div className="flex gap-2">
-                                    <Input 
-                                        id="coupon" 
-                                        placeholder="Enter coupon code"
-                                        value={couponCode}
-                                        onChange={(e) => setCouponCode(e.target.value)}
-                                        disabled={isCouponApplied}
-                                    />
-                                    <Button onClick={handleApplyCoupon} disabled={isCouponApplied}>
-                                        {isCouponApplied ? 'Applied' : 'Apply'}
-                                    </Button>
+                            {currency === 'inr' && (
+                                <div className="space-y-2 pt-4 border-t">
+                                    <Label htmlFor="coupon" className="flex items-center gap-2 text-muted-foreground"><Ticket className="h-4 w-4"/> Have a coupon?</Label>
+                                    <div className="flex gap-2">
+                                        <Input 
+                                            id="coupon" 
+                                            placeholder="Enter coupon code"
+                                            value={couponCode}
+                                            onChange={(e) => setCouponCode(e.target.value)}
+                                            disabled={isCouponApplied}
+                                        />
+                                        <Button onClick={handleApplyCoupon} disabled={isCouponApplied}>
+                                            {isCouponApplied ? 'Applied' : 'Apply'}
+                                        </Button>
+                                    </div>
                                 </div>
-                            </div>
-                        </CardContent>
-                        <CardFooter>
-                            {currency === 'inr' ? (
-                                <Button
-                                    className="w-full"
-                                    size="lg"
-                                    onClick={handleRazorpayPayment}
-                                    disabled={loadingPlan === 'razorpay'}
-                                >
-                                    {loadingPlan === 'razorpay' ? (
-                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    ) : (
-                                        'Upgrade to Pro'
-                                    )}
-                                </Button>
-                            ) : (
-                                 <Button
-                                    className="w-full"
-                                    size="lg"
-                                    onClick={handlePaypalPayment}
-                                    disabled={loadingPlan === 'paypal'}
-                                >
-                                    {loadingPlan === 'paypal' ? (
-                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    ) : (
-                                        <><CreditCard className="mr-2 h-4 w-4"/> Pay with PayPal</>
-                                    )}
-                                </Button>
                             )}
+                        </CardContent>
+                        <CardFooter className="flex-col gap-6">
+                             <div className="w-full">
+                                {currency === 'inr' ? (
+                                    <Button
+                                        className="w-full"
+                                        size="lg"
+                                        onClick={handleRazorpayPayment}
+                                        disabled={loadingPlan === 'razorpay'}
+                                    >
+                                        {loadingPlan === 'razorpay' ? (
+                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        ) : (
+                                            'Upgrade to Pro'
+                                        )}
+                                    </Button>
+                                ) : (
+                                    <Button
+                                        className="w-full"
+                                        size="lg"
+                                        onClick={handlePaypalPayment}
+                                        disabled={loadingPlan === 'paypal'}
+                                    >
+                                        {loadingPlan === 'paypal' ? (
+                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        ) : (
+                                            <><CreditCard className="mr-2 h-4 w-4"/> Pay with PayPal</>
+                                        )}
+                                    </Button>
+                                )}
+                            </div>
+                            <PaymentMethods />
                         </CardFooter>
                     </Card>
                 </div>
