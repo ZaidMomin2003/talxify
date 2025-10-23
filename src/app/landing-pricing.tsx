@@ -203,7 +203,7 @@ export default function LandingPricing() {
                       ))}
                   </ul>
                    <div className="mt-6 pt-4 border-t text-center text-sm text-muted-foreground">
-                        7-Day Money-Back Guarantee
+                        10x your chance of cracking the interview.
                    </div>
               </CardContent>
               <CardFooter className="flex-col gap-6">
