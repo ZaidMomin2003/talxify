@@ -152,6 +152,29 @@ export default function LiveInterviewPage() {
     return systemInstruction;
   }, [searchParams]);
 
+  const handleTurnComplete = useCallback(async () => {
+    // This block runs after the user has finished speaking their first turn (the introduction).
+    if (transcriptRef.current.length === 2 && !candidateName.current) {
+        setStatus("Analyzing introduction...");
+        const userIntroText = transcriptRef.current.find(t => t.speaker === 'user')?.text || '';
+        
+        if (userIntroText) {
+            const icebreakerData = await extractIcebreakerInfo(userIntroText);
+            if (icebreakerData.isIcebreaker && icebreakerData.name) {
+                candidateName.current = icebreakerData.name;
+                toast({ title: `Nice to meet you, ${icebreakerData.name}!` });
+                 if(user) {
+                  await updateUserFromIcebreaker(user.uid, icebreakerData);
+                }
+            }
+        }
+        
+        // Re-initialize session with the new context
+        await session?.reinitialize({ systemInstruction: getSystemInstruction(candidateName.current) });
+    }
+    setStatus("🔴 Your turn... Speak now.");
+  }, [getSystemInstruction, session, toast, user]);
+
     useEffect(() => {
         const AudioContext = (window as any).AudioContext || (window as any).webkitAudioContext;
         inputAudioContextRef.current = new AudioContext({ sampleRate: 16000 });
@@ -189,29 +212,6 @@ export default function LiveInterviewPage() {
             audioBufferSources.current.clear();
             nextAudioStartTimeRef.current = 0;
         };
-
-        const handleTurnComplete = async () => {
-          // This block runs after the user has finished speaking their first turn (the introduction).
-          if (transcriptRef.current.length === 2 && !candidateName.current) {
-            setStatus("Analyzing introduction...");
-            const userIntroText = transcriptRef.current.find(t => t.speaker === 'user')?.text || '';
-            
-            if (userIntroText) {
-              const icebreakerData = await extractIcebreakerInfo(userIntroText);
-              if (icebreakerData.isIcebreaker && icebreakerData.name) {
-                candidateName.current = icebreakerData.name;
-                toast({ title: `Nice to meet you, ${icebreakerData.name}!` });
-                 if(user) {
-                  await updateUserFromIcebreaker(user.uid, icebreakerData);
-                }
-              }
-            }
-            
-            // Re-initialize session with the new context
-            await session?.reinitialize({ systemInstruction: getSystemInstruction(candidateName.current) });
-          }
-          setStatus("🔴 Your turn... Speak now.");
-        }
 
         const initSession = async () => {
             if (!process.env.NEXT_PUBLIC_GEMINI_API_KEY) {
