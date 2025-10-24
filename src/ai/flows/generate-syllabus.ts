@@ -116,4 +116,3 @@ const generateSyllabusFlow = ai.defineFlow(
     }
   }
 );
-
