@@ -72,34 +72,21 @@ const generateSyllabusFlow = ai.defineFlow(
     outputSchema: GenerateSyllabusOutputSchema,
   },
   async (input) => {
-    try {
-        const { output } = await generateSyllabusPrompt(input);
+    const { output } = await generateSyllabusPrompt(input);
 
-        if (!output || !output.syllabus || output.syllabus.length < 60) {
-             throw new Error(`Incomplete syllabus generated. Only got ${output?.syllabus?.length || 0} days.`);
-        }
+    if (!output || !output.syllabus || output.syllabus.length < 60) {
+        throw new Error(`Incomplete syllabus generated. Only got ${output?.syllabus?.length || 0} days.`);
+    }
 
-        // Ensure syllabus from AI is sorted and day numbers are correct, just in case
-        const finalSyllabus = output.syllabus
-            .sort((a, b) => a.day - b.day)
-            .slice(0, 60)
-            .map((day, index) => ({
-                ...day,
-                day: index + 1, // Re-assign day number to ensure it's sequential
-            }));
-
-        return { syllabus: finalSyllabus };
-
-    } catch (error) {
-        console.error("Syllabus generation failed, applying fallback.", error);
-        
-        const fallbackSyllabus: SyllabusDay[] = Array.from({ length: 60 }, (_, i) => ({
-            day: i + 1,
-            topic: `Review Day ${i + 1}: Core CS Fundamentals`,
-            description: "Revisiting foundational concepts to build a strong base."
+    // Ensure syllabus from AI is sorted and day numbers are correct, just in case
+    const finalSyllabus = output.syllabus
+        .sort((a, b) => a.day - b.day)
+        .slice(0, 60)
+        .map((day, index) => ({
+            ...day,
+            day: index + 1, // Re-assign day number to ensure it's sequential
         }));
 
-        return { syllabus: fallbackSyllabus };
-    }
+    return { syllabus: finalSyllabus };
   }
 );
