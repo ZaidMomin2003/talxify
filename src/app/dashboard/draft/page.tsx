@@ -131,7 +131,6 @@ export default function DraftPage() {
   const nextAudioStartTimeRef = useRef(0);
   const audioBufferSources = useRef(new Set<AudioBufferSourceNode>());
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const sessionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   useEffect(() => {
     // This effect runs only ONCE on component mount to initialize everything.
@@ -238,6 +237,7 @@ export default function DraftPage() {
             inputAudioTranscription: {},
             outputAudioTranscription: {},
             systemInstruction: systemInstruction,
+            contextWindowCompression: { slidingWindow: {} }
           },
         });
         setSession(newSession); // <-- Set the session in state once ready
@@ -256,7 +256,6 @@ export default function DraftPage() {
       inputAudioContextRef.current?.close();
       outputAudioContextRef.current?.close();
       if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
-      if (sessionTimeoutRef.current) clearTimeout(sessionTimeoutRef.current);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // <-- Empty dependency array ensures this runs only once.
@@ -313,15 +312,6 @@ export default function DraftPage() {
         setElapsedTime(0);
         timerIntervalRef.current = setInterval(() => setElapsedTime(prev => prev + 1), 1000);
         
-        // Set a 14-minute timeout to gracefully end the session
-        sessionTimeoutRef.current = setTimeout(() => {
-            toast({
-                title: 'Session Ending Soon',
-                description: 'The interview session will end automatically to ensure your transcript is saved.',
-            });
-            endSession();
-        }, 14 * 60 * 1000); // 14 minutes in milliseconds
-
         setStatus("🔴 Your turn... Speak now.");
 
     } catch (err: any) {
@@ -332,7 +322,6 @@ export default function DraftPage() {
 
   const endSession = useCallback(async (shouldNavigate = true) => {
     if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
-    if (sessionTimeoutRef.current) clearTimeout(sessionTimeoutRef.current);
     
     setIsInterviewing(false);
     if(shouldNavigate) setStatus('Interview ended. Saving transcript...');

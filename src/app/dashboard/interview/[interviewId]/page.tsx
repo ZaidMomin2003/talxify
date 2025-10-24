@@ -133,7 +133,6 @@ export default function LiveInterviewPage() {
   const nextAudioStartTimeRef = useRef(0);
   const audioBufferSources = useRef(new Set<AudioBufferSourceNode>());
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const sessionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   const getSystemInstruction = useCallback((name: string | null = null) => {
     const topic = searchParams.get('topic') || 'general software engineering';
@@ -279,6 +278,7 @@ export default function LiveInterviewPage() {
                         inputAudioTranscription: {},
                         outputAudioTranscription: {},
                         systemInstruction: getSystemInstruction(),
+                        contextWindowCompression: { slidingWindow: {} }
                     },
                 });
                 setSession(newSession);
@@ -296,7 +296,6 @@ export default function LiveInterviewPage() {
             inputAudioContextRef.current?.close();
             outputAudioContextRef.current?.close();
             if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
-            if (sessionTimeoutRef.current) clearTimeout(sessionTimeoutRef.current);
         };
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
@@ -356,15 +355,6 @@ export default function LiveInterviewPage() {
         setElapsedTime(0);
         timerIntervalRef.current = setInterval(() => setElapsedTime(prev => prev + 1), 1000);
         
-        // Set a 14-minute timeout to gracefully end the session
-        sessionTimeoutRef.current = setTimeout(() => {
-            toast({
-                title: 'Session Ending Soon',
-                description: 'The interview session will end automatically to ensure your transcript is saved.',
-            });
-            endSession();
-        }, 14 * 60 * 1000); // 14 minutes in milliseconds
-
         setStatus("🔴 Your turn... Speak now.");
 
     } catch (err: any) {
@@ -375,7 +365,6 @@ export default function LiveInterviewPage() {
 
   const endSession = useCallback(async (shouldNavigate = true) => {
     if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
-    if (sessionTimeoutRef.current) clearTimeout(sessionTimeoutRef.current);
     
     setIsInterviewing(false);
     if(shouldNavigate) setStatus('Interview ended. Saving transcript...');
