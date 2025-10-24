@@ -1,3 +1,4 @@
+
 import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
@@ -5,6 +6,7 @@ import { AuthProvider } from '@/context/auth-context';
 import PromotionalPopup from '@/components/disclaimer-dialog';
 import FeaturebaseMessenger from '@/components/featurebase-messenger';
 import { ThemeProvider } from '@/components/theme-provider';
+import GoogleAnalytics from '@/components/google-analytics';
 
 export const metadata: Metadata = {
   title: 'Talxify: AI-Powered Interview & Coding Prep',
@@ -27,6 +29,7 @@ export default function RootLayout({
               enableSystem
               disableTransitionOnChange
             >
+              <GoogleAnalytics />
               {children}
               <PromotionalPopup />
               <FeaturebaseMessenger />
