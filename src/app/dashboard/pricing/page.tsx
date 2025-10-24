@@ -3,7 +3,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check, Star, Loader2, UserRound, Sparkles, Info, Ticket, CreditCard } from 'lucide-react';
+import { Check, Star, Loader2, UserRound, Sparkles, Info, Ticket, CreditCard, Wallet } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import React, { useState, useEffect } from 'react';
 import { createOrder, verifyPayment } from '@/app/actions/razorpay';
@@ -60,6 +60,7 @@ const UpiLogo = () => (
     </svg>
 );
 
+
 const PayPalLogo = () => (
      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
         <path fill="#0070BA" d="M16.742 6.278h-5.604c-.39 0-.728.39-.728.845l-1.457 9.075c-.065.455.26.715.65.715h3.445c.39 0 .728-.39.728-.845l.39-2.535.065-.39c.065-.455.39-.845.793-.845h.325a.855.855 0 0 0 .845-.715l.845-5.33c.065-.455-.26-.715-.65-.715z"/>
@@ -74,6 +75,7 @@ const AnimatedPaymentButton = ({ onClick, disabled, currency }: { onClick: () =>
         ? [
             { icon: <CreditCard className="w-5 h-5" />, text: 'Pay with Card' },
             { icon: <UpiLogo />, text: 'Pay with UPI' },
+            { icon: <Wallet className="w-5 h-5" />, text: 'Pay with Wallet' },
             { icon: null, text: 'Upgrade to Pro' }
           ]
         : [
@@ -357,3 +359,5 @@ export default function PricingPage() {
         </>
     );
 }
+
+    
