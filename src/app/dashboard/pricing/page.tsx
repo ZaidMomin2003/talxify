@@ -109,21 +109,6 @@ const AnimatedPaymentButton = ({ onClick, disabled, currency }: { onClick: () =>
     );
 };
 
-const PaymentMethods = () => (
-    <div className="border-t pt-6">
-        <p className="text-center text-xs text-muted-foreground mb-3">We accept all major payment methods</p>
-        <div className="flex flex-wrap justify-center items-center gap-4 opacity-70">
-            <img src="https://www.svgrepo.com/show/303202/visa-logo.svg" alt="Visa" className="h-5" />
-            <img src="https://www.svgrepo.com/show/303203/mastercard-logo.svg" alt="Mastercard" className="h-5" />
-            <img src="https://www.svgrepo.com/show/303408/american-express-logo.svg" alt="American Express" className="h-5" />
-            <img src="https://www.svgrepo.com/show/354123/npci-logogram.svg" alt="UPI" className="h-6" />
-            <img src="https://www.svgrepo.com/show/303252/paypal-logo.svg" alt="PayPal" className="h-5" />
-             <p className="text-sm font-semibold">EMI</p>
-        </div>
-    </div>
-);
-
-
 export default function PricingPage() {
     const { user } = useAuth();
     const { toast } = useToast();
@@ -365,7 +350,6 @@ export default function PricingPage() {
                                     currency={currency}
                                 />
                             </div>
-                            <PaymentMethods />
                         </CardFooter>
                     </Card>
                 </div>
