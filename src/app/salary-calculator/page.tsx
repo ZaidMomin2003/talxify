@@ -101,7 +101,7 @@ export default function SalaryCalculatorPage() {
   return (
     <div className="bg-background min-h-screen">
       <LandingHeader />
-      <main className="container mx-auto p-4 sm:p-6 lg:p-8 pt-32">
+      <main className="container mx-auto p-4 sm:p-6 lg:p-8 pt-60">
         <div className="text-center mb-12">
             <h1 className="text-4xl sm:text-5xl font-bold font-headline">AI Salary Calculator</h1>
             <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
