@@ -51,3 +51,21 @@ secretEnvironmentVariables:
     secret: FIREBASE_CLIENT_EMAIL
   - key: FIREBASE_PRIVATE_KEY
     secret: FIREBASE_PRIVATE_KEY
+  - key: DEEPGRAM_API_KEY
+    secret: DEEPGRAM_API_KEY
+  - key: NEXT_PUBLIC_DEEPGRAM_API_KEY
+    secret: NEXT_PUBLIC_DEEPGRAM_API_KEY
+  - key: CREEM_API_KEY
+    secret: CREEM_API_KEY
+  - key: GROQ_API_KEY
+    secret: GROQ_API_KEY
+  - key: ASSEMBLYAI_API_KEY
+    secret: ASSEMBLYAI_API_KEY
+  - key: GOOGLE_CLIENT_EMAIL_CX
+    secret: GOOGLE_CLIENT_EMAIL_CX
+  - key: GOOGLE_PRIVATE_KEY_CX
+    secret: GOOGLE_PRIVATE_KEY_CX
+  - key: GOOGLE_CLIENT_ID_CX
+    secret: GOOGLE_CLIENT_ID_CX
+  - key: DEEPGRAM_PROJECT_ID
+    secret: DEEPGRAM_PROJECT_ID
