@@ -12,6 +12,9 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit"
   },
+  "engines": {
+    "node": "20"
+  },
   "dependencies": {
     "@calcom/embed-react": "^1.5.0",
     "@deepgram/sdk": "^3.3.3",
