@@ -5,3 +5,49 @@ runConfig:
   # Increase this value if you'd like to automatically spin up
   # more instances in response to increased traffic.
   maxInstances: 1
+
+# Defines the environment variables and secrets available to your application.
+# These are managed in Google Secret Manager and are unavailable during builds.
+secretEnvironmentVariables:
+  - key: NEXT_PUBLIC_FIREBASE_API_KEY
+    secret: NEXT_PUBLIC_FIREBASE_API_KEY
+  - key: RAZORPAY_KEY_ID
+    secret: RAZORPAY_KEY_ID
+  - key: NEXT_PUBLIC_RAZORPAY_KEY_ID
+    secret: NEXT_PUBLIC_RAZORPAY_KEY_ID
+  - key: RAZORPAY_KEY_SECRET
+    secret: RAZORPAY_KEY_SECRET
+  - key: NEXT_PUBLIC_VIDEOSDK_API_KEY
+    secret: NEXT_PUBLIC_VIDEOSDK_API_KEY
+  - key: VIDEOSDK_SECRET_KEY
+    secret: VIDEOSDK_SECRET_KEY
+  - key: NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
+    secret: NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
+  - key: NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET
+    secret: NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET
+  - key: NEXT_PUBLIC_ADMIN_EMAIL
+    secret: NEXT_PUBLIC_ADMIN_EMAIL
+  - key: GEMINI_API_KEY
+    secret: GEMINI_API_KEY
+  - key: NEXT_PUBLIC_GEMINI_API_KEY
+    secret: NEXT_PUBLIC_GEMINI_API_KEY
+  - key: PAYPAL_CLIENT_ID
+    secret: PAYPAL_CLIENT_ID
+  - key: NEXT_PUBLIC_PAYPAL_CLIENT_ID
+    secret: NEXT_PUBLIC_PAYPAL_CLIENT_ID
+  - key: PAYPAL_CLIENT_SECRET
+    secret: PAYPAL_CLIENT_SECRET
+  - key: PAYPAL_WEBHOOK_ID
+    secret: PAYPAL_WEBHOOK_ID
+  - key: GOOGLE_API_KEY
+    secret: GOOGLE_API_KEY
+  - key: GOOGLE_CLIENT_ID
+    secret: GOOGLE_CLIENT_ID
+  - key: NEXT_PUBLIC_GOOGLE_ANALYTICS_ID
+    secret: NEXT_PUBLIC_GOOGLE_ANALYTICS_ID
+  - key: FIREBASE_PROJECT_ID
+    secret: FIREBASE_PROJECT_ID
+  - key: FIREBASE_CLIENT_EMAIL
+    secret: FIREBASE_CLIENT_EMAIL
+  - key: FIREBASE_PRIVATE_KEY
+    secret: FIREBASE_PRIVATE_KEY
