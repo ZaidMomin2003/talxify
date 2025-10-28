@@ -69,7 +69,7 @@ export default function LevelUpPage() {
                 <div className="mx-auto bg-white/20 text-primary-foreground rounded-full p-4 w-fit mb-6">
                     <Rocket className="h-10 w-10" />
                 </div>
-                <h1 className="font-headline text-5xl font-bold tracking-tighter">AI Coding Quiz Generator</h1>
+                <h1 className="font-headline text-5xl font-bold tracking-tighter">Level Up Your Programming Skills</h1>
                 <p className="mt-4 text-lg text-primary-foreground/80 max-w-2xl mx-auto">
                     Create custom coding challenges to target your weak spots and master any topic. Our AI will generate a unique quiz based on your needs.
                 </p>
