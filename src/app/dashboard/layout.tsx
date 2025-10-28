@@ -24,7 +24,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuSub,
   DropdownMenuSubTrigger,
-  DropdownMenuSubContent,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import {
@@ -512,11 +512,11 @@ function DashboardLayoutContent({
               <SidebarMenuItem key={item.label}>
                 {item.subItems ? (
                   <SidebarMenuSub>
-                    <SidebarMenuButton>
+                    <SidebarMenuSubButton>
                       <item.icon />
                       <span>{item.label}</span>
                       <ChevronDown className="ml-auto size-4" />
-                    </SidebarMenuButton>
+                    </SidebarMenuSubButton>
                     <SidebarMenuSub>
                       {item.subItems.map(subItem => (
                         <SidebarMenuSubItem key={subItem.href}>
