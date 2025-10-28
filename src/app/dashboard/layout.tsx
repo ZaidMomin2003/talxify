@@ -401,6 +401,7 @@ function DashboardLayoutContent({
   const menuItems = [
     { href: "/dashboard", label: "Dashboard", icon: LayoutGrid },
     { href: "/dashboard/arena", label: "Arena", icon: Swords },
+    { href: "/dashboard/levelup", label: "Level Up", icon: Rocket, isPro: true },
     { href: "/dashboard/resume-builder", label: "Resume Builder", icon: FileText, isFree: true, isTesting: true },
     { href: "/dashboard/portfolio", label: "Portfolio Builder", icon: User, isPro: true },
   ];
