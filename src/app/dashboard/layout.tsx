@@ -405,7 +405,7 @@ function DashboardLayoutContent({
       icon: Rocket, 
       isPro: true,
       subItems: [
-        { href: "/dashboard/levelup", label: "Coding Quiz Generator", icon: Code },
+        { href: "/dashboard/coding-practice", label: "Coding Quiz Generator", icon: Code },
         { href: "/dashboard/levelup-interview", label: "Interview Generator", icon: MessageSquare },
       ]
     },
@@ -811,5 +811,3 @@ export default function DashboardLayout({
     <DashboardLayoutContent>{children}</DashboardLayoutContent>
   )
 }
-
-    
