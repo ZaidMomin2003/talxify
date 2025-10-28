@@ -139,8 +139,12 @@ export default function LevelUpPage() {
                                                 <FormControl><SelectTrigger><SelectValue placeholder="Select language" /></SelectTrigger></FormControl>
                                                 <SelectContent>
                                                     <SelectItem value="JavaScript">JavaScript</SelectItem>
-                                                    <SelectItem value="Python" disabled>Python (coming soon)</SelectItem>
-                                                    <SelectItem value="Java" disabled>Java (coming soon)</SelectItem>
+                                                    <SelectItem value="Python">Python</SelectItem>
+                                                    <SelectItem value="Java">Java</SelectItem>
+                                                    <SelectItem value="TypeScript">TypeScript</SelectItem>
+                                                    <SelectItem value="C++">C++</SelectItem>
+                                                    <SelectItem value="Go">Go</SelectItem>
+                                                    <SelectItem value="Rust">Rust</SelectItem>
                                                 </SelectContent>
                                             </Select>
                                             <FormMessage />
