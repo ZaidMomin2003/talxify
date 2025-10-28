@@ -86,7 +86,7 @@ export default function LevelUpPage() {
                 <CardContent>
                     <Form {...form}>
                         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-start">
+                            <div className="space-y-6">
                                 <FormField
                                     control={form.control}
                                     name="topics"
@@ -94,63 +94,65 @@ export default function LevelUpPage() {
                                         <FormItem>
                                             <FormLabel>Topics</FormLabel>
                                             <FormControl>
-                                                <Input placeholder="e.g., Arrays, Sorting" {...field} />
+                                                <Input placeholder="e.g., Arrays, Sorting, Dynamic Programming" {...field} />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
                                     )}
                                 />
-                                <FormField
-                                    control={form.control}
-                                    name="difficulty"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Difficulty</FormLabel>
-                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                <FormControl><SelectTrigger><SelectValue placeholder="Select difficulty" /></SelectTrigger></FormControl>
-                                                <SelectContent>
-                                                    <SelectItem value="easy">Easy</SelectItem>
-                                                    <SelectItem value="moderate">Moderate</SelectItem>
-                                                    <SelectItem value="difficult">Difficult</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                                 <FormField
-                                    control={form.control}
-                                    name="numQuestions"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Number of Questions</FormLabel>
-                                            <FormControl><Input type="number" min="1" max="10" {...field} /></FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                                 <FormField
-                                    control={form.control}
-                                    name="language"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Language</FormLabel>
-                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                <FormControl><SelectTrigger><SelectValue placeholder="Select language" /></SelectTrigger></FormControl>
-                                                <SelectContent>
-                                                    <SelectItem value="JavaScript">JavaScript</SelectItem>
-                                                    <SelectItem value="Python">Python</SelectItem>
-                                                    <SelectItem value="Java">Java</SelectItem>
-                                                    <SelectItem value="TypeScript">TypeScript</SelectItem>
-                                                    <SelectItem value="C++">C++</SelectItem>
-                                                    <SelectItem value="Go">Go</SelectItem>
-                                                    <SelectItem value="Rust">Rust</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+                                    <FormField
+                                        control={form.control}
+                                        name="difficulty"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Difficulty</FormLabel>
+                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                    <FormControl><SelectTrigger><SelectValue placeholder="Select difficulty" /></SelectTrigger></FormControl>
+                                                    <SelectContent>
+                                                        <SelectItem value="easy">Easy</SelectItem>
+                                                        <SelectItem value="moderate">Moderate</SelectItem>
+                                                        <SelectItem value="difficult">Difficult</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                    <FormField
+                                        control={form.control}
+                                        name="numQuestions"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Number of Questions</FormLabel>
+                                                <FormControl><Input type="number" min="1" max="10" {...field} /></FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                    <FormField
+                                        control={form.control}
+                                        name="language"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Language</FormLabel>
+                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                    <FormControl><SelectTrigger><SelectValue placeholder="Select language" /></SelectTrigger></FormControl>
+                                                    <SelectContent>
+                                                        <SelectItem value="JavaScript">JavaScript</SelectItem>
+                                                        <SelectItem value="Python">Python</SelectItem>
+                                                        <SelectItem value="Java">Java</SelectItem>
+                                                        <SelectItem value="TypeScript">TypeScript</SelectItem>
+                                                        <SelectItem value="C++">C++</SelectItem>
+                                                        <SelectItem value="Go">Go</SelectItem>
+                                                        <SelectItem value="Rust">Rust</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                </div>
                             </div>
                             <div className="pt-4 text-right">
                                 <Button type="submit" size="lg">Generate Quiz</Button>
