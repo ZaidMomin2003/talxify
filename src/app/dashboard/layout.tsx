@@ -41,10 +41,9 @@ import {
   SidebarSeparator,
   SidebarGroup,
   SidebarGroupLabel,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Bot, Code, LayoutGrid, MessageSquare, BarChart, Settings, History, Search, User, LogOut, Gem, LifeBuoy, Sun, Moon, Briefcase, CalendarDays, BrainCircuit, PlayCircle, X, CheckCircle, Circle, Swords, BookOpen, AlertTriangle, FileText, FlaskConical, Rocket, ListChecks, Plus, Edit, ShoppingCart, ChevronDown, Wand2 } from "lucide-react";
 import type { StoredActivity, QuizResult, UserData, InterviewActivity, NoteGenerationActivity, TodoItem } from "@/lib/types";
 import { formatDistanceToNow, format } from 'date-fns';
@@ -509,26 +508,34 @@ function DashboardLayoutContent({
         <SidebarContent>
           <SidebarMenu>
             {menuItems.map((item) => (
-              <SidebarMenuItem key={item.label}>
-                {item.subItems ? (
-                  <SidebarMenuSub>
-                    <SidebarMenuSubButton>
-                      <item.icon />
-                      <span>{item.label}</span>
-                      <ChevronDown className="ml-auto size-4" />
-                    </SidebarMenuSubButton>
-                    <SidebarMenuSub>
-                      {item.subItems.map(subItem => (
-                        <SidebarMenuSubItem key={subItem.href}>
-                           <Link href={subItem.href}>
-                            <subItem.icon />
-                            <span>{subItem.label}</span>
-                           </Link>
-                        </SidebarMenuSubItem>
-                      ))}
-                    </SidebarMenuSub>
-                  </SidebarMenuSub>
-                ) : (
+              item.subItems ? (
+                  <Collapsible key={item.label} asChild>
+                    <SidebarMenuItem>
+                       <CollapsibleTrigger asChild>
+                           <SidebarMenuButton>
+                              <item.icon />
+                              <span>{item.label}</span>
+                              <ChevronDown className="ml-auto size-4 transition-transform data-[state=open]:rotate-180" />
+                          </SidebarMenuButton>
+                       </CollapsibleTrigger>
+                       <CollapsibleContent className="pl-4">
+                           <SidebarMenu>
+                            {item.subItems.map(subItem => (
+                                <SidebarMenuItem key={subItem.href}>
+                                  <SidebarMenuButton asChild isActive={pathname === subItem.href}>
+                                      <Link href={subItem.href}>
+                                          <subItem.icon />
+                                          <span>{subItem.label}</span>
+                                      </Link>
+                                  </SidebarMenuButton>
+                                </SidebarMenuItem>
+                            ))}
+                           </SidebarMenu>
+                       </CollapsibleContent>
+                    </SidebarMenuItem>
+                  </Collapsible>
+              ) : (
+                <SidebarMenuItem key={item.label}>
                   <SidebarMenuButton
                     asChild
                     isActive={pathname === item.href}
@@ -570,8 +577,8 @@ function DashboardLayoutContent({
                       </div>
                     </Link>
                   </SidebarMenuButton>
-                )}
-              </SidebarMenuItem>
+                </SidebarMenuItem>
+              )
             ))}
           </SidebarMenu>
           <SidebarSeparator />
