@@ -22,8 +22,6 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuSub,
-  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
@@ -411,7 +409,6 @@ function DashboardLayoutContent({
         { href: "/dashboard/levelup-interview", label: "Interview Generator", icon: MessageSquare },
       ]
     },
-    { href: "/dashboard/tools", label: "Tools", icon: Wand2 },
     { href: "/dashboard/resume-builder", label: "Resume Builder", icon: FileText, isFree: true, isTesting: true },
     { href: "/dashboard/portfolio", label: "Portfolio Builder", icon: User, isPro: true },
   ];
