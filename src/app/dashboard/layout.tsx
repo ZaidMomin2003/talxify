@@ -25,7 +25,6 @@ import {
   DropdownMenuSub,
   DropdownMenuSubTrigger,
   DropdownMenuSubContent,
-  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import {
@@ -808,3 +807,5 @@ export default function DashboardLayout({
     <DashboardLayoutContent>{children}</DashboardLayoutContent>
   )
 }
+
+    
