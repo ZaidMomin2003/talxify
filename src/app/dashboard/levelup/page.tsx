@@ -1,7 +1,7 @@
 
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -12,9 +12,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Rocket, Sparkles } from 'lucide-react';
+import { Rocket, Sparkles, Loader2, BarChart, RefreshCw } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
+import { getUserData } from '@/lib/firebase-service';
+import type { UserData, QuizResult } from '@/lib/types';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import Link from 'next/link';
 
 const codingQuizSchema = z.object({
   topics: z.string().min(3, { message: "Please enter at least one topic." }),
@@ -25,10 +30,18 @@ const codingQuizSchema = z.object({
 
 type CodingQuizFormValues = z.infer<typeof codingQuizSchema>;
 
+const getOverallScore = (analysis: QuizResult['analysis']) => {
+    if (!analysis || analysis.length === 0) return 'N/A';
+    const totalScore = analysis.reduce((sum, item) => sum + item.score, 0);
+    return `${Math.round((totalScore / analysis.length) * 100)}%`;
+};
+
 export default function LevelUpPage() {
   const router = useRouter();
   const { user } = useAuth();
   const { toast } = useToast();
+  const [userData, setUserData] = useState<UserData | null>(null);
+  const [isDataLoading, setIsDataLoading] = useState(true);
 
   const form = useForm<CodingQuizFormValues>({
     resolver: zodResolver(codingQuizSchema),
@@ -39,6 +52,27 @@ export default function LevelUpPage() {
       language: 'JavaScript',
     },
   });
+  
+  const fetchUserData = useCallback(async () => {
+    if (user) {
+      setIsDataLoading(true);
+      const data = await getUserData(user.uid);
+      setUserData(data);
+      setIsDataLoading(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    fetchUserData();
+  }, [fetchUserData]);
+
+  const quizHistory = useMemo(() => {
+    if (!userData || !userData.activity) return [];
+    // Filter for non-arena quizzes. Arena quizzes usually have a difficulty of "Izanami Mode"
+    return (userData.activity.filter(a => a.type === 'quiz' && a.details.difficulty !== 'Izanami Mode') as QuizResult[])
+      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+  }, [userData]);
+
 
   function onSubmit(values: CodingQuizFormValues) {
     if (!user) {
@@ -159,6 +193,58 @@ export default function LevelUpPage() {
                             </div>
                         </form>
                     </Form>
+                </CardContent>
+            </Card>
+        </section>
+
+        <section className="mt-12">
+            <Card className="shadow-lg">
+                <CardHeader>
+                    <CardTitle>Custom Quiz History</CardTitle>
+                    <CardDescription>Review your performance on quizzes you've generated.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    {isDataLoading ? (
+                        <div className="text-center text-muted-foreground p-8">
+                            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2"/>
+                            <p>Loading history...</p>
+                        </div>
+                    ) : quizHistory.length > 0 ? (
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Topic</TableHead>
+                                    <TableHead>Difficulty</TableHead>
+                                    <TableHead>Score</TableHead>
+                                    <TableHead className="text-right">Actions</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {quizHistory.map(quiz => (
+                                    <TableRow key={quiz.id}>
+                                        <TableCell className="font-medium capitalize">{quiz.topics}</TableCell>
+                                        <TableCell>
+                                            <Badge variant={
+                                                quiz.difficulty === 'easy' ? 'default' :
+                                                quiz.difficulty === 'moderate' ? 'secondary' : 'destructive'
+                                            } className="capitalize">{quiz.difficulty}</Badge>
+                                        </TableCell>
+                                        <TableCell className="font-semibold">{getOverallScore(quiz.analysis)}</TableCell>
+                                        <TableCell className="text-right">
+                                             <Button asChild variant="outline" size="sm" disabled={getOverallScore(quiz.analysis) === 'N/A'}>
+                                                <Link href={`/dashboard/coding-quiz/analysis?id=${quiz.id}`}>
+                                                    <BarChart className="mr-2 h-4 w-4" />
+                                                    View Result
+                                                </Link>
+                                            </Button>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    ) : (
+                        <p className="text-center text-muted-foreground p-8">You haven't completed any custom quizzes yet.</p>
+                    )}
                 </CardContent>
             </Card>
         </section>
