@@ -42,8 +42,12 @@ import {
   SidebarSeparator,
   SidebarGroup,
   SidebarGroupLabel,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubContent,
+  SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
-import { Bot, Code, LayoutGrid, MessageSquare, BarChart, Settings, History, Search, User, LogOut, Gem, LifeBuoy, Sun, Moon, Briefcase, CalendarDays, BrainCircuit, PlayCircle, X, CheckCircle, Circle, Swords, BookOpen, AlertTriangle, FileText, FlaskConical, Rocket, ListChecks, Plus, Edit, ShoppingCart } from "lucide-react";
+import { Bot, Code, LayoutGrid, MessageSquare, BarChart, Settings, History, Search, User, LogOut, Gem, LifeBuoy, Sun, Moon, Briefcase, CalendarDays, BrainCircuit, PlayCircle, X, CheckCircle, Circle, Swords, BookOpen, AlertTriangle, FileText, FlaskConical, Rocket, ListChecks, Plus, Edit, ShoppingCart, ChevronDown, Wand2 } from "lucide-react";
 import type { StoredActivity, QuizResult, UserData, InterviewActivity, NoteGenerationActivity, TodoItem } from "@/lib/types";
 import { formatDistanceToNow, format } from 'date-fns';
 import { useAuth } from "@/context/auth-context";
@@ -401,10 +405,18 @@ function DashboardLayoutContent({
   const menuItems = [
     { href: "/dashboard", label: "Dashboard", icon: LayoutGrid },
     { href: "/dashboard/arena", label: "Arena", icon: Swords },
-    { href: "/dashboard/levelup", label: "Level Up", icon: Rocket, isPro: true },
+    { 
+      label: "Level Up", 
+      icon: Rocket, 
+      isPro: true,
+      subItems: [
+        { href: "/dashboard/levelup", label: "Coding Quiz Generator", icon: Code },
+        { href: "/dashboard/levelup-interview", label: "Interview Generator", icon: MessageSquare },
+      ]
+    },
+    { href: "/dashboard/tools", label: "Tools", icon: Wand2 },
     { href: "/dashboard/resume-builder", label: "Resume Builder", icon: FileText, isFree: true, isTesting: true },
     { href: "/dashboard/portfolio", label: "Portfolio Builder", icon: User, isPro: true },
-    { href: "/dashboard/shop", label: "Shop", icon: ShoppingCart, isPro: true },
   ];
   
   const recentActivity = userData?.activity?.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()) || [];
@@ -500,47 +512,67 @@ function DashboardLayoutContent({
           <SidebarMenu>
             {menuItems.map((item) => (
               <SidebarMenuItem key={item.label}>
-                <SidebarMenuButton
-                  asChild
-                  isActive={pathname === item.href}
-                >
-                  <Link href={item.href}>
-                    <item.icon />
-                    <span>{item.label}</span>
-                    <div className="ml-auto flex items-center gap-2">
-                        {(item as any).isTesting && (
-                             <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <FlaskConical className="w-4 h-4 text-yellow-500" />
-                                </TooltipTrigger>
-                                <TooltipContent side="right">
-                                <p>Under Testing</p>
-                                </TooltipContent>
-                            </Tooltip>
-                        )}
-                        {(item as any).isFree && (
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                            <Gem className="w-4 h-4 text-green-500" />
-                            </TooltipTrigger>
-                            <TooltipContent side="right">
-                            <p>Forever Free</p>
-                            </TooltipContent>
-                        </Tooltip>
-                        )}
-                        {(item as any).isPro && !isFreePlan && (
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                            <Gem className="w-4 h-4 text-primary" />
-                            </TooltipTrigger>
-                            <TooltipContent side="right">
-                            <p>Pro Feature</p>
-                            </TooltipContent>
-                        </Tooltip>
-                        )}
-                    </div>
-                  </Link>
-                </SidebarMenuButton>
+                {item.subItems ? (
+                  <SidebarMenuSub>
+                    <SidebarMenuButton>
+                      <item.icon />
+                      <span>{item.label}</span>
+                      <ChevronDown className="ml-auto size-4" />
+                    </SidebarMenuButton>
+                    <SidebarMenuSubContent>
+                      {item.subItems.map(subItem => (
+                        <SidebarMenuSubItem key={subItem.href}>
+                           <Link href={subItem.href}>
+                            <subItem.icon />
+                            <span>{subItem.label}</span>
+                           </Link>
+                        </SidebarMenuSubItem>
+                      ))}
+                    </SidebarMenuSubContent>
+                  </SidebarMenuSub>
+                ) : (
+                  <SidebarMenuButton
+                    asChild
+                    isActive={pathname === item.href}
+                  >
+                    <Link href={item.href!}>
+                      <item.icon />
+                      <span>{item.label}</span>
+                      <div className="ml-auto flex items-center gap-2">
+                          {(item as any).isTesting && (
+                              <Tooltip>
+                                  <TooltipTrigger asChild>
+                                      <FlaskConical className="w-4 h-4 text-yellow-500" />
+                                  </TooltipTrigger>
+                                  <TooltipContent side="right">
+                                  <p>Under Testing</p>
+                                  </TooltipContent>
+                              </Tooltip>
+                          )}
+                          {(item as any).isFree && (
+                          <Tooltip>
+                              <TooltipTrigger asChild>
+                              <Gem className="w-4 h-4 text-green-500" />
+                              </TooltipTrigger>
+                              <TooltipContent side="right">
+                              <p>Forever Free</p>
+                              </TooltipContent>
+                          </Tooltip>
+                          )}
+                          {(item as any).isPro && !isFreePlan && (
+                          <Tooltip>
+                              <TooltipTrigger asChild>
+                              <Gem className="w-4 h-4 text-primary" />
+                              </TooltipTrigger>
+                              <TooltipContent side="right">
+                              <p>Pro Feature</p>
+                              </TooltipContent>
+                          </Tooltip>
+                          )}
+                      </div>
+                    </Link>
+                  </SidebarMenuButton>
+                )}
               </SidebarMenuItem>
             ))}
           </SidebarMenu>
