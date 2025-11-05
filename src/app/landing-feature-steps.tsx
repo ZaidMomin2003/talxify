@@ -3,12 +3,11 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { Rocket, BrainCircuit, MessageSquare, FileText, Bot, ShieldQuestion, User } from 'lucide-react';
+import { Rocket, BrainCircuit, MessageSquare, FileText, Bot, ShieldQuestion, User, Video, Phone, Mic } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Avatar } from '@/components/ui/avatar';
-import { AvatarFallback } from '@radix-ui/react-avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 const featurePrototypes = [
     // Step 1: Generate Practice Material
@@ -32,22 +31,37 @@ const featurePrototypes = [
     ),
     // Step 2: Practice with AI
     (
-        <Card className="w-full h-full max-w-lg mx-auto bg-card/80 backdrop-blur-sm p-6 shadow-xl border border-border/50 flex flex-col justify-center">
-            <CardHeader className="p-0 mb-4 flex-row items-center gap-3">
-                 <div className="p-2 bg-primary/10 rounded-lg text-primary"><MessageSquare className="w-6 h-6" /></div>
-                <CardTitle className="text-xl m-0">Live Interview Practice</CardTitle>
-            </CardHeader>
-            <CardContent className="p-0 space-y-3">
-                <div className="p-3 rounded-lg bg-muted border text-left">
-                    <p className="text-sm font-semibold flex items-center gap-2"><Bot className="w-4 h-4 text-primary"/> AI Interviewer</p>
-                    <p className="text-muted-foreground text-xs mt-1">"Thanks for sharing that. Can you elaborate on the technical challenges you faced?"</p>
+       <div className="w-full max-w-lg mx-auto aspect-video rounded-2xl p-4 shadow-xl border border-border/50 bg-background relative flex items-center justify-center overflow-hidden">
+            <div className="absolute inset-0 thermal-gradient-bg z-0"/>
+            <div className="relative z-10 flex flex-col items-center justify-center">
+                <div className={cn("relative flex items-center justify-center w-32 h-32 rounded-full transition-all duration-500 scale-100")}>
+                    <div className={cn("absolute inset-0 rounded-full bg-primary/10 animate-pulse duration-1000")}/>
+                    <div className={cn("absolute inset-2 rounded-full bg-primary/20 animate-pulse duration-1500")}/>
+                    <Avatar className="w-24 h-24 border-4 border-background">
+                        <div className="w-full h-full flex items-center justify-center bg-primary/10 text-primary">
+                            <BrainCircuit className="w-12 h-12" />
+                        </div>
+                        <AvatarFallback>AI</AvatarFallback>
+                    </Avatar>
                 </div>
-                 <div className="p-3 rounded-lg bg-primary/10 border border-primary/20 text-right">
-                    <p className="text-sm font-semibold flex items-center justify-end gap-2"><User className="w-4 h-4 text-foreground"/> You</p>
-                    <p className="text-muted-foreground text-xs mt-1">"Certainly. The main challenge was integrating the legacy authentication system..."</p>
+                <p className="mt-4 text-xl font-bold font-headline text-foreground">Kathy</p>
+                <p className="text-sm text-muted-foreground">AI Interviewer</p>
+            </div>
+            <div className="absolute bottom-4 right-4 w-24 h-24 rounded-full overflow-hidden border-2 border-border bg-black shadow-lg flex items-center justify-center">
+                <Video className="w-8 h-8 text-muted-foreground"/>
+            </div>
+             <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 rounded-full bg-background/50 border p-2 backdrop-blur-md">
+                <Button size="icon" className="w-10 h-10 rounded-full" variant={'secondary'}><Mic /></Button>
+                <Button size="icon" className="w-10 h-10 rounded-full" variant={'secondary'}><Video /></Button>
+                <Button size="icon" className="w-10 h-10 rounded-full" variant={'destructive'}><Phone /></Button>
+            </div>
+            <div className="absolute top-2 left-1/2 -translate-x-1/2 z-20">
+                <div className="flex items-center gap-2 bg-background/50 border rounded-full px-3 py-1 text-xs text-muted-foreground backdrop-blur-sm">
+                    <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"/>
+                    <span>Your turn... Speak now.</span>
                 </div>
-            </CardContent>
-        </Card>
+            </div>
+        </div>
     ),
     // Step 3: Build Your Profile
     (
