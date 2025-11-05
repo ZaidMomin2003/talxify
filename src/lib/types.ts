@@ -160,25 +160,26 @@ export interface SignInForm {
 
 // --- Subscription ---
 export type SubscriptionPlan = 'free' | 'pro-1m' | 'pro-2m' | 'pro-3m';
+export type UsageType = 'interview' | 'codingQuiz' | 'notes' | 'questionGenerator' | 'resumeExport' | 'aiEnhancement';
 
 export interface Subscription {
     plan: SubscriptionPlan;
     status: 'active' | 'inactive' | 'cancelled';
     startDate?: string;
     endDate: string | null;
-    usage?: { // for free plan general usage
-        date: string; // YYYY-MM-DD
-        count: number;
+    usage?: { // for free plan
+        [key in UsageType]?: number;
     };
-    interviewUsage?: {
+    interviewUsage?: { // for pro plan
         limit: number;
         count: number;
-    },
-    resumeExports?: {
-        date: string; // YYYY-MM or YYYY-MM-DD
+    };
+    resumeExports?: { // for pro plan
+        date: string; // YYYY-MM
         count: number;
-    }
+    };
 }
+
 
 
 // --- Portfolio Types ---

@@ -4,9 +4,9 @@
 
 import { doc, getDoc, setDoc, updateDoc, arrayUnion, collection, getDocs, addDoc, serverTimestamp, runTransaction, deleteDoc, increment, arrayRemove, Timestamp } from 'firebase/firestore';
 import { db } from './firebase';
-import type { UserData, Portfolio, StoredActivity, OnboardingData, SurveySubmission, IcebreakerData, TodoItem, SubscriptionPlan } from './types';
+import type { UserData, Portfolio, StoredActivity, OnboardingData, SurveySubmission, IcebreakerData, TodoItem, SubscriptionPlan, UsageType } from './types';
 import { initialPortfolioData } from './initial-data';
-import { format, differenceInHours, addMonths } from 'date-fns';
+import { format, differenceInHours, addMonths, addDays } from 'date-fns';
 import { getUserBySlug } from '@/app/zaidmin/actions';
 
 
@@ -42,8 +42,15 @@ export const createUserDocument = async (userId: string, email: string, name: st
       activity: [],
       subscription: {
         plan: 'free',
-        status: 'inactive',
-        endDate: null
+        status: 'active', // Free plan is always active
+        endDate: null,
+        usage: {
+            interview: 0,
+            codingQuiz: 0,
+            notes: 0,
+            questionGenerator: 0,
+            resumeExport: 0,
+        }
       },
       onboardingCompleted: false,
       syllabus: [],
@@ -166,19 +173,19 @@ export const updateSubscription = async (userId: string, planId: SubscriptionPla
     interviewUsage: {
         limit: interviewLimit,
         count: 0
-    }
+    },
+    // Reset free tier usage on upgrade
+    usage: {},
   };
 
   await setDoc(userRef, { 
       subscription: subscriptionData,
-      // Reset usage limits upon new subscription
-      'subscription.usage': { date: format(new Date(), 'yyyy-MM-dd'), count: 0 },
-      'subscription.aiEnhancementsUsage': { date: format(new Date(), 'yyyy-MM-dd'), count: 0 },
-      'subscription.resumeExports': { date: format(new Date(), 'yyyy-MM-dd'), count: 0 },
+      // Reset monthly resume exports on new subscription
+      'subscription.resumeExports': { date: format(new Date(), 'yyyy-MM'), count: 0 },
     }, { merge: true });
 };
 
-export const checkAndIncrementUsage = async (userId: string, usageType: 'general' | 'aiEnhancements' | 'interview' = 'general'): Promise<{ success: boolean; message: string; }> => {
+export const checkAndIncrementUsage = async (userId: string, usageType: UsageType): Promise<{ success: boolean; message: string; }> => {
     const userRef = doc(db, 'users', userId);
 
     try {
@@ -193,6 +200,7 @@ export const checkAndIncrementUsage = async (userId: string, usageType: 'general
             const userData = userDoc.data() as UserData;
             const isPro = userData.subscription?.plan?.startsWith('pro') && userData.subscription.endDate && new Date(userData.subscription.endDate) > new Date();
             
+            // Pro Plan Logic
             if (isPro) {
                 if (usageType === 'interview') {
                      const interviewUsage = userData.subscription?.interviewUsage || { count: 0, limit: 10 };
@@ -204,27 +212,31 @@ export const checkAndIncrementUsage = async (userId: string, usageType: 'general
                          message = `You have reached your limit of ${interviewUsage.limit} AI interviews for this plan.`;
                      }
                 } else {
-                    usageAllowed = true; // Unlimited for other types on Pro
+                    // All other usage types are unlimited for Pro users
+                    usageAllowed = true;
                 }
                 return;
             }
             
-            // Logic for free plan
-            const dailyLimit = 5;
-            const usageData = userData.subscription?.usage;
-            const today = format(new Date(), 'yyyy-MM-dd');
+            // Free Plan Logic
+            const freeLimits: Record<UsageType, number> = {
+                interview: 1,
+                codingQuiz: 1,
+                notes: 1,
+                questionGenerator: 1,
+                resumeExport: 1,
+                aiEnhancement: 1,
+            };
 
-            if (usageData && usageData.date === today) {
-                if (usageData.count < dailyLimit) {
-                    transaction.update(userRef, { 'subscription.usage.count': increment(1) });
-                    usageAllowed = true;
-                } else {
-                    usageAllowed = false;
-                    message = `You have reached your daily limit of ${dailyLimit} activities for the free plan. Upgrade to Pro for unlimited access.`;
-                }
-            } else {
-                transaction.set(userRef, { subscription: { usage: { date: today, count: 1 } } }, { merge: true });
+            const currentUsage = userData.subscription?.usage?.[usageType] || 0;
+
+            if (currentUsage < freeLimits[usageType]) {
+                transaction.set(userRef, { subscription: { usage: { [usageType]: increment(1) } } }, { merge: true });
                 usageAllowed = true;
+            } else {
+                usageAllowed = false;
+                const featureName = usageType.replace(/([A-Z])/g, ' $1').toLowerCase();
+                message = `You have used your free ${featureName}. Upgrade to Pro for unlimited access.`;
             }
         });
         
@@ -251,31 +263,36 @@ export const checkAndIncrementResumeExports = async (userId: string): Promise<{ 
 
             const userData = userDoc.data() as UserData;
             const isPro = userData.subscription?.plan?.startsWith('pro') && userData.subscription.endDate && new Date(userData.subscription.endDate) > new Date();
-            const limit = isPro ? 10 : 2;
-            const period = isPro ? 'monthly' : 'daily';
-
-            const usageField = 'resumeExports';
-            const usageData = userData.subscription?.[usageField];
             
-            let currentPeriod: string;
-            if (period === 'monthly') {
-                currentPeriod = format(new Date(), 'yyyy-MM');
-            } else {
-                currentPeriod = format(new Date(), 'yyyy-MM-dd');
-            }
+            if (isPro) {
+                // Pro plan: 10 exports per month
+                const limit = 10;
+                const usageData = userData.subscription?.resumeExports;
+                const currentPeriod = format(new Date(), 'yyyy-MM');
 
-            if (usageData && usageData.date === currentPeriod) {
-                if (usageData.count < limit) {
-                    transaction.update(userRef, { [`subscription.${usageField}.count`]: increment(1) });
+                if (usageData && usageData.date === currentPeriod) {
+                    if (usageData.count < limit) {
+                        transaction.update(userRef, { 'subscription.resumeExports.count': increment(1) });
+                        usageAllowed = true;
+                    } else {
+                        usageAllowed = false;
+                        message = `You have reached your monthly limit of ${limit} resume exports.`;
+                    }
+                } else {
+                    transaction.set(userRef, { subscription: { resumeExports: { date: currentPeriod, count: 1 } } }, { merge: true });
+                    usageAllowed = true;
+                }
+            } else {
+                // Free plan: 1 lifetime export
+                const limit = 1;
+                const usageData = userData.subscription?.usage?.resumeExport || 0;
+                if (usageData < limit) {
+                    transaction.set(userRef, { subscription: { usage: { resumeExport: increment(1) } } }, { merge: true });
                     usageAllowed = true;
                 } else {
                     usageAllowed = false;
-                    message = `You have reached your ${period} limit of ${limit} resume exports.`;
+                    message = 'You have used your 1 free resume export. Upgrade to Pro for more.';
                 }
-            } else {
-                // First export of the period
-                transaction.set(userRef, { subscription: { [usageField]: { date: currentPeriod, count: 1 } } }, { merge: true });
-                usageAllowed = true;
             }
         });
         
@@ -292,7 +309,16 @@ export const checkAndIncrementResumeExports = async (userId: string): Promise<{ 
 
 export const getPortfolio = async (userId: string): Promise<Portfolio | null> => {
     const userDocData = await getUserData(userId);
-    return userDocData?.portfolio ?? null;
+    const portfolio = userDocData?.portfolio ?? null;
+
+    if (portfolio && userDocData) {
+        const isPro = userDocData.subscription?.plan?.startsWith('pro') && userDocData.subscription.endDate && new Date(userDocData.subscription.endDate) > new Date();
+        const isFreeTrial = userDocData.subscription?.plan === 'free' && userDocData.subscription.startDate && differenceInHours(new Date(), new Date(userDocData.subscription.startDate)) <= 24;
+        if (!isPro && !isFreeTrial) {
+            portfolio.personalInfo.name += " (Preview)";
+        }
+    }
+    return portfolio;
 };
 
 

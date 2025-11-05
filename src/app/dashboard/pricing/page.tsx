@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -20,10 +21,12 @@ const freePlan = {
     name: 'Free',
     price: 0,
     features: [
-        '5 AI interactions per day',
-        'Limited Arena access (Day 1)',
-        '2 Resume exports per day',
-        'Limited Portfolio customization',
+        '1 AI Mock Interview',
+        '1 AI Coding Quiz',
+        '1 AI Study Note Generation',
+        '1 AI Question Set Generation',
+        '1 Resume Export',
+        '1 Day Portfolio Access',
     ],
 };
 
