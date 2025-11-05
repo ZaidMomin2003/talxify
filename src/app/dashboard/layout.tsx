@@ -395,20 +395,14 @@ function DashboardLayoutContent({
     return <main className="flex-1 w-full h-screen overflow-hidden">{children}</main>;
   }
 
+  const practiceItems = [
+    { href: "/dashboard/coding-practice", label: "Coding Practice", icon: Code },
+    { href: "/dashboard/levelup-interview", label: "Mock Interviews", icon: MessageSquare },
+    { href: "/dashboard/notes-generator", label: "Notes Generator", icon: BookOpen },
+    { href: "/dashboard/interview-questions-generator", label: "Question Bank", icon: BrainCircuit },
+  ];
 
-  const menuItems = [
-    { href: "/dashboard", label: "Dashboard", icon: LayoutGrid },
-    { 
-      label: "Level Up", 
-      icon: Rocket, 
-      isPro: true,
-      subItems: [
-        { href: "/dashboard/coding-practice", label: "Coding Quiz Generator", icon: Code },
-        { href: "/dashboard/interview-questions-generator", label: "Interview Questions Generator", icon: MessageSquare },
-        { href: "/dashboard/notes-generator", label: "Notes Generator", icon: BookOpen },
-        { href: "/dashboard/levelup-interview", label: "Interview Generator", icon: MessageSquare },
-      ]
-    },
+  const showcaseItems = [
     { href: "/dashboard/resume-builder", label: "Resume Builder", icon: FileText, isFree: true, isTesting: true },
     { href: "/dashboard/portfolio", label: "Portfolio Builder", icon: User, isPro: true },
   ];
@@ -504,40 +498,29 @@ function DashboardLayoutContent({
         </SidebarHeader>
         <SidebarContent>
           <SidebarMenu>
-            {menuItems.map((item) => (
-              item.subItems ? (
-                  <Collapsible key={item.label} asChild>
-                    <SidebarMenuItem>
-                       <CollapsibleTrigger asChild>
-                           <SidebarMenuButton>
-                              <item.icon />
-                              <span>{item.label}</span>
-                              <ChevronDown className="ml-auto size-4 transition-transform data-[state=open]:rotate-180" />
-                          </SidebarMenuButton>
-                       </CollapsibleTrigger>
-                       <CollapsibleContent className="pl-4">
-                           <SidebarMenu>
-                            {item.subItems.map(subItem => (
-                                <SidebarMenuItem key={subItem.href}>
-                                  <SidebarMenuButton asChild isActive={pathname === subItem.href}>
-                                      <Link href={subItem.href}>
-                                          <subItem.icon />
-                                          <span>{subItem.label}</span>
-                                      </Link>
-                                  </SidebarMenuButton>
-                                </SidebarMenuItem>
-                            ))}
-                           </SidebarMenu>
-                       </CollapsibleContent>
-                    </SidebarMenuItem>
-                  </Collapsible>
-              ) : (
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild isActive={pathname === '/dashboard'}>
+                <Link href="/dashboard"><LayoutGrid />Dashboard</Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+
+            <SidebarGroup>
+              <SidebarGroupLabel>Practice</SidebarGroupLabel>
+              {practiceItems.map(item => (
                 <SidebarMenuItem key={item.label}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={pathname === item.href}
-                  >
-                    <Link href={item.href!}>
+                  <SidebarMenuButton asChild isActive={pathname.startsWith(item.href)}>
+                    <Link href={item.href}><item.icon />{item.label}</Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarGroup>
+
+            <SidebarGroup>
+              <SidebarGroupLabel>Showcase</SidebarGroupLabel>
+              {showcaseItems.map(item => (
+                 <SidebarMenuItem key={item.href}>
+                  <SidebarMenuButton asChild isActive={pathname.startsWith(item.href)}>
+                     <Link href={item.href}>
                       <item.icon />
                       <span>{item.label}</span>
                       <div className="ml-auto flex items-center gap-2">
@@ -575,52 +558,12 @@ function DashboardLayoutContent({
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-              )
-            ))}
+              ))}
+            </SidebarGroup>
           </SidebarMenu>
-          <SidebarSeparator />
-          <SidebarGroup>
-            {allGettingStartedCompleted ? (
-                 <TodoListPopup todos={userData.todos || []} userId={user.uid} onDataRefresh={fetchUserData} />
-            ) : (
-                 <GettingStartedList activity={userData.activity || []} onDataRefresh={fetchUserData} />
-            )}
-          </SidebarGroup>
         </SidebarContent>
         <SidebarFooter>
            <div className="p-2 space-y-2">
-            <Dialog open={isHelpOpen} onOpenChange={setIsHelpOpen}>
-              <DialogTrigger asChild>
-                 <div className="hidden md:block group cursor-pointer rounded-lg border-2 border-dashed border-border p-4 text-center hover:border-primary hover:bg-primary/5 transition-all">
-                    <div className="flex justify-center mb-2">
-                        <div className="rounded-full bg-primary/10 p-3 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
-                            <Rocket className="h-6 w-6" />
-                        </div>
-                    </div>
-                    <p className="font-semibold text-foreground">How to use Talxify</p>
-                    <p className="text-xs text-muted-foreground">A quick step-by-step guide</p>
-                </div>
-              </DialogTrigger>
-              <DialogContent className="max-w-lg">
-                <DialogHeader>
-                    <DialogTitle className="text-2xl font-bold">Getting Started with Talxify</DialogTitle>
-                    <DialogDescription>Follow these steps to make the most of the platform.</DialogDescription>
-                </DialogHeader>
-                 <div className="my-6 space-y-4 max-h-[70vh] overflow-y-auto pr-4">
-                    {guideSteps.map(step => (
-                        <div key={step.title} className="flex items-start gap-4">
-                            <div className="bg-primary/10 text-primary rounded-lg p-2 mt-0.5">
-                                <step.icon className="w-5 h-5" />
-                            </div>
-                            <div>
-                                <p className="font-semibold text-foreground">{step.title}</p>
-                                <p className="text-sm text-muted-foreground">{step.description}</p>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-              </DialogContent>
-            </Dialog>
             
             {isFreePlan ? (
                  <Button asChild className="w-full bg-gradient-to-r from-purple-500 to-blue-500 text-white hover:from-purple-600 hover:to-blue-600 shadow-lg">
