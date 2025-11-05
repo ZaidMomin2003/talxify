@@ -1,7 +1,7 @@
 'use client';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
-import { ArrowRight, Code, FileText, Layers, Palette, Zap } from 'lucide-react';
+import { ArrowRight, Code, FileText, BrainCircuit, MessageSquare, BookOpen, User } from 'lucide-react';
 
 interface BentoGridItemProps {
   title: string;
@@ -60,42 +60,42 @@ const BentoGridItem = ({
 
 const items = [
   {
-    title: 'Developer Experience',
+    title: 'AI Mock Interviews',
     description:
-      'Built with developers in mind, making implementation a breeze.',
-    icon: <Code className="size-6" />,
+      'Practice with a realistic AI that asks relevant technical and behavioral questions and provides instant feedback.',
+    icon: <MessageSquare className="size-6" />,
     size: 'large' as const,
   },
   {
-    title: 'Accessibility',
+    title: 'Coding Gym',
     description:
-      'Built with a11y best practices to ensure your app is usable by everyone.',
-    icon: <Layers className="size-6" />,
+      'Solve coding problems and get line-by-line feedback and optimal solutions from our AI assistant.',
+    icon: <Code className="size-6" />,
     size: 'small' as const,
   },
   {
-    title: 'Responsive Design',
-    description: 'Create layouts that adapt to any screen size with ease.',
-    icon: <Layers className="size-6" />,
+    title: 'Question Generator',
+    description: 'Generate tailored interview questions for any role, level, or company to target your preparation.',
+    icon: <BrainCircuit className="size-6" />,
     size: 'medium' as const,
   },
   {
-    title: 'Customizable',
-    description: "Tailor components to match your brand's unique style.",
-    icon: <Palette className="size-6" />,
+    title: 'AI Notes Generator',
+    description: "Instantly create detailed study guides on any technical topic to deepen your understanding.",
+    icon: <BookOpen className="size-6" />,
     size: 'medium' as const,
   },
   {
-    title: 'Performance',
-    description: 'Optimized for speed and efficiency across all devices.',
-    icon: <Zap className="size-6" />,
-    size: 'small' as const,
-  },
-  {
-    title: 'Documentation',
-    description:
-      'Comprehensive guides and examples to help you get started quickly.',
+    title: 'Resume Builder',
+    description: 'Craft a professional, keyword-optimized resume that stands out to recruiters.',
     icon: <FileText className="size-6" />,
+    size: 'small' as const,
+  },
+  {
+    title: 'Portfolio Builder',
+    description:
+      'Automatically showcase your skills and completed challenges in a shareable portfolio.',
+    icon: <User className="size-6" />,
     size: 'large' as const,
   },
 ];
@@ -117,7 +117,8 @@ export default function LandingProductFeatures() {
         className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-6"
         variants={containerVariants}
         initial="hidden"
-        animate="visible"
+        whileInView="visible"
+        viewport={{ once: true }}
       >
         {items.map((item, i) => (
           <BentoGridItem
