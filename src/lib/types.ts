@@ -4,7 +4,7 @@ import type { AnswerAnalysis } from "@/ai/flows/analyze-coding-answers";
 import type { GenerateStudyNotesOutput } from "@/ai/flows/generate-study-notes";
 import type { QuizState } from "@/app/dashboard/coding-quiz/quiz/page";
 import type { SyllabusDay } from "@/ai/flows/generate-syllabus";
-import { z } from 'genkit';
+import { z } from 'zod';
 import { type serverTimestamp } from "firebase/firestore";
 
 // A generic type for any activity stored in the user's document
@@ -140,6 +140,10 @@ export interface UserData {
     retakeCounts?: { [topic: string]: number };
     timestamp?: any;
     todos: TodoItem[];
+    onboardingInfo?: {
+        roles: string[];
+        companies: string[];
+    }
 }
 
 // --- Auth ---
@@ -420,4 +424,3 @@ export const InterviewFlowOutputSchema = z.object({
   transcript: z.array(TranscriptEntrySchema),
 });
 export type InterviewFlowOutput = z.infer<typeof InterviewFlowOutputSchema>;
-

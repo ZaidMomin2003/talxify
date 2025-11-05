@@ -6,7 +6,6 @@ import { doc, getDoc, setDoc, updateDoc, arrayUnion, collection, getDocs, addDoc
 import { db } from './firebase';
 import type { UserData, Portfolio, StoredActivity, OnboardingData, SurveySubmission, IcebreakerData, TodoItem } from './types';
 import { initialPortfolioData } from './initial-data';
-import type { SyllabusDay } from '@/ai/flows/generate-syllabus';
 import { format, differenceInHours } from 'date-fns';
 import { getUserBySlug } from '@/app/zaidmin/actions';
 
@@ -69,7 +68,7 @@ export const getUserData = async (userId: string): Promise<UserData | null> => {
   return null;
 };
 
-export const updateUserOnboardingData = async (userId: string, onboardingData: OnboardingData, syllabus: SyllabusDay[]): Promise<void> => {
+export const updateUserOnboardingData = async (userId: string, onboardingData: OnboardingData): Promise<void> => {
     const userRef = doc(db, 'users', userId);
     const updateData = {
         'portfolio.personalInfo.name': onboardingData.name,
@@ -79,7 +78,9 @@ export const updateUserOnboardingData = async (userId: string, onboardingData: O
             year: 'N/A'
         }],
         onboardingCompleted: true,
-        syllabus: syllabus
+        // Also save roles and companies for future use, even without a syllabus
+        'onboardingInfo.roles': onboardingData.roles,
+        'onboardingInfo.companies': onboardingData.companies,
     };
     await setDoc(userRef, updateData, { merge: true });
 }

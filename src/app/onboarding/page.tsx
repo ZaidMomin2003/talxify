@@ -10,7 +10,6 @@ import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { updateUserOnboardingData } from '@/lib/firebase-service';
-import { generateSyllabus, GenerateSyllabusInput } from '@/ai/flows/generate-syllabus';
 import type { OnboardingData } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -111,8 +110,8 @@ export default function OnboardingPage() {
       return;
     }
     
-    if (formData.roles.length === 0 || formData.companies.length === 0) {
-        toast({ title: "Information Missing", description: "Please select at least one role and one company.", variant: "destructive" });
+    if (!formData.university || !formData.major) {
+        toast({ title: "Information Missing", description: "Please provide your education details.", variant: "destructive" });
         return;
     }
 
@@ -120,22 +119,16 @@ export default function OnboardingPage() {
     setStep(prev => prev + 1); // Move to loading screen
 
     try {
-        const syllabusInput: GenerateSyllabusInput = {
-            roles: formData.roles.join(', '),
-            companies: formData.companies.join(', '),
-        };
-        const syllabusResult = await generateSyllabus(syllabusInput);
-        
-        await updateUserOnboardingData(user.uid, formData, syllabusResult.syllabus);
+        await updateUserOnboardingData(user.uid, formData);
         
         sessionStorage.removeItem(storageKey); // Clear session storage on success
         
-        toast({ title: "Onboarding Complete!", description: "Your personalized learning plan is ready." });
-        router.push('/dashboard/arena');
+        toast({ title: "Onboarding Complete!", description: "Your profile has been updated." });
+        router.push('/dashboard');
 
     } catch (error) {
         console.error("Onboarding failed:", error);
-        toast({ title: "Onboarding Failed", description: "Could not generate your syllabus. Please try again.", variant: "destructive" });
+        toast({ title: "Onboarding Failed", description: "Could not save your information. Please try again.", variant: "destructive" });
         setIsProcessing(false);
         setStep(prev => prev -1); // Go back to the form
     }
@@ -169,7 +162,7 @@ export default function OnboardingPage() {
     // Step 2: Roles
     <motion.div key={2} custom={direction} variants={variants} initial="enter" animate="center" exit="exit" transition={{ type: 'tween' }} className="w-full space-y-6">
         <h2 className="text-3xl font-bold font-headline">What roles are you interested in?</h2>
-        <p className="text-muted-foreground">Select all that apply.</p>
+        <p className="text-muted-foreground">This helps us tailor content in the future. Select all that apply.</p>
         <div className="flex flex-wrap gap-3">
             {roles.map(role => (
                  <Badge 
@@ -193,14 +186,14 @@ export default function OnboardingPage() {
         </div>
         <div className="flex gap-4">
              <Button onClick={handleBack} variant="outline" size="lg">Back</Button>
-             <Button onClick={handleNext} size="lg" disabled={formData.roles.length === 0}>Next</Button>
+             <Button onClick={handleNext} size="lg">Next</Button>
         </div>
     </motion.div>,
 
     // Step 3: Companies
     <motion.div key={3} custom={direction} variants={variants} initial="enter" animate="center" exit="exit" transition={{ type: 'tween' }} className="w-full space-y-6">
         <h2 className="text-3xl font-bold font-headline">Any dream companies?</h2>
-        <p className="text-muted-foreground">Select your target companies.</p>
+        <p className="text-muted-foreground">This helps us understand your goals.</p>
         <div className="flex flex-wrap gap-3">
             {companies.map(company => (
                  <Badge 
@@ -224,15 +217,17 @@ export default function OnboardingPage() {
         </div>
         <div className="flex gap-4">
             <Button onClick={handleBack} variant="outline" size="lg">Back</Button>
-            <Button onClick={handleSubmit} size="lg" disabled={formData.companies.length === 0}>Finish Onboarding</Button>
+            <Button onClick={handleSubmit} size="lg" disabled={isProcessing}>
+               {isProcessing ? <Loader2 className="animate-spin" /> : 'Finish Onboarding'}
+            </Button>
         </div>
     </motion.div>,
 
     // Step 4: Processing
     <motion.div key={4} custom={direction} variants={variants} initial="enter" animate="center" exit="exit" transition={{ type: 'tween' }} className="w-full text-center">
         <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto mb-6" />
-        <h2 className="text-3xl font-bold font-headline">Crafting Your Plan...</h2>
-        <p className="text-muted-foreground mt-2">Our AI is generating a personalized 60-day syllabus just for you.</p>
+        <h2 className="text-3xl font-bold font-headline">Saving Your Profile...</h2>
+        <p className="text-muted-foreground mt-2">Getting your dashboard ready.</p>
     </motion.div>
   ];
 
@@ -255,5 +250,3 @@ export default function OnboardingPage() {
     </div>
   );
 }
-
-    
