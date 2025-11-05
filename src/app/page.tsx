@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import AppHero from "./landing-hero";
@@ -91,7 +89,6 @@ export default function LandingPage() {
         
         <LandingValueProposition />
         <LandingProductFeatures />
-        <LandingFeatures />
         <LandingTestimonials />
         <LandingPricing />
         <LandingFaq />
