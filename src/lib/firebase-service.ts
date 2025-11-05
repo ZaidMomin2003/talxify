@@ -153,6 +153,10 @@ export const updateSubscription = async (userId: string, plan: 'pro-60d'): Promi
 };
 
 export const checkAndIncrementUsage = async (userId: string, usageType: 'general' | 'aiEnhancements' | 'interview' = 'general'): Promise<{ success: boolean; message: string; }> => {
+    // Temporarily allow unlimited usage for all users.
+    return { success: true, message: '' };
+
+    /*
     const userRef = doc(db, 'users', userId);
 
     try {
@@ -209,6 +213,7 @@ export const checkAndIncrementUsage = async (userId: string, usageType: 'general
         console.error(`${usageType} usage transaction failed: `, e);
         return { success: false, message: `An error occurred while checking your usage limit. Please try again.` };
     }
+    */
 }
 
 
