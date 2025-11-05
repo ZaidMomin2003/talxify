@@ -4,6 +4,13 @@
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
 
+export async function getRazorpayKeyId() {
+  if (!process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID) {
+    throw new Error('Razorpay Key ID is not configured.');
+  }
+  return process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
+}
+
 export async function createOrder(amount: number, planId: string) {
   if (!process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
     throw new Error('Razorpay keys are not configured in environment variables.');

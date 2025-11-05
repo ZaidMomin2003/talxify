@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Check, Star, Loader2, UserRound, Sparkles, Info, Ticket, CreditCard, Wallet, Trophy } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import React, { useState, useEffect } from 'react';
-import { createOrder, verifyPayment } from '@/app/actions/razorpay';
+import { createOrder, verifyPayment, getRazorpayKeyId } from '@/app/actions/razorpay';
 import Script from 'next/script';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
@@ -89,10 +89,14 @@ export default function PricingPage() {
         setLoadingPlan(planId);
 
         try {
+            const key = await getRazorpayKeyId();
+            if (!key) {
+              throw new Error("Razorpay Key ID is not configured.");
+            }
             const order = await createOrder(amount, planId);
 
             const options = {
-                key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+                key,
                 amount: order.amount,
                 currency: order.currency,
                 name: 'Talxify',
@@ -104,10 +108,7 @@ export default function PricingPage() {
                     const { isAuthentic } = await verifyPayment(razorpay_order_id, razorpay_payment_id, razorpay_signature);
 
                     if (isAuthentic) {
-                        const orderDetails = await new (window as any).Razorpay.Checkout({ key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID }).getOrderDetails(razorpay_order_id);
-                        const purchasedPlanId = orderDetails.notes.planId;
-                        
-                        await updateSubscription(user.uid, purchasedPlanId);
+                        await updateSubscription(user.uid, planId);
                         toast({
                             title: "Payment Successful!",
                             description: `Your subscription is now active.`,
@@ -141,9 +142,9 @@ export default function PricingPage() {
                 });
             });
 
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
-            toast({ title: "Payment Error", description: "Something went wrong. Please try again.", variant: "destructive" });
+            toast({ title: "Payment Error", description: error.message || "Something went wrong. Please try again.", variant: "destructive" });
         } finally {
             setLoadingPlan(null);
         }
