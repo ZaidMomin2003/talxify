@@ -1,8 +1,7 @@
-
 'use client';
-import { useEffect, useRef, useState } from 'react';
-import { Color, Scene, Fog, PerspectiveCamera, Vector3 } from 'three';
-import { useThree, Canvas } from '@react-three/fiber';
+import { useEffect, useRef } from 'react';
+import { Color } from 'three';
+import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import {
   default as globeVertexShader,
@@ -20,15 +19,8 @@ function Globe({
   glowColor: [number, number, number];
   scale?: number;
 }) {
-  const { gl } = useThree();
   const meshRef = useRef<any>();
-  const [aspect, setAspect] = useState(1);
-
-  useEffect(() => {
-    const { width, height } = gl.domElement.getBoundingClientRect();
-    setAspect(width / height);
-  }, [gl]);
-
+  
   const uniforms = {
     baseColor: { value: new Color(...baseColor) },
     markerColor: { value: new Color(...markerColor) },
