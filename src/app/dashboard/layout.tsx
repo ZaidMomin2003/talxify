@@ -42,7 +42,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Bot, Code, LayoutGrid, MessageSquare, BarChart, Settings, History, Search, User, LogOut, Gem, LifeBuoy, Sun, Moon, Briefcase, CalendarDays, BrainCircuit, PlayCircle, X, CheckCircle, Circle, Swords, BookOpen, AlertTriangle, FileText, FlaskConical, Rocket, ListChecks, Plus, Edit, ShoppingCart, ChevronDown, Wand2 } from "lucide-react";
-import type { StoredActivity, QuizResult, UserData, InterviewActivity, NoteGenerationActivity, TodoItem } from "@/lib/types";
+import type { StoredActivity, QuizResult, UserData, InterviewActivity, NoteGenerationActivity, TodoItem, InterviewQuestionSetActivity } from "@/lib/types";
 import { formatDistanceToNow, format } from 'date-fns';
 import { useAuth } from "@/context/auth-context";
 import { useRouter } from "next/navigation";
@@ -495,6 +495,10 @@ function DashboardLayoutContent({
                 <span className="text-xs -mt-1 text-muted-foreground">AI Job Assistant</span>
             </div>
           </div>
+          <div className="relative mt-2">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input placeholder="Search everywhere..." className="pl-9" />
+          </div>
         </SidebarHeader>
         <SidebarContent>
           <SidebarMenu>
@@ -745,5 +749,7 @@ export default function DashboardLayout({
     <DashboardLayoutContent>{children}</DashboardLayoutContent>
   )
 }
+
+    
 
     
