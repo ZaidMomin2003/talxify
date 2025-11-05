@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Rocket, Code, Briefcase, Percent, Search, RefreshCw, BarChart, Info, CalendarDays, Loader2, Lock, Building, BrainCircuit, User, Gem, CheckCircle, BookOpen, PlayCircle, Star, Swords, ArrowRight } from "lucide-react";
+import { Rocket, Code, Briefcase, Percent, Search, RefreshCw, BarChart, Info, CalendarDays, Loader2, Lock, Building, BrainCircuit, User, Gem, CheckCircle, BookOpen, PlayCircle, Star, Swords, ArrowRight, MessageSquare, Wand2 } from "lucide-react";
 import Link from "next/link";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useForm } from "react-hook-form";
@@ -63,6 +63,21 @@ const getOverallScore = (analysis: QuizResult['analysis']) => {
     const totalScore = analysis.reduce((sum, item) => sum + item.score, 0);
     return Math.round((totalScore / analysis.length) * 100);
 };
+
+const LevelUpToolCard = ({ href, icon: Icon, title, description }: { href: string; icon: React.ElementType; title: string; description: string }) => (
+    <Link href={href} className="group block">
+        <div className="flex items-start gap-4 p-3 rounded-lg hover:bg-muted transition-colors">
+            <div className="bg-primary/10 text-primary p-2 rounded-lg mt-1 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                <Icon className="w-5 h-5"/>
+            </div>
+            <div>
+                <p className="font-semibold text-foreground group-hover:text-primary transition-colors">{title}</p>
+                <p className="text-sm text-muted-foreground">{description}</p>
+            </div>
+            <ArrowRight className="w-5 h-5 text-muted-foreground ml-auto self-center opacity-0 group-hover:opacity-100 transition-opacity" />
+        </div>
+    </Link>
+);
 
 
 export default function DashboardPage() {
@@ -306,32 +321,18 @@ export default function DashboardPage() {
 
         <div>
             <Card className="h-full flex flex-col">
-                 <CardHeader>
-                    <CardTitle>Today's Focus: Day {currentDayNumber}</CardTitle>
-                    {currentDayData ? (
-                        <CardDescription>Topic: <span className="font-semibold text-foreground">{currentDayData.topic}</span></CardDescription>
-                    ) : (
-                         <CardDescription>You've completed the Arena!</CardDescription>
-                    )}
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-3"><Wand2 className="w-6 h-6 text-primary"/> Level Up Tools</CardTitle>
+                    <CardDescription>Shortcuts to your AI-powered generators.</CardDescription>
                 </CardHeader>
-                 <CardContent className="flex-grow space-y-3">
-                    {currentDayData ? (
-                        <>
-                           {!isFinalDay && <FocusChecklistItem icon={BookOpen} text="Study Core Concepts" isCompleted={currentDayStatus.learn} />}
-                           <FocusChecklistItem icon={Code} text="Take Code Izanami" isCompleted={currentDayStatus.quiz} />
-                           {interviewIsScheduled && (
-                                <FocusChecklistItem icon={Briefcase} text="Mock Interview" isCompleted={currentDayStatus.interview} />
-                           )}
-                        </>
-                    ) : (
-                        <div className="text-center text-muted-foreground h-full flex flex-col justify-center items-center">
-                            <Star className="w-10 h-10 mb-4 text-yellow-500" />
-                            <p className="font-semibold">Congratulations!</p>
-                        </div>
-                    )}
+                <CardContent className="flex-grow space-y-1">
+                   <LevelUpToolCard href="/dashboard/coding-practice" icon={Code} title="Coding Quiz Generator" description="Create custom coding quizzes." />
+                   <LevelUpToolCard href="/dashboard/interview-questions-generator" icon={MessageSquare} title="Interview Questions Generator" description="Generate tailored Q&A for any role." />
+                   <LevelUpToolCard href="/dashboard/notes-generator" icon={BookOpen} title="Notes Generator" description="Get detailed study notes on any topic." />
+                   <LevelUpToolCard href="/dashboard/levelup-interview" icon={Briefcase} title="Mock Interview Generator" description="Start a mock interview session." />
                 </CardContent>
                 <CardFooter>
-                     <Button asChild className="w-full">
+                     <Button asChild className="w-full" variant="ghost">
                         <Link href="/dashboard/arena">Go to Arena <ArrowRight className="ml-2 w-4 h-4"/></Link>
                     </Button>
                 </CardFooter>
