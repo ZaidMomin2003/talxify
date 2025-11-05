@@ -1,9 +1,9 @@
 
 "use client";
 import React, { useEffect, useState } from "react";
-import { tsParticles } from "@tsparticles/engine";
-import type { Engine } from "@tsparticles/engine";
-import { loadSlim } from "@tsparticles/slim";
+import { tsParticles } from "tsparticles-engine";
+import type { Engine } from "tsparticles-engine";
+import { loadSlim } from "tsparticles-slim";
 
 export const SparklesCore = (props: {
   id?: string;
