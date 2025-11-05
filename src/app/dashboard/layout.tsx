@@ -39,7 +39,6 @@ import {
   SidebarSeparator,
   SidebarGroup,
   SidebarGroupLabel,
-  SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Bot, Code, LayoutGrid, MessageSquare, BarChart, Settings, History, Search, User, LogOut, Gem, LifeBuoy, Sun, Moon, Briefcase, CalendarDays, BrainCircuit, PlayCircle, X, CheckCircle, Circle, Swords, BookOpen, AlertTriangle, FileText, FlaskConical, Rocket, ListChecks, Plus, Edit, ShoppingCart, ChevronDown, Wand2 } from "lucide-react";
