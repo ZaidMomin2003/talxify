@@ -104,40 +104,6 @@ const ImagePicker = ({ value, onChange, dataAiHint, isAvatar, isCloudinaryLoaded
     )
 }
 
-function LockedFeature() {
-    return (
-        <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8 flex items-center justify-center">
-            <Card className="max-w-md w-full text-center shadow-lg">
-                 <CardHeader>
-                    <div className="mx-auto bg-primary/10 text-primary rounded-full p-3 w-fit mb-2">
-                        <Lock className="h-8 w-8" />
-                    </div>
-                    <CardTitle className="text-2xl font-bold">Feature Locked</CardTitle>
-                    <CardDescription>
-                        The Portfolio Editor is a Pro feature. Please upgrade or renew your plan to customize and share your professional portfolio.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <Button asChild size="lg">
-                        <Link href="/dashboard/pricing">
-                            <Gem className="mr-2 h-4 w-4" />
-                            Upgrade to Pro
-                        </Link>
-                    </Button>
-                </CardContent>
-            </Card>
-        </main>
-    )
-}
-
-const colorOptions = [
-    { name: 'Default', hsl: '221.2 83.2% 53.3%' },
-    { name: 'Forest Green', hsl: '142.1 76.2% 36.3%' },
-    { name: 'Midnight Blue', hsl: '210 40% 30%' },
-    { name: 'Ruby Red', hsl: '351 83% 40%' },
-    { name: 'Royal Purple', hsl: '262 52% 47%' },
-];
-
 
 export default function PortfolioPage() {
   const { user } = useAuth();
@@ -295,10 +261,6 @@ export default function PortfolioPage() {
     });
   };
 
-  const { plan, endDate } = userData?.subscription || {};
-  const isExpired = endDate ? new Date() > new Date(endDate) : false;
-  const isFreePlan = !plan || plan === 'free' || isExpired;
-
 
   if (isLoading) {
     return (
@@ -308,10 +270,6 @@ export default function PortfolioPage() {
     );
   }
   
-  if (isFreePlan) {
-    return <LockedFeature />;
-  }
-
   if (!portfolio) {
       return (
         <div className="flex h-full w-full items-center justify-center">

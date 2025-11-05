@@ -1,19 +1,15 @@
 
-
 'use client';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check, Star, Loader2, UserRound, Sparkles, Info, Ticket, CreditCard, Wallet, Trophy } from 'lucide-react';
+import { Check, Star, Loader2, UserRound, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import React, { useState, useEffect } from 'react';
-import { createOrder, verifyPayment, getRazorpayKeyId } from '@/app/actions/razorpay';
-import Script from 'next/script';
+import React, { useState } from 'react';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { updateSubscription } from '@/lib/firebase-service';
 import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
 import type { SubscriptionPlan } from '@/lib/types';
 
 
@@ -80,71 +76,26 @@ export default function PricingPage() {
     const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
     const [selectedPlanId, setSelectedPlanId] = useState<SubscriptionPlan>('pro-2m');
 
-    const handleRazorpayPayment = async (amount: number, planId: SubscriptionPlan) => {
+    const handleSimulatedPayment = async (planId: SubscriptionPlan) => {
         if (!user) {
-            toast({ title: "Authentication Error", description: "You must be logged in to make a purchase.", variant: "destructive" });
+            toast({ title: "Authentication Error", description: "You must be logged in to upgrade your plan.", variant: "destructive" });
             return;
         }
 
         setLoadingPlan(planId);
 
         try {
-            const key = await getRazorpayKeyId();
-            if (!key) {
-              throw new Error("Razorpay Key ID is not configured.");
-            }
-            const order = await createOrder(amount, planId);
-
-            const options = {
-                key,
-                amount: order.amount,
-                currency: order.currency,
-                name: 'Talxify',
-                description: `Pro Plan - ${planId}`,
-                order_id: order.id,
-                handler: async function (response: any) {
-                    const { razorpay_payment_id, razorpay_order_id, razorpay_signature } = response;
-                    
-                    const { isAuthentic } = await verifyPayment(razorpay_order_id, razorpay_payment_id, razorpay_signature);
-
-                    if (isAuthentic) {
-                        await updateSubscription(user.uid, planId);
-                        toast({
-                            title: "Payment Successful!",
-                            description: `Your subscription is now active.`,
-                        });
-                        router.push('/dashboard');
-                    } else {
-                        toast({
-                            title: "Payment Verification Failed",
-                            description: "Your payment could not be verified. Please contact support.",
-                            variant: "destructive",
-                        });
-                    }
-                },
-                prefill: {
-                    name: user.displayName || '',
-                    email: user.email || '',
-                },
-                theme: {
-                    color: '#3F51B5'
-                }
-            };
-
-            const rzp = new (window as any).Razorpay(options);
-            rzp.open();
-            
-            rzp.on('payment.failed', function (response: any){
-                toast({
-                    title: "Payment Failed",
-                    description: response.error.description,
-                    variant: "destructive"
-                });
+            // Simulate a successful payment and update subscription
+            await updateSubscription(user.uid, planId);
+            toast({
+                title: "Upgrade Successful!",
+                description: `Your subscription is now active. Enjoy your Pro features!`,
             });
+            router.push('/dashboard');
 
         } catch (error: any) {
             console.error(error);
-            toast({ title: "Payment Error", description: error.message || "Something went wrong. Please try again.", variant: "destructive" });
+            toast({ title: "Upgrade Error", description: error.message || "Something went wrong. Please try again.", variant: "destructive" });
         } finally {
             setLoadingPlan(null);
         }
@@ -153,10 +104,6 @@ export default function PricingPage() {
 
     return (
         <>
-            <Script
-                id="razorpay-checkout-js"
-                src="https://checkout.razorpay.com/v1/checkout.js"
-            />
             <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
                 <div className="text-center mb-12">
                     <h1 className="text-4xl font-bold font-headline tracking-tighter sm:text-5xl">
@@ -200,7 +147,7 @@ export default function PricingPage() {
                         <Card className="shadow-lg border-primary border-2 shadow-primary/20">
                              <CardHeader>
                                 <div className="flex justify-center items-center gap-3 mb-2 text-primary">
-                                    <Trophy className="w-8 h-8"/>
+                                    <Star className="w-8 h-8"/>
                                     <CardTitle className="text-3xl font-bold font-headline">Pro Plans</CardTitle>
                                 </div>
                                 <CardDescription className="text-center">Unlock your full potential and land your dream job with our comprehensive toolkit.</CardDescription>
@@ -252,7 +199,7 @@ export default function PricingPage() {
                                     selectedPlanId === plan.id && (
                                          <Button 
                                             key={plan.id}
-                                            onClick={() => handleRazorpayPayment(plan.priceInr, plan.id)} 
+                                            onClick={() => handleSimulatedPayment(plan.id)} 
                                             className="w-full" 
                                             size="lg"
                                             disabled={!!loadingPlan}

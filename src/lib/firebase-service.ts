@@ -1,12 +1,11 @@
 
-
 'use client';
 
 import { doc, getDoc, setDoc, updateDoc, arrayUnion, collection, getDocs, addDoc, serverTimestamp, runTransaction, deleteDoc, increment, arrayRemove, Timestamp } from 'firebase/firestore';
 import { db } from './firebase';
 import type { UserData, Portfolio, StoredActivity, OnboardingData, SurveySubmission, IcebreakerData, TodoItem, SubscriptionPlan, UsageType } from './types';
 import { initialPortfolioData } from './initial-data';
-import { format, differenceInHours, addMonths, addDays } from 'date-fns';
+import { format, differenceInHours, addMonths, addYears } from 'date-fns';
 import { getUserBySlug } from '@/app/zaidmin/actions';
 
 
@@ -44,13 +43,7 @@ export const createUserDocument = async (userId: string, email: string, name: st
         plan: 'free',
         status: 'active', // Free plan is always active
         endDate: null,
-        usage: {
-            interview: 0,
-            codingQuiz: 0,
-            notes: 0,
-            questionGenerator: 0,
-            resumeExport: 0,
-        }
+        usage: {}
       },
       onboardingCompleted: false,
       syllabus: [],
@@ -145,163 +138,33 @@ export const updateSubscription = async (userId: string, planId: SubscriptionPla
   const userRef = doc(db, 'users', userId);
   const currentDate = new Date();
   
-  let monthsToAdd = 0;
-  let interviewLimit = 0;
-
-  if (planId === 'pro-1m') {
-    monthsToAdd = 1;
-    interviewLimit = 10;
-  } else if (planId === 'pro-2m') {
-    monthsToAdd = 2;
-    interviewLimit = 25;
-  } else if (planId === 'pro-3m') {
-    monthsToAdd = 3;
-    interviewLimit = 40;
-  }
-
-  if (monthsToAdd === 0) {
-      throw new Error("Invalid plan ID provided for subscription update.");
-  }
-
-  const endDate = addMonths(currentDate, monthsToAdd);
+  // Set a long expiration date to simulate a permanent Pro plan for now
+  const endDate = addYears(currentDate, 5);
 
   const subscriptionData = {
     plan: planId,
     status: 'active',
     startDate: currentDate.toISOString(),
     endDate: endDate.toISOString(),
-    interviewUsage: {
-        limit: interviewLimit,
-        count: 0
-    },
-    // Reset free tier usage on upgrade
     usage: {},
   };
 
   await setDoc(userRef, { 
       subscription: subscriptionData,
-      // Reset monthly resume exports on new subscription
       'subscription.resumeExports': { date: format(new Date(), 'yyyy-MM'), count: 0 },
     }, { merge: true });
 };
 
 export const checkAndIncrementUsage = async (userId: string, usageType: UsageType): Promise<{ success: boolean; message: string; }> => {
-    const userRef = doc(db, 'users', userId);
-
-    try {
-        let usageAllowed = false;
-        let message = '';
-        await runTransaction(db, async (transaction) => {
-            const userDoc = await transaction.get(userRef);
-            if (!userDoc.exists()) {
-                throw new Error("User document does not exist!");
-            }
-
-            const userData = userDoc.data() as UserData;
-            const isPro = userData.subscription?.plan?.startsWith('pro') && userData.subscription.endDate && new Date(userData.subscription.endDate) > new Date();
-            
-            // Pro Plan Logic
-            if (isPro) {
-                if (usageType === 'interview') {
-                     const interviewUsage = userData.subscription?.interviewUsage || { count: 0, limit: 10 };
-                     if (interviewUsage.count < interviewUsage.limit) {
-                         transaction.update(userRef, { 'subscription.interviewUsage.count': increment(1) });
-                         usageAllowed = true;
-                     } else {
-                         usageAllowed = false;
-                         message = `You have reached your limit of ${interviewUsage.limit} AI interviews for this plan.`;
-                     }
-                } else {
-                    // All other usage types are unlimited for Pro users
-                    usageAllowed = true;
-                }
-                return;
-            }
-            
-            // Free Plan Logic
-            const freeLimits: Record<UsageType, number> = {
-                interview: 1,
-                codingQuiz: 1,
-                notes: 1,
-                questionGenerator: 1,
-                resumeExport: 1,
-                aiEnhancement: 1,
-            };
-
-            const currentUsage = userData.subscription?.usage?.[usageType] || 0;
-
-            if (currentUsage < freeLimits[usageType]) {
-                transaction.set(userRef, { subscription: { usage: { [usageType]: increment(1) } } }, { merge: true });
-                usageAllowed = true;
-            } else {
-                usageAllowed = false;
-                const featureName = usageType.replace(/([A-Z])/g, ' $1').toLowerCase();
-                message = `You have used your free ${featureName}. Upgrade to Pro for unlimited access.`;
-            }
-        });
-        
-        return { success: usageAllowed, message };
-
-    } catch (e) {
-        console.error(`${usageType} usage transaction failed: `, e);
-        return { success: false, message: `An error occurred while checking your usage limit. Please try again.` };
-    }
+    // This function is temporarily modified to always allow usage.
+    // No limits are being checked or enforced.
+    return { success: true, message: '' };
 }
 
 
 export const checkAndIncrementResumeExports = async (userId: string): Promise<{ success: boolean; message: string; }> => {
-    const userRef = doc(db, 'users', userId);
-
-    try {
-        let usageAllowed = false;
-        let message = '';
-        await runTransaction(db, async (transaction) => {
-            const userDoc = await transaction.get(userRef);
-            if (!userDoc.exists()) {
-                throw new Error("User document does not exist!");
-            }
-
-            const userData = userDoc.data() as UserData;
-            const isPro = userData.subscription?.plan?.startsWith('pro') && userData.subscription.endDate && new Date(userData.subscription.endDate) > new Date();
-            
-            if (isPro) {
-                // Pro plan: 10 exports per month
-                const limit = 10;
-                const usageData = userData.subscription?.resumeExports;
-                const currentPeriod = format(new Date(), 'yyyy-MM');
-
-                if (usageData && usageData.date === currentPeriod) {
-                    if (usageData.count < limit) {
-                        transaction.update(userRef, { 'subscription.resumeExports.count': increment(1) });
-                        usageAllowed = true;
-                    } else {
-                        usageAllowed = false;
-                        message = `You have reached your monthly limit of ${limit} resume exports.`;
-                    }
-                } else {
-                    transaction.set(userRef, { subscription: { resumeExports: { date: currentPeriod, count: 1 } } }, { merge: true });
-                    usageAllowed = true;
-                }
-            } else {
-                // Free plan: 1 lifetime export
-                const limit = 1;
-                const usageData = userData.subscription?.usage?.resumeExport || 0;
-                if (usageData < limit) {
-                    transaction.set(userRef, { subscription: { usage: { resumeExport: increment(1) } } }, { merge: true });
-                    usageAllowed = true;
-                } else {
-                    usageAllowed = false;
-                    message = 'You have used your 1 free resume export. Upgrade to Pro for more.';
-                }
-            }
-        });
-        
-        return { success: usageAllowed, message };
-
-    } catch (e) {
-        console.error("Resume export transaction failed: ", e);
-        return { success: false, message: "An error occurred while checking your export limit. Please try again." };
-    }
+    // This function is temporarily modified to always allow resume exports.
+    return { success: true, message: '' };
 }
 
 
@@ -309,16 +172,7 @@ export const checkAndIncrementResumeExports = async (userId: string): Promise<{ 
 
 export const getPortfolio = async (userId: string): Promise<Portfolio | null> => {
     const userDocData = await getUserData(userId);
-    const portfolio = userDocData?.portfolio ?? null;
-
-    if (portfolio && userDocData) {
-        const isPro = userDocData.subscription?.plan?.startsWith('pro') && userDocData.subscription.endDate && new Date(userDocData.subscription.endDate) > new Date();
-        const isFreeTrial = userDocData.subscription?.plan === 'free' && userDocData.subscription.startDate && differenceInHours(new Date(), new Date(userDocData.subscription.startDate)) <= 24;
-        if (!isPro && !isFreeTrial) {
-            portfolio.personalInfo.name += " (Preview)";
-        }
-    }
-    return portfolio;
+    return userDocData?.portfolio ?? null;
 };
 
 
@@ -474,5 +328,3 @@ export const saveWaitlistSubmission = async (submission: {name: string, email: s
         throw error;
     }
 }
-
-    

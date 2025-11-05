@@ -11,12 +11,6 @@ runConfig:
 secretEnvironmentVariables:
   - key: NEXT_PUBLIC_FIREBASE_API_KEY
     secret: NEXT_PUBLIC_FIREBASE_API_KEY
-  - key: RAZORPAY_KEY_ID
-    secret: RAZORPAY_KEY_ID
-  - key: NEXT_PUBLIC_RAZORPAY_KEY_ID
-    secret: NEXT_PUBLIC_RAZORPAY_KEY_ID
-  - key: RAZORPAY_KEY_SECRET
-    secret: RAZORPAY_KEY_SECRET
   - key: NEXT_PUBLIC_VIDEOSDK_API_KEY
     secret: NEXT_PUBLIC_VIDEOSDK_API_KEY
   - key: VIDEOSDK_SECRET_KEY
@@ -69,3 +63,5 @@ secretEnvironmentVariables:
     secret: GOOGLE_CLIENT_ID_CX
   - key: DEEPGRAM_PROJECT_ID
     secret: DEEPGRAM_PROJECT_ID
+  - key: RAZORPAY_KEY_ID # Still needed for server action
+    secret: RAZORPAY_KEY_ID
