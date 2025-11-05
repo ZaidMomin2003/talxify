@@ -1,9 +1,9 @@
 
 "use client";
 import React, { useEffect, useState } from "react";
-import { tsParticles } from "tsparticles-engine";
-import type { Engine } from "tsparticles-engine";
-import { loadFull } from "tsparticles";
+import { tsParticles } from "@tsparticles/engine";
+import type { Engine } from "@tsparticles/engine";
+import { loadSlim } from "@tsparticles/slim";
 
 export const SparklesCore = (props: {
   id?: string;
@@ -27,12 +27,14 @@ export const SparklesCore = (props: {
   const [init, setInit] = useState(false);
 
   useEffect(() => {
-    const initParticles = async () => {
-      await loadFull(tsParticles as Engine);
+    const initParticles = async (engine: Engine) => {
+      await loadSlim(engine);
       setInit(true);
     };
-    initParticles();
-  }, []);
+    if (!init) {
+        initParticles(tsParticles);
+    }
+  }, [init]);
 
   useEffect(() => {
     if (init) {
