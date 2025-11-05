@@ -1,12 +1,11 @@
 
-
 'use client';
 
 import { doc, getDoc, setDoc, updateDoc, arrayUnion, collection, getDocs, addDoc, serverTimestamp, runTransaction, deleteDoc, increment, arrayRemove, Timestamp } from 'firebase/firestore';
 import { db } from './firebase';
-import type { UserData, Portfolio, StoredActivity, OnboardingData, SurveySubmission, IcebreakerData, TodoItem } from './types';
+import type { UserData, Portfolio, StoredActivity, OnboardingData, SurveySubmission, IcebreakerData, TodoItem, SubscriptionPlan } from './types';
 import { initialPortfolioData } from './initial-data';
-import { format, differenceInHours } from 'date-fns';
+import { format, differenceInHours, addMonths } from 'date-fns';
 import { getUserBySlug } from '@/app/zaidmin/actions';
 
 
@@ -134,30 +133,39 @@ export const deleteUserDocument = async (userId: string): Promise<void> => {
 
 // --- Subscription & Usage ---
 
-export const updateSubscription = async (userId: string, plan: 'pro-60d'): Promise<void> => {
+export const updateSubscription = async (userId: string, planId: SubscriptionPlan): Promise<void> => {
   const userRef = doc(db, 'users', userId);
   const currentDate = new Date();
-  const endDate = new Date(currentDate);
+  
+  let monthsToAdd = 0;
+  if (planId === 'pro-1m') monthsToAdd = 1;
+  else if (planId === 'pro-2m') monthsToAdd = 2;
+  else if (planId === 'pro-3m') monthsToAdd = 3;
 
-  if (plan === 'pro-60d') {
-    endDate.setDate(currentDate.getDate() + 60);
+  if (monthsToAdd === 0) {
+      throw new Error("Invalid plan ID provided for subscription update.");
   }
 
+  const endDate = addMonths(currentDate, monthsToAdd);
+
   const subscriptionData = {
-    plan,
+    plan: planId,
     status: 'active',
     startDate: currentDate.toISOString(),
     endDate: endDate.toISOString()
   };
 
-  await setDoc(userRef, { subscription: subscriptionData }, { merge: true });
+  await setDoc(userRef, { 
+      subscription: subscriptionData,
+      // Reset usage limits upon new subscription
+      'subscription.usage': { date: format(new Date(), 'yyyy-MM-dd'), count: 0 },
+      'subscription.interviewUsage': { date: format(new Date(), 'yyyy-MM-dd'), count: 0 },
+      'subscription.aiEnhancementsUsage': { date: format(new Date(), 'yyyy-MM-dd'), count: 0 },
+      'subscription.resumeExports': { date: format(new Date(), 'yyyy-MM-dd'), count: 0 },
+    }, { merge: true });
 };
 
 export const checkAndIncrementUsage = async (userId: string, usageType: 'general' | 'aiEnhancements' | 'interview' = 'general'): Promise<{ success: boolean; message: string; }> => {
-    // Temporarily allow unlimited usage for all users.
-    return { success: true, message: '' };
-
-    /*
     const userRef = doc(db, 'users', userId);
 
     try {
@@ -173,37 +181,37 @@ export const checkAndIncrementUsage = async (userId: string, usageType: 'general
             const isPro = userData.subscription?.plan?.startsWith('pro') && userData.subscription.endDate && new Date(userData.subscription.endDate) > new Date();
             
             if (isPro) {
-                usageAllowed = true;
+                if (usageType === 'interview') {
+                     const interviewLimit = 10;
+                     const interviewUsage = userData.subscription?.interviewUsage || { count: 0 };
+                     if (interviewUsage.count < interviewLimit) {
+                         transaction.update(userRef, { 'subscription.interviewUsage.count': increment(1) });
+                         usageAllowed = true;
+                     } else {
+                         usageAllowed = false;
+                         message = `You have reached your limit of ${interviewLimit} AI interviews for this plan.`;
+                     }
+                } else {
+                    usageAllowed = true; // Unlimited for other types on Pro
+                }
                 return;
             }
             
-            let dailyLimit = 5;
-            let usageField = 'usage';
-            let usageName = 'activities'
-            
-            if (usageType === 'aiEnhancements') {
-                dailyLimit = 2;
-                usageField = 'aiEnhancementsUsage';
-                usageName = 'AI enhancements';
-            } else if (usageType === 'interview') {
-                dailyLimit = 5;
-                usageField = 'interviewUsage';
-                usageName = 'interviews';
-            }
-            
-            const usageData = userData.subscription?.[usageField as keyof UserData['subscription']];
+            // Logic for free plan
+            const dailyLimit = 5;
+            const usageData = userData.subscription?.usage;
             const today = format(new Date(), 'yyyy-MM-dd');
 
             if (usageData && usageData.date === today) {
                 if (usageData.count < dailyLimit) {
-                    transaction.update(userRef, { [`subscription.${usageField}.count`]: increment(1) });
+                    transaction.update(userRef, { 'subscription.usage.count': increment(1) });
                     usageAllowed = true;
                 } else {
                     usageAllowed = false;
-                    message = `You have reached your daily limit of ${dailyLimit} ${usageName} for the free plan. Upgrade to Pro for unlimited access.`;
+                    message = `You have reached your daily limit of ${dailyLimit} activities for the free plan. Upgrade to Pro for unlimited access.`;
                 }
             } else {
-                transaction.set(userRef, { subscription: { [usageField]: { date: today, count: 1 } } }, { merge: true });
+                transaction.set(userRef, { subscription: { usage: { date: today, count: 1 } } }, { merge: true });
                 usageAllowed = true;
             }
         });
@@ -214,7 +222,6 @@ export const checkAndIncrementUsage = async (userId: string, usageType: 'general
         console.error(`${usageType} usage transaction failed: `, e);
         return { success: false, message: `An error occurred while checking your usage limit. Please try again.` };
     }
-    */
 }
 
 
@@ -231,22 +238,31 @@ export const checkAndIncrementResumeExports = async (userId: string): Promise<{ 
             }
 
             const userData = userDoc.data() as UserData;
-            const { resumeExports } = userData.subscription;
-            const today = format(new Date(), 'yyyy-MM-dd');
-            
-            const dailyLimit = 5;
+            const isPro = userData.subscription?.plan?.startsWith('pro') && userData.subscription.endDate && new Date(userData.subscription.endDate) > new Date();
+            const limit = isPro ? 10 : 2;
+            const period = isPro ? 'monthly' : 'daily';
 
-            if (resumeExports && resumeExports.date === today) {
-                if (resumeExports.count < dailyLimit) {
-                    transaction.update(userRef, { 'subscription.resumeExports.count': resumeExports.count + 1 });
+            const usageField = 'resumeExports';
+            const usageData = userData.subscription?.[usageField];
+            
+            let currentPeriod: string;
+            if (period === 'monthly') {
+                currentPeriod = format(new Date(), 'yyyy-MM');
+            } else {
+                currentPeriod = format(new Date(), 'yyyy-MM-dd');
+            }
+
+            if (usageData && usageData.date === currentPeriod) {
+                if (usageData.count < limit) {
+                    transaction.update(userRef, { [`subscription.${usageField}.count`]: increment(1) });
                     usageAllowed = true;
                 } else {
                     usageAllowed = false;
-                    message = `You have reached your daily limit of ${dailyLimit} resume exports. Please try again tomorrow.`;
+                    message = `You have reached your ${period} limit of ${limit} resume exports.`;
                 }
             } else {
-                // First export of the day
-                transaction.set(userRef, { subscription: { resumeExports: { date: today, count: 1 } } }, { merge: true });
+                // First export of the period
+                transaction.set(userRef, { subscription: { [usageField]: { date: currentPeriod, count: 1 } } }, { merge: true });
                 usageAllowed = true;
             }
         });

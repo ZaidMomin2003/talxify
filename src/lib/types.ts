@@ -1,5 +1,4 @@
 
-
 import type { AnswerAnalysis } from "@/ai/flows/analyze-coding-answers";
 import type { GenerateStudyNotesOutput } from "@/ai/flows/generate-study-notes";
 import type { QuizState } from "@/app/dashboard/coding-quiz/quiz/page";
@@ -159,25 +158,22 @@ export interface SignInForm {
 }
 
 // --- Subscription ---
+export type SubscriptionPlan = 'free' | 'pro-1m' | 'pro-2m' | 'pro-3m';
+
 export interface Subscription {
-    plan: 'free' | 'pro-60d';
+    plan: SubscriptionPlan;
     status: 'active' | 'inactive' | 'cancelled';
     startDate?: string;
     endDate: string | null;
-    usage?: {
+    usage?: { // for free plan general usage
         date: string; // YYYY-MM-DD
         count: number;
     };
-    aiEnhancementsUsage?: {
-        date: string;
+    interviewUsage?: { // for pro plan interview usage
         count: number;
-    };
-    interviewUsage?: {
-        date: string;
-        count: number;
-    };
+    },
     resumeExports?: {
-        date: string; // YYYY-MM-DD
+        date: string; // YYYY-MM or YYYY-MM-DD
         count: number;
     }
 }

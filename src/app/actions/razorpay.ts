@@ -4,7 +4,7 @@
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
 
-export async function createOrder(amount: number) {
+export async function createOrder(amount: number, planId: string) {
   if (!process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
     throw new Error('Razorpay keys are not configured in environment variables.');
   }
@@ -18,6 +18,9 @@ export async function createOrder(amount: number) {
     amount: amount * 100, // amount in the smallest currency unit (e.g., paise for INR)
     currency: 'INR',
     receipt: `receipt_order_${new Date().getTime()}`,
+    notes: {
+        planId: planId,
+    }
   };
 
   try {
