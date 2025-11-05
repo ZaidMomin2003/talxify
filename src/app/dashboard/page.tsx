@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Rocket, Code, Briefcase, Percent, Search, RefreshCw, BarChart, Info, CalendarDays, Loader2, Lock, Building, BrainCircuit, User, Gem, CheckCircle, BookOpen, PlayCircle, Star, Swords, ArrowRight, MessageSquare, Wand2 } from "lucide-react";
+import { Rocket, Code, Briefcase, Percent, Search, RefreshCw, BarChart, Info, CalendarDays, Loader2, Lock, Building, BrainCircuit, User, Gem, CheckCircle, BookOpen, PlayCircle, Star, Swords, ArrowRight, MessageSquare, Wand2, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useForm } from "react-hook-form";
@@ -15,7 +15,7 @@ import { z } from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useRouter } from "next/navigation";
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import type { StoredActivity, QuizResult, InterviewActivity, UserData, SyllabusDay } from "@/lib/types";
+import type { StoredActivity, QuizResult, InterviewActivity, UserData, SyllabusDay, InterviewQuestionSetActivity } from "@/lib/types";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
@@ -38,7 +38,6 @@ const CustomTooltip = ({ active, payload, label }: any) => {
       <div className="bg-background/90 backdrop-blur-sm p-4 rounded-lg border border-border shadow-lg">
         <p className="label text-muted-foreground">{`${label}`}</p>
         <div style={{ color: payload[0].color }} className="flex items-center gap-2 font-semibold">
-          <div className="w-2.5 h-2.5 rounded-full" style={{backgroundColor: payload[0].fill}}/>
           Score: {payload[0].value}%
         </div>
       </div>
@@ -103,9 +102,11 @@ export default function DashboardPage() {
   const allActivity = userData?.activity || [];
   
 
-  const { questionsSolved, interviewsCompleted, recentQuizzes, averageScore, hasTakenQuiz, performanceData, completedDays, dailyTaskStatus } = useMemo(() => {
+  const { questionsSolved, interviewsCompleted, recentQuizzes, averageScore, hasTakenQuiz, performanceData, completedDays, dailyTaskStatus, interviewQuestionsGenerated } = useMemo(() => {
     const quizzes = allActivity.filter(item => item.type === 'quiz') as QuizResult[];
     const interviews = allActivity.filter(item => item.type === 'interview') as InterviewActivity[];
+    const questionSets = allActivity.filter(item => item.type === 'interview-question-set') as InterviewQuestionSetActivity[];
+    
     const completedQuizzes = quizzes.filter(item => item.analysis.length > 0);
     const completedInterviews = interviews.filter(item => item.analysis && item.analysis.crackingChance !== undefined);
 
@@ -117,6 +118,8 @@ export default function DashboardPage() {
     }, 0);
 
     const totalInterviewScore = completedInterviews.reduce((sum, interview) => sum + (interview.analysis?.crackingChance || 0), 0);
+    
+    const interviewQuestionsGenerated = questionSets.reduce((acc, set) => acc + set.questions.questions.length, 0);
 
     const totalActivities = completedQuizzes.length + completedInterviews.length;
     const totalScore = totalQuizScore + totalInterviewScore;
@@ -180,6 +183,7 @@ export default function DashboardPage() {
         performanceData: perfData,
         completedDays: lastCompletedDay,
         dailyTaskStatus: status,
+        interviewQuestionsGenerated: interviewQuestionsGenerated
     };
   }, [allActivity, userData]);
   
@@ -256,24 +260,15 @@ export default function DashboardPage() {
             <p className="text-xs text-pink-400/80">Based on your performance</p>
           </CardContent>
         </Card>
-        <Card className="bg-yellow-500/20 text-yellow-950 dark:text-yellow-200 border-yellow-500/30 shadow-lg shadow-yellow-500/20">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Plan Expires</CardTitle>
-            <CalendarDays className="h-4 w-4 text-yellow-400" />
-          </CardHeader>
-          <CardContent>
-             {planExpiresDays !== null && userData?.subscription.plan !== 'free' ? (
-                <>
-                    <div className="text-2xl font-bold">{planExpiresDays} Days</div>
-                    <p className="text-xs text-yellow-400/80">left on your current plan.</p>
-                </>
-             ) : (
-                <>
-                    <div className="text-2xl font-bold">N/A</div>
-                    <p className="text-xs text-yellow-400/80">You are on the free plan.</p>
-                </>
-             )}
-          </CardContent>
+        <Card className="bg-green-500/20 text-green-950 dark:text-green-200 border-green-500/30 shadow-lg shadow-green-500/20">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium">Interview Q's Generated</CardTitle>
+                <Sparkles className="h-4 w-4 text-green-400" />
+            </CardHeader>
+            <CardContent>
+                <div className="text-2xl font-bold">{interviewQuestionsGenerated}</div>
+                <p className="text-xs text-green-400/80">Tailored by AI</p>
+            </CardContent>
         </Card>
       </div>
 
@@ -442,3 +437,4 @@ export default function DashboardPage() {
     </main>
   );
 }
+
