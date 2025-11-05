@@ -59,7 +59,6 @@ const proPlans = [
 ]
 
 const proFeatures = [
-    'AI-Powered Mock Interviews',
     'Unlimited Coding Questions',
     'Unlimited Study Notes',
     'Interview Question Generator',
@@ -225,13 +224,16 @@ export default function PricingPage() {
                                                     <span className="text-muted-foreground line-through">₹{plan.originalPriceInr.toLocaleString('en-IN')}</span>
                                                 )}
                                             </div>
-                                            <p className="text-sm text-muted-foreground">{plan.interviews} Mock Interviews</p>
                                         </div>
                                     ))}
                                 </div>
                                  <div>
                                     <p className="font-semibold text-center mb-4">All Pro plans include:</p>
                                     <ul className="grid sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-3">
+                                         <li className="flex items-start gap-2">
+                                            <Check className="w-4 h-4 text-green-500 mt-1 shrink-0"/>
+                                            <span className="text-sm text-muted-foreground">{proPlans.find(p => p.id === selectedPlanId)?.interviews} AI Mock Interviews</span>
+                                        </li>
                                         {proFeatures.map((feature, index) => (
                                             <li key={index} className="flex items-start gap-2">
                                                 <Check className="w-4 h-4 text-green-500 mt-1 shrink-0"/>
@@ -268,5 +270,3 @@ export default function PricingPage() {
         </>
     );
 }
-
-    

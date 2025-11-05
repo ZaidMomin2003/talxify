@@ -55,7 +55,6 @@ const proPlans = [
 ]
 
 const proFeatures = [
-    'AI-Powered Mock Interviews',
     'Unlimited Coding Questions',
     'Unlimited Study Notes',
     'Interview Question Generator',
@@ -168,6 +167,12 @@ export default function LandingPricing() {
                                 ))}
                             </div>
                              <ul className="space-y-4">
+                                <li className="flex items-center gap-3">
+                                    <div className="bg-primary/10 text-primary rounded-full p-1">
+                                        <Check className="w-4 h-4" />
+                                    </div>
+                                    <span className="text-muted-foreground">{selectedPlan?.interviews} AI Mock Interviews</span>
+                                </li>
                                 {proFeatures.map((feature, index) => (
                                     <li key={index} className="flex items-center gap-3">
                                         <div className="bg-primary/10 text-primary rounded-full p-1">
@@ -176,12 +181,6 @@ export default function LandingPricing() {
                                         <span className="text-muted-foreground">{feature}</span>
                                     </li>
                                 ))}
-                                <li className="flex items-center gap-3">
-                                    <div className="bg-primary/10 text-primary rounded-full p-1">
-                                        <Check className="w-4 h-4" />
-                                    </div>
-                                    <span className="text-muted-foreground">{selectedPlan?.interviews} AI Mock Interviews</span>
-                                </li>
                             </ul>
                         </CardContent>
                         <CardFooter>
@@ -198,5 +197,3 @@ export default function LandingPricing() {
         </section>
     );
 }
-
-    
