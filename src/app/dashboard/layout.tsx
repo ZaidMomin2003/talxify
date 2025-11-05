@@ -403,7 +403,7 @@ function DashboardLayoutContent({
   ];
 
   const showcaseItems = [
-    { href: "/dashboard/resume-builder", label: "Resume Builder", icon: FileText, isFree: true, isTesting: true },
+    { href: "/dashboard/resume-builder", label: "Resume Builder", icon: FileText, isTesting: true },
     { href: "/dashboard/portfolio", label: "Portfolio Builder", icon: User, isPro: true },
   ];
   
@@ -533,16 +533,6 @@ function DashboardLayoutContent({
                                   <p>Under Testing</p>
                                   </TooltipContent>
                               </Tooltip>
-                          )}
-                          {(item as any).isFree && (
-                          <Tooltip>
-                              <TooltipTrigger asChild>
-                              <Gem className="w-4 h-4 text-green-500" />
-                              </TooltipTrigger>
-                              <TooltipContent side="right">
-                              <p>Forever Free</p>
-                              </TooltipContent>
-                          </Tooltip>
                           )}
                           {(item as any).isPro && !isFreePlan && (
                           <Tooltip>
