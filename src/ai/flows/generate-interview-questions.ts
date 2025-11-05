@@ -5,30 +5,11 @@
  * @fileOverview A flow to generate interview questions with answers based on role, level, company, and description.
  *
  * - generateInterviewQuestions - A function that generates interview questions and answers.
- * - GenerateInterviewQuestionsInput - The input type for the function.
- * - GenerateInterviewQuestionsOutput - The return type for the function.
  */
 
 import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { GenerateInterviewQuestionsInputSchema, GenerateInterviewQuestionsOutputSchema, type GenerateInterviewQuestionsInput, type GenerateInterviewQuestionsOutput } from '@/lib/types';
 
-export const GenerateInterviewQuestionsInputSchema = z.object({
-  role: z.string().describe('The role for which interview questions are generated (e.g., "Software Engineer").'),
-  description: z.string().describe('The job description, which may include required technologies and responsibilities.'),
-  level: z.enum(['entry-level', 'mid-level', 'senior', 'principal']).describe('The seniority level of the role.'),
-  company: z.string().optional().describe('The target company, if any (e.g., "Google", "Netflix").'),
-});
-export type GenerateInterviewQuestionsInput = z.infer<typeof GenerateInterviewQuestionsInputSchema>;
-
-const InterviewQuestionAndAnswerSchema = z.object({
-    question: z.string().describe('A single, well-defined interview question.'),
-    answer: z.string().describe('A detailed, expert-level answer to the question.'),
-});
-
-export const GenerateInterviewQuestionsOutputSchema = z.object({
-  questions: z.array(InterviewQuestionAndAnswerSchema).length(15).describe('An array of exactly 15 questions and answers.'),
-});
-export type GenerateInterviewQuestionsOutput = z.infer<typeof GenerateInterviewQuestionsOutputSchema>;
 
 export async function generateInterviewQuestions(input: GenerateInterviewQuestionsInput): Promise<GenerateInterviewQuestionsOutput> {
   return generateInterviewQuestionsFlow(input);

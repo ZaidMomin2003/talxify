@@ -364,7 +364,27 @@ export interface WaitlistSubmission {
 }
 
 
-// --- Interview Flow Schemas ---
+// --- Interview Question Generator Flow Schemas ---
+export const GenerateInterviewQuestionsInputSchema = z.object({
+  role: z.string().describe('The role for which interview questions are generated (e.g., "Software Engineer").'),
+  description: z.string().describe('The job description, which may include required technologies and responsibilities.'),
+  level: z.enum(['entry-level', 'mid-level', 'senior', 'principal']).describe('The seniority level of the role.'),
+  company: z.string().optional().describe('The target company, if any (e.g., "Google", "Netflix").'),
+});
+export type GenerateInterviewQuestionsInput = z.infer<typeof GenerateInterviewQuestionsInputSchema>;
+
+const InterviewQuestionAndAnswerSchema = z.object({
+    question: z.string().describe('A single, well-defined interview question.'),
+    answer: z.string().describe('A detailed, expert-level answer to the question.'),
+});
+
+export const GenerateInterviewQuestionsOutputSchema = z.object({
+  questions: z.array(InterviewQuestionAndAnswerSchema).length(15).describe('An array of exactly 15 questions and answers.'),
+});
+export type GenerateInterviewQuestionsOutput = z.infer<typeof GenerateInterviewQuestionsOutputSchema>;
+
+
+// --- DEPRECATED Interview Flow Schemas ---
 export const InterviewFlowInputSchema = z.object({
   topic: z.string(),
   role: z.string(),
