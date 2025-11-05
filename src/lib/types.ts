@@ -8,7 +8,7 @@ import { z } from 'genkit';
 import { type serverTimestamp } from "firebase/firestore";
 
 // A generic type for any activity stored in the user's document
-export type StoredActivity = QuizResult | InterviewActivity | NoteGenerationActivity;
+export type StoredActivity = QuizResult | InterviewActivity | NoteGenerationActivity | InterviewQuestionSetActivity;
 
 export const TranscriptEntrySchema = z.object({
   speaker: z.enum(['user', 'ai']),
@@ -20,7 +20,7 @@ export type TranscriptEntry = z.infer<typeof TranscriptEntrySchema>;
 // The base interface that all activity types extend
 export interface BaseActivity {
     id: string;
-    type: 'quiz' | 'interview' | 'note-generation';
+    type: 'quiz' | 'interview' | 'note-generation' | 'interview-question-set';
     timestamp: string; // ISO 8601 date string
     details: {
         topic: string;
@@ -86,6 +86,18 @@ export interface NoteGenerationActivity extends BaseActivity {
     notes?: GenerateStudyNotesOutput;
     details: {
         topic: string;
+    }
+}
+
+// A specific type for generated interview question sets
+export interface InterviewQuestionSetActivity extends BaseActivity {
+    type: 'interview-question-set';
+    questions: GenerateInterviewQuestionsOutput;
+    details: {
+        topic: string; // In this context, topic can be the role
+        role: string;
+        level: string;
+        company?: string;
     }
 }
 
@@ -376,7 +388,9 @@ export type GenerateInterviewQuestionsInput = z.infer<typeof GenerateInterviewQu
 const InterviewQuestionAndAnswerSchema = z.object({
     question: z.string().describe('A single, well-defined interview question.'),
     answer: z.string().describe('A detailed, expert-level answer to the question.'),
+    type: z.enum(['Behavioral', 'Technical', 'Coding']).describe('The category of the question.')
 });
+export type InterviewQuestionAndAnswer = z.infer<typeof InterviewQuestionAndAnswerSchema>;
 
 export const GenerateInterviewQuestionsOutputSchema = z.object({
   questions: z.array(InterviewQuestionAndAnswerSchema).length(15).describe('An array of exactly 15 questions and answers.'),

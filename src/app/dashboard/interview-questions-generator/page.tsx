@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -13,13 +13,15 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { MessageSquare, Sparkles, Loader2, History } from 'lucide-react';
+import { MessageSquare, Sparkles, Loader2, History, BarChart } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { generateInterviewQuestions, type GenerateInterviewQuestionsInput, type GenerateInterviewQuestionsOutput } from '@/ai/flows/generate-interview-questions';
+import { generateInterviewQuestions } from '@/ai/flows/generate-interview-questions';
 import { addActivity, getUserData, checkAndIncrementUsage } from '@/lib/firebase-service';
-import type { UserData } from '@/lib/types';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import type { UserData, InterviewQuestionSetActivity, GenerateInterviewQuestionsInput } from '@/lib/types';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import Link from 'next/link';
+import { formatDistanceToNow } from 'date-fns';
 
 const questionsGeneratorSchema = z.object({
   role: z.string().min(2, "Please enter a job role."),
@@ -35,7 +37,8 @@ export default function InterviewQuestionsGeneratorPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
-  const [generatedQuestions, setGeneratedQuestions] = useState<GenerateInterviewQuestionsOutput | null>(null);
+  const [userData, setUserData] = useState<UserData | null>(null);
+  const [isHistoryLoading, setIsHistoryLoading] = useState(true);
 
   const form = useForm<QuestionsGeneratorFormValues>({
     resolver: zodResolver(questionsGeneratorSchema),
@@ -46,6 +49,25 @@ export default function InterviewQuestionsGeneratorPage() {
       company: '',
     },
   });
+  
+  const fetchUserData = useCallback(async () => {
+    if (user) {
+      setIsHistoryLoading(true);
+      const data = await getUserData(user.uid);
+      setUserData(data);
+      setIsHistoryLoading(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    fetchUserData();
+  }, [fetchUserData]);
+  
+  const questionHistory = useMemo(() => {
+    if (!userData?.activity) return [];
+    return userData.activity.filter(a => a.type === 'interview-question-set') as InterviewQuestionSetActivity[];
+  }, [userData]);
+
 
   async function onSubmit(values: QuestionsGeneratorFormValues) {
     if (!user) {
@@ -60,10 +82,26 @@ export default function InterviewQuestionsGeneratorPage() {
     }
 
     setIsGenerating(true);
-    setGeneratedQuestions(null);
     try {
       const result = await generateInterviewQuestions(values);
-      setGeneratedQuestions(result);
+      
+      const activity: InterviewQuestionSetActivity = {
+        id: `iq-set-${Date.now()}`,
+        type: 'interview-question-set',
+        timestamp: new Date().toISOString(),
+        questions: result,
+        details: {
+            topic: values.role,
+            role: values.role,
+            level: values.level,
+            company: values.company || 'N/A'
+        }
+      };
+
+      await addActivity(user.uid, activity);
+      
+      router.push(`/dashboard/interview-questions-generator/results?id=${activity.id}`);
+      
     } catch (e: any) {
       console.error("Failed to generate questions:", e);
       toast({ title: "Generation Failed", description: e.message || "An error occurred.", variant: "destructive" });
@@ -162,36 +200,6 @@ export default function InterviewQuestionsGeneratorPage() {
                 </CardContent>
             </Card>
         </section>
-
-        {(isGenerating || generatedQuestions) && (
-            <section className="mt-12">
-                 <Card className="shadow-lg">
-                    <CardHeader>
-                        <CardTitle>Generated Questions</CardTitle>
-                        <CardDescription>Here are the 15 questions and answers tailored to your request.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        {isGenerating ? (
-                            <div className="text-center text-muted-foreground p-8">
-                                <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2"/>
-                                <p>AI is generating your questions... This may take a moment.</p>
-                            </div>
-                        ) : generatedQuestions && (
-                            <Accordion type="single" collapsible className="w-full">
-                                {generatedQuestions.questions.map((qa, index) => (
-                                    <AccordionItem value={`item-${index}`} key={index}>
-                                        <AccordionTrigger className="text-lg text-left">{index + 1}. {qa.question}</AccordionTrigger>
-                                        <AccordionContent className="prose dark:prose-invert max-w-none text-base">
-                                            <p>{qa.answer}</p>
-                                        </AccordionContent>
-                                    </AccordionItem>
-                                ))}
-                            </Accordion>
-                        )}
-                    </CardContent>
-                </Card>
-            </section>
-        )}
         
         <section className="mt-12">
             <Card className="shadow-lg">
@@ -200,7 +208,42 @@ export default function InterviewQuestionsGeneratorPage() {
                     <CardDescription>Review questions you've previously generated.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                     <p className="text-center text-muted-foreground p-8">This feature is coming soon. Your history will appear here.</p>
+                     {isHistoryLoading ? (
+                        <div className="text-center text-muted-foreground p-8">
+                            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2"/>
+                            <p>Loading history...</p>
+                        </div>
+                    ) : questionHistory.length > 0 ? (
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Role</TableHead>
+                                    <TableHead>Company</TableHead>
+                                    <TableHead>Generated</TableHead>
+                                    <TableHead className="text-right">Actions</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {questionHistory.map(item => (
+                                    <TableRow key={item.id}>
+                                        <TableCell className="font-medium">{item.details.role}</TableCell>
+                                        <TableCell>{item.details.company || 'N/A'}</TableCell>
+                                        <TableCell>{formatDistanceToNow(new Date(item.timestamp), { addSuffix: true })}</TableCell>
+                                        <TableCell className="text-right">
+                                            <Button asChild variant="outline" size="sm">
+                                                <Link href={`/dashboard/interview-questions-generator/results?id=${item.id}`}>
+                                                    <BarChart className="mr-2 h-4 w-4"/>
+                                                    View Questions
+                                                </Link>
+                                            </Button>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    ) : (
+                        <p className="text-center text-muted-foreground p-8">You haven't generated any question sets yet.</p>
+                    )}
                 </CardContent>
             </Card>
         </section>
