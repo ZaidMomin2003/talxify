@@ -315,24 +315,6 @@ export default function ProfilePage() {
                     </CardContent>
                 </Card>
 
-                {completedDays < 1 && (
-                     <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-3"><RefreshCw className="h-6 w-6"/> Account Actions</CardTitle>
-                            <CardDescription>Manage your account settings and preferences.</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <Button variant="outline" onClick={() => router.push('/onboarding')} className="h-auto whitespace-normal">
-                                <RefreshCw className="mr-2 h-4 w-4 shrink-0"/>
-                                <span>Redo Onboarding & Regenerate Syllabus</span>
-                            </Button>
-                            <p className="text-sm text-muted-foreground mt-2">
-                            Generate a new 60-day learning plan based on different roles or companies. Your stats will not be affected. This option is only available on Day 1.
-                            </p>
-                        </CardContent>
-                    </Card>
-                )}
-
 
                  <Card className="border-destructive">
                     <CardHeader>
@@ -381,3 +363,5 @@ export default function ProfilePage() {
         </main>
     )
 }
+
+    
