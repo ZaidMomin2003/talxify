@@ -37,19 +37,19 @@ const features = [
         description: 'Generate hyper-relevant questions for any role. Our AI analyzes job descriptions to create technical, behavioral, and coding questions with detailed example answers, tailored to the required seniority.',
         icon: BrainCircuit,
         prototype: (
-            <Card className="w-full max-w-lg mx-auto bg-card/80 backdrop-blur-sm p-6 shadow-xl border border-border/50">
+            <Card className="w-full max-w-lg mx-auto bg-card/80 backdrop-blur-sm p-4 sm:p-6 shadow-xl border border-border/50">
                  <CardHeader className="p-0 mb-4 flex flex-row items-center gap-3">
-                    <div className="flex-shrink-0 bg-primary/10 text-primary p-2 rounded-lg"><BrainCircuit className="w-6 h-6"/></div>
-                    <CardTitle className="text-xl m-0">Generated Questions</CardTitle>
+                    <div className="flex-shrink-0 bg-primary/10 text-primary p-2 rounded-lg"><BrainCircuit className="w-5 h-5 sm:w-6 sm:h-6"/></div>
+                    <CardTitle className="text-lg sm:text-xl m-0">Generated Questions</CardTitle>
                 </CardHeader>
-                <CardContent className="p-0 space-y-3">
+                <CardContent className="p-0 space-y-2 sm:space-y-3">
                     <div className="p-3 rounded-lg bg-muted border">
-                        <Badge variant="destructive" className="mb-2">Coding</Badge>
-                        <p className="font-medium text-sm">Implement an algorithm to find the maximum contiguous subarray sum (Kadane's Algorithm).</p>
+                        <Badge variant="destructive" className="mb-2 text-xs">Coding</Badge>
+                        <p className="font-medium text-xs sm:text-sm">Implement an algorithm to find the maximum contiguous subarray sum (Kadane's Algorithm).</p>
                     </div>
                     <div className="p-3 rounded-lg bg-muted border opacity-70">
-                         <Badge variant="secondary" className="mb-2">Behavioral</Badge>
-                        <p className="font-medium text-sm">Tell me about a time you had to take ownership of a failing project.</p>
+                         <Badge variant="secondary" className="mb-2 text-xs">Behavioral</Badge>
+                        <p className="font-medium text-xs sm:text-sm">Tell me about a time you had to take ownership of a failing project.</p>
                     </div>
                 </CardContent>
             </Card>
@@ -60,12 +60,12 @@ const features = [
         description: "Don't just memorize—understand. Select any topic, and our AI will generate a detailed, easy-to-digest study guide, complete with core concepts, key terminology, and practical code examples.",
         icon: BookOpen,
         prototype: (
-             <Card className="w-full max-w-lg mx-auto bg-card/80 backdrop-blur-sm p-6 shadow-xl border border-border/50 overflow-hidden">
+             <Card className="w-full max-w-lg mx-auto bg-card/80 backdrop-blur-sm p-4 sm:p-6 shadow-xl border border-border/50 overflow-hidden">
                 <CardHeader className="p-0 mb-4 flex-row items-center gap-3">
-                     <div className="p-2 bg-primary/10 rounded-lg text-primary"><BookOpen className="w-6 h-6" /></div>
-                    <CardTitle className="text-xl m-0">React Hooks</CardTitle>
+                     <div className="p-2 bg-primary/10 rounded-lg text-primary"><BookOpen className="w-5 h-5 sm:w-6 sm:h-6" /></div>
+                    <CardTitle className="text-lg sm:text-xl m-0">React Hooks</CardTitle>
                 </CardHeader>
-                <CardContent className="p-0 space-y-3">
+                <CardContent className="p-0 space-y-2 sm:space-y-3">
                     <p className="text-sm text-muted-foreground">An introduction to the core concepts of React Hooks, including useState, useEffect, and custom hooks for managing component state and side effects.</p>
                     <div className="p-3 rounded-lg bg-muted border">
                         <p className="font-semibold text-sm">Core Concept: useState</p>
@@ -83,19 +83,19 @@ const features = [
         description: 'Test knowledge with AI-generated coding challenges. Write solutions in our editor and get instant, in-depth feedback on correctness, efficiency, and code style, along with an optimal solution.',
         icon: ShieldQuestion,
         prototype: (
-             <Card className="w-full max-w-lg mx-auto bg-card/80 backdrop-blur-sm p-6 shadow-xl border border-border/50">
+             <Card className="w-full max-w-lg mx-auto bg-card/80 backdrop-blur-sm p-4 sm:p-6 shadow-xl border border-border/50">
                 <CardHeader className="p-0 mb-4">
-                    <CardTitle className="text-lg">Question 1: Reverse a String</CardTitle>
+                    <CardTitle className="text-base sm:text-lg">Question 1: Reverse a String</CardTitle>
                 </CardHeader>
                 <CardContent className="p-0 space-y-3">
-                    <div className="h-32 bg-muted rounded-md p-3 font-mono text-sm border">
+                    <div className="h-24 sm:h-32 bg-muted rounded-md p-3 font-mono text-xs sm:text-sm border">
                         <span className="text-primary">function</span> <span className="text-foreground">reverseString</span>(<span className="text-yellow-400">str</span>) {"{"} <br/>
                         &nbsp;&nbsp;<span className="text-gray-500">// Your code here...</span><br/>
                         {"}"}
                     </div>
                     <div className="flex justify-end gap-2">
-                        <Button variant="secondary">Get Hint</Button>
-                        <Button>Submit</Button>
+                        <Button variant="secondary" size="sm">Get Hint</Button>
+                        <Button size="sm">Submit</Button>
                     </div>
                 </CardContent>
             </Card>
@@ -106,32 +106,32 @@ const features = [
         description: "Experience a realistic, voice-based mock interview. Our conversational AI asks relevant technical and behavioral questions, listens to your answers, and responds dynamically, just like a real interviewer.",
         icon: MessageSquare,
         prototype: (
-            <div className="w-full max-w-lg mx-auto aspect-video rounded-2xl p-4 shadow-xl border border-border/50 bg-background relative flex items-center justify-center overflow-hidden">
+            <div className="w-full max-w-lg mx-auto aspect-video rounded-xl sm:rounded-2xl p-2 sm:p-4 shadow-xl border border-border/50 bg-background relative flex items-center justify-center overflow-hidden">
                 <div className="absolute inset-0 thermal-gradient-bg z-0"/>
                 <div className="relative z-10 flex flex-col items-center justify-center">
-                    <div className={cn("relative flex items-center justify-center w-32 h-32 rounded-full transition-all duration-500 scale-100")}>
+                    <div className={cn("relative flex items-center justify-center w-24 h-24 sm:w-32 sm:h-32 rounded-full transition-all duration-500 scale-100")}>
                         <div className={cn("absolute inset-0 rounded-full bg-primary/10 animate-pulse duration-1000")}/>
                         <div className={cn("absolute inset-2 rounded-full bg-primary/20 animate-pulse duration-1500")}/>
-                        <Avatar className="w-24 h-24 border-4 border-background">
+                        <Avatar className="w-20 h-20 sm:w-24 sm:h-24 border-4 border-background">
                             <div className="w-full h-full flex items-center justify-center bg-primary/10 text-primary">
-                                <BrainCircuit className="w-12 h-12" />
+                                <BrainCircuit className="w-10 h-10 sm:w-12 sm:h-12" />
                             </div>
                             <AvatarFallback>AI</AvatarFallback>
                         </Avatar>
                     </div>
-                    <p className="mt-4 text-xl font-bold font-headline text-foreground">Kathy</p>
-                    <p className="text-sm text-muted-foreground">AI Interviewer</p>
+                    <p className="mt-2 sm:mt-4 text-lg sm:text-xl font-bold font-headline text-foreground">Kathy</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground">AI Interviewer</p>
                 </div>
-                <div className="absolute bottom-4 right-4 w-24 h-24 rounded-full overflow-hidden border-2 border-border bg-black shadow-lg flex items-center justify-center">
-                    <Video className="w-8 h-8 text-muted-foreground"/>
+                <div className="absolute bottom-2 right-2 sm:bottom-4 sm:right-4 w-16 h-16 sm:w-24 sm:h-24 rounded-full overflow-hidden border-2 border-border bg-black shadow-lg flex items-center justify-center">
+                    <Video className="w-6 h-6 sm:w-8 sm:h-8 text-muted-foreground"/>
                 </div>
-                 <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 rounded-full bg-background/50 border p-2 backdrop-blur-md">
-                    <Button size="icon" className="w-10 h-10 rounded-full" variant={'secondary'}><Mic /></Button>
-                    <Button size="icon" className="w-10 h-10 rounded-full" variant={'secondary'}><Video /></Button>
-                    <Button size="icon" className="w-10 h-10 rounded-full" variant={'destructive'}><Phone /></Button>
+                 <div className="absolute bottom-2 left-1/2 sm:bottom-4 -translate-x-1/2 z-20 flex items-center gap-2 rounded-full bg-background/50 border p-1 sm:p-2 backdrop-blur-md">
+                    <Button size="icon" className="w-8 h-8 sm:w-10 sm:h-10 rounded-full" variant={'secondary'}><Mic className="w-4 h-4 sm:w-auto"/></Button>
+                    <Button size="icon" className="w-8 h-8 sm:w-10 sm:h-10 rounded-full" variant={'secondary'}><Video className="w-4 h-4 sm:w-auto"/></Button>
+                    <Button size="icon" className="w-8 h-8 sm:w-10 sm:h-10 rounded-full" variant={'destructive'}><Phone className="w-4 h-4 sm:w-auto"/></Button>
                 </div>
-                <div className="absolute top-2 left-1/2 -translate-x-1/2 z-20">
-                    <div className="flex items-center gap-2 bg-background/50 border rounded-full px-3 py-1 text-xs text-muted-foreground backdrop-blur-sm">
+                <div className="absolute top-1 left-1/2 sm:top-2 -translate-x-1/2 z-20">
+                    <div className="flex items-center gap-2 bg-background/50 border rounded-full px-3 py-1 text-[10px] sm:text-xs text-muted-foreground backdrop-blur-sm">
                         <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"/>
                         <span>Your turn... Speak now.</span>
                     </div>
@@ -144,9 +144,9 @@ const features = [
         description: 'Track progress with a comprehensive dashboard. Analyze quiz scores, identify weak concepts, and review interview transcripts to pinpoint areas for improvement.',
         icon: BarChart,
         prototype: (
-            <Card className="w-full max-w-lg mx-auto bg-card/80 backdrop-blur-sm p-6 shadow-xl border border-border/50">
+            <Card className="w-full max-w-lg mx-auto bg-card/80 backdrop-blur-sm p-4 sm:p-6 shadow-xl border border-border/50">
                  <CardHeader className="p-0 mb-4">
-                    <CardTitle className="text-xl">Performance Analysis</CardTitle>
+                    <CardTitle className="text-lg sm:text-xl">Performance Analysis</CardTitle>
                 </CardHeader>
                 <CardContent className="p-0 space-y-3">
                     <div className="h-28 w-full rounded-md bg-muted/50 border flex items-end p-2 gap-2">
@@ -249,9 +249,9 @@ export default function InstituteColabPage() {
                         <h2 className="text-4xl font-bold font-headline">The Ultimate Student Toolkit</h2>
                         <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">A suite of powerful AI features designed to build skills, confidence, and job-readiness.</p>
                     </div>
-                     <div className="space-y-24">
+                     <div className="space-y-16 sm:space-y-24">
                         {features.map((feature, index) => (
-                            <div key={feature.title} className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                            <div key={feature.title} className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-12 items-center">
                                 <div className={cn("prose prose-lg dark:prose-invert", index % 2 === 1 && "lg:order-2")}>
                                      <div className="flex items-center gap-4 mb-4">
                                         <div className="bg-primary/10 text-primary p-3 rounded-full">
