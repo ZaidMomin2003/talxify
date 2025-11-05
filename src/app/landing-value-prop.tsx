@@ -8,10 +8,10 @@ import { ArrowRight, Check, DollarSign, X } from 'lucide-react';
 import Link from 'next/link';
 
 const replacedApps = [
-  { name: 'LeetCode Premium', price: 35, features: ['Problem Access', 'Company Questions'] },
-  { name: 'AlgoExpert', price: 99, features: ['Curated Questions', 'Video Explanations'] },
-  { name: 'Interviewing.io', price: 225, features: ['Mock Interviews', 'Anonymous Practice'] },
-  { name: 'Grammarly Premium', price: 30, features: ['Resume Writing', 'Clarity'] },
+  { name: 'LeetCode Premium', price: 2900, features: ['Problem Access', 'Company Questions'] },
+  { name: 'AlgoExpert', price: 8200, features: ['Curated Questions', 'Video Explanations'] },
+  { name: 'Interviewing.io', price: 18000, features: ['Mock Interviews', 'Anonymous Practice'] },
+  { name: 'Grammarly Premium', price: 2500, features: ['Resume Writing', 'Clarity'] },
 ];
 
 const totalCost = replacedApps.reduce((acc, app) => acc + app.price, 0);
@@ -75,7 +75,7 @@ export default function LandingValueProposition() {
               >
                 <div className="flex items-center justify-between mb-4">
                   <p className="font-semibold text-foreground">{app.name}</p>
-                  <p className="font-bold text-lg">${app.price}<span className="text-sm text-muted-foreground">/mo</span></p>
+                  <p className="font-bold text-lg">₹{app.price.toLocaleString('en-IN')}<span className="text-sm text-muted-foreground">/mo</span></p>
                 </div>
                 <div className="flex flex-wrap gap-2">
                     {app.features.map(feature => (
@@ -96,17 +96,17 @@ export default function LandingValueProposition() {
           >
             <p className="text-muted-foreground mb-2">Total monthly cost of other platforms:</p>
             <p className="text-4xl font-bold text-foreground line-through decoration-destructive decoration-2 mb-4">
-              ${totalCost}
+              ₹{totalCost.toLocaleString('en-IN')}
             </p>
             
             <div className="flex items-center justify-center gap-2 mb-4">
                 <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-primary-foreground">
                     <DollarSign size={28} />
                 </div>
-                 <p className="text-5xl font-bold text-primary">$99</p>
+                 <p className="text-5xl font-bold text-primary">₹4999</p>
             </div>
-            <p className="text-2xl font-semibold text-foreground mb-1">One-Time Payment</p>
-            <p className="text-muted-foreground mb-6">For full 60-day access. No recurring fees.</p>
+            <p className="text-2xl font-semibold text-foreground mb-1">2 Months Pro</p>
+            <p className="text-muted-foreground mb-6">Our most popular plan. No recurring fees.</p>
 
             <Button asChild size="lg" className="w-full group">
               <Link href="/#pricing">
