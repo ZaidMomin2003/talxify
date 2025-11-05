@@ -1,3 +1,4 @@
+
 'use client';
 
 import AppHero from "./landing-hero";
@@ -12,7 +13,7 @@ import LandingHeader from "./landing-header";
 import LandingFooter from "./landing-footer";
 import { Badge } from "@/components/ui/badge";
 import LandingProductFeatures from "./landing-product-features";
-import LandingHowItWorks from "./landing-how-it-works";
+import LandingFeatureSteps from "./landing-feature-steps";
 import Image from "next/image";
 import LandingValueProposition from "./landing-value-prop";
 
@@ -57,7 +58,7 @@ export default function LandingPage() {
       <main className="flex-1 relative z-20">
         <AppHero />
         
-        <LandingHowItWorks />
+        <LandingFeatureSteps />
         
         {/* Video Section */}
         <section id="see-in-action" className="py-16 sm:py-24 bg-transparent">
