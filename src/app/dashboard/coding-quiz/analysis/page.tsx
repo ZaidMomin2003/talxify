@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
@@ -176,7 +177,7 @@ export default function CodingQuizAnalysisPage() {
           ))}
         </Accordion>
         <div className="mt-8 text-center">
-            <Button onClick={() => router.push(isIzanami ? '/dashboard/arena' : '/dashboard')}>Back to {isIzanami ? 'Arena' : 'Dashboard'}</Button>
+            <Button onClick={() => router.push('/dashboard')}>Back to Dashboard</Button>
         </div>
       </div>
     </main>

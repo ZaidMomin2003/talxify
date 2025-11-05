@@ -213,9 +213,9 @@ function GettingStartedList({ activity, onDataRefresh }: { activity: StoredActiv
     
 
     const checklistItems = [
-        { name: "Generate Study Notes", completed: hasGeneratedNotes, href: "/dashboard/arena" },
+        { name: "Generate Study Notes", completed: hasGeneratedNotes, href: "/dashboard/notes-generator" },
         { name: "Take an Interview", completed: hasTakenInterview, action: () => handleStartInterview() },
-        { name: "Take a Coding Quiz", completed: hasTakenQuiz, href: "/dashboard/coding-gym" },
+        { name: "Take a Coding Quiz", completed: hasTakenQuiz, href: "/dashboard/coding-practice" },
         { name: "Deploy your Portfolio", completed: canDeployPortfolio, href: "/dashboard/portfolio" }
     ];
 
@@ -246,13 +246,13 @@ function GettingStartedList({ activity, onDataRefresh }: { activity: StoredActiv
                                 <span className={item.completed ? "text-foreground" : ""}>{item.name}</span>
                             </Link>
                          ) : (
-                             <>
+                             <div className="flex items-center gap-2 w-full h-full">
                                 {item.completed ? 
                                     <CheckCircle className="h-4 w-4 text-green-500" /> : 
                                     <Circle className="h-4 w-4 text-muted-foreground/50" />
                                 }
                                 <span className={item.completed ? "text-foreground" : ""}>{item.name}</span>
-                            </>
+                            </div>
                          )}
                     </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -398,7 +398,6 @@ function DashboardLayoutContent({
 
   const menuItems = [
     { href: "/dashboard", label: "Dashboard", icon: LayoutGrid },
-    { href: "/dashboard/arena", label: "Arena", icon: Swords },
     { 
       label: "Level Up", 
       icon: Rocket, 

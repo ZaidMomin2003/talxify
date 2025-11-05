@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -191,8 +192,8 @@ export default function InterviewResultsPage() {
     return (
          <main className="p-4 sm:p-6 lg:p-8 overflow-auto bg-muted/30 min-h-screen">
             <div className="max-w-6xl mx-auto space-y-8">
-                 <Button variant="outline" size="sm" onClick={() => router.push('/dashboard/arena')} className="mb-4">
-                    <ChevronLeft className="mr-2 h-4 w-4"/> Back to Arena
+                 <Button variant="outline" size="sm" onClick={() => router.push('/dashboard')} className="mb-4">
+                    <ChevronLeft className="mr-2 h-4 w-4"/> Back to Dashboard
                 </Button>
 
                 {/* Header */}

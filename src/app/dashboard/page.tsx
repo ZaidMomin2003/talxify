@@ -331,11 +331,6 @@ export default function DashboardPage() {
                    <LevelUpToolCard href="/dashboard/notes-generator" icon={BookOpen} title="Notes Generator" description="Get detailed study notes on any topic." />
                    <LevelUpToolCard href="/dashboard/levelup-interview" icon={Briefcase} title="Mock Interview Generator" description="Start a mock interview session." />
                 </CardContent>
-                <CardFooter>
-                     <Button asChild className="w-full" variant="ghost">
-                        <Link href="/dashboard/arena">Go to Arena <ArrowRight className="ml-2 w-4 h-4"/></Link>
-                    </Button>
-                </CardFooter>
             </Card>
         </div>
       </div>
