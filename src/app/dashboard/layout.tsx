@@ -237,22 +237,22 @@ function GettingStartedList({ activity, onDataRefresh }: { activity: StoredActiv
                         className="justify-start text-muted-foreground hover:text-foreground"
                         onClick={item.action}
                     >
-                         {item.href ? (
-                            <Link href={item.href}>
+                        {item.href ? (
+                            <Link href={item.href} className="flex items-center gap-2 w-full h-full">
                                {item.completed ? 
                                     <CheckCircle className="h-4 w-4 text-green-500" /> : 
                                     <Circle className="h-4 w-4 text-muted-foreground/50" />
                                 }
                                 <span className={item.completed ? "text-foreground" : ""}>{item.name}</span>
-                             </Link>
+                            </Link>
                          ) : (
-                            <button className="w-full h-full flex items-center gap-2">
+                             <>
                                 {item.completed ? 
                                     <CheckCircle className="h-4 w-4 text-green-500" /> : 
                                     <Circle className="h-4 w-4 text-muted-foreground/50" />
                                 }
                                 <span className={item.completed ? "text-foreground" : ""}>{item.name}</span>
-                            </button>
+                            </>
                          )}
                     </SidebarMenuButton>
                 </SidebarMenuItem>
