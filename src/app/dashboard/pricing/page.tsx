@@ -175,7 +175,7 @@ export default function PricingPage() {
                             <div className="flex items-baseline justify-center gap-1">
                                 <span className="text-5xl font-bold tracking-tighter">₹0</span>
                             </div>
-                            <CardDescription>Get a taste of our platform, forever free.</CardDescription>
+                            <CardDescription>Get a taste of our platform.</CardDescription>
                         </CardHeader>
                         <CardContent className="flex-grow">
                             <ul className="space-y-4">
@@ -273,3 +273,5 @@ export default function PricingPage() {
         </>
     );
 }
+
+  
