@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { doc, getDoc, setDoc, updateDoc, arrayUnion, collection, getDocs, addDoc, serverTimestamp, runTransaction, deleteDoc, increment, arrayRemove, Timestamp } from 'firebase/firestore';
@@ -138,9 +139,18 @@ export const updateSubscription = async (userId: string, planId: SubscriptionPla
   const currentDate = new Date();
   
   let monthsToAdd = 0;
-  if (planId === 'pro-1m') monthsToAdd = 1;
-  else if (planId === 'pro-2m') monthsToAdd = 2;
-  else if (planId === 'pro-3m') monthsToAdd = 3;
+  let interviewLimit = 0;
+
+  if (planId === 'pro-1m') {
+    monthsToAdd = 1;
+    interviewLimit = 10;
+  } else if (planId === 'pro-2m') {
+    monthsToAdd = 2;
+    interviewLimit = 25;
+  } else if (planId === 'pro-3m') {
+    monthsToAdd = 3;
+    interviewLimit = 40;
+  }
 
   if (monthsToAdd === 0) {
       throw new Error("Invalid plan ID provided for subscription update.");
@@ -152,14 +162,17 @@ export const updateSubscription = async (userId: string, planId: SubscriptionPla
     plan: planId,
     status: 'active',
     startDate: currentDate.toISOString(),
-    endDate: endDate.toISOString()
+    endDate: endDate.toISOString(),
+    interviewUsage: {
+        limit: interviewLimit,
+        count: 0
+    }
   };
 
   await setDoc(userRef, { 
       subscription: subscriptionData,
       // Reset usage limits upon new subscription
       'subscription.usage': { date: format(new Date(), 'yyyy-MM-dd'), count: 0 },
-      'subscription.interviewUsage': { date: format(new Date(), 'yyyy-MM-dd'), count: 0 },
       'subscription.aiEnhancementsUsage': { date: format(new Date(), 'yyyy-MM-dd'), count: 0 },
       'subscription.resumeExports': { date: format(new Date(), 'yyyy-MM-dd'), count: 0 },
     }, { merge: true });
@@ -182,14 +195,13 @@ export const checkAndIncrementUsage = async (userId: string, usageType: 'general
             
             if (isPro) {
                 if (usageType === 'interview') {
-                     const interviewLimit = 10;
-                     const interviewUsage = userData.subscription?.interviewUsage || { count: 0 };
-                     if (interviewUsage.count < interviewLimit) {
+                     const interviewUsage = userData.subscription?.interviewUsage || { count: 0, limit: 10 };
+                     if (interviewUsage.count < interviewUsage.limit) {
                          transaction.update(userRef, { 'subscription.interviewUsage.count': increment(1) });
                          usageAllowed = true;
                      } else {
                          usageAllowed = false;
-                         message = `You have reached your limit of ${interviewLimit} AI interviews for this plan.`;
+                         message = `You have reached your limit of ${interviewUsage.limit} AI interviews for this plan.`;
                      }
                 } else {
                     usageAllowed = true; // Unlimited for other types on Pro
@@ -436,3 +448,5 @@ export const saveWaitlistSubmission = async (submission: {name: string, email: s
         throw error;
     }
 }
+
+    

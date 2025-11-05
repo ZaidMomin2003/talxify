@@ -34,6 +34,7 @@ const proPlans = [
         priceInr: 2999,
         duration: '1 Month',
         description: 'Perfect for a focused prep sprint.',
+        interviews: 10,
     },
     {
         id: 'pro-2m' as SubscriptionPlan,
@@ -42,7 +43,8 @@ const proPlans = [
         originalPriceInr: 5998,
         duration: '2 Months',
         description: 'Balanced plan for steady preparation.',
-        badge: 'Save ₹999'
+        badge: 'Save ₹999',
+        interviews: 25,
     },
     {
         id: 'pro-3m' as SubscriptionPlan,
@@ -51,13 +53,13 @@ const proPlans = [
         originalPriceInr: 8997,
         duration: '3 Months',
         description: 'Best value for in-depth mastery.',
-        badge: 'Save ₹1998'
+        badge: 'Save ₹1998',
+        interviews: 40,
     },
 ]
 
 const proFeatures = [
-    'Full 60-Day Arena Access',
-    '10 AI-Powered Mock Interviews',
+    'AI-Powered Mock Interviews',
     'Unlimited Coding Questions',
     'Unlimited Study Notes',
     'Interview Question Generator',
@@ -223,7 +225,7 @@ export default function PricingPage() {
                                                     <span className="text-muted-foreground line-through">₹{plan.originalPriceInr.toLocaleString('en-IN')}</span>
                                                 )}
                                             </div>
-                                            <p className="text-sm text-muted-foreground">{plan.description}</p>
+                                            <p className="text-sm text-muted-foreground">{plan.interviews} Mock Interviews</p>
                                         </div>
                                     ))}
                                 </div>
@@ -266,3 +268,5 @@ export default function PricingPage() {
         </>
     );
 }
+
+    

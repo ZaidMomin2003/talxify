@@ -3,10 +3,10 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check, Star, UserRound, Sparkles, CreditCard } from 'lucide-react';
+import { Check, Star, UserRound, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
 import type { SubscriptionPlan } from '@/lib/types';
@@ -16,9 +16,9 @@ const freePlan = {
     name: 'Free',
     price: '₹0',
     features: [
-        'Limited AI interactions',
+        '5 AI interactions per day',
         'Limited Arena access (Day 1)',
-        'Limited Resume exports',
+        '2 Resume exports per day',
         'Limited Portfolio customization',
     ],
 };
@@ -30,6 +30,7 @@ const proPlans = [
         priceInr: 2999,
         duration: '1 Month',
         description: 'Perfect for a focused prep sprint.',
+        interviews: 10,
     },
     {
         id: 'pro-2m' as SubscriptionPlan,
@@ -38,7 +39,8 @@ const proPlans = [
         originalPriceInr: 5998,
         duration: '2 Months',
         description: 'Balanced plan for steady preparation.',
-        badge: 'Save ₹999'
+        badge: 'Save ₹999',
+        interviews: 25,
     },
     {
         id: 'pro-3m' as SubscriptionPlan,
@@ -47,13 +49,13 @@ const proPlans = [
         originalPriceInr: 8997,
         duration: '3 Months',
         description: 'Best value for in-depth mastery.',
-        badge: 'Save ₹1998'
+        badge: 'Save ₹1998',
+        interviews: 40,
     },
 ]
 
 const proFeatures = [
-    'Full 60-Day Arena Access',
-    '10 AI-Powered Mock Interviews',
+    'AI-Powered Mock Interviews',
     'Unlimited Coding Questions',
     'Unlimited Study Notes',
     'Interview Question Generator',
@@ -174,6 +176,12 @@ export default function LandingPricing() {
                                         <span className="text-muted-foreground">{feature}</span>
                                     </li>
                                 ))}
+                                <li className="flex items-center gap-3">
+                                    <div className="bg-primary/10 text-primary rounded-full p-1">
+                                        <Check className="w-4 h-4" />
+                                    </div>
+                                    <span className="text-muted-foreground">{selectedPlan?.interviews} AI Mock Interviews</span>
+                                </li>
                             </ul>
                         </CardContent>
                         <CardFooter>
@@ -191,3 +199,4 @@ export default function LandingPricing() {
     );
 }
 
+    

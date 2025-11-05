@@ -1,4 +1,5 @@
 
+
 import type { AnswerAnalysis } from "@/ai/flows/analyze-coding-answers";
 import type { GenerateStudyNotesOutput } from "@/ai/flows/generate-study-notes";
 import type { QuizState } from "@/app/dashboard/coding-quiz/quiz/page";
@@ -169,7 +170,8 @@ export interface Subscription {
         date: string; // YYYY-MM-DD
         count: number;
     };
-    interviewUsage?: { // for pro plan interview usage
+    interviewUsage?: {
+        limit: number;
         count: number;
     },
     resumeExports?: {
@@ -420,3 +422,5 @@ export const InterviewFlowOutputSchema = z.object({
   transcript: z.array(TranscriptEntrySchema),
 });
 export type InterviewFlowOutput = z.infer<typeof InterviewFlowOutputSchema>;
+
+    
