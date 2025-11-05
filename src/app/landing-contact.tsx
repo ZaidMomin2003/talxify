@@ -1,15 +1,15 @@
 'use client';
 
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Check, Loader2 } from 'lucide-react';
-import { motion } from 'framer-motion';
 import { useState, useRef, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { useInView } from 'framer-motion';
 import dynamic from 'next/dynamic';
 import { SparklesCore } from '@/components/ui/sparkles';
 import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Check, Loader2 } from 'lucide-react';
 
 const Earth = dynamic(() => import('@/components/ui/globe'), {
   ssr: false,

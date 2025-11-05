@@ -1,14 +1,8 @@
 'use client';
 import { useEffect, useRef } from 'react';
-import { Color } from 'three';
-import { Canvas } from '@react-three/fiber';
-import { OrbitControls } from '@react-three/drei';
-import {
-  default as globeVertexShader,
-  fragmentShader as globeFragmentShader,
-} from '@/lib/globe-shader';
+import * as THREE from 'three';
 
-function Globe({
+const Globe = ({
   baseColor,
   markerColor,
   glowColor,
@@ -18,55 +12,67 @@ function Globe({
   markerColor: [number, number, number];
   glowColor: [number, number, number];
   scale?: number;
-}) {
-  const meshRef = useRef<any>();
-  
-  const uniforms = {
-    baseColor: { value: new Color(...baseColor) },
-    markerColor: { value: new Color(...markerColor) },
-    glowColor: { value: new Color(...glowColor) },
-  };
+}) => {
+  const mountRef = useRef<HTMLDivElement>(null);
 
-  return (
-    <mesh ref={meshRef} scale={[scale, scale, scale]}>
-      <icosahedronGeometry args={[5, 20]} />
-      <shaderMaterial
-        vertexShader={globeVertexShader}
-        fragmentShader={globeFragmentShader}
-        uniforms={uniforms}
-        wireframe={true}
-      />
-    </mesh>
-  );
-}
+  useEffect(() => {
+    if (!mountRef.current) return;
 
-export default function Earth({
-  baseColor = [1, 1, 1],
-  markerColor = [1, 1, 1],
-  glowColor = [1, 1, 1],
-  scale = 1,
-}) {
-  return (
-    <Canvas
-      camera={{
-        position: [0, 0, 20],
-        fov: 50,
-      }}
-    >
-      <ambientLight color={[1, 1, 1]} intensity={0.1} />
-      <directionalLight position={[10, 10, 5]} intensity={0.5} />
-      <Globe
-        baseColor={baseColor}
-        markerColor={markerColor}
-        glowColor={glowColor}
-        scale={scale}
-      />
-      <OrbitControls
-        enableZoom={false}
-        enablePan={false}
-        autoRotate={true}
-        autoRotateSpeed={0.5}
-      />
-    </Canvas>
-  );
-}
+    // Scene, Camera, Renderer
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(50, mountRef.current.clientWidth / mountRef.current.clientHeight, 0.1, 1000);
+    camera.position.z = 20;
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(mountRef.current.clientWidth, mountRef.current.clientHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    mountRef.current.appendChild(renderer.domElement);
+
+    // Globe Geometry
+    const geometry = new THREE.IcosahedronGeometry(5, 20);
+    const material = new THREE.MeshBasicMaterial({
+      color: new THREE.Color(...baseColor),
+      wireframe: true,
+      transparent: true,
+      opacity: 0.2,
+    });
+    
+    const globe = new THREE.Mesh(geometry, material);
+    globe.scale.set(scale, scale, scale);
+    scene.add(globe);
+    
+    // Animation Loop
+    const animate = () => {
+      requestAnimationFrame(animate);
+      globe.rotation.y += 0.0005;
+      renderer.render(scene, camera);
+    };
+
+    animate();
+
+    // Handle Resize
+    const handleResize = () => {
+      if (mountRef.current) {
+        const width = mountRef.current.clientWidth;
+        const height = mountRef.current.clientHeight;
+        renderer.setSize(width, height);
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+      }
+    };
+    
+    window.addEventListener('resize', handleResize);
+
+    // Cleanup
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      if (mountRef.current) {
+        mountRef.current.removeChild(renderer.domElement);
+      }
+    };
+  }, [baseColor, markerColor, glowColor, scale]);
+
+  return <div ref={mountRef} className="w-full h-full" />;
+};
+
+export default Globe;
