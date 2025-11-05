@@ -406,6 +406,8 @@ function DashboardLayoutContent({
       isPro: true,
       subItems: [
         { href: "/dashboard/coding-practice", label: "Coding Quiz Generator", icon: Code },
+        { href: "/dashboard/interview-questions-generator", label: "Interview Questions Generator", icon: MessageSquare },
+        { href: "/dashboard/notes-generator", label: "Notes Generator", icon: BookOpen },
         { href: "/dashboard/levelup-interview", label: "Interview Generator", icon: MessageSquare },
       ]
     },
