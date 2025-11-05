@@ -14,27 +14,27 @@ const freePlan = {
     name: 'Free',
     price: '₹0',
     features: [
-        'First Day of 60-Day Arena',
         'AI-Powered Mock Interview',
         'AI-Analyzed Coding Quiz',
         'AI-Generated Study Notes',
-        'Limited Portfolio Access (24h)',
+        'Limited Portfolio Access',
+        'Limited Resume Downloads'
     ],
 };
 
 const proPlan = {
     name: 'Pro',
-    originalPriceInr: '₹9999',
-    priceInr: '₹7999',
+    originalPriceInr: '₹7999',
+    priceInr: '₹6999',
     priceUsd: '$99',
     period: '/60 days',
 };
 
 const proFeatures = [
-    'Full 60-Day Arena Access',
-    'AI-Powered Mock Interviews',
+    'Unlimited Mock Interviews',
     'Unlimited Coding Questions',
     'Unlimited Study Notes',
+    'Interview Question Generator',
     'Professional Resume Builder',
     'Full Portfolio Customization',
     'Detailed Performance Analytics',

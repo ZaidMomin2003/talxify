@@ -22,7 +22,7 @@ const navItems: NavItem[] = [
 ];
 
 const featureItems = [
-    { name: '60-Day Prep Arena', href: '/#features', icon: Swords, description: "Personalized syllabus to master key concepts." },
+    { name: 'Interview Question Bank', href: '/dashboard/interview-questions-generator', icon: BrainCircuit, description: "Generate tailored questions for any role." },
     { name: 'AI Mock Interviews', href: '/#features', icon: MessageSquare, description: 'Practice with a realistic AI that asks relevant questions.' },
     { name: 'AI Coding Gym', href: '/#features', icon: Code, description: 'Solve problems with instant, line-by-line feedback.' },
     { name: 'AI Study Notes', href: '/#features', icon: BrainCircuit, description: 'Generate in-depth study guides for any topic.' },
@@ -31,17 +31,18 @@ const featureItems = [
 ];
 
 const freePlanFeatures = [
-    'First Day of 60-Day Arena',
     'AI-Powered Mock Interview',
     'AI-Analyzed Coding Quiz',
-    'Limited Portfolio Access (24h)',
+    'AI-Generated Study Notes',
+    'Limited Portfolio Access',
+    'Limited Resume Downloads'
 ];
 
 const proPlanFeatures = [
-    'Full 60-Day Arena Access',
+    'Unlimited Mock Interviews',
     'Unlimited Coding Questions',
+    'Interview Question Generator',
     'Professional Resume Builder',
-    'Full Portfolio Customization',
     'And everything in Free...',
 ];
 

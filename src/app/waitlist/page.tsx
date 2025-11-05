@@ -25,8 +25,8 @@ const features = [
   },
   {
     icon: <BrainCircuit className="w-8 h-8" />,
-    title: 'Targeted Prep Tracks',
-    description: 'Choose a company like Google or Amazon, and get a personalized 60-day syllabus and mock interviews tailored to their style.',
+    title: 'Interview Question Generator',
+    description: 'Generate hyper-relevant interview questions for any role, level, or company to target your preparation.',
   },
   {
     icon: <FileText className="w-8 h-8" />,
@@ -37,10 +37,10 @@ const features = [
 
 const howItWorksSteps = [
     {
-        icon: CalendarDays,
+        icon: BrainCircuit,
         step: 1,
-        title: "Get Your Personalized Plan",
-        description: "Answer a few questions about your career goals, and our AI will generate a custom 60-day prep syllabus tailored just for you."
+        title: "Generate Practice Material",
+        description: "Create tailored interview questions, study notes, or coding quizzes based on the role and company you're targeting."
     },
     {
         icon: Code,

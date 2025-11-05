@@ -33,27 +33,23 @@ const benefits = [
 
 const features = [
     {
-        title: 'Your Personalized 60-Day Prep Plan',
-        description: 'Start with a plan tailored to your target roles and companies. Our AI generates a comprehensive, 60-day syllabus covering everything from data structures to system design, ensuring students learn what matters most.',
-        icon: CalendarDays,
+        title: 'AI Interview Question Bank',
+        description: 'Generate hyper-relevant questions for any role. Our AI analyzes job descriptions to create technical, behavioral, and coding questions with detailed example answers, tailored to the required seniority.',
+        icon: BrainCircuit,
         prototype: (
             <Card className="w-full max-w-lg mx-auto bg-card/80 backdrop-blur-sm p-6 shadow-xl border border-border/50">
-                <CardHeader className="p-0 mb-4 flex flex-row items-center gap-3">
-                    <div className="flex-shrink-0 bg-primary/10 text-primary p-2 rounded-lg"><CalendarDays className="w-6 h-6"/></div>
-                    <CardTitle className="text-xl m-0">Your 60-Day Arena</CardTitle>
+                 <CardHeader className="p-0 mb-4 flex flex-row items-center gap-3">
+                    <div className="flex-shrink-0 bg-primary/10 text-primary p-2 rounded-lg"><BrainCircuit className="w-6 h-6"/></div>
+                    <CardTitle className="text-xl m-0">Generated Questions</CardTitle>
                 </CardHeader>
                 <CardContent className="p-0 space-y-3">
-                    <div className="flex items-center justify-between p-3 rounded-lg bg-muted border border-green-500/50">
-                        <div className="flex items-center gap-3"><CheckCircle className="w-5 h-5 text-green-500" /> <span className="font-medium">Day 1: Arrays & Strings</span></div>
-                        <Badge variant="default" className="bg-green-600/80">Done</Badge>
+                    <div className="p-3 rounded-lg bg-muted border">
+                        <Badge variant="destructive" className="mb-2">Coding</Badge>
+                        <p className="font-medium text-sm">Implement an algorithm to find the maximum contiguous subarray sum (Kadane's Algorithm).</p>
                     </div>
-                    <div className="flex items-center justify-between p-3 rounded-lg bg-primary/10 border border-primary/50 ring-2 ring-primary/30">
-                        <div className="flex items-center gap-3"><ArrowRight className="w-5 h-5 text-primary" /> <span className="font-medium">Day 2: Linked Lists</span></div>
-                        <Button size="sm">Start</Button>
-                    </div>
-                    <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 opacity-60">
-                        <div className="flex items-center gap-3"><CheckCircle className="w-5 h-5" /> <span className="font-medium">Day 3: Hash Tables</span></div>
-                        <Badge variant="secondary">Locked</Badge>
+                    <div className="p-3 rounded-lg bg-muted border opacity-70">
+                         <Badge variant="secondary" className="mb-2">Behavioral</Badge>
+                        <p className="font-medium text-sm">Tell me about a time you had to take ownership of a failing project.</p>
                     </div>
                 </CardContent>
             </Card>
@@ -61,7 +57,7 @@ const features = [
     },
     {
         title: 'AI-Generated Study Notes',
-        description: "Don't just memorize—understand. Select any topic from the syllabus, and our AI will generate a detailed, easy-to-digest study guide, complete with core concepts, key terminology, and practical code examples.",
+        description: "Don't just memorize—understand. Select any topic, and our AI will generate a detailed, easy-to-digest study guide, complete with core concepts, key terminology, and practical code examples.",
         icon: BookOpen,
         prototype: (
              <Card className="w-full max-w-lg mx-auto bg-card/80 backdrop-blur-sm p-6 shadow-xl border border-border/50 overflow-hidden">
@@ -181,7 +177,7 @@ const faqs = [
     },
     {
         question: "How does the AI personalize the experience for each student?",
-        answer: "Personalization is at our core. The journey begins with a custom 60-day prep syllabus based on the student's target roles and companies. The 'Code Izanami' quizzes adapt in difficulty based on performance, and the AI interviewer can tailor questions based on the specified job role and level."
+        answer: "Personalization is at our core. Students can generate interview questions for specific roles, create study notes for any topic, and practice with adaptive coding quizzes. The AI interviewer can also tailor questions based on the specified job role and level."
     },
     {
         question: "What kind of support do students receive?",

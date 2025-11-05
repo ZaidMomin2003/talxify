@@ -1,33 +1,33 @@
 
 'use client';
 
-import { CalendarDays, Code, User, Rocket, BookOpen, MessageSquare, FileText } from "lucide-react";
+import { CalendarDays, Code, User, Rocket, BookOpen, MessageSquare, FileText, BrainCircuit } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 const steps = [
     {
-        icon: CalendarDays,
+        icon: BrainCircuit,
         step: 1,
-        title: "Get Your Plan",
-        description: "Generate a personalized 60-day syllabus based on your target roles and companies to create your prep Arena."
-    },
-    {
-        icon: BookOpen,
-        step: 2,
-        title: "Learn & Practice",
-        description: "Study from AI-generated notes and test your knowledge with adaptive 'Code Izanami' quizzes for any topic."
+        title: "Generate Practice Material",
+        description: "Create tailored interview questions, study notes, or coding quizzes based on the role and company you're targeting."
     },
     {
         icon: MessageSquare,
-        step: 3,
-        title: "Master Interviews",
-        description: "Practice with our conversational AI that simulates real-world technical and behavioral interviews."
+        step: 2,
+        title: "Practice with AI",
+        description: "Use the generated material to practice. Engage in mock interviews, solve coding problems, and study key concepts."
     },
     {
         icon: FileText,
+        step: 3,
+        title: "Build Your Profile",
+        description: "Craft a professional resume and build a portfolio to showcase your skills and preparation progress to recruiters."
+    },
+    {
+        icon: Rocket,
         step: 4,
-        title: "Showcase & Succeed",
-        description: "Build a professional resume and portfolio, automatically updated with your progress, to share with recruiters."
+        title: "Land Your Dream Job",
+        description: "Apply for jobs with confidence, backed by rigorous, AI-powered preparation and a standout professional profile."
     }
 ];
 
