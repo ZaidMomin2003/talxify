@@ -10,7 +10,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, AlertTriangle, ChevronLeft, MessageSquare, Sparkles } from 'lucide-react';
+import { Loader2, AlertTriangle, ChevronLeft, MessageSquare, Sparkles, Lightbulb, UserCheck } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 function ResultsLoader() {
     return (
@@ -129,8 +130,21 @@ export default function InterviewQuestionsResultPage() {
                                     </Badge>
                                 </div>
                             </AccordionTrigger>
-                            <AccordionContent className="text-base text-muted-foreground space-y-4 p-4 bg-muted/50 rounded-b-lg prose dark:prose-invert max-w-none">
-                                <div dangerouslySetInnerHTML={{ __html: qa.answer }} />
+                            <AccordionContent className="text-base text-muted-foreground space-y-6 p-4 bg-muted/50 rounded-b-lg">
+                                <Alert>
+                                    <Lightbulb className="h-4 w-4" />
+                                    <AlertTitle>How to Answer</AlertTitle>
+                                    <AlertDescription>
+                                        <div dangerouslySetInnerHTML={{ __html: qa.guidance }} />
+                                    </AlertDescription>
+                                </Alert>
+                                <Alert variant="default" className="bg-background">
+                                     <UserCheck className="h-4 w-4" />
+                                    <AlertTitle>Example Answer</AlertTitle>
+                                    <AlertDescription>
+                                        <div className="prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: qa.exampleAnswer }} />
+                                    </AlertDescription>
+                                </Alert>
                             </AccordionContent>
                         </AccordionItem>
                     ))}

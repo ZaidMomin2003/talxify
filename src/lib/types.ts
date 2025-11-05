@@ -387,7 +387,8 @@ export type GenerateInterviewQuestionsInput = z.infer<typeof GenerateInterviewQu
 
 const InterviewQuestionAndAnswerSchema = z.object({
     question: z.string().describe('A single, well-defined interview question.'),
-    answer: z.string().describe('A detailed, expert-level answer to the question.'),
+    guidance: z.string().describe('A brief explanation of what an interviewer is looking for in a good answer.'),
+    exampleAnswer: z.string().describe('A complete, well-structured example answer. Format this as an HTML string.'),
     type: z.enum(['Behavioral', 'Technical', 'Coding']).describe('The category of the question.')
 });
 export type InterviewQuestionAndAnswer = z.infer<typeof InterviewQuestionAndAnswerSchema>;

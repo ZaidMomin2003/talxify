@@ -21,7 +21,7 @@ const prompt = ai.definePrompt({
   output: {schema: GenerateInterviewQuestionsOutputSchema},
   prompt: `You are an expert technical interviewer and career coach.
   
-  Your task is to generate exactly 15 interview questions, each with a detailed, expert-level answer. The questions should be highly relevant to the provided job details.
+  Your task is to generate exactly 15 interview questions. The questions should be highly relevant to the provided job details.
 
   **Job Details:**
   - **Role:** {{role}}
@@ -37,8 +37,9 @@ const prompt = ai.definePrompt({
   2.  Generate a mix of technical, coding, and behavioral questions.
   3.  For each question, provide:
       a.  A "question" string.
-      b.  A comprehensive, well-explained "answer".
-      c.  A "type" string, which must be one of: "Behavioral", "Technical", or "Coding".
+      b.  A "guidance" string, explaining what a good answer should cover and what the interviewer is looking for.
+      c.  An "exampleAnswer" string, providing a complete, well-structured example answer that follows the STAR method for behavioral questions or is technically sound for technical/coding questions. This should be formatted as a valid HTML string.
+      d.  A "type" string, which must be one of: "Behavioral", "Technical", or "Coding".
   4.  The difficulty and depth of the questions must be appropriate for the specified **Level**.
   5.  If a **Company** is specified, tailor some questions to reflect that company's known culture, values, and typical interview style (e.g., scalability for Netflix, algorithms for Google).
   6.  Ensure the final output contains exactly 15 question-and-answer pairs.
