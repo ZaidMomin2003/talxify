@@ -396,10 +396,10 @@ function DashboardLayoutContent({
   }
 
   const practiceItems = [
-    { href: "/dashboard/coding-practice", label: "Coding Practice", icon: Code },
-    { href: "/dashboard/levelup-interview", label: "Mock Interviews", icon: MessageSquare },
-    { href: "/dashboard/notes-generator", label: "Notes Generator", icon: BookOpen },
-    { href: "/dashboard/interview-questions-generator", label: "Question Bank", icon: BrainCircuit },
+    { href: "/dashboard/coding-practice", label: "AI Coding Practice", icon: Code },
+    { href: "/dashboard/levelup-interview", label: "AI Mock Interviews", icon: MessageSquare },
+    { href: "/dashboard/notes-generator", label: "AI Notes Generator", icon: BookOpen },
+    { href: "/dashboard/interview-questions-generator", label: "AI Interview Questions", icon: BrainCircuit },
   ];
 
   const showcaseItems = [
@@ -745,3 +745,5 @@ export default function DashboardLayout({
     <DashboardLayoutContent>{children}</DashboardLayoutContent>
   )
 }
+
+    
