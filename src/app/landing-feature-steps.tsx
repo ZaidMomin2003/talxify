@@ -1,13 +1,15 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { Rocket, BrainCircuit, MessageSquare, FileText, Bot, ShieldQuestion, User, Video, Phone, Mic } from 'lucide-react';
+import { Rocket, BrainCircuit, MessageSquare, FileText, Bot, ShieldQuestion, User, Video, Phone, Mic, BarChart, Star } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { AreaChart, Area, ResponsiveContainer } from 'recharts';
 
 const featurePrototypes = [
     // Step 1: Generate Practice Material
@@ -31,7 +33,7 @@ const featurePrototypes = [
     ),
     // Step 2: Practice with AI
     (
-       <div className="w-full max-w-lg mx-auto aspect-video rounded-2xl p-4 shadow-xl border border-border/50 bg-background relative flex items-center justify-center overflow-hidden">
+        <div className="w-full max-w-lg mx-auto aspect-video rounded-2xl p-4 shadow-xl border border-border/50 bg-background relative flex items-center justify-center overflow-hidden">
             <div className="absolute inset-0 thermal-gradient-bg z-0"/>
             <div className="relative z-10 flex flex-col items-center justify-center">
                 <div className={cn("relative flex items-center justify-center w-32 h-32 rounded-full transition-all duration-500 scale-100")}>
@@ -44,7 +46,7 @@ const featurePrototypes = [
                         <AvatarFallback>AI</AvatarFallback>
                     </Avatar>
                 </div>
-                <p className="mt-4 text-xl font-bold font-headline text-foreground">Kathy</p>
+                <p className="mt-4 text-xl font-bold font-headline text-foreground">Mark</p>
                 <p className="text-sm text-muted-foreground">AI Interviewer</p>
             </div>
             <div className="absolute bottom-4 right-4 w-24 h-24 rounded-full overflow-hidden border-2 border-border bg-black shadow-lg flex items-center justify-center">
@@ -65,26 +67,39 @@ const featurePrototypes = [
     ),
     // Step 3: Build Your Profile
     (
-        <Card className="w-full h-full max-w-lg mx-auto bg-card/80 backdrop-blur-sm p-6 shadow-xl border border-border/50 flex flex-col justify-center">
-            <CardHeader className="p-0 mb-4 flex-row items-center gap-3">
-                 <div className="p-2 bg-primary/10 rounded-lg text-primary"><FileText className="w-6 h-6" /></div>
-                <CardTitle className="text-xl m-0">Profile & Resume</CardTitle>
-            </CardHeader>
-            <CardContent className="p-0 space-y-3">
-                <div className="flex items-center gap-4 p-3 rounded-lg bg-muted border">
-                    <Avatar className="w-12 h-12 border-2 border-primary">
-                        <AvatarFallback>JD</AvatarFallback>
-                    </Avatar>
-                    <div>
-                        <p className="font-bold">Jane Doe</p>
-                        <p className="text-sm text-muted-foreground">Software Engineer</p>
-                    </div>
-                </div>
-                <div className="p-3 rounded-lg bg-muted border text-sm text-muted-foreground">
-                    <p><span className="font-semibold text-foreground">Skills:</span> React, Next.js, System Design...</p>
-                </div>
-            </CardContent>
-        </Card>
+       <Card className="w-full h-full max-w-lg mx-auto bg-card/80 backdrop-blur-sm p-6 shadow-xl border border-border/50 flex flex-col justify-center">
+          <CardHeader className="p-0 mb-4 flex-row items-center gap-3">
+              <div className="p-2 bg-primary/10 rounded-lg text-primary"><FileText className="w-6 h-6" /></div>
+              <CardTitle className="text-xl m-0">Portfolio & Resume</CardTitle>
+          </CardHeader>
+          <CardContent className="p-0 space-y-3">
+              <div className="flex items-center gap-4 p-3 rounded-lg bg-muted border">
+                  <Avatar className="w-12 h-12 border-2 border-primary">
+                      <AvatarFallback>JD</AvatarFallback>
+                  </Avatar>
+                  <div>
+                      <p className="font-bold text-lg">Jane Doe</p>
+                      <p className="text-sm text-muted-foreground">Full-Stack Developer</p>
+                  </div>
+              </div>
+              <div className="p-3 rounded-lg bg-muted border text-sm text-muted-foreground space-y-2">
+                  <p className="font-semibold text-foreground text-base">Key Skills</p>
+                  <div className="flex flex-wrap gap-2">
+                      <Badge>React</Badge>
+                      <Badge>Next.js</Badge>
+                      <Badge>Node.js</Badge>
+                      <Badge variant="secondary">Python</Badge>
+                  </div>
+              </div>
+               <div className="p-3 rounded-lg bg-muted border text-sm text-muted-foreground">
+                  <p className="font-semibold text-foreground text-base mb-2">Project Highlight</p>
+                  <div className="p-2 rounded-md bg-background border">
+                    <p className="font-bold text-sm text-foreground">E-commerce Platform</p>
+                    <p className="text-xs">Built a full-stack e-commerce site with Stripe integration.</p>
+                  </div>
+              </div>
+          </CardContent>
+      </Card>
     ),
     // Step 4: Land Your Job
     (
@@ -149,7 +164,14 @@ export default function LandingFeatureSteps() {
   useEffect(() => {
       setProgress(0);
       const progressTimer = setInterval(() => {
-          setProgress(p => p + (100 / (4000 / 50)))
+          setProgress(p => {
+              const newProgress = p + (100 / (4000 / 50));
+              if (newProgress >= 100) {
+                  clearInterval(progressTimer);
+                  return 100;
+              }
+              return newProgress;
+          })
       }, 50);
 
       return () => clearInterval(progressTimer);
