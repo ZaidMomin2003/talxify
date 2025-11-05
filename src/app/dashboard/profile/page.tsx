@@ -9,11 +9,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, User, KeyRound, ShieldAlert, Trash2, RefreshCw, Edit, Save, X } from 'lucide-react';
+import { Loader2, User, KeyRound, ShieldAlert, Trash2, RefreshCw, Edit, Save, X, Briefcase, Building, GraduationCap } from 'lucide-react';
 import { updatePassword, EmailAuthProvider, reauthenticateWithCredential, updateProfile } from 'firebase/auth';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { deleteUserDocument, getUserData, updatePortfolio } from '@/lib/firebase-service';
 import type { UserData, InterviewActivity, QuizResult } from '@/lib/types';
+import { Badge } from '@/components/ui/badge';
 
 
 export default function ProfilePage() {
@@ -231,6 +232,55 @@ export default function ProfilePage() {
                         </div>
                     </CardContent>
                 </Card>
+
+                {userData && (userData.portfolio?.education?.length > 0 || userData.onboardingInfo?.roles?.length > 0) && (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-3"><Briefcase className="h-6 w-6"/> Career Profile</CardTitle>
+                            <CardDescription>Information from your onboarding process.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            {userData.portfolio.education?.[0]?.institution && (
+                                <div className="space-y-1">
+                                    <Label>University / College</Label>
+                                    <div className="flex items-center gap-2 p-3 rounded-md bg-muted">
+                                        <GraduationCap className="h-5 w-5 text-muted-foreground"/>
+                                        <p>{userData.portfolio.education[0].institution}</p>
+                                    </div>
+                                </div>
+                            )}
+                             {userData.portfolio.education?.[0]?.degree && (
+                                <div className="space-y-1">
+                                    <Label>Major / Field of Study</Label>
+                                     <div className="flex items-center gap-2 p-3 rounded-md bg-muted">
+                                        <p>{userData.portfolio.education[0].degree}</p>
+                                    </div>
+                                </div>
+                            )}
+                            {userData.onboardingInfo?.roles && userData.onboardingInfo.roles.length > 0 && (
+                                <div className="space-y-2">
+                                    <Label>Target Roles</Label>
+                                    <div className="flex flex-wrap gap-2">
+                                        {userData.onboardingInfo.roles.map(role => (
+                                            <Badge key={role} variant="secondary">{role}</Badge>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                             {userData.onboardingInfo?.companies && userData.onboardingInfo.companies.length > 0 && (
+                                <div className="space-y-2">
+                                    <Label>Target Companies</Label>
+                                    <div className="flex flex-wrap gap-2">
+                                        {userData.onboardingInfo.companies.map(company => (
+                                            <Badge key={company}>{company}</Badge>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+                )}
+
 
                 <Card>
                     <CardHeader>
