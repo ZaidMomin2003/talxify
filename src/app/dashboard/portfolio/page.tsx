@@ -104,6 +104,14 @@ const ImagePicker = ({ value, onChange, dataAiHint, isAvatar, isCloudinaryLoaded
     )
 }
 
+const colorOptions = [
+    { name: 'Default', hsl: '221.2 83.2% 53.3%' },
+    { name: 'Forest Green', hsl: '142.1 76.2% 36.3%' },
+    { name: 'Midnight Blue', hsl: '210 40% 30%' },
+    { name: 'Ruby Red', hsl: '0 100% 35%' },
+    { name: 'Royal Purple', hsl: '260 50% 40%' },
+];
+
 
 export default function PortfolioPage() {
   const { user } = useAuth();
