@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -145,7 +146,7 @@ export default function PricingPage() {
                     email: user.email || "",
                 },
                 theme: {
-                    color: "#e60a64"
+                    color: "#3F51B5"
                 }
             };
 
