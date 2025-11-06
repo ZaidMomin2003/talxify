@@ -87,9 +87,9 @@ export default function LandingPricing() {
                     </p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto items-stretch">
-                    {/* Free Plan */}
-                    <Card className="flex flex-col shadow-lg transition-transform duration-300 hover:-translate-y-1">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 max-w-7xl mx-auto items-start gap-8">
+                     {/* Free Plan */}
+                    <Card className="flex flex-col shadow-lg transition-transform duration-300 hover:-translate-y-1 lg:col-span-1 h-full">
                         <CardHeader className="text-center">
                             <UserRound className="h-10 w-10 mx-auto text-muted-foreground mb-2" />
                             <CardTitle className="text-3xl font-bold font-headline">{freePlan.name}</CardTitle>
@@ -105,7 +105,7 @@ export default function LandingPricing() {
                                         <div className="bg-muted text-muted-foreground rounded-full p-1">
                                             <Check className="w-4 h-4" />
                                         </div>
-                                        <span className="text-muted-foreground">{feature}</span>
+                                        <span className="text-muted-foreground text-sm">{feature}</span>
                                     </li>
                                 ))}
                             </ul>
@@ -117,83 +117,68 @@ export default function LandingPricing() {
                         </CardFooter>
                     </Card>
 
-                    {/* Pro Plan */}
-                    <Card className="relative flex flex-col shadow-lg transition-transform duration-300 hover:-translate-y-1 border-primary border-2 shadow-primary/20">
-                        <div className="absolute top-0 right-0 -mt-3 -mr-3">
-                            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg">
-                                <Star className="h-6 w-6" />
-                            </div>
-                        </div>
-                        <CardHeader className="text-center">
-                            <Sparkles className="h-10 w-10 mx-auto text-primary mb-2" />
-                            <CardTitle className="text-3xl font-bold font-headline">Pro</CardTitle>
-                             <AnimatePresence mode="wait">
-                                <motion.div
-                                    key={selectedPlanId}
-                                    initial={{ opacity: 0, y: -10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, y: 10 }}
-                                    transition={{ duration: 0.2 }}
-                                    className="flex items-baseline justify-center gap-2"
-                                >
-                                    {selectedPlan?.originalPriceInr && (
-                                        <span className="text-3xl font-medium text-muted-foreground line-through">
-                                            ₹{selectedPlan.originalPriceInr.toLocaleString('en-IN')}
-                                        </span>
-                                    )}
-                                    <span className="text-5xl font-bold tracking-tighter">
-                                        ₹{selectedPlan?.priceInr.toLocaleString('en-IN')}
-                                    </span>
-                                </motion.div>
-                            </AnimatePresence>
-                            <CardDescription>All the tools you need to land your dream job.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="flex-grow">
-                             <div className="grid grid-cols-3 gap-2 rounded-lg bg-muted p-1 mb-6">
-                                {proPlans.map((plan) => (
-                                    <button
-                                        key={plan.id}
-                                        onClick={() => setSelectedPlanId(plan.id)}
-                                        className={cn(
-                                            "relative rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                                            selectedPlanId === plan.id ? "bg-background text-foreground shadow-sm" : "hover:bg-background/50"
-                                        )}
-                                    >
-                                        {plan.badge && (
-                                            <div className="absolute -top-2 -right-2 bg-primary text-primary-foreground px-2 py-0.5 text-[10px] font-bold rounded-full">
-                                                {plan.badge}
+                    {/* Pro Plans */}
+                    <div className="lg:col-span-3 h-full">
+                        <Card className="shadow-lg border-primary border-2 shadow-primary/20 h-full flex flex-col">
+                             <CardHeader>
+                                <div className="flex justify-center items-center gap-3 mb-2 text-primary">
+                                    <Star className="w-8 h-8"/>
+                                    <CardTitle className="text-3xl font-bold font-headline">Pro Plans</CardTitle>
+                                </div>
+                                <CardDescription className="text-center">Unlock your full potential and land your dream job with our comprehensive toolkit.</CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-8 flex-grow">
+                                <div className="grid sm:grid-cols-3 gap-4">
+                                    {proPlans.map((plan) => (
+                                        <div
+                                            key={plan.id}
+                                            onClick={() => setSelectedPlanId(plan.id)}
+                                            className={cn(
+                                                "relative rounded-lg border p-4 cursor-pointer transition-all duration-300",
+                                                selectedPlanId === plan.id ? "border-primary ring-2 ring-primary" : "hover:border-primary/50"
+                                            )}
+                                        >
+                                            {plan.badge && (
+                                                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-3 py-1 text-xs font-bold rounded-full">
+                                                    {plan.badge}
+                                                </div>
+                                            )}
+                                            <p className="font-bold text-lg">{plan.name}</p>
+                                            <div className="flex items-baseline gap-2">
+                                                <span className="text-3xl font-bold">₹{plan.priceInr.toLocaleString('en-IN')}</span>
+                                                {plan.originalPriceInr && (
+                                                    <span className="text-muted-foreground line-through">₹{plan.originalPriceInr.toLocaleString('en-IN')}</span>
+                                                )}
                                             </div>
-                                        )}
-                                        {plan.duration}
-                                    </button>
-                                ))}
-                            </div>
-                             <ul className="space-y-4">
-                                <li className="flex items-center gap-3">
-                                    <div className="bg-primary/10 text-primary rounded-full p-1">
-                                        <Check className="w-4 h-4" />
-                                    </div>
-                                    <span className="text-muted-foreground">{selectedPlan?.interviews} AI Mock Interviews</span>
-                                </li>
-                                {proFeatures.map((feature, index) => (
-                                    <li key={index} className="flex items-center gap-3">
-                                        <div className="bg-primary/10 text-primary rounded-full p-1">
-                                            <Check className="w-4 h-4" />
                                         </div>
-                                        <span className="text-muted-foreground">{feature}</span>
-                                    </li>
-                                ))}
-                            </ul>
-                        </CardContent>
-                        <CardFooter>
-                           <Button asChild className="w-full" size="lg">
-                                <Link href="/signup">
-                                    <Sparkles className="mr-2 h-4 w-4" />
-                                    Get Pro Access
-                                </Link>
-                            </Button>
-                        </CardFooter>
-                    </Card>
+                                    ))}
+                                </div>
+                                 <div>
+                                    <p className="font-semibold text-center mb-4">All Pro plans include:</p>
+                                    <ul className="grid sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-3">
+                                         <li className="flex items-start gap-2">
+                                            <Check className="w-4 h-4 text-green-500 mt-1 shrink-0"/>
+                                            <span className="text-sm text-muted-foreground">{proPlans.find(p => p.id === selectedPlanId)?.interviews} AI Mock Interviews</span>
+                                        </li>
+                                        {proFeatures.map((feature, index) => (
+                                            <li key={index} className="flex items-start gap-2">
+                                                <Check className="w-4 h-4 text-green-500 mt-1 shrink-0"/>
+                                                <span className="text-sm text-muted-foreground">{feature}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            </CardContent>
+                            <CardFooter>
+                                <Button asChild className="w-full" size="lg">
+                                    <Link href="/signup">
+                                        <Sparkles className="mr-2 h-4 w-4" />
+                                        Get Pro Access
+                                    </Link>
+                                </Button>
+                            </CardFooter>
+                        </Card>
+                    </div>
                 </div>
             </div>
         </section>
