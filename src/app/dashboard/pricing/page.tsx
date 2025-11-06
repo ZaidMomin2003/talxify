@@ -11,7 +11,6 @@ import { useToast } from '@/hooks/use-toast';
 import { updateSubscription } from '@/lib/firebase-service';
 import { useRouter } from 'next/navigation';
 import type { SubscriptionPlan } from '@/lib/types';
-import { createOrder, getRazorpayKeyId, verifyPayment } from '@/app/actions/razorpay';
 import Script from 'next/script';
 
 
@@ -77,15 +76,6 @@ export default function PricingPage() {
     const router = useRouter();
     const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
     const [selectedPlanId, setSelectedPlanId] = useState<SubscriptionPlan>('pro-2m');
-    const [razorpayKey, setRazorpayKey] = useState<string | null>(null);
-
-    useEffect(() => {
-        const fetchKey = async () => {
-            const key = await getRazorpayKeyId();
-            setRazorpayKey(key);
-        };
-        fetchKey();
-    }, []);
 
     const handlePayment = async (planId: SubscriptionPlan) => {
         if (!user) {
@@ -94,51 +84,59 @@ export default function PricingPage() {
             return;
         }
 
-        if (!razorpayKey) {
-            toast({ title: "Payment Error", description: "Payment gateway is not configured. Please contact support.", variant: "destructive"});
-            return;
-        }
-
-        setLoadingPlan(planId);
-
         const plan = proPlans.find(p => p.id === planId);
-        if (!plan) {
-            setLoadingPlan(null);
-            return;
-        }
+        if (!plan) return;
+
+        setLoadingPlan(plan.id);
 
         try {
-            const order = await createOrder(plan.priceInr * 100, plan.id);
-            if (!order) {
-                throw new Error('Failed to create payment order.');
+            // 1. Create Order
+            const orderRes = await fetch('/api/payment/order', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ amount: plan.priceInr }),
+            });
+            const orderData = await orderRes.json();
+            if (!orderData.success) {
+                throw new Error(orderData.message || 'Failed to create order.');
             }
+            const order = orderData.order;
 
+            // 2. Open Razorpay Checkout
             const options = {
-                key: razorpayKey,
+                key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
                 amount: order.amount,
                 currency: order.currency,
                 name: "Talxify Pro",
                 description: `Purchase ${plan.name}`,
                 order_id: order.id,
                 handler: async function (response: any) {
-                    const { razorpay_payment_id, razorpay_order_id, razorpay_signature } = response;
-                    
-                    const verificationResult = await verifyPayment(
-                        razorpay_order_id,
-                        razorpay_payment_id,
-                        razorpay_signature,
-                        user.uid,
-                        plan.id
-                    );
-
-                    if (verificationResult.isAuthentic) {
-                         toast({
-                            title: "Upgrade Successful!",
-                            description: `Your subscription is now active. Enjoy your Pro features!`,
+                    try {
+                         // 3. Verify Payment
+                        const verifyRes = await fetch('/api/payment/verify', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                razorpay_order_id: response.razorpay_order_id,
+                                razorpay_payment_id: response.razorpay_payment_id,
+                                razorpay_signature: response.razorpay_signature,
+                                userId: user.uid,
+                                planId: plan.id,
+                            }),
                         });
-                        router.push('/dashboard');
-                    } else {
-                        toast({ title: "Payment Failed", description: "Payment verification failed. Please contact support.", variant: "destructive" });
+                        const verifyData = await verifyRes.json();
+
+                        if (verifyData.success) {
+                            toast({
+                                title: "Upgrade Successful!",
+                                description: `Your subscription is now active. Enjoy your Pro features!`,
+                            });
+                            router.push('/dashboard');
+                        } else {
+                            throw new Error(verifyData.message || 'Payment verification failed.');
+                        }
+                    } catch (verifyError: any) {
+                         toast({ title: "Payment Failed", description: verifyError.message, variant: "destructive" });
                     }
                 },
                 prefill: {
@@ -149,13 +147,13 @@ export default function PricingPage() {
                     color: "#3F51B5"
                 }
             };
-
+            
             const rzp = new (window as any).Razorpay(options);
             rzp.open();
 
         } catch (error: any) {
             console.error(error);
-            toast({ title: "Payment Error", description: error.message || "Something went wrong. Please try again.", variant: "destructive" });
+            toast({ title: "Payment Error", description: error.message, variant: "destructive" });
         } finally {
             setLoadingPlan(null);
         }
@@ -266,7 +264,7 @@ export default function PricingPage() {
                                             onClick={() => handlePayment(plan.id)} 
                                             className="w-full" 
                                             size="lg"
-                                            disabled={!!loadingPlan || !razorpayKey}
+                                            disabled={!!loadingPlan || !process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID}
                                         >
                                             {loadingPlan === plan.id ? (
                                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
