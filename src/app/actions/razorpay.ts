@@ -1,3 +1,4 @@
+
 'use server';
 
 import Razorpay from 'razorpay';
@@ -8,7 +9,7 @@ import type { SubscriptionPlan } from '@/lib/types';
 
 /**
  * Securely retrieves the Razorpay Key ID for the client.
- * This prevents exposing the secret key.
+ * This prevents a situation where the secret key could be exposed.
  */
 export async function getRazorpayKeyId() {
   const keyId = process.env.RAZORPAY_KEY_ID;
@@ -34,7 +35,7 @@ export async function createOrder(amount: number, planId: string) {
     throw new Error('Payment gateway is not configured. Please ensure RAZORPAY_KEY_ID and RAZORPAY_SECRET_KEY are set.');
   }
   
-  // IMPORTANT: Initialize the client *inside* the function
+  // Initialize the client *inside* the function
   // to ensure env variables are loaded at runtime.
   const razorpay = new Razorpay({
     key_id: keyId,
@@ -62,6 +63,7 @@ export async function createOrder(amount: number, planId: string) {
 
 /**
  * Verifies the payment signature returned by Razorpay.
+ * This is a critical security step to prevent fraudulent transactions.
  * @param razorpay_order_id The ID of the order from Razorpay.
  * @param razorpay_payment_id The ID of the payment from Razorpay.
  * @param razorpay_signature The signature to verify.
@@ -77,20 +79,17 @@ export async function verifyPayment(
   planId: SubscriptionPlan
 ) {
   const keySecret = process.env.RAZORPAY_SECRET_KEY;
+
   if (!keySecret) {
-    console.error('RAZORPAY_SECRET_KEY is not configured on the server.');
+    console.error('RAZORPAY_SECRET_KEY is not configured on the server for verification.');
     return { isAuthentic: false, error: "Payment verification key is missing." };
   }
-    
-  const generated_signature = require('crypto')
-    .createHmac('sha256', keySecret)
-    .update(razorpay_order_id + '|' + razorpay_payment_id)
-    .digest('hex');
 
-  const isAuthentic = generated_signature === razorpay_signature;
+  const body = razorpay_order_id + '|' + razorpay_payment_id;
 
+  const isAuthentic = Razorpay.validateWebhookSignature(body, razorpay_signature, keySecret);
+  
   if (isAuthentic) {
-    // If payment is authentic, update the user's subscription in Firebase.
     try {
       await updateSubscription(userId, planId);
       return { isAuthentic: true };
