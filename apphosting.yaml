@@ -63,5 +63,7 @@ secretEnvironmentVariables:
     secret: GOOGLE_CLIENT_ID_CX
   - key: DEEPGRAM_PROJECT_ID
     secret: DEEPGRAM_PROJECT_ID
-  - key: RAZORPAY_KEY_ID # Still needed for server action
+  - key: RAZORPAY_KEY_ID
     secret: RAZORPAY_KEY_ID
+  - key: RAZORPAY_SECRET_KEY
+    secret: RAZORPAY_SECRET_KEY
