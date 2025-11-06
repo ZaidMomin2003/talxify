@@ -11,11 +11,12 @@ admin.initializeApp();
 const db = admin.firestore();
 
 const app = express();
+// Use cors middleware to allow requests from any origin
 app.use(cors({origin: true}));
 
-// Get Razorpay credentials from Firebase config
-const razorpayKeyId = functions.config().razorpay.key_id;
-const razorpayKeySecret = functions.config().razorpay.key_secret;
+// Get Razorpay credentials from environment variables (set in apphosting.yaml)
+const razorpayKeyId = process.env.RAZORPAY_KEY_ID;
+const razorpayKeySecret = process.env.RAZORPAY_KEY_SECRET;
 
 const razorpayInstance = new Razorpay({
   key_id: razorpayKeyId,
@@ -71,7 +72,6 @@ app.post("/verify-payment", async (req, res) => {
   }
 
   try {
-    // --- Verify Signature ---
     const body = razorpay_order_id + "|" + razorpay_payment_id;
     const expectedSignature = crypto
         .createHmac("sha256", razorpayKeySecret)
@@ -83,11 +83,9 @@ app.post("/verify-payment", async (req, res) => {
       return res.status(400).send({error: "Invalid payment signature."});
     }
 
-    // --- Signature is valid, update database ---
     const orderRef = db.collection("orders").doc(razorpay_order_id);
     const userRef = db.collection("users").doc(uid);
 
-    // Plan details
     const planDetails = {
       "pro-1m": {interviews: 10, durationMonths: 1},
       "pro-2m": {interviews: 25, durationMonths: 2},
@@ -103,9 +101,7 @@ app.post("/verify-payment", async (req, res) => {
     const endDate = new Date(currentDate);
     endDate.setMonth(currentDate.getMonth() + selectedPlanDetails.durationMonths);
 
-    // Use a transaction to ensure atomicity
     await db.runTransaction(async (transaction) => {
-      // 1. Update the order status
       transaction.update(orderRef, {
         status: "paid",
         paymentId: razorpay_payment_id,
@@ -113,7 +109,6 @@ app.post("/verify-payment", async (req, res) => {
         verifiedAt: admin.firestore.FieldValue.serverTimestamp(),
       });
 
-      // 2. Update the user's subscription
       transaction.set(userRef, {
         subscription: {
           plan: plan,
@@ -125,7 +120,7 @@ app.post("/verify-payment", async (req, res) => {
             count: 0,
           },
           resumeExports: {
-            date: currentDate.toISOString().slice(0, 7), // YYYY-MM
+            date: currentDate.toISOString().slice(0, 7),
             count: 0,
           },
         },

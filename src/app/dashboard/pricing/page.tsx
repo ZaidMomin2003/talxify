@@ -78,6 +78,12 @@ export default function PricingPage() {
         const rzpScript = document.getElementById('razorpay-checkout-js');
         if (rzpScript) {
             rzpScript.onload = () => setIsRzpLoaded(true);
+        } else {
+            const script = document.createElement('script');
+            script.id = 'razorpay-checkout-js';
+            script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+            script.onload = () => setIsRzpLoaded(true);
+            document.body.appendChild(script);
         }
     }, []);
 
@@ -107,7 +113,10 @@ export default function PricingPage() {
                 body: JSON.stringify({ amount, currency: 'INR', plan: planId, uid: user.uid }),
             });
 
-            if (!orderRes.ok) throw new Error('Failed to create order.');
+            if (!orderRes.ok) {
+                 const errorData = await orderRes.json();
+                 throw new Error(errorData.error || 'Failed to create order.');
+            }
             const order = await orderRes.json();
 
             // 2. Open Razorpay Checkout
@@ -127,7 +136,10 @@ export default function PricingPage() {
                             body: JSON.stringify({ ...response, uid: user.uid, plan: planId }),
                         });
                         
-                        if (!verifyRes.ok) throw new Error('Payment verification failed.');
+                        if (!verifyRes.ok) {
+                            const errorData = await verifyRes.json();
+                            throw new Error(errorData.error || 'Payment verification failed.');
+                        }
 
                         toast({
                             title: "Payment Successful!",
@@ -154,6 +166,14 @@ export default function PricingPage() {
             // @ts-ignore
             const rzp = new window.Razorpay(options);
             rzp.open();
+            rzp.on('payment.failed', function (response:any){
+                toast({
+                    title: "Payment Failed",
+                    description: response.error.description || "Your payment could not be processed.",
+                    variant: "destructive"
+                });
+                setLoadingPlan(null);
+            });
 
         } catch (error: any) {
             toast({ title: "Payment Error", description: error.message || "Could not initiate payment.", variant: "destructive" });
@@ -164,11 +184,6 @@ export default function PricingPage() {
 
     return (
         <>
-            <Script
-                id="razorpay-checkout-js"
-                src="https://checkout.razorpay.com/v1/checkout.js"
-                onLoad={() => setIsRzpLoaded(true)}
-            />
             <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
                 <div className="text-center mb-12">
                     <h1 className="text-4xl font-bold font-headline tracking-tighter sm:text-5xl">
