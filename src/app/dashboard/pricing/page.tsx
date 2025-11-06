@@ -5,13 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Check, Star, Loader2, UserRound, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '@/context/auth-context';
-import { useToast } from '@/hooks/use-toast';
-import { updateSubscription } from '@/lib/firebase-service';
-import { useRouter } from 'next/navigation';
+import React, { useState } from 'react';
 import type { SubscriptionPlan } from '@/lib/types';
-import Script from 'next/script';
 
 
 const freePlan = {
@@ -71,215 +66,118 @@ const proFeatures = [
 
 
 export default function PricingPage() {
-    const { user } = useAuth();
-    const { toast } = useToast();
-    const router = useRouter();
     const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
     const [selectedPlanId, setSelectedPlanId] = useState<SubscriptionPlan>('pro-2m');
 
-    const handlePayment = async (planId: SubscriptionPlan) => {
-        if (!user) {
-            toast({ title: "Authentication Error", description: "You must be logged in to upgrade your plan.", variant: "destructive" });
-            router.push('/login');
-            return;
-        }
-
-        const plan = proPlans.find(p => p.id === planId);
-        if (!plan) return;
-
-        setLoadingPlan(plan.id);
-
-        try {
-            // 1. Create Order
-            const orderRes = await fetch('/api/payment/order', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ amount: plan.priceInr }),
-            });
-            const orderData = await orderRes.json();
-            if (!orderData.success) {
-                throw new Error(orderData.message || 'Failed to create order.');
-            }
-            const order = orderData.order;
-
-            // 2. Open Razorpay Checkout
-            const options = {
-                key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
-                amount: order.amount,
-                currency: order.currency,
-                name: "Talxify Pro",
-                description: `Purchase ${plan.name}`,
-                order_id: order.id,
-                handler: async function (response: any) {
-                    try {
-                         // 3. Verify Payment
-                        const verifyRes = await fetch('/api/payment/verify', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                razorpay_order_id: response.razorpay_order_id,
-                                razorpay_payment_id: response.razorpay_payment_id,
-                                razorpay_signature: response.razorpay_signature,
-                                userId: user.uid,
-                                planId: plan.id,
-                            }),
-                        });
-                        const verifyData = await verifyRes.json();
-
-                        if (verifyData.success) {
-                            toast({
-                                title: "Upgrade Successful!",
-                                description: `Your subscription is now active. Enjoy your Pro features!`,
-                            });
-                            router.push('/dashboard');
-                        } else {
-                            throw new Error(verifyData.message || 'Payment verification failed.');
-                        }
-                    } catch (verifyError: any) {
-                         toast({ title: "Payment Failed", description: verifyError.message, variant: "destructive" });
-                    }
-                },
-                prefill: {
-                    name: user.displayName || "Valued User",
-                    email: user.email || "",
-                },
-                theme: {
-                    color: "#3F51B5"
-                }
-            };
-            
-            const rzp = new (window as any).Razorpay(options);
-            rzp.open();
-
-        } catch (error: any) {
-            console.error(error);
-            toast({ title: "Payment Error", description: error.message, variant: "destructive" });
-        } finally {
-            setLoadingPlan(null);
-        }
-    };
-
-
     return (
-        <>
-            <Script
-                id="razorpay-checkout-js"
-                src="https://checkout.razorpay.com/v1/checkout.js"
-            />
-            <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
-                <div className="text-center mb-12">
-                    <h1 className="text-4xl font-bold font-headline tracking-tighter sm:text-5xl">
-                        Find the Perfect Plan
-                    </h1>
-                    <p className="mt-4 max-w-2xl mx-auto text-lg text-muted-foreground">
-                        Invest in your future. Choose the plan that best fits your interview preparation timeline.
-                    </p>
-                </div>
+        <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
+            <div className="text-center mb-12">
+                <h1 className="text-4xl font-bold font-headline tracking-tighter sm:text-5xl">
+                    Find the Perfect Plan
+                </h1>
+                <p className="mt-4 max-w-2xl mx-auto text-lg text-muted-foreground">
+                    Invest in your future. Choose the plan that best fits your interview preparation timeline.
+                </p>
+            </div>
 
-                <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4 max-w-7xl mx-auto">
-                     {/* Free Plan */}
-                    <Card className="flex flex-col shadow-lg transition-transform duration-300 lg:col-span-1">
-                        <CardHeader className="text-center">
-                            <UserRound className="h-10 w-10 mx-auto text-muted-foreground mb-2" />
-                            <CardTitle className="text-3xl font-bold font-headline">Free</CardTitle>
-                            <div className="flex items-baseline justify-center gap-1">
-                                <span className="text-5xl font-bold tracking-tighter">₹0</span>
+            <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4 max-w-7xl mx-auto">
+                 {/* Free Plan */}
+                <Card className="flex flex-col shadow-lg transition-transform duration-300 lg:col-span-1">
+                    <CardHeader className="text-center">
+                        <UserRound className="h-10 w-10 mx-auto text-muted-foreground mb-2" />
+                        <CardTitle className="text-3xl font-bold font-headline">Free</CardTitle>
+                        <div className="flex items-baseline justify-center gap-1">
+                            <span className="text-5xl font-bold tracking-tighter">₹0</span>
+                        </div>
+                        <CardDescription>Get a taste of our platform.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex-grow">
+                        <ul className="space-y-4">
+                            {freePlan.features.map((feature, index) => (
+                                <li key={index} className="flex items-center gap-3">
+                                    <div className="bg-muted text-muted-foreground rounded-full p-1">
+                                        <Check className="w-4 h-4" />
+                                    </div>
+                                    <span className="text-muted-foreground text-sm">{feature}</span>
+                                </li>
+                            ))}
+                        </ul>
+                    </CardContent>
+                    <CardFooter>
+                        <Button className="w-full" size="lg" variant="secondary" disabled>Your Current Plan</Button>
+                    </CardFooter>
+                </Card>
+
+                {/* Pro Plans */}
+                <div className="lg:col-span-3">
+                    <Card className="shadow-lg border-primary border-2 shadow-primary/20">
+                         <CardHeader>
+                            <div className="flex justify-center items-center gap-3 mb-2 text-primary">
+                                <Star className="w-8 h-8"/>
+                                <CardTitle className="text-3xl font-bold font-headline">Pro Plans</CardTitle>
                             </div>
-                            <CardDescription>Get a taste of our platform.</CardDescription>
+                            <CardDescription className="text-center">Unlock your full potential and land your dream job with our comprehensive toolkit.</CardDescription>
                         </CardHeader>
-                        <CardContent className="flex-grow">
-                            <ul className="space-y-4">
-                                {freePlan.features.map((feature, index) => (
-                                    <li key={index} className="flex items-center gap-3">
-                                        <div className="bg-muted text-muted-foreground rounded-full p-1">
-                                            <Check className="w-4 h-4" />
+                        <CardContent className="space-y-8">
+                            <div className="grid sm:grid-cols-3 gap-4">
+                                {proPlans.map((plan) => (
+                                    <div
+                                        key={plan.id}
+                                        onClick={() => setSelectedPlanId(plan.id)}
+                                        className={cn(
+                                            "relative rounded-lg border p-4 cursor-pointer transition-all duration-300",
+                                            selectedPlanId === plan.id ? "border-primary ring-2 ring-primary" : "hover:border-primary/50"
+                                        )}
+                                    >
+                                        {plan.badge && (
+                                            <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-3 py-1 text-xs font-bold rounded-full">
+                                                {plan.badge}
+                                            </div>
+                                        )}
+                                        <p className="font-bold text-lg">{plan.name}</p>
+                                        <div className="flex items-baseline gap-2">
+                                            <span className="text-3xl font-bold">₹{plan.priceInr.toLocaleString('en-IN')}</span>
+                                            {plan.originalPriceInr && (
+                                                <span className="text-muted-foreground line-through">₹{plan.originalPriceInr.toLocaleString('en-IN')}</span>
+                                            )}
                                         </div>
-                                        <span className="text-muted-foreground text-sm">{feature}</span>
-                                    </li>
+                                    </div>
                                 ))}
-                            </ul>
+                            </div>
+                             <div>
+                                <p className="font-semibold text-center mb-4">All Pro plans include:</p>
+                                <ul className="grid sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-3">
+                                     <li className="flex items-start gap-2">
+                                        <Check className="w-4 h-4 text-green-500 mt-1 shrink-0"/>
+                                        <span className="text-sm text-muted-foreground">{proPlans.find(p => p.id === selectedPlanId)?.interviews} AI Mock Interviews</span>
+                                    </li>
+                                    {proFeatures.map((feature, index) => (
+                                        <li key={index} className="flex items-start gap-2">
+                                            <Check className="w-4 h-4 text-green-500 mt-1 shrink-0"/>
+                                            <span className="text-sm text-muted-foreground">{feature}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
                         </CardContent>
                         <CardFooter>
-                            <Button className="w-full" size="lg" variant="secondary" disabled>Your Current Plan</Button>
+                            {proPlans.map(plan => (
+                                selectedPlanId === plan.id && (
+                                     <Button 
+                                        key={plan.id}
+                                        className="w-full" 
+                                        size="lg"
+                                        disabled={true}
+                                    >
+                                        <Sparkles className="mr-2 h-4 w-4" />
+                                        Get {plan.duration} Pro Access
+                                    </Button>
+                                )
+                            ))}
                         </CardFooter>
                     </Card>
-
-                    {/* Pro Plans */}
-                    <div className="lg:col-span-3">
-                        <Card className="shadow-lg border-primary border-2 shadow-primary/20">
-                             <CardHeader>
-                                <div className="flex justify-center items-center gap-3 mb-2 text-primary">
-                                    <Star className="w-8 h-8"/>
-                                    <CardTitle className="text-3xl font-bold font-headline">Pro Plans</CardTitle>
-                                </div>
-                                <CardDescription className="text-center">Unlock your full potential and land your dream job with our comprehensive toolkit.</CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-8">
-                                <div className="grid sm:grid-cols-3 gap-4">
-                                    {proPlans.map((plan) => (
-                                        <div
-                                            key={plan.id}
-                                            onClick={() => setSelectedPlanId(plan.id)}
-                                            className={cn(
-                                                "relative rounded-lg border p-4 cursor-pointer transition-all duration-300",
-                                                selectedPlanId === plan.id ? "border-primary ring-2 ring-primary" : "hover:border-primary/50"
-                                            )}
-                                        >
-                                            {plan.badge && (
-                                                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-3 py-1 text-xs font-bold rounded-full">
-                                                    {plan.badge}
-                                                </div>
-                                            )}
-                                            <p className="font-bold text-lg">{plan.name}</p>
-                                            <div className="flex items-baseline gap-2">
-                                                <span className="text-3xl font-bold">₹{plan.priceInr.toLocaleString('en-IN')}</span>
-                                                {plan.originalPriceInr && (
-                                                    <span className="text-muted-foreground line-through">₹{plan.originalPriceInr.toLocaleString('en-IN')}</span>
-                                                )}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                                 <div>
-                                    <p className="font-semibold text-center mb-4">All Pro plans include:</p>
-                                    <ul className="grid sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-3">
-                                         <li className="flex items-start gap-2">
-                                            <Check className="w-4 h-4 text-green-500 mt-1 shrink-0"/>
-                                            <span className="text-sm text-muted-foreground">{proPlans.find(p => p.id === selectedPlanId)?.interviews} AI Mock Interviews</span>
-                                        </li>
-                                        {proFeatures.map((feature, index) => (
-                                            <li key={index} className="flex items-start gap-2">
-                                                <Check className="w-4 h-4 text-green-500 mt-1 shrink-0"/>
-                                                <span className="text-sm text-muted-foreground">{feature}</span>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </div>
-                            </CardContent>
-                            <CardFooter>
-                                {proPlans.map(plan => (
-                                    selectedPlanId === plan.id && (
-                                         <Button 
-                                            key={plan.id}
-                                            onClick={() => handlePayment(plan.id)} 
-                                            className="w-full" 
-                                            size="lg"
-                                            disabled={!!loadingPlan || !process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID}
-                                        >
-                                            {loadingPlan === plan.id ? (
-                                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                            ) : (
-                                                <Sparkles className="mr-2 h-4 w-4" />
-                                            )}
-                                            {loadingPlan === plan.id ? 'Processing...' : `Get ${plan.duration} Pro Access`}
-                                        </Button>
-                                    )
-                                ))}
-                            </CardFooter>
-                        </Card>
-                    </div>
                 </div>
-            </main>
-        </>
+            </div>
+        </main>
     );
 }
