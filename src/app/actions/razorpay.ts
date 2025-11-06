@@ -74,8 +74,14 @@ export async function verifyPayment(
   userId: string,
   planId: SubscriptionPlan
 ) {
+  const keySecret = process.env.RAZORPAY_SECRET_KEY;
+  if (!keySecret) {
+    console.error('RAZORPAY_SECRET_KEY is not configured on the server.');
+    return { isAuthentic: false, error: "Payment verification key is missing." };
+  }
+    
   const generated_signature = require('crypto')
-    .createHmac('sha256', process.env.RAZORPAY_SECRET_KEY!)
+    .createHmac('sha256', keySecret)
     .update(razorpay_order_id + '|' + razorpay_payment_id)
     .digest('hex');
 
