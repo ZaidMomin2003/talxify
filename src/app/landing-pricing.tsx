@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -88,7 +87,7 @@ export default function LandingPricing() {
                     </p>
                 </div>
 
-                <div className="grid gap-8 md:grid-cols-2 max-w-4xl mx-auto">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto items-stretch">
                     {/* Free Plan */}
                     <Card className="flex flex-col shadow-lg transition-transform duration-300 hover:-translate-y-1">
                         <CardHeader className="text-center">
@@ -200,5 +199,3 @@ export default function LandingPricing() {
         </section>
     );
 }
-
-  
