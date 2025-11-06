@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Github, Linkedin, Instagram, Mail, Phone, Link as LinkIcon, Award, Briefcase, MessageSquare, GraduationCap, Sparkles, Building, Calendar, Star, Code, Twitter, Globe, School, Percent, Loader2, Bot, User as UserIcon, BarChart, Youtube, HelpCircle, Menu, Eye } from "lucide-react";
+import { Github, Linkedin, Instagram, Mail, Phone, Link as LinkIcon, Award, Briefcase, MessageSquare, GraduationCap, Sparkles, Building, Calendar, Star, Code, Twitter, Globe, School, Percent, Loader2, Bot, User as UserIcon, BarChart, Youtube, HelpCircle, Menu, Eye, UserCheck } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
