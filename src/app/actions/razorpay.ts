@@ -5,6 +5,7 @@ import Razorpay from 'razorpay';
 import { randomBytes } from 'crypto';
 import { updateSubscription } from '@/lib/firebase-service';
 import type { SubscriptionPlan } from '@/lib/types';
+import crypto from 'crypto';
 
 
 /**
@@ -87,7 +88,12 @@ export async function verifyPayment(
 
   const body = razorpay_order_id + '|' + razorpay_payment_id;
 
-  const isAuthentic = Razorpay.validateWebhookSignature(body, razorpay_signature, keySecret);
+  const expectedSignature = crypto
+    .createHmac('sha256', keySecret)
+    .update(body.toString())
+    .digest('hex');
+
+  const isAuthentic = expectedSignature === razorpay_signature;
   
   if (isAuthentic) {
     try {
