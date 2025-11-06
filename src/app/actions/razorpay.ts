@@ -33,7 +33,9 @@ export async function createOrder(amount: number, planId: string) {
     console.error('Razorpay API keys are not configured on the server.');
     throw new Error('Payment gateway is not configured. Please ensure RAZORPAY_KEY_ID and RAZORPAY_SECRET_KEY are set.');
   }
-
+  
+  // IMPORTANT: Initialize the client *inside* the function
+  // to ensure env variables are loaded at runtime.
   const razorpay = new Razorpay({
     key_id: keyId,
     key_secret: keySecret,
