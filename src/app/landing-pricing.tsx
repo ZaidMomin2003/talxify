@@ -73,7 +73,7 @@ export default function LandingPricing() {
     const selectedPlan = proPlans.find(p => p.id === selectedPlanId);
 
     return (
-        <section className="bg-background py-16 sm:py-24" id="pricing">
+        <section className="py-16 sm:py-24" id="pricing">
              <div className="container mx-auto max-w-7xl px-4 md:px-6">
                 <div className="mb-12 flex flex-col items-center">
                     <Badge variant="outline" className="border-primary mb-4 px-3 py-1 text-xs font-medium tracking-wider uppercase">
@@ -89,7 +89,7 @@ export default function LandingPricing() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 max-w-7xl mx-auto items-start gap-8">
                      {/* Free Plan */}
-                    <Card className="flex flex-col shadow-lg transition-transform duration-300 hover:-translate-y-1 lg:col-span-1 h-full">
+                    <Card className="flex flex-col shadow-lg transition-transform duration-300 hover:-translate-y-1 lg:col-span-1 h-full bg-card/50">
                         <CardHeader className="text-center">
                             <UserRound className="h-10 w-10 mx-auto text-muted-foreground mb-2" />
                             <CardTitle className="text-3xl font-bold font-headline">{freePlan.name}</CardTitle>
@@ -119,7 +119,7 @@ export default function LandingPricing() {
 
                     {/* Pro Plans */}
                     <div className="lg:col-span-3 h-full">
-                        <Card className="shadow-lg border-primary border-2 shadow-primary/20 h-full flex flex-col">
+                        <Card className="shadow-lg border-primary border-2 shadow-primary/20 h-full flex flex-col bg-card/50">
                              <CardHeader>
                                 <div className="flex justify-center items-center gap-3 mb-2 text-primary">
                                     <Star className="w-8 h-8"/>
@@ -135,7 +135,7 @@ export default function LandingPricing() {
                                             onClick={() => setSelectedPlanId(plan.id)}
                                             className={cn(
                                                 "relative rounded-lg border p-4 cursor-pointer transition-all duration-300",
-                                                selectedPlanId === plan.id ? "border-primary ring-2 ring-primary" : "hover:border-primary/50"
+                                                selectedPlanId === plan.id ? "border-primary ring-2 ring-primary bg-primary/10" : "hover:border-primary/50 bg-muted/50"
                                             )}
                                         >
                                             {plan.badge && (
