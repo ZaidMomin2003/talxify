@@ -44,7 +44,6 @@ const nextConfig: NextConfig = {
   // Only public keys (prefixed with NEXT_PUBLIC_) should be here.
   // Secret keys should be in .env and accessed directly via process.env on the server.
   env: {
-    NEXT_PUBLIC_PAYMENT_API_URL: process.env.NEXT_PUBLIC_PAYMENT_API_URL,
     NEXT_PUBLIC_RAZORPAY_KEY_ID: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
   }
 };

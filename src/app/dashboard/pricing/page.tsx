@@ -74,22 +74,18 @@ export default function PricingPage() {
     const [selectedPlanId, setSelectedPlanId] = useState<SubscriptionPlan>('pro-2m');
     const [isRzpLoaded, setIsRzpLoaded] = useState(false);
     const [razorpayKeyId, setRazorpayKeyId] = useState<string | null>(null);
+    
+    // The public URL of your deployed Cloud Function.
+    const paymentApiUrl = 'https://us-central1-talxify-ijwhm.cloudfunctions.net/payment';
 
 
     useEffect(() => {
         const fetchKey = async () => {
-            if (!process.env.NEXT_PUBLIC_PAYMENT_API_URL) {
-                toast({
-                    title: "Configuration Error",
-                    description: "Payment API URL is not configured.",
-                    variant: "destructive"
-                });
-                return;
-            }
             try {
-                const res = await fetch(`${process.env.NEXT_PUBLIC_PAYMENT_API_URL}/get-key`);
+                const res = await fetch(`${paymentApiUrl}/get-key`);
                 if (!res.ok) {
-                    throw new Error('Failed to fetch Razorpay key from server.');
+                    const errorData = await res.json();
+                    throw new Error(errorData.error || 'Failed to fetch Razorpay key from server.');
                 }
                 const { keyId } = await res.json();
                 if (!keyId) {
@@ -113,11 +109,6 @@ export default function PricingPage() {
             toast({ title: "Not Authenticated", description: "Please log in to purchase a plan.", variant: "destructive" });
             return;
         }
-
-        if (!process.env.NEXT_PUBLIC_PAYMENT_API_URL) {
-            toast({ title: "Configuration Error", description: "Payment API URL is not configured.", variant: "destructive" });
-            return;
-        }
         
         if (!razorpayKeyId) {
             toast({ title: "Configuration Error", description: "Razorpay Key ID is not configured.", variant: "destructive" });
@@ -128,7 +119,7 @@ export default function PricingPage() {
 
         try {
             // 1. Create Order
-            const orderRes = await fetch(`${process.env.NEXT_PUBLIC_PAYMENT_API_URL}/create-order`, {
+            const orderRes = await fetch(`${paymentApiUrl}/create-order`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ amount, currency: 'INR', plan: planId, uid: user.uid }),
@@ -151,7 +142,7 @@ export default function PricingPage() {
                 handler: async function (response: any) {
                     // 3. Verify Payment
                     try {
-                        const verifyRes = await fetch(`${process.env.NEXT_PUBLIC_PAYMENT_API_URL}/verify-payment`, {
+                        const verifyRes = await fetch(`${paymentApiUrl}/verify-payment`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ ...response, uid: user.uid, plan: planId }),
