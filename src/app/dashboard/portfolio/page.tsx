@@ -1,5 +1,4 @@
 
-
 "use client"
 
 import { Button } from "@/components/ui/button";
@@ -12,7 +11,7 @@ import { PlusCircle, Trash2, Loader2, Lock, Gem, ExternalLink, Link as LinkIcon,
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/auth-context";
-import { getPortfolio, updatePortfolio, getUserData as fetchUserData } from "@/lib/firebase-service";
+import { getUserData as fetchUserData } from "@/lib/firebase-service";
 import type { Portfolio, Project, Certificate, Achievement, Testimonial, FAQ, Skill, WorkExperience, Education, UserData } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { initialPortfolioData } from "@/lib/initial-data";
@@ -21,7 +20,7 @@ import Image from "next/image";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger, DialogClose } from "@/components/ui/dialog";
 import Script from "next/script";
 import { Switch } from "@/components/ui/switch";
-import { getUserBySlug } from "@/app/zaidmin/actions";
+import { getUserBySlug, updatePortfolio } from "@/app/zaidmin/actions";
 
 
 const CloudinaryIcon = () => (
@@ -174,26 +173,15 @@ export default function PortfolioPage() {
 
  const handleFieldChange = (section: keyof Portfolio, index: number, field: string, value: string | number) => {
     if (!portfolio) return;
-
     setPortfolio(prev => {
         if (!prev) return null;
-        const newPortfolio = JSON.parse(JSON.stringify(prev));
-        // @ts-ignore
-        newPortfolio[section][index][field] = value;
-        return newPortfolio;
+        const newPortfolio = { ...prev };
+        const newSection = [...newPortfolio[section as keyof typeof newPortfolio] as any[]];
+        newSection[index] = { ...newSection[index], [field]: value };
+        return { ...newPortfolio, [section]: newSection };
     });
-  };
+};
 
-  const handleSimpleListChange = (section: keyof Portfolio, index: number, field: string, value: string | number) => {
-    if (!portfolio) return;
-    setPortfolio(prev => {
-        if (!prev) return null;
-        const newPortfolio = JSON.parse(JSON.stringify(prev));
-        // @ts-ignore
-        newPortfolio[section][index][field] = value;
-        return newPortfolio;
-    });
-  };
   
   const handleAddItem = (section: keyof Portfolio, newItem: any) => {
     if (!portfolio) return;
@@ -437,7 +425,7 @@ export default function PortfolioPage() {
                     <div key={index} className="flex items-center gap-4">
                         <div className="flex-grow">
                            <Label>Skill</Label>
-                           <Input value={item.skill} onChange={(e) => handleSimpleListChange('skills', index, 'skill', e.target.value)} />
+                           <Input value={item.skill} onChange={(e) => handleFieldChange('skills', index, 'skill', e.target.value)} />
                         </div>
                         <div className="w-1/2">
                            <Label>Expertise ({item.expertise}%)</Label>
@@ -445,7 +433,7 @@ export default function PortfolioPage() {
                              defaultValue={[item.expertise]}
                              max={100}
                              step={1}
-                             onValueChange={(value) => handleSimpleListChange('skills', index, 'expertise', value[0])}
+                             onValueChange={(value) => handleFieldChange('skills', index, 'expertise', value[0])}
                            />
                         </div>
                         <Button variant="ghost" size="icon" className="shrink-0 self-end" onClick={() => handleRemoveItem('skills', index)}><Trash2 className="w-4 h-4" /></Button>
@@ -575,12 +563,12 @@ export default function PortfolioPage() {
                 {portfolio.achievements.map((item, index) => (
                     <div key={index} className="space-y-4 p-4 border rounded-lg relative">
                         <Button variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => handleRemoveItem('achievements', index)}><Trash2 className="w-4 h-4" /></Button>
-                        <div><Label>Description</Label><Input value={item.description} onChange={(e) => handleSimpleListChange('achievements', index, 'description', e.target.value)} /></div>
+                        <div><Label>Description</Label><Input value={item.description} onChange={(e) => handleFieldChange('achievements', index, 'description', e.target.value)} /></div>
                         <div>
                             <Label>Image</Label>
                             <ImagePicker 
                                 value={item.imageUrl}
-                                onChange={(value) => handleSimpleListChange('achievements', index, 'imageUrl', value)}
+                                onChange={(value) => handleFieldChange('achievements', index, 'imageUrl', value)}
                                 dataAiHint="achievement award"
                                 isCloudinaryLoaded={isCloudinaryLoaded}
                             />
@@ -647,3 +635,5 @@ export default function PortfolioPage() {
     </>
   );
 }
+
+    
