@@ -26,9 +26,17 @@ export async function getRazorpayKeyId() {
  * @returns The order details from Razorpay.
  */
 export async function createOrder(amount: number, planId: string) {
+  const keyId = process.env.RAZORPAY_KEY_ID;
+  const keySecret = process.env.RAZORPAY_SECRET_KEY;
+
+  if (!keyId || !keySecret) {
+    console.error('Razorpay API keys are not configured on the server.');
+    throw new Error('Payment gateway is not configured. Please ensure RAZORPAY_KEY_ID and RAZORPAY_SECRET_KEY are set.');
+  }
+
   const razorpay = new Razorpay({
-    key_id: process.env.RAZORPAY_KEY_ID!,
-    key_secret: process.env.RAZORPAY_SECRET_KEY!,
+    key_id: keyId,
+    key_secret: keySecret,
   });
 
   const options = {
@@ -43,9 +51,10 @@ export async function createOrder(amount: number, planId: string) {
   try {
     const order = await razorpay.orders.create(options);
     return order;
-  } catch (error) {
-    console.error('Razorpay createOrder error:', error);
-    return null;
+  } catch (error: any) {
+    console.error('Razorpay createOrder error:', error.message);
+    // Rethrow the error so the client can catch it.
+    throw new Error(`Failed to create Razorpay order: ${error.message}`);
   }
 }
 
