@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -10,6 +9,7 @@ import type { SubscriptionPlan } from '@/lib/types';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import Script from 'next/script';
+import { getRazorpayApiKey } from '@/app/actions/razorpay';
 
 const freePlan = {
     name: 'Free',
@@ -73,19 +73,25 @@ export default function PricingPage() {
     const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
     const [selectedPlanId, setSelectedPlanId] = useState<SubscriptionPlan>('pro-2m');
     const [isRzpLoaded, setIsRzpLoaded] = useState(false);
+    const [razorpayKeyId, setRazorpayKeyId] = useState<string | null>(null);
+
 
     useEffect(() => {
-        const rzpScript = document.getElementById('razorpay-checkout-js');
-        if (rzpScript) {
-            rzpScript.onload = () => setIsRzpLoaded(true);
-        } else {
-            const script = document.createElement('script');
-            script.id = 'razorpay-checkout-js';
-            script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-            script.onload = () => setIsRzpLoaded(true);
-            document.body.appendChild(script);
-        }
-    }, []);
+        const fetchKey = async () => {
+            try {
+                const key = await getRazorpayApiKey();
+                setRazorpayKeyId(key);
+            } catch (error) {
+                console.error("Failed to fetch Razorpay key:", error);
+                toast({
+                    title: "Configuration Error",
+                    description: "Could not load payment configuration. Please refresh the page.",
+                    variant: "destructive"
+                });
+            }
+        };
+        fetchKey();
+    }, [toast]);
 
     const handlePayment = async (planId: SubscriptionPlan, amount: number) => {
         if (!user) {
@@ -98,7 +104,7 @@ export default function PricingPage() {
             return;
         }
         
-        if (!process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID) {
+        if (!razorpayKeyId) {
             toast({ title: "Configuration Error", description: "Razorpay Key ID is not configured.", variant: "destructive" });
             return;
         }
@@ -121,7 +127,7 @@ export default function PricingPage() {
 
             // 2. Open Razorpay Checkout
             const options = {
-                key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+                key: razorpayKeyId,
                 amount: order.amount,
                 currency: order.currency,
                 name: "Talxify",
@@ -146,7 +152,6 @@ export default function PricingPage() {
                             description: "Your Pro plan has been activated. Refreshing your dashboard...",
                         });
 
-                        // Optionally, trigger a page refresh or re-fetch user data
                         window.location.reload();
 
                     } catch (verifyError: any) {
@@ -184,6 +189,10 @@ export default function PricingPage() {
 
     return (
         <>
+            <Script 
+                src="https://checkout.razorpay.com/v1/checkout.js"
+                onLoad={() => setIsRzpLoaded(true)}
+            />
             <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
                 <div className="text-center mb-12">
                     <h1 className="text-4xl font-bold font-headline tracking-tighter sm:text-5xl">
@@ -282,7 +291,7 @@ export default function PricingPage() {
                                             className="w-full" 
                                             size="lg"
                                             onClick={() => handlePayment(plan.id, plan.priceInr)}
-                                            disabled={loadingPlan === plan.id || !isRzpLoaded}
+                                            disabled={loadingPlan === plan.id || !isRzpLoaded || !razorpayKeyId}
                                         >
                                             {loadingPlan === plan.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Sparkles className="mr-2 h-4 w-4" />}
                                             {loadingPlan === plan.id ? 'Processing...' : `Get ${plan.duration} Pro Access`}
