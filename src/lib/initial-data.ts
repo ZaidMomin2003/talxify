@@ -8,6 +8,7 @@ export const initialPortfolioData: Omit<UserData, 'activity' | 'subscription' | 
             slug: 'john-doe',
             profession: 'Senior Software Engineer',
             bio: 'A passionate software engineer with a love for building scalable and user-friendly web applications.',
+            developmentPhilosophy: 'I believe in writing clean, maintainable code and fostering a collaborative team environment. My focus is on creating user-centric products that are both performant and scalable.',
             avatarUrl: 'https://placehold.co/150x150.png',
             bannerUrl: 'https://placehold.co/1200x300.png',
             email: 'john.doe@example.com',

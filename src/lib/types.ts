@@ -216,6 +216,7 @@ export interface PersonalInfo {
     slug: string;
     profession: string;
     bio: string;
+    developmentPhilosophy?: string;
     avatarUrl: string;
     bannerUrl: string;
     email: string;

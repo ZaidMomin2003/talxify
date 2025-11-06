@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { PlusCircle, Trash2, Loader2, Lock, Gem, ExternalLink, Link as LinkIcon, UploadCloud, Image as ImageIcon, Save, CheckCircle, AlertTriangle } from "lucide-react";
+import { PlusCircle, Trash2, Loader2, Lock, Gem, ExternalLink, Link as LinkIcon, UploadCloud, Image as ImageIcon, Save, CheckCircle, AlertTriangle, UserCheck } from "lucide-react";
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/auth-context";
@@ -348,6 +348,10 @@ export default function PortfolioPage() {
             <div>
               <Label htmlFor="bio">Bio</Label>
               <Textarea id="bio" value={portfolio.personalInfo.bio} onChange={(e) => setPortfolio({...portfolio, personalInfo: {...portfolio.personalInfo, bio: e.target.value}})} />
+            </div>
+            <div>
+                <Label htmlFor="philosophy">Development Philosophy</Label>
+                <Textarea id="philosophy" value={portfolio.personalInfo.developmentPhilosophy || ''} onChange={(e) => setPortfolio({...portfolio, personalInfo: {...portfolio.personalInfo, developmentPhilosophy: e.target.value}})} placeholder="e.g., I believe in writing clean, testable code..."/>
             </div>
              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                  <div>
