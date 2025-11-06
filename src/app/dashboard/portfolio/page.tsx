@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import { Button } from "@/components/ui/button";
@@ -20,7 +21,8 @@ import Image from "next/image";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger, DialogClose } from "@/components/ui/dialog";
 import Script from "next/script";
 import { Switch } from "@/components/ui/switch";
-import { getUserBySlug, updatePortfolio } from "@/app/zaidmin/actions";
+import { getUserBySlug } from "@/app/zaidmin/actions";
+import { updatePortfolio } from "@/lib/firebase-service";
 
 
 const CloudinaryIcon = () => (
@@ -172,11 +174,11 @@ export default function PortfolioPage() {
   }
 
  const handleFieldChange = (section: keyof Portfolio, index: number, field: string, value: string | number) => {
-    if (!portfolio) return;
     setPortfolio(prev => {
         if (!prev) return null;
         const newPortfolio = { ...prev };
-        const newSection = [...newPortfolio[section as keyof typeof newPortfolio] as any[]];
+        // @ts-ignore
+        const newSection = [...newPortfolio[section]];
         newSection[index] = { ...newSection[index], [field]: value };
         return { ...newPortfolio, [section]: newSection };
     });
@@ -184,7 +186,6 @@ export default function PortfolioPage() {
 
   
   const handleAddItem = (section: keyof Portfolio, newItem: any) => {
-    if (!portfolio) return;
     setPortfolio(prev => {
         if (!prev) return null;
         const newPortfolio = { ...prev };
@@ -195,7 +196,6 @@ export default function PortfolioPage() {
   };
 
   const handleRemoveItem = (section: keyof Portfolio, index: number) => {
-    if (!portfolio) return;
     setPortfolio(prev => {
         if (!prev) return null;
         const newPortfolio = { ...prev };
