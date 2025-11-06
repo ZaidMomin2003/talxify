@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -9,7 +10,6 @@ import type { SubscriptionPlan } from '@/lib/types';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import Script from 'next/script';
-import { getRazorpayApiKey } from '@/app/actions/razorpay';
 
 const freePlan = {
     name: 'Free',
@@ -78,9 +78,24 @@ export default function PricingPage() {
 
     useEffect(() => {
         const fetchKey = async () => {
+            if (!process.env.NEXT_PUBLIC_PAYMENT_API_URL) {
+                toast({
+                    title: "Configuration Error",
+                    description: "Payment API URL is not configured.",
+                    variant: "destructive"
+                });
+                return;
+            }
             try {
-                const key = await getRazorpayApiKey();
-                setRazorpayKeyId(key);
+                const res = await fetch(`${process.env.NEXT_PUBLIC_PAYMENT_API_URL}/get-key`);
+                if (!res.ok) {
+                    throw new Error('Failed to fetch Razorpay key from server.');
+                }
+                const { keyId } = await res.json();
+                if (!keyId) {
+                     throw new Error('Razorpay Key ID is missing from server response.');
+                }
+                setRazorpayKeyId(keyId);
             } catch (error) {
                 console.error("Failed to fetch Razorpay key:", error);
                 toast({
@@ -165,7 +180,7 @@ export default function PricingPage() {
                     email: user.email || '',
                 },
                 theme: {
-                    color: "#e60a64"
+                    color: "#3F51B5" // Matching primary theme color
                 }
             };
             // @ts-ignore

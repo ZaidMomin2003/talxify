@@ -23,6 +23,15 @@ const razorpayInstance = new Razorpay({
   key_secret: razorpayKeySecret,
 });
 
+// Endpoint to fetch public key
+app.get("/get-key", (req, res) => {
+  if (!razorpayKeyId) {
+    return res.status(500).send({ error: "Razorpay Key ID is not configured on the server." });
+  }
+  res.status(200).send({ keyId: razorpayKeyId });
+});
+
+
 // Endpoint to create a Razorpay order
 app.post("/create-order", async (req, res) => {
   const {amount, currency, plan, uid} = req.body;
