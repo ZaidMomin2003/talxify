@@ -358,8 +358,8 @@ export default function InstituteColabPage() {
                 {/* Calendly Embed Section */}
                 <section id="schedule-call">
                     <div className="text-center mb-12">
-                        <h2 className="text-4xl font-bold font-headline">Connect With Us</h2>
-                        <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">Schedule a 30-minute call with our partnership team to get started.</p>
+                        <h2 className="text-4xl font-bold font-headline">Schedule a Personalized Demo</h2>
+                        <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">Book a 30-minute call with our team to see how Talxify can benefit your students and faculty.</p>
                     </div>
                     <Card className="max-w-4xl mx-auto shadow-lg overflow-hidden">
                         <CardContent className="p-0 h-[650px]">
