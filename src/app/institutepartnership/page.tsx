@@ -204,16 +204,37 @@ const features = [
         description: 'Showcase your skills and completed challenges on a personal portfolio website. Connect your GitHub and let your activity on Talxify build your professional online presence automatically.',
         icon: User,
         prototype: (
-            <Card className="w-full max-w-lg mx-auto bg-card/80 backdrop-blur-sm p-4 sm:p-6 shadow-xl border border-border/50">
+             <Card className="w-full h-full max-w-lg mx-auto bg-card/80 backdrop-blur-sm p-4 sm:p-6 shadow-xl border border-border/50 flex flex-col justify-center">
                 <CardHeader className="p-0 mb-4 flex-row items-center gap-3">
                     <div className="p-2 bg-primary/10 rounded-lg text-primary"><User className="w-5 h-5 sm:w-6 sm:h-6" /></div>
-                    <CardTitle className="text-lg sm:text-xl m-0">Your Portfolio</CardTitle>
+                    <CardTitle className="text-lg sm:text-xl m-0">Portfolio Builder</CardTitle>
                 </CardHeader>
-                <CardContent className="p-0 space-y-3">
-                    <div className="h-28 w-full rounded-md bg-muted/50 border flex items-center justify-center p-2">
-                        <p className="text-muted-foreground text-sm">Your projects and stats will appear here.</p>
+                <CardContent className="p-0 space-y-2 sm:space-y-3">
+                    <div className="flex items-center gap-3 sm:gap-4 p-3 rounded-lg bg-muted border">
+                        <Avatar className="w-10 h-10 sm:w-12 sm:h-12 border-2 border-primary">
+                            <AvatarFallback>JD</AvatarFallback>
+                        </Avatar>
+                        <div>
+                            <p className="font-bold text-base sm:text-lg">Jane Doe</p>
+                            <p className="text-xs sm:text-sm text-muted-foreground">Full-Stack Developer</p>
+                        </div>
                     </div>
-                    <div className="text-sm text-muted-foreground text-center">jane-doe.talxify.space</div>
+                    <div className="p-3 rounded-lg bg-muted border text-sm text-muted-foreground space-y-2">
+                        <p className="font-semibold text-foreground text-base">Key Skills</p>
+                        <div className="flex flex-wrap gap-2">
+                            <Badge>React</Badge>
+                            <Badge>Next.js</Badge>
+                            <Badge>Node.js</Badge>
+                            <Badge variant="secondary">Python</Badge>
+                        </div>
+                    </div>
+                     <div className="p-3 rounded-lg bg-muted border text-sm text-muted-foreground">
+                        <p className="font-semibold text-foreground text-base mb-2">Project Highlight</p>
+                        <div className="p-2 rounded-md bg-background border">
+                          <p className="font-bold text-sm text-foreground">E-commerce Platform</p>
+                          <p className="text-xs">Built a full-stack e-commerce site with Stripe integration.</p>
+                        </div>
+                    </div>
                 </CardContent>
             </Card>
         )
