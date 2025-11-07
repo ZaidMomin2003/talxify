@@ -9,7 +9,6 @@ import type { SubscriptionPlan } from '@/lib/types';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import Script from 'next/script';
-import { getRazorpayApiKey } from '@/app/actions/razorpay';
 
 
 const freePlan = {
@@ -73,139 +72,18 @@ export default function PricingPage() {
     const { toast } = useToast();
     const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
     const [selectedPlanId, setSelectedPlanId] = useState<SubscriptionPlan>('pro-2m');
-    const [isReady, setIsReady] = useState(false);
-    const [razorpayKeyId, setRazorpayKeyId] = useState<string | null>(null);
     
-    const paymentApiUrl = process.env.NEXT_PUBLIC_PAYMENT_API_URL;
-
-    useEffect(() => {
-        const fetchKey = async () => {
-            try {
-                const key = await getRazorpayApiKey();
-                if (key) {
-                    setRazorpayKeyId(key);
-                } else {
-                     toast({ title: "Configuration Error", description: "Razorpay Key ID is not available.", variant: "destructive" });
-                }
-            } catch (error) {
-                 toast({ title: "Configuration Error", description: "Could not load payment configuration.", variant: "destructive" });
-            }
-        };
-        fetchKey();
-    }, [toast]);
-
-    const handleScriptLoad = () => {
-        if (razorpayKeyId && paymentApiUrl) {
-            setIsReady(true);
-        }
-    };
-
-    useEffect(() => {
-        if (razorpayKeyId && paymentApiUrl) {
-            // This is to handle the case where the script loads before the key is fetched
-            // @ts-ignore
-            if (window.Razorpay) {
-                setIsReady(true);
-            }
-        }
-    }, [razorpayKeyId, paymentApiUrl]);
-
-
     const handlePayment = async (planId: SubscriptionPlan, amount: number) => {
         if (!user) {
             toast({ title: "Not Authenticated", description: "Please log in to purchase a plan.", variant: "destructive" });
             return;
         }
-        
-        if (!isReady) {
-            toast({ title: "Configuration Error", description: "Payment gateway is not configured correctly. Please contact support.", variant: "destructive" });
-            return;
-        }
-
-        setLoadingPlan(planId);
-
-        try {
-            // 1. Create Order
-            const orderRes = await fetch(`${paymentApiUrl}/create-order`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ amount, currency: 'INR', plan: planId, uid: user.uid }),
-            });
-
-            if (!orderRes.ok) {
-                 const errorData = await orderRes.json();
-                 throw new Error(errorData.error || 'Failed to create order.');
-            }
-            const order = await orderRes.json();
-
-            // 2. Open Razorpay Checkout
-            const options = {
-                key: razorpayKeyId!,
-                amount: order.amount,
-                currency: order.currency,
-                name: "Talxify",
-                description: `Talxify Pro Plan - ${planId}`,
-                order_id: order.id,
-                handler: async function (response: any) {
-                    // 3. Verify Payment
-                    try {
-                        const verifyRes = await fetch(`${paymentApiUrl}/verify-payment`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ ...response, uid: user.uid, plan: planId }),
-                        });
-                        
-                        if (!verifyRes.ok) {
-                            const errorData = await verifyRes.json();
-                            throw new Error(errorData.error || 'Payment verification failed.');
-                        }
-
-                        toast({
-                            title: "Payment Successful!",
-                            description: "Your Pro plan has been activated. Refreshing your dashboard...",
-                        });
-
-                        window.location.reload();
-
-                    } catch (verifyError: any) {
-                        toast({ title: "Payment Verification Failed", description: verifyError.message || "Please contact support.", variant: "destructive" });
-                    } finally {
-                        setLoadingPlan(null);
-                    }
-                },
-                prefill: {
-                    name: user.displayName || '',
-                    email: user.email || '',
-                },
-                theme: {
-                    color: "#3F51B5" // Matching primary theme color
-                }
-            };
-            // @ts-ignore
-            const rzp = new window.Razorpay(options);
-            rzp.open();
-            rzp.on('payment.failed', function (response:any){
-                toast({
-                    title: "Payment Failed",
-                    description: response.error.description || "Your payment could not be processed.",
-                    variant: "destructive"
-                });
-                setLoadingPlan(null);
-            });
-
-        } catch (error: any) {
-            toast({ title: "Payment Error", description: error.message || "Could not initiate payment.", variant: "destructive" });
-            setLoadingPlan(null);
-        }
+        toast({ title: "Coming Soon", description: "Payment integration is currently under development.", variant: "default" });
     };
 
 
     return (
         <>
-            <Script 
-                src="https://checkout.razorpay.com/v1/checkout.js"
-                onLoad={handleScriptLoad}
-            />
             <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
                 <div className="text-center mb-12">
                     <h1 className="text-4xl font-bold font-headline tracking-tighter sm:text-5xl">
@@ -304,10 +182,10 @@ export default function PricingPage() {
                                             className="w-full" 
                                             size="lg"
                                             onClick={() => handlePayment(plan.id, plan.priceInr)}
-                                            disabled={loadingPlan === plan.id || !isReady}
+                                            disabled={loadingPlan === plan.id}
                                         >
-                                            {loadingPlan === plan.id || !isReady ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Sparkles className="mr-2 h-4 w-4" />}
-                                            {loadingPlan === plan.id ? 'Processing...' : (isReady ? `Get ${plan.duration} Pro Access` : 'Initializing...')}
+                                            {loadingPlan === plan.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Sparkles className="mr-2 h-4 w-4" />}
+                                            {loadingPlan === plan.id ? 'Processing...' : `Get ${plan.duration} Pro Access`}
                                         </Button>
                                     )
                                 ))}
