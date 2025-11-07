@@ -395,7 +395,7 @@ export default function InstituteColabPage() {
                                 Let's discuss how Talxify can be tailored to your institution's needs. Contact us today for a personalized demo and a custom pricing plan.
                             </p>
                             <Button size="lg" variant="secondary" asChild className="text-base">
-                                <a href="mailto:partners@talxify.space">
+                                <a href="#schedule-call">
                                     Request a Demo <ArrowRight className="ml-2 h-4 w-4"/>
                                 </a>
                             </Button>
