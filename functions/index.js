@@ -11,24 +11,36 @@ admin.initializeApp();
 const db = admin.firestore();
 
 const app = express();
-// Use cors middleware to allow requests from any origin
-app.use(cors({origin: true}));
 
-// Get Razorpay credentials from environment variables (set in apphosting.yaml)
+// Configure CORS to allow requests only from your app's domain
+const allowedOrigins = [
+    'https://talxify-ijwhm.web.app', 
+    'https://talxify-ijwhm.firebaseapp.com'
+];
+app.use(cors({
+  origin: function (origin, callback) {
+    // allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  }
+}));
+
+
+// Get Razorpay credentials from environment variables
 const razorpayKeyId = process.env.RAZORPAY_KEY_ID;
 const razorpayKeySecret = process.env.RAZORPAY_KEY_SECRET;
+
+if (!razorpayKeyId || !razorpayKeySecret) {
+    console.error("Razorpay Key ID or Key Secret is not configured in environment variables.");
+}
 
 const razorpayInstance = new Razorpay({
   key_id: razorpayKeyId,
   key_secret: razorpayKeySecret,
-});
-
-// Endpoint to fetch public key
-app.get("/get-key", (req, res) => {
-  if (!razorpayKeyId) {
-    return res.status(500).send({ error: "Razorpay Key ID is not configured on the server." });
-  }
-  res.status(200).send({ keyId: razorpayKeyId });
 });
 
 

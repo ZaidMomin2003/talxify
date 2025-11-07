@@ -73,36 +73,10 @@ export default function PricingPage() {
     const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
     const [selectedPlanId, setSelectedPlanId] = useState<SubscriptionPlan>('pro-2m');
     const [isRzpLoaded, setIsRzpLoaded] = useState(false);
-    const [razorpayKeyId, setRazorpayKeyId] = useState<string | null>(null);
     
-    // The public URL of your deployed Cloud Function.
-    const paymentApiUrl = 'https://us-central1-talxify-ijwhm.cloudfunctions.net/payment';
+    const paymentApiUrl = process.env.NEXT_PUBLIC_PAYMENT_API_URL;
+    const razorpayKeyId = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
 
-
-    useEffect(() => {
-        const fetchKey = async () => {
-            try {
-                const res = await fetch(`${paymentApiUrl}/get-key`);
-                if (!res.ok) {
-                    const errorData = await res.json();
-                    throw new Error(errorData.error || 'Failed to fetch Razorpay key from server.');
-                }
-                const { keyId } = await res.json();
-                if (!keyId) {
-                     throw new Error('Razorpay Key ID is missing from server response.');
-                }
-                setRazorpayKeyId(keyId);
-            } catch (error) {
-                console.error("Failed to fetch Razorpay key:", error);
-                toast({
-                    title: "Configuration Error",
-                    description: "Could not load payment configuration. Please refresh the page.",
-                    variant: "destructive"
-                });
-            }
-        };
-        fetchKey();
-    }, [toast]);
 
     const handlePayment = async (planId: SubscriptionPlan, amount: number) => {
         if (!user) {
@@ -112,6 +86,11 @@ export default function PricingPage() {
         
         if (!razorpayKeyId) {
             toast({ title: "Configuration Error", description: "Razorpay Key ID is not configured.", variant: "destructive" });
+            return;
+        }
+        
+        if (!paymentApiUrl) {
+            toast({ title: "Configuration Error", description: "Payment API URL is not configured.", variant: "destructive" });
             return;
         }
 
@@ -255,7 +234,7 @@ export default function PricingPage() {
                                             onClick={() => setSelectedPlanId(plan.id)}
                                             className={cn(
                                                 "relative rounded-lg border p-4 cursor-pointer transition-all duration-300",
-                                                selectedPlanId === plan.id ? "border-primary ring-2 ring-primary" : "hover:border-primary/50"
+                                                selectedPlanId === plan.id ? "border-primary ring-2 ring-primary bg-primary/10" : "hover:border-primary/50"
                                             )}
                                         >
                                             {plan.badge && (

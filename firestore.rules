@@ -1,4 +1,3 @@
-
 rules_version = '2';
 
 service cloud.firestore {
@@ -37,11 +36,6 @@ service cloud.firestore {
     match /waitlist/{submissionId} {
       allow read, update, delete: if false;
       allow create: if true;
-    }
-
-    // Lock down all other collections by default.
-    match /{document=**} {
-      allow read, write: if false;
     }
   }
 }
