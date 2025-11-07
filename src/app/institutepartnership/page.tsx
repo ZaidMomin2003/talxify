@@ -5,7 +5,7 @@ import React from 'react';
 import LandingHeader from '../landing-header';
 import LandingFooter from '../landing-footer';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, BarChart, BookOpen, Bot, Briefcase, CheckCircle, ChevronDown, Code, FileText, Globe, GraduationCap, Users, Swords, ShieldQuestion, ListChecks, CalendarDays, MessageSquare, Sparkles, BrainCircuit, Video, Phone, Mic, AlertTriangle } from 'lucide-react';
+import { ArrowRight, BarChart, BookOpen, Bot, Briefcase, CheckCircle, ChevronDown, Code, FileText, Globe, GraduationCap, Users, Swords, ShieldQuestion, ListChecks, CalendarDays, MessageSquare, Sparkles, BrainCircuit, Video, Phone, Mic, AlertTriangle, UserCheck } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import Link from 'next/link';
@@ -34,28 +34,33 @@ const benefits = [
 const failures = [
     {
         title: "1. Overlooking Edge Cases",
-        problem: "Students often write code for the 'happy path' but fail to consider inputs like empty arrays, null values, single-element arrays, or very large numbers. This is a critical failure in production environments.",
+        problem: "Students often write code for the 'happy path' but fail to consider inputs like empty arrays, null values, or very large numbers.",
+        interviewImpact: "In an interview, this looks like a lack of thoroughness. The interviewer has to prompt them ('What if the input is null?'), which signals a junior mindset and a lack of production readiness.",
         solution: "Talxify's Code Izanami quizzes automatically test submissions against a comprehensive suite of hidden edge cases. Our AI feedback explicitly points out which cases failed and why, training students to think defensively."
     },
     {
         title: "2. Inefficient, Brute-Force Solutions",
-        problem: "Many students can solve a problem, but not optimally. They default to nested loops (O(n²)) when a more efficient O(n) or O(n log n) solution exists, a red flag for interviewers.",
-        solution: "Our AI analysis doesn't just check for correctness; it evaluates efficiency. The feedback suggests more optimal approaches (like using hashmaps or the two-pointer technique) and provides a well-commented, optimal solution for comparison."
+        problem: "Many students default to nested loops (O(n²)) when a more efficient O(n) or O(n log n) solution exists, a major red flag for interviewers.",
+        interviewImpact: "Presenting a brute-force solution without acknowledging its inefficiency suggests a weak grasp of time/space complexity. Top candidates often identify the brute-force path first, but immediately discuss how to optimize it.",
+        solution: "Our AI analysis doesn't just check for correctness; it evaluates efficiency. The feedback suggests more optimal approaches (like using hashmaps) and provides a well-commented, optimal solution for comparison."
     },
     {
         title: "3. Poor Code Quality & Structure",
-        problem: "Unreadable code with poor variable names (e.g., `i`, `j`, `temp`), lack of helper functions, and monolithic blocks of logic are common. This signals an inability to write maintainable code for a team.",
+        problem: "Unreadable code with poor variable names (e.g., `i`, `j`, `temp`), and monolithic blocks of logic are common.",
+        interviewImpact: "This signals an inability to write maintainable code for a team. Interviewers see this as a sign that the candidate would be difficult to collaborate with and that their code would be costly to maintain.",
         solution: "The AI feedback provides direct comments on code style, structure, and readability. It encourages breaking down problems into smaller functions and adhering to industry-standard naming conventions."
     },
     {
-        title: "4. Incomplete Problem Comprehension",
-        problem: "A frequent issue is jumping into coding before fully understanding the problem constraints and requirements, leading to solutions that don't fully meet the prompt's criteria.",
-        solution: "Our AI-generated questions are designed to be clear and specific, mimicking real interview prompts. The structured environment encourages students to read carefully, and feedback will penalize solutions that misunderstand the core task."
+        title: "4. Vague Behavioral Answers",
+        problem: "When asked behavioral questions ('Tell me about a time...'), students often give generic, rambling answers without structure.",
+        interviewImpact: "This is a missed opportunity to showcase soft skills like leadership and teamwork. Interviewers are looking for clear, concise stories of impact, not just a list of responsibilities.",
+        solution: "Talxify's AI Interviewer is trained to ask behavioral questions. The detailed feedback analyzes the structure and content of the answer, guiding students to use frameworks like the STAR method to tell compelling stories."
     },
     {
-        title: "5. Struggling with Foundational Data Structures",
-        problem: "While complex algorithms are practiced, we see frequent struggles with the practical application of fundamental data structures like Hashmaps, Sets, Stacks, and Queues to optimize solutions.",
-        solution: "Talxify's 60-day Arena syllabus dedicates specific days to mastering these core data structures. The adaptive quizzes ensure students can not only define them but apply them effectively to solve real problems."
+        title: "5. Weak Problem Comprehension",
+        problem: "A frequent issue is jumping into coding before fully understanding the problem constraints and requirements, leading to solutions that don't meet the prompt's criteria.",
+        interviewImpact: "This shows poor communication and analytical skills. The candidate wastes valuable time building the wrong thing, forcing the interviewer to redirect them, which rarely ends well.",
+        solution: "Our AI-generated questions are designed to be clear and specific, mimicking real interview prompts. The structured environment encourages students to read carefully, and feedback penalizes solutions that misunderstand the core task."
     },
 ]
 
@@ -248,19 +253,25 @@ export default function InstituteColabPage() {
                     </div>
                     <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
                         {failures.map((item, index) => (
-                             <Card key={index} className="shadow-lg hover:shadow-xl transition-shadow duration-300">
+                             <Card key={index} className="shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col">
                                 <CardHeader>
-                                    <div className="flex items-center gap-3">
-                                        <div className="flex-shrink-0 bg-destructive/10 text-destructive p-3 rounded-full">
+                                    <div className="flex items-start gap-4">
+                                        <div className="flex-shrink-0 bg-destructive/10 text-destructive p-3 rounded-full mt-1">
                                             <AlertTriangle className="w-6 h-6" />
                                         </div>
-                                        <CardTitle>{item.title}</CardTitle>
+                                        <div>
+                                            <CardTitle>{item.title}</CardTitle>
+                                            <CardDescription>{item.problem}</CardDescription>
+                                        </div>
                                     </div>
-                                    <CardDescription>{item.problem}</CardDescription>
                                 </CardHeader>
-                                <CardContent>
-                                     <div className="bg-primary/10 border-l-4 border-primary p-4 rounded-r-lg">
-                                        <p className="font-semibold text-primary mb-2">The Talxify Solution</p>
+                                <CardContent className="flex-grow flex flex-col justify-end">
+                                     <div className="bg-muted/50 p-4 rounded-lg mt-4">
+                                        <p className="font-semibold text-foreground mb-2 flex items-center gap-2"><UserCheck className="w-5 h-5 text-yellow-500"/> Interview Impact</p>
+                                        <p className="text-sm text-muted-foreground">{item.interviewImpact}</p>
+                                    </div>
+                                     <div className="bg-primary/10 border-l-4 border-primary p-4 rounded-r-lg mt-4">
+                                        <p className="font-semibold text-primary mb-2 flex items-center gap-2"><Bot className="w-5 h-5"/> The Talxify Solution</p>
                                         <p className="text-sm text-muted-foreground">{item.solution}</p>
                                     </div>
                                 </CardContent>
@@ -362,3 +373,5 @@ export default function InstituteColabPage() {
         </div>
     );
 }
+
+    
