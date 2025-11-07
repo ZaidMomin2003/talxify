@@ -49,6 +49,67 @@ const failures = [
 
 const features = [
     {
+        title: 'Human-Like AI Interviews',
+        description: "Experience a realistic, voice-based mock interview. Our conversational AI asks relevant technical and behavioral questions, listens to your answers, and responds dynamically, just like a real interviewer.",
+        icon: MessageSquare,
+        prototype: (
+            <div className="w-full max-w-lg mx-auto aspect-video rounded-xl sm:rounded-2xl p-2 sm:p-4 shadow-xl border border-border/50 bg-background relative flex items-center justify-center overflow-hidden">
+                <div className="absolute inset-0 thermal-gradient-bg z-0"/>
+                <div className="relative z-10 flex flex-col items-center justify-center">
+                    <div className={cn("relative flex items-center justify-center w-24 h-24 sm:w-32 sm:h-32 rounded-full transition-all duration-500 scale-100")}>
+                        <div className={cn("absolute inset-0 rounded-full bg-primary/10 animate-pulse duration-1000")}/>
+                        <div className={cn("absolute inset-2 rounded-full bg-primary/20 animate-pulse duration-1500")}/>
+                        <Avatar className="w-20 h-20 sm:w-24 sm:h-24 border-4 border-background">
+                            <div className="w-full h-full flex items-center justify-center bg-primary/10 text-primary">
+                                <BrainCircuit className="w-10 h-10 sm:w-12 sm:h-12" />
+                            </div>
+                            <AvatarFallback>AI</AvatarFallback>
+                        </Avatar>
+                    </div>
+                    <p className="mt-2 sm:mt-4 text-lg sm:text-xl font-bold font-headline text-foreground">Mark</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground">AI Interviewer</p>
+                </div>
+                <div className="absolute bottom-2 right-2 sm:bottom-4 sm:right-4 w-16 h-16 sm:w-24 sm:h-24 rounded-full overflow-hidden border-2 border-border bg-black shadow-lg flex items-center justify-center">
+                    <Video className="w-6 h-6 sm:w-8 sm:h-8 text-muted-foreground"/>
+                </div>
+                 <div className="absolute bottom-2 left-1/2 sm:bottom-4 -translate-x-1/2 z-20 flex items-center gap-2 rounded-full bg-background/50 border p-1 sm:p-2 backdrop-blur-md">
+                    <Button size="icon" className="w-8 h-8 sm:w-10 sm:h-10 rounded-full" variant={'secondary'}><Mic className="w-4 h-4 sm:w-auto"/></Button>
+                    <Button size="icon" className="w-8 h-8 sm:w-10 sm:h-10 rounded-full" variant={'secondary'}><Video className="w-4 h-4 sm:w-auto"/></Button>
+                    <Button size="icon" className="w-8 h-8 sm:w-10 sm:h-10 rounded-full" variant={'destructive'}><Phone className="w-4 h-4 sm:w-auto"/></Button>
+                </div>
+                <div className="absolute top-1 left-1/2 sm:top-2 -translate-x-1/2 z-20">
+                    <div className="flex items-center gap-2 bg-background/50 border rounded-full px-3 py-1 text-[10px] sm:text-xs text-muted-foreground backdrop-blur-sm">
+                        <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"/>
+                        <span>Your turn... Speak now.</span>
+                    </div>
+                </div>
+            </div>
+        )
+    },
+    {
+        title: 'Interactive Coding Quizzes (Code Izanami)',
+        description: 'Test knowledge with AI-generated coding challenges. Write solutions in our editor and get instant, in-depth feedback on correctness, efficiency, and code style, along with an optimal solution.',
+        icon: ShieldQuestion,
+        prototype: (
+             <Card className="w-full max-w-lg mx-auto bg-card/80 backdrop-blur-sm p-4 sm:p-6 shadow-xl border border-border/50">
+                <CardHeader className="p-0 mb-4">
+                    <CardTitle className="text-base sm:text-lg">Question 1: Reverse a String</CardTitle>
+                </CardHeader>
+                <CardContent className="p-0 space-y-3">
+                    <div className="h-24 sm:h-32 bg-muted rounded-md p-3 font-mono text-xs sm:text-sm border">
+                        <span className="text-primary">function</span> <span className="text-foreground">reverseString</span>(<span className="text-yellow-400">str</span>) {"{"} <br/>
+                        &nbsp;&nbsp;<span className="text-gray-500">// Your code here...</span><br/>
+                        {"}"}
+                    </div>
+                    <div className="flex justify-end gap-2">
+                        <Button variant="secondary" size="sm">Get Hint</Button>
+                        <Button size="sm">Submit</Button>
+                    </div>
+                </CardContent>
+            </Card>
+        )
+    },
+    {
         title: 'AI Interview Question Bank',
         description: 'Generate hyper-relevant questions for any role. Our AI analyzes job descriptions to create technical, behavioral, and coding questions with detailed example answers, tailored to the required seniority.',
         icon: BrainCircuit,
@@ -92,67 +153,6 @@ const features = [
                     </div>
                 </CardContent>
             </Card>
-        )
-    },
-    {
-        title: 'Interactive Coding Quizzes (Code Izanami)',
-        description: 'Test knowledge with AI-generated coding challenges. Write solutions in our editor and get instant, in-depth feedback on correctness, efficiency, and code style, along with an optimal solution.',
-        icon: ShieldQuestion,
-        prototype: (
-             <Card className="w-full max-w-lg mx-auto bg-card/80 backdrop-blur-sm p-4 sm:p-6 shadow-xl border border-border/50">
-                <CardHeader className="p-0 mb-4">
-                    <CardTitle className="text-base sm:text-lg">Question 1: Reverse a String</CardTitle>
-                </CardHeader>
-                <CardContent className="p-0 space-y-3">
-                    <div className="h-24 sm:h-32 bg-muted rounded-md p-3 font-mono text-xs sm:text-sm border">
-                        <span className="text-primary">function</span> <span className="text-foreground">reverseString</span>(<span className="text-yellow-400">str</span>) {"{"} <br/>
-                        &nbsp;&nbsp;<span className="text-gray-500">// Your code here...</span><br/>
-                        {"}"}
-                    </div>
-                    <div className="flex justify-end gap-2">
-                        <Button variant="secondary" size="sm">Get Hint</Button>
-                        <Button size="sm">Submit</Button>
-                    </div>
-                </CardContent>
-            </Card>
-        )
-    },
-    {
-        title: 'Human-Like AI Interviews',
-        description: "Experience a realistic, voice-based mock interview. Our conversational AI asks relevant technical and behavioral questions, listens to your answers, and responds dynamically, just like a real interviewer.",
-        icon: MessageSquare,
-        prototype: (
-            <div className="w-full max-w-lg mx-auto aspect-video rounded-xl sm:rounded-2xl p-2 sm:p-4 shadow-xl border border-border/50 bg-background relative flex items-center justify-center overflow-hidden">
-                <div className="absolute inset-0 thermal-gradient-bg z-0"/>
-                <div className="relative z-10 flex flex-col items-center justify-center">
-                    <div className={cn("relative flex items-center justify-center w-24 h-24 sm:w-32 sm:h-32 rounded-full transition-all duration-500 scale-100")}>
-                        <div className={cn("absolute inset-0 rounded-full bg-primary/10 animate-pulse duration-1000")}/>
-                        <div className={cn("absolute inset-2 rounded-full bg-primary/20 animate-pulse duration-1500")}/>
-                        <Avatar className="w-20 h-20 sm:w-24 sm:h-24 border-4 border-background">
-                            <div className="w-full h-full flex items-center justify-center bg-primary/10 text-primary">
-                                <BrainCircuit className="w-10 h-10 sm:w-12 sm:h-12" />
-                            </div>
-                            <AvatarFallback>AI</AvatarFallback>
-                        </Avatar>
-                    </div>
-                    <p className="mt-2 sm:mt-4 text-lg sm:text-xl font-bold font-headline text-foreground">Mark</p>
-                    <p className="text-xs sm:text-sm text-muted-foreground">AI Interviewer</p>
-                </div>
-                <div className="absolute bottom-2 right-2 sm:bottom-4 sm:right-4 w-16 h-16 sm:w-24 sm:h-24 rounded-full overflow-hidden border-2 border-border bg-black shadow-lg flex items-center justify-center">
-                    <Video className="w-6 h-6 sm:w-8 sm:h-8 text-muted-foreground"/>
-                </div>
-                 <div className="absolute bottom-2 left-1/2 sm:bottom-4 -translate-x-1/2 z-20 flex items-center gap-2 rounded-full bg-background/50 border p-1 sm:p-2 backdrop-blur-md">
-                    <Button size="icon" className="w-8 h-8 sm:w-10 sm:h-10 rounded-full" variant={'secondary'}><Mic className="w-4 h-4 sm:w-auto"/></Button>
-                    <Button size="icon" className="w-8 h-8 sm:w-10 sm:h-10 rounded-full" variant={'secondary'}><Video className="w-4 h-4 sm:w-auto"/></Button>
-                    <Button size="icon" className="w-8 h-8 sm:w-10 sm:h-10 rounded-full" variant={'destructive'}><Phone className="w-4 h-4 sm:w-auto"/></Button>
-                </div>
-                <div className="absolute top-1 left-1/2 sm:top-2 -translate-x-1/2 z-20">
-                    <div className="flex items-center gap-2 bg-background/50 border rounded-full px-3 py-1 text-[10px] sm:text-xs text-muted-foreground backdrop-blur-sm">
-                        <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"/>
-                        <span>Your turn... Speak now.</span>
-                    </div>
-                </div>
-            </div>
         )
     },
     {
