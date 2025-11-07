@@ -73,16 +73,14 @@ export default function PricingPage() {
     const { toast } = useToast();
     const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
     const [selectedPlanId, setSelectedPlanId] = useState<SubscriptionPlan>('pro-2m');
-    const [isRzpLoaded, setIsRzpLoaded] = useState(false);
+    const [isReady, setIsReady] = useState(false);
     const [razorpayKeyId, setRazorpayKeyId] = useState<string | null>(null);
-    const [isConfigLoading, setIsConfigLoading] = useState(true);
     
     const paymentApiUrl = process.env.NEXT_PUBLIC_PAYMENT_API_URL;
 
     useEffect(() => {
         const fetchKey = async () => {
             try {
-                setIsConfigLoading(true);
                 const key = await getRazorpayApiKey();
                 if (key) {
                     setRazorpayKeyId(key);
@@ -91,14 +89,26 @@ export default function PricingPage() {
                 }
             } catch (error) {
                  toast({ title: "Configuration Error", description: "Could not load payment configuration.", variant: "destructive" });
-            } finally {
-                setIsConfigLoading(false);
             }
         };
         fetchKey();
     }, [toast]);
 
-    const isReadyForPayment = isRzpLoaded && !!razorpayKeyId && !!paymentApiUrl;
+    const handleScriptLoad = () => {
+        if (razorpayKeyId && paymentApiUrl) {
+            setIsReady(true);
+        }
+    };
+
+    useEffect(() => {
+        if (razorpayKeyId && paymentApiUrl) {
+            // This is to handle the case where the script loads before the key is fetched
+            // @ts-ignore
+            if (window.Razorpay) {
+                setIsReady(true);
+            }
+        }
+    }, [razorpayKeyId, paymentApiUrl]);
 
 
     const handlePayment = async (planId: SubscriptionPlan, amount: number) => {
@@ -107,7 +117,7 @@ export default function PricingPage() {
             return;
         }
         
-        if (!isReadyForPayment) {
+        if (!isReady) {
             toast({ title: "Configuration Error", description: "Payment gateway is not configured correctly. Please contact support.", variant: "destructive" });
             return;
         }
@@ -130,7 +140,7 @@ export default function PricingPage() {
 
             // 2. Open Razorpay Checkout
             const options = {
-                key: razorpayKeyId,
+                key: razorpayKeyId!,
                 amount: order.amount,
                 currency: order.currency,
                 name: "Talxify",
@@ -194,7 +204,7 @@ export default function PricingPage() {
         <>
             <Script 
                 src="https://checkout.razorpay.com/v1/checkout.js"
-                onLoad={() => setIsRzpLoaded(true)}
+                onLoad={handleScriptLoad}
             />
             <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
                 <div className="text-center mb-12">
@@ -294,10 +304,10 @@ export default function PricingPage() {
                                             className="w-full" 
                                             size="lg"
                                             onClick={() => handlePayment(plan.id, plan.priceInr)}
-                                            disabled={loadingPlan === plan.id || isConfigLoading || !isReadyForPayment}
+                                            disabled={loadingPlan === plan.id || !isReady}
                                         >
-                                            {loadingPlan === plan.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Sparkles className="mr-2 h-4 w-4" />}
-                                            {loadingPlan === plan.id ? 'Processing...' : `Get ${plan.duration} Pro Access`}
+                                            {loadingPlan === plan.id || !isReady ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Sparkles className="mr-2 h-4 w-4" />}
+                                            {loadingPlan === plan.id ? 'Processing...' : (isReady ? `Get ${plan.duration} Pro Access` : 'Initializing...')}
                                         </Button>
                                     )
                                 ))}
