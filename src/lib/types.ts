@@ -160,7 +160,7 @@ export interface SignInForm {
 
 // --- Subscription ---
 export type SubscriptionPlan = 'free' | 'pro-1m' | 'pro-2m' | 'pro-3m';
-export type UsageType = 'interview' | 'codingQuiz' | 'notes' | 'questionGenerator' | 'resumeExport' | 'aiEnhancement';
+export type UsageType = 'interview' | 'codingQuiz' | 'notes' | 'questionGenerator' | 'resumeExport' | 'aiEnhancements';
 
 export interface Subscription {
     plan: SubscriptionPlan;

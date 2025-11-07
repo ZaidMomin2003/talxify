@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Mic, MicOff, Video, VideoOff, Phone, BrainCircuit, Loader2, Play } from 'lucide-react';
 import { addActivity, checkAndIncrementUsage, updateUserFromIcebreaker } from '@/lib/firebase-service';
 import { useAuth } from '@/context/auth-context';
-import type { InterviewActivity, TranscriptEntry } from '@/lib/types';
+import type { InterviewActivity, TranscriptEntry, UsageType } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';

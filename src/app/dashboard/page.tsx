@@ -15,7 +15,7 @@ import { z } from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useRouter } from "next/navigation";
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import type { StoredActivity, QuizResult, InterviewActivity, UserData, SyllabusDay, InterviewQuestionSetActivity } from "@/lib/types";
+import type { StoredActivity, QuizResult, InterviewActivity, UserData, SyllabusDay, InterviewQuestionSetActivity, SubscriptionPlan } from "@/lib/types";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
@@ -78,6 +78,14 @@ const LevelUpToolCard = ({ href, icon: Icon, title, description }: { href: strin
     </Link>
 );
 
+const freePlanLimits: Record<string, number> = {
+    interviews: 1,
+    codingQuizzes: 1,
+    notes: 1,
+    questionSets: 1,
+    aiEnhancements: 2,
+};
+
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -102,11 +110,26 @@ export default function DashboardPage() {
   const allActivity = userData?.activity || [];
   
 
-  const { questionsSolved, interviewsCompleted, recentQuizzes, averageScore, hasTakenQuiz, performanceData, completedDays, dailyTaskStatus, interviewQuestionsGenerated } = useMemo(() => {
+  const { 
+      questionsSolved, 
+      interviewsCompleted, 
+      recentQuizzes, 
+      averageScore, 
+      hasTakenQuiz, 
+      performanceData, 
+      completedDays, 
+      dailyTaskStatus,
+      interviewQuestionsGenerated,
+      interviewUsage,
+      notesGenerated,
+      quizzesTaken,
+      aiEnhancementsUsed
+  } = useMemo(() => {
     const quizzes = allActivity.filter(item => item.type === 'quiz') as QuizResult[];
     const interviews = allActivity.filter(item => item.type === 'interview') as InterviewActivity[];
     const questionSets = allActivity.filter(item => item.type === 'interview-question-set') as InterviewQuestionSetActivity[];
-    
+    const notes = allActivity.filter(item => item.type === 'note-generation');
+
     const completedQuizzes = quizzes.filter(item => item.analysis.length > 0);
     const completedInterviews = interviews.filter(item => item.analysis && item.analysis.crackingChance !== undefined);
 
@@ -119,8 +142,8 @@ export default function DashboardPage() {
 
     const totalInterviewScore = completedInterviews.reduce((sum, interview) => sum + (interview.analysis?.crackingChance || 0), 0);
     
-    const interviewQuestionsGenerated = questionSets.reduce((acc, set) => acc + set.questions.questions.length, 0);
-
+    const questionsGenerated = questionSets.reduce((acc, set) => acc + set.questions.questions.length, 0);
+    
     const totalActivities = completedQuizzes.length + completedInterviews.length;
     const totalScore = totalQuizScore + totalInterviewScore;
     
@@ -173,6 +196,18 @@ export default function DashboardPage() {
             break;
         }
     }
+    
+    const currentPlan = userData?.subscription?.plan || 'free';
+    
+    let interviewLimit: number;
+    let interviewCount = interviews.length;
+
+    if (currentPlan.startsWith('pro')) {
+        interviewLimit = userData?.subscription?.interviewUsage?.limit || 0;
+    } else {
+        interviewLimit = freePlanLimits.interviews;
+    }
+    
 
     return {
         questionsSolved: solved,
@@ -183,7 +218,15 @@ export default function DashboardPage() {
         performanceData: perfData,
         completedDays: lastCompletedDay,
         dailyTaskStatus: status,
-        interviewQuestionsGenerated: interviewQuestionsGenerated
+        interviewQuestionsGenerated: questionsGenerated,
+        interviewUsage: {
+            count: interviewCount,
+            limit: interviewLimit,
+            isPro: currentPlan.startsWith('pro'),
+        },
+        notesGenerated: notes.length,
+        quizzesTaken: quizzes.length,
+        aiEnhancementsUsed: userData?.subscription?.usage?.aiEnhancements || 0,
     };
   }, [allActivity, userData]);
   
@@ -236,18 +279,20 @@ export default function DashboardPage() {
             <Briefcase className="h-4 w-4 text-blue-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{interviewsCompleted}</div>
-            <p className="text-xs text-blue-400/80">Practice makes perfect</p>
+            <div className="text-2xl font-bold">{interviewUsage.count}
+                <span className="text-lg text-blue-400/80"> / {interviewUsage.isPro ? interviewUsage.limit : freePlanLimits.interviews}</span>
+            </div>
+            <p className="text-xs text-blue-400/80">{interviewUsage.isPro ? 'Pro plan usage' : 'Free plan usage'}</p>
           </CardContent>
         </Card>
         <Card className="bg-orange-500/20 text-orange-950 dark:text-orange-200 border-orange-500/30 shadow-lg shadow-orange-500/20">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Coding Questions Solved</CardTitle>
+            <CardTitle className="text-sm font-medium">Coding Questions</CardTitle>
             <Code className="h-4 w-4 text-orange-400" />
           </CardHeader>
           <CardContent>
              <div className="text-2xl font-bold">{questionsSolved}</div>
-             <p className="text-xs text-orange-400/80">Across all quizzes</p>
+             <p className="text-xs text-orange-400/80">Solved across all quizzes</p>
           </CardContent>
         </Card>
         <Card className="bg-pink-500/20 text-pink-950 dark:text-pink-200 border-pink-500/30 shadow-lg shadow-pink-500/20">
@@ -262,12 +307,14 @@ export default function DashboardPage() {
         </Card>
         <Card className="bg-green-500/20 text-green-950 dark:text-green-200 border-green-500/30 shadow-lg shadow-green-500/20">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">Interview Q's Generated</CardTitle>
+                <CardTitle className="text-sm font-medium">AI Enhancements Used</CardTitle>
                 <Sparkles className="h-4 w-4 text-green-400" />
             </CardHeader>
             <CardContent>
-                <div className="text-2xl font-bold">{interviewQuestionsGenerated}</div>
-                <p className="text-xs text-green-400/80">Tailored by AI</p>
+                 <div className="text-2xl font-bold">{aiEnhancementsUsed}
+                    <span className="text-lg text-green-400/80"> / {userData?.subscription?.plan.startsWith('pro') ? '∞' : freePlanLimits.aiEnhancements}</span>
+                 </div>
+                <p className="text-xs text-green-400/80">Resume & Portfolio AI</p>
             </CardContent>
         </Card>
       </div>
@@ -437,4 +484,3 @@ export default function DashboardPage() {
     </main>
   );
 }
-
