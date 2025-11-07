@@ -12,6 +12,8 @@ import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import CalEmbed from './cal-embed';
+
 
 const failures = [
     {
@@ -353,6 +355,18 @@ export default function InstituteColabPage() {
                     </div>
                 </section>
 
+                {/* Calendly Embed Section */}
+                <section id="schedule-call">
+                    <div className="text-center mb-12">
+                        <h2 className="text-4xl font-bold font-headline">Connect With Us</h2>
+                        <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">Schedule a 30-minute call with our partnership team to get started.</p>
+                    </div>
+                    <Card className="max-w-4xl mx-auto shadow-lg overflow-hidden">
+                        <CardContent className="p-0 h-[650px]">
+                           <CalEmbed />
+                        </CardContent>
+                    </Card>
+                </section>
 
                 {/* FAQ Section */}
                 <section id="faq">
