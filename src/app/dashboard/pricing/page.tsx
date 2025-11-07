@@ -1,15 +1,16 @@
-
 'use client';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Check, Star, Loader2, UserRound, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import type { SubscriptionPlan } from '@/lib/types';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import Script from 'next/script';
+import { getRazorpayApiKey } from '@/app/actions/razorpay';
+
 
 const freePlan = {
     name: 'Free',
@@ -73,9 +74,31 @@ export default function PricingPage() {
     const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
     const [selectedPlanId, setSelectedPlanId] = useState<SubscriptionPlan>('pro-2m');
     const [isRzpLoaded, setIsRzpLoaded] = useState(false);
+    const [razorpayKeyId, setRazorpayKeyId] = useState<string | null>(null);
+    const [isConfigLoading, setIsConfigLoading] = useState(true);
     
     const paymentApiUrl = process.env.NEXT_PUBLIC_PAYMENT_API_URL;
-    const razorpayKeyId = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
+
+    useEffect(() => {
+        const fetchKey = async () => {
+            try {
+                setIsConfigLoading(true);
+                const key = await getRazorpayApiKey();
+                if (key) {
+                    setRazorpayKeyId(key);
+                } else {
+                     toast({ title: "Configuration Error", description: "Razorpay Key ID is not available.", variant: "destructive" });
+                }
+            } catch (error) {
+                 toast({ title: "Configuration Error", description: "Could not load payment configuration.", variant: "destructive" });
+            } finally {
+                setIsConfigLoading(false);
+            }
+        };
+        fetchKey();
+    }, [toast]);
+
+    const isReadyForPayment = isRzpLoaded && !!razorpayKeyId && !!paymentApiUrl;
 
 
     const handlePayment = async (planId: SubscriptionPlan, amount: number) => {
@@ -84,13 +107,8 @@ export default function PricingPage() {
             return;
         }
         
-        if (!razorpayKeyId) {
-            toast({ title: "Configuration Error", description: "Razorpay Key ID is not configured.", variant: "destructive" });
-            return;
-        }
-        
-        if (!paymentApiUrl) {
-            toast({ title: "Configuration Error", description: "Payment API URL is not configured.", variant: "destructive" });
+        if (!isReadyForPayment) {
+            toast({ title: "Configuration Error", description: "Payment gateway is not configured correctly. Please contact support.", variant: "destructive" });
             return;
         }
 
@@ -276,7 +294,7 @@ export default function PricingPage() {
                                             className="w-full" 
                                             size="lg"
                                             onClick={() => handlePayment(plan.id, plan.priceInr)}
-                                            disabled={loadingPlan === plan.id || !isRzpLoaded || !razorpayKeyId}
+                                            disabled={loadingPlan === plan.id || isConfigLoading || !isReadyForPayment}
                                         >
                                             {loadingPlan === plan.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Sparkles className="mr-2 h-4 w-4" />}
                                             {loadingPlan === plan.id ? 'Processing...' : `Get ${plan.duration} Pro Access`}
