@@ -178,7 +178,7 @@ const features = [
             </Card>
         )
     },
-     {
+    {
         title: 'Professional Resume Builder',
         description: "Craft a standout, keyword-optimized resume using our intuitive builder. Let our AI enhance your descriptions to catch recruiters' attention and land more interviews.",
         icon: FileText,
@@ -251,10 +251,6 @@ const faqs = [
     {
         question: "Can Talxify integrate with our Learning Management System (LMS)?",
         answer: "Currently, we do not offer direct LMS integration. However, our platform is web-based and easily accessible to all students. Onboarding is a straightforward process, and we provide dedicated support to help your faculty and students get started quickly."
-    },
-    {
-        question: "What kind of data and analytics can our institution access?",
-        answer: "Institutions can be provided with an admin dashboard showing anonymized, aggregate data. This includes metrics on student activity, overall performance on quizzes by topic, and common areas of weakness, helping you gain valuable insights into your cohort's job-readiness."
     },
     {
         question: "How does the AI personalize the experience for each student?",
@@ -359,7 +355,7 @@ export default function InstituteColabPage() {
                 <section id="schedule-call">
                     <div className="text-center mb-12">
                         <h2 className="text-4xl font-bold font-headline">Schedule a Personalized Demo</h2>
-                        <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">Book a 30-minute call with our team to see how Talxify can benefit your students and faculty.</p>
+                        <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">Book a 30-minute call with our team to discover how Talxify can benefit your students and faculty, and to discuss a custom partnership plan.</p>
                     </div>
                     <Card className="max-w-4xl mx-auto shadow-lg overflow-hidden">
                         <CardContent className="p-0 h-[650px]">
