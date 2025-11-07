@@ -1,3 +1,4 @@
+
 # Settings to manage and configure a Firebase App Hosting backend.
 # https://firebase.google.com/docs/app-hosting/configure
 
@@ -65,3 +66,9 @@ secretEnvironmentVariables:
     secret: DEEPGRAM_PROJECT_ID
   - key: NEXT_PUBLIC_PAYMENT_API_URL
     secret: NEXT_PUBLIC_PAYMENT_API_URL
+  - key: NEXT_PUBLIC_RAZORPAY_KEY_ID
+    secret: RAZORPAY_KEY_ID
+  - key: RAZORPAY_KEY_ID
+    secret: RAZORPAY_KEY_ID
+  - key: RAZORPAY_KEY_SECRET
+    secret: RAZORPAY_KEY_SECRET

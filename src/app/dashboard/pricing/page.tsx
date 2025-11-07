@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -9,7 +10,7 @@ import type { SubscriptionPlan } from '@/lib/types';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import Script from 'next/script';
-
+import { createRazorpayOrder, verifyRazorpayPayment } from './actions';
 
 const freePlan = {
     name: 'Free',
@@ -78,12 +79,78 @@ export default function PricingPage() {
             toast({ title: "Not Authenticated", description: "Please log in to purchase a plan.", variant: "destructive" });
             return;
         }
-        toast({ title: "Coming Soon", description: "Payment integration is currently under development.", variant: "default" });
+        setLoadingPlan(planId);
+
+        try {
+             // 1. Create the order on the backend
+            const order = await createRazorpayOrder(amount, user.uid, planId);
+
+            // 2. Configure the Razorpay checkout options
+            const options = {
+                key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID, // Public key
+                amount: order.amount,
+                currency: order.currency,
+                name: 'Talxify',
+                description: `Pro Plan Subscription - ${planId}`,
+                order_id: order.id,
+                
+                // 3. This is the success callback function
+                handler: async function (response: any) {
+                    const verificationData = {
+                        razorpay_order_id: response.razorpay_order_id,
+                        razorpay_payment_id: response.razorpay_payment_id,
+                        razorpay_signature: response.razorpay_signature,
+                        uid: user.uid,
+                        planId: planId,
+                    };
+                    
+                    // 4. Send the payment details to the backend for verification
+                    try {
+                        const result = await verifyRazorpayPayment(verificationData);
+
+                        if (result.success) {
+                            toast({ title: 'Payment Successful!', description: 'Welcome to Pro! Your plan is now active.' });
+                            // You might want to refresh user data here or redirect
+                            window.location.reload(); 
+                        } else {
+                            toast({ variant: 'destructive', title: 'Payment Verification Failed' });
+                        }
+                    } catch (verifyError: any) {
+                         toast({ variant: 'destructive', title: 'Verification Error', description: verifyError.message });
+                    }
+                },
+                prefill: {
+                    name: user.displayName || 'User',
+                    email: user.email || '',
+                },
+                theme: {
+                    color: '#3F51B5', // Your brand color
+                },
+                 modal: {
+                    ondismiss: function() {
+                        setLoadingPlan(null); // Stop loading indicator if user closes the modal
+                    }
+                }
+            };
+            
+            // 5. Create a new Razorpay instance and open the checkout modal
+            // @ts-ignore
+            const rzp = new window.Razorpay(options);
+            rzp.open();
+        
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Payment Error', description: error.message });
+            setLoadingPlan(null);
+        }
     };
 
 
     return (
         <>
+            <Script
+                id="razorpay-checkout-js"
+                src="https://checkout.razorpay.com/v1/checkout.js"
+            />
             <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
                 <div className="text-center mb-12">
                     <h1 className="text-4xl font-bold font-headline tracking-tighter sm:text-5xl">
