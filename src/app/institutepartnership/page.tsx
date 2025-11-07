@@ -5,7 +5,7 @@ import React from 'react';
 import LandingHeader from '../landing-header';
 import LandingFooter from '../landing-footer';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, BarChart, BookOpen, Bot, Briefcase, CheckCircle, ChevronDown, Code, FileText, Globe, GraduationCap, Users, Swords, ShieldQuestion, ListChecks, CalendarDays, MessageSquare, Sparkles, BrainCircuit, Video, Phone, Mic } from 'lucide-react';
+import { ArrowRight, BarChart, BookOpen, Bot, Briefcase, CheckCircle, ChevronDown, Code, FileText, Globe, GraduationCap, Users, Swords, ShieldQuestion, ListChecks, CalendarDays, MessageSquare, Sparkles, BrainCircuit, Video, Phone, Mic, AlertTriangle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import Link from 'next/link';
@@ -30,6 +30,35 @@ const benefits = [
         description: "Demonstrate a solid commitment to industry-readiness, enhancing your institution's reputation among top tech employers."
     }
 ]
+
+const failures = [
+    {
+        title: "1. Overlooking Edge Cases",
+        problem: "Students often write code for the 'happy path' but fail to consider inputs like empty arrays, null values, single-element arrays, or very large numbers. This is a critical failure in production environments.",
+        solution: "Talxify's Code Izanami quizzes automatically test submissions against a comprehensive suite of hidden edge cases. Our AI feedback explicitly points out which cases failed and why, training students to think defensively."
+    },
+    {
+        title: "2. Inefficient, Brute-Force Solutions",
+        problem: "Many students can solve a problem, but not optimally. They default to nested loops (O(n²)) when a more efficient O(n) or O(n log n) solution exists, a red flag for interviewers.",
+        solution: "Our AI analysis doesn't just check for correctness; it evaluates efficiency. The feedback suggests more optimal approaches (like using hashmaps or the two-pointer technique) and provides a well-commented, optimal solution for comparison."
+    },
+    {
+        title: "3. Poor Code Quality & Structure",
+        problem: "Unreadable code with poor variable names (e.g., `i`, `j`, `temp`), lack of helper functions, and monolithic blocks of logic are common. This signals an inability to write maintainable code for a team.",
+        solution: "The AI feedback provides direct comments on code style, structure, and readability. It encourages breaking down problems into smaller functions and adhering to industry-standard naming conventions."
+    },
+    {
+        title: "4. Incomplete Problem Comprehension",
+        problem: "A frequent issue is jumping into coding before fully understanding the problem constraints and requirements, leading to solutions that don't fully meet the prompt's criteria.",
+        solution: "Our AI-generated questions are designed to be clear and specific, mimicking real interview prompts. The structured environment encourages students to read carefully, and feedback will penalize solutions that misunderstand the core task."
+    },
+    {
+        title: "5. Struggling with Foundational Data Structures",
+        problem: "While complex algorithms are practiced, we see frequent struggles with the practical application of fundamental data structures like Hashmaps, Sets, Stacks, and Queues to optimize solutions.",
+        solution: "Talxify's 60-day Arena syllabus dedicates specific days to mastering these core data structures. The adaptive quizzes ensure students can not only define them but apply them effectively to solve real problems."
+    },
+]
+
 
 const features = [
     {
@@ -209,10 +238,44 @@ export default function InstituteColabPage() {
                 </div>
             </section>
 
-            <main className="container mx-auto max-w-6xl p-4 md:p-6 lg:p-8 space-y-24">
+             <main className="container mx-auto max-w-6xl p-4 md:p-6 lg:p-8 space-y-24">
+                
+                {/* Data-Driven Insights Section */}
+                <section>
+                    <div className="text-center mb-12">
+                        <h2 className="text-4xl font-bold font-headline">Data-Driven Insights: Top 5 Student Stumbling Blocks</h2>
+                        <p className="text-muted-foreground mt-2 max-w-3xl mx-auto">Based on thousands of AI-led interviews, we've identified the most common pitfalls for CS students. Here's how Talxify directly addresses them.</p>
+                    </div>
+                    <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+                        {failures.map((item, index) => (
+                             <Card key={index} className="shadow-lg hover:shadow-xl transition-shadow duration-300">
+                                <CardHeader>
+                                    <div className="flex items-center gap-3">
+                                        <div className="flex-shrink-0 bg-destructive/10 text-destructive p-3 rounded-full">
+                                            <AlertTriangle className="w-6 h-6" />
+                                        </div>
+                                        <CardTitle>{item.title}</CardTitle>
+                                    </div>
+                                    <CardDescription>{item.problem}</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                     <div className="bg-primary/10 border-l-4 border-primary p-4 rounded-r-lg">
+                                        <p className="font-semibold text-primary mb-2">The Talxify Solution</p>
+                                        <p className="text-sm text-muted-foreground">{item.solution}</p>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+                </section>
+
 
                 {/* Benefits Section */}
                 <section>
+                    <div className="text-center mb-12">
+                        <h2 className="text-4xl font-bold font-headline">A Partnership That Pays Off</h2>
+                        <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">Elevate your institution's placement rates and reputation.</p>
+                    </div>
                     <div className="grid md:grid-cols-3 gap-8 text-center">
                         {benefits.map(benefit => (
                             <div key={benefit.title} className="flex flex-col items-center">
@@ -223,23 +286,6 @@ export default function InstituteColabPage() {
                                 <p className="text-muted-foreground">{benefit.description}</p>
                             </div>
                         ))}
-                    </div>
-                </section>
-                
-                {/* Video Section */}
-                <section>
-                    <div className="text-center mb-12">
-                        <h2 className="text-4xl font-bold font-headline">See Talxify in Action</h2>
-                        <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">A quick overview of the platform and how it empowers students.</p>
-                    </div>
-                    <div className="aspect-video w-full max-w-4xl mx-auto rounded-xl overflow-hidden shadow-2xl border">
-                         <iframe
-                            className="w-full h-full"
-                            src="https://www.youtube.com/embed/Tn6-PIqc4UM"
-                            title="YouTube video player"
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                            allowFullScreen
-                        ></iframe>
                     </div>
                 </section>
                 
