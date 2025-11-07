@@ -13,24 +13,6 @@ import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
-const benefits = [
-    {
-        icon: GraduationCap,
-        title: 'Boost Employability',
-        description: "Equip your students with the practical interview skills and confidence needed to convert their academic knowledge into job offers."
-    },
-    {
-        icon: BarChart,
-        title: 'Gain Curriculum Insights',
-        description: "Use our analytics dashboard to identify common skill gaps and areas where students struggle, providing valuable data to refine your curriculum."
-    },
-    {
-        icon: Briefcase,
-        title: 'Strengthen Industry Ties',
-        description: "Demonstrate a solid commitment to industry-readiness, enhancing your institution's reputation among top tech employers."
-    }
-]
-
 const failures = [
     {
         title: "1. Overlooking Edge Cases",
@@ -280,31 +262,11 @@ export default function InstituteColabPage() {
                     </div>
                 </section>
 
-
-                {/* Benefits Section */}
-                <section>
-                    <div className="text-center mb-12">
-                        <h2 className="text-4xl font-bold font-headline">A Partnership That Pays Off</h2>
-                        <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">Elevate your institution's placement rates and reputation.</p>
-                    </div>
-                    <div className="grid md:grid-cols-3 gap-8 text-center">
-                        {benefits.map(benefit => (
-                            <div key={benefit.title} className="flex flex-col items-center">
-                                <div className="bg-primary/10 text-primary rounded-full p-4 mb-4">
-                                    <benefit.icon className="w-8 h-8" />
-                                </div>
-                                <h3 className="text-xl font-bold mb-2">{benefit.title}</h3>
-                                <p className="text-muted-foreground">{benefit.description}</p>
-                            </div>
-                        ))}
-                    </div>
-                </section>
-                
-                 {/* Features Section */}
+                {/* Features Section */}
                 <section id="features">
                     <div className="text-center mb-12">
-                        <h2 className="text-4xl font-bold font-headline">The Ultimate Student Toolkit</h2>
-                        <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">A suite of powerful AI features designed to build skills, confidence, and job-readiness.</p>
+                        <h2 className="text-4xl font-bold font-headline">How Talxify Can Help</h2>
+                        <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">We provide a suite of powerful AI tools designed to build skills, confidence, and job-readiness.</p>
                     </div>
                      <div className="space-y-16 sm:space-y-24">
                         {features.map((feature, index) => (
