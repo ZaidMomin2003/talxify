@@ -5,7 +5,7 @@ import React from 'react';
 import LandingHeader from '../landing-header';
 import LandingFooter from '../landing-footer';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, BarChart, BookOpen, Bot, Briefcase, CheckCircle, ChevronDown, Code, FileText, Globe, GraduationCap, Users, Swords, ShieldQuestion, ListChecks, CalendarDays, MessageSquare, Sparkles, BrainCircuit, Video, Phone, Mic, AlertTriangle, UserCheck } from 'lucide-react';
+import { ArrowRight, BarChart, BookOpen, Bot, Briefcase, CheckCircle, ChevronDown, Code, FileText, Globe, GraduationCap, Users, Swords, ShieldQuestion, ListChecks, CalendarDays, MessageSquare, Sparkles, BrainCircuit, Video, Phone, Mic, AlertTriangle, UserCheck, User } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import Link from 'next/link';
@@ -135,7 +135,7 @@ const features = [
                             <AvatarFallback>AI</AvatarFallback>
                         </Avatar>
                     </div>
-                    <p className="mt-2 sm:mt-4 text-lg sm:text-xl font-bold font-headline text-foreground">Kathy</p>
+                    <p className="mt-2 sm:mt-4 text-lg sm:text-xl font-bold font-headline text-foreground">Mark</p>
                     <p className="text-xs sm:text-sm text-muted-foreground">AI Interviewer</p>
                 </div>
                 <div className="absolute bottom-2 right-2 sm:bottom-4 sm:right-4 w-16 h-16 sm:w-24 sm:h-24 rounded-full overflow-hidden border-2 border-border bg-black shadow-lg flex items-center justify-center">
@@ -172,6 +172,48 @@ const features = [
                         <div className="w-1/4 h-full bg-primary/60 rounded-t-sm animate-pulse" style={{animationDelay: '0.4s'}}></div>
                     </div>
                     <div className="text-sm text-muted-foreground">Your average score is up <span className="font-semibold text-green-500">12%</span> this week.</div>
+                </CardContent>
+            </Card>
+        )
+    },
+     {
+        title: 'Professional Resume Builder',
+        description: "Craft a standout, keyword-optimized resume using our intuitive builder. Let our AI enhance your descriptions to catch recruiters' attention and land more interviews.",
+        icon: FileText,
+        prototype: (
+            <Card className="w-full max-w-lg mx-auto bg-card/80 backdrop-blur-sm p-4 sm:p-6 shadow-xl border border-border/50">
+                <CardHeader className="p-0 mb-4 flex-row items-center gap-3">
+                    <div className="p-2 bg-primary/10 rounded-lg text-primary"><FileText className="w-5 h-5 sm:w-6 sm:h-6" /></div>
+                    <CardTitle className="text-lg sm:text-xl m-0">Resume Builder</CardTitle>
+                </CardHeader>
+                <CardContent className="p-0 space-y-3">
+                    <div className="p-3 rounded-lg bg-muted border">
+                        <p className="font-semibold text-sm">Diya Agarwal</p>
+                        <p className="text-xs text-muted-foreground mt-1">Increased monthly sales 10% by effectively upselling...</p>
+                    </div>
+                    <div className="p-3 rounded-lg bg-muted border opacity-70">
+                        <p className="font-semibold text-sm">AI Suggestion</p>
+                        <p className="text-xs text-muted-foreground mt-1">"Exceeded revenue targets by 10% through strategic upselling..."</p>
+                    </div>
+                </CardContent>
+            </Card>
+        )
+    },
+    {
+        title: 'Automated Portfolio Website',
+        description: 'Showcase your skills and completed challenges on a personal portfolio website. Connect your GitHub and let your activity on Talxify build your professional online presence automatically.',
+        icon: User,
+        prototype: (
+            <Card className="w-full max-w-lg mx-auto bg-card/80 backdrop-blur-sm p-4 sm:p-6 shadow-xl border border-border/50">
+                <CardHeader className="p-0 mb-4 flex-row items-center gap-3">
+                    <div className="p-2 bg-primary/10 rounded-lg text-primary"><User className="w-5 h-5 sm:w-6 sm:h-6" /></div>
+                    <CardTitle className="text-lg sm:text-xl m-0">Your Portfolio</CardTitle>
+                </CardHeader>
+                <CardContent className="p-0 space-y-3">
+                    <div className="h-28 w-full rounded-md bg-muted/50 border flex items-center justify-center p-2">
+                        <p className="text-muted-foreground text-sm">Your projects and stats will appear here.</p>
+                    </div>
+                    <div className="text-sm text-muted-foreground text-center">jane-doe.talxify.space</div>
                 </CardContent>
             </Card>
         )
@@ -335,5 +377,3 @@ export default function InstituteColabPage() {
         </div>
     );
 }
-
-    
