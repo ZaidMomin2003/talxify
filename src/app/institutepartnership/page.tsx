@@ -17,10 +17,10 @@ import CalEmbed from './cal-embed';
 
 const failures = [
     {
-        title: "1. Overlooking Edge Cases",
-        problem: "Students often write code for the 'happy path' but fail to consider inputs like empty arrays, null values, or very large numbers.",
-        interviewImpact: "In an interview, this looks like a lack of thoroughness. The interviewer has to prompt them ('What if the input is null?'), which signals a junior mindset and a lack of production readiness.",
-        solution: "Talxify's Code Izanami quizzes automatically test submissions against a comprehensive suite of hidden edge cases. Our AI feedback explicitly points out which cases failed and why, training students to think defensively."
+        title: "1. Lack of Realistic Practice & Confidence",
+        problem: "Students may know CS fundamentals, but they haven't practiced applying that knowledge under the pressure of a live interview. This lack of real-world practice leads to a major loss of confidence.",
+        interviewImpact: "When faced with a real interviewer, students freeze. They struggle to articulate their thought process, appear nervous, and fail to communicate their skills effectively, which is often misinterpreted as a lack of knowledge.",
+        solution: "Talxify's human-like AI mock interviews provide a safe, on-demand space to practice. By simulating real interview pressure, students build the 'muscle memory' for thinking on their feet, explaining their code, and answering behavioral questions with confidence."
     },
     {
         title: "2. Inefficient, Brute-Force Solutions",
