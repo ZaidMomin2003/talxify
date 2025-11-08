@@ -15,6 +15,7 @@ import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const initialColumns: Column[] = [
     { id: 'todo', name: 'To Do', color: '#6B7280' },
@@ -157,32 +158,34 @@ export default function TodosPage() {
                 </CardDescription>
             </CardHeader>
             <div className="mt-6">
-                <KanbanProvider columns={initialColumns} tasks={tasks} onTasksChange={handleTasksChange} renderCard={(task) => <TaskCard task={task as TodoItem} />}>
-                    {initialColumns.map(column => (
-                         <KanbanColumn key={column.id} column={column}>
-                            <KanbanHeader>
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2">
-                                        <div className="h-3 w-3 rounded-full" style={{ backgroundColor: column.color }} />
-                                        <span className="font-semibold">{column.name}</span>
-                                        <Badge variant="secondary" className="ml-1">
-                                            {tasks[column.id]?.length || 0}
-                                        </Badge>
+                <ScrollArea className="w-full whitespace-nowrap">
+                    <KanbanProvider columns={initialColumns} tasks={tasks} onTasksChange={handleTasksChange} renderCard={(task) => <TaskCard task={task as TodoItem} />}>
+                        {initialColumns.map(column => (
+                             <KanbanColumn key={column.id} column={column}>
+                                <KanbanHeader>
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <div className="h-3 w-3 rounded-full" style={{ backgroundColor: column.color }} />
+                                            <span className="font-semibold">{column.name}</span>
+                                            <Badge variant="secondary" className="ml-1">
+                                                {tasks[column.id]?.length || 0}
+                                            </Badge>
+                                        </div>
+                                        {column.id === 'todo' && (
+                                            <Button variant="ghost" size="icon" onClick={() => setShowNewTaskForm(!showNewTaskForm)}>
+                                                <Plus className="h-5 w-5" />
+                                            </Button>
+                                        )}
                                     </div>
-                                    {column.id === 'todo' && (
-                                        <Button variant="ghost" size="icon" onClick={() => setShowNewTaskForm(!showNewTaskForm)}>
-                                            <Plus className="h-5 w-5" />
-                                        </Button>
+                                    {column.id === 'todo' && showNewTaskForm && (
+                                        <NewTaskForm columnId={column.id} onTaskAdded={() => { fetchTasks(); setShowNewTaskForm(false); }}/>
                                     )}
-                                </div>
-                                {column.id === 'todo' && showNewTaskForm && (
-                                    <NewTaskForm columnId={column.id} onTaskAdded={() => { fetchTasks(); setShowNewTaskForm(false); }}/>
-                                )}
-                            </KanbanHeader>
-                            <KanbanCards columnId={column.id} />
-                         </KanbanColumn>
-                    ))}
-                </KanbanProvider>
+                                </KanbanHeader>
+                                <KanbanCards columnId={column.id} />
+                             </KanbanColumn>
+                        ))}
+                    </KanbanProvider>
+                </ScrollArea>
             </div>
         </main>
     );

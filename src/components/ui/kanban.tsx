@@ -177,7 +177,7 @@ export function KanbanColumn({ column, children }: KanbanColumnProps) {
   return (
      <div
       ref={setNodeRef}
-      className={cn("flex flex-col w-full min-w-72 max-w-sm rounded-lg bg-muted/50 border",
+      className={cn("inline-flex flex-col w-72 min-w-72 max-w-sm rounded-lg bg-muted/50 border",
         isOver && "ring-2 ring-primary"
       )}
     >
@@ -255,4 +255,3 @@ export function KanbanCard({ children }: { children: ReactNode }) {
     </Card>
   )
 }
-
