@@ -307,14 +307,14 @@ export default function DashboardPage() {
         </Card>
         <Card className="bg-green-500/20 text-green-950 dark:text-green-200 border-green-500/30 shadow-lg shadow-green-500/20">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">AI Enhancements Used</CardTitle>
-                <Sparkles className="h-4 w-4 text-green-400" />
+                <CardTitle className="text-sm font-medium">AI Notes Generated</CardTitle>
+                <BookOpen className="h-4 w-4 text-green-400" />
             </CardHeader>
             <CardContent>
-                 <div className="text-2xl font-bold">{aiEnhancementsUsed}
-                    <span className="text-lg text-green-400/80"> / {userData?.subscription?.plan.startsWith('pro') ? '∞' : freePlanLimits.aiEnhancements}</span>
+                 <div className="text-2xl font-bold">{notesGenerated}
+                    <span className="text-lg text-green-400/80"> / {userData?.subscription?.plan.startsWith('pro') ? '∞' : freePlanLimits.notes}</span>
                  </div>
-                <p className="text-xs text-green-400/80">Resume & Portfolio AI</p>
+                <p className="text-xs text-green-400/80">Across all topics</p>
             </CardContent>
         </Card>
       </div>
