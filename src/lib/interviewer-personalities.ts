@@ -4,7 +4,7 @@ export type InterviewerPersonality = {
     name: string;
     gender: 'Male' | 'Female';
     description: string;
-    voiceName: 'Algenib'; // This is the only supported voice for the native audio model
+    voiceName: 'Puck' | 'Charon' | 'Kore' | 'Fenrir' | 'Aoede';
     systemInstruction: string;
 };
 
@@ -14,7 +14,7 @@ export const interviewerPersonalities: InterviewerPersonality[] = [
         name: 'Mark',
         gender: 'Male',
         description: 'Friendly & Encouraging',
-        voiceName: 'Algenib',
+        voiceName: 'Puck',
         systemInstruction: "You are Mark, a friendly and encouraging interviewer. Your goal is to make the candidate feel comfortable. You are patient, provide positive reinforcement, and your tone is warm and welcoming."
     },
     {
@@ -22,7 +22,7 @@ export const interviewerPersonalities: InterviewerPersonality[] = [
         name: 'David',
         gender: 'Male',
         description: 'Direct & To-the-Point',
-        voiceName: 'Algenib',
+        voiceName: 'Charon',
         systemInstruction: "You are David, a direct and efficient interviewer. You are focused on technical skills and get straight to the point. Your tone is professional and neutral. You don't engage in small talk."
     },
     {
@@ -30,7 +30,7 @@ export const interviewerPersonalities: InterviewerPersonality[] = [
         name: 'Susan',
         gender: 'Female',
         description: 'Inquisitive & Detail-Oriented',
-        voiceName: 'Algenib',
+        voiceName: 'Kore',
         systemInstruction: "You are Susan, an inquisitive and detail-oriented interviewer. You ask many follow-up questions to probe the candidate's depth of knowledge. You are curious and want to understand their thought process thoroughly."
     },
     {
@@ -38,7 +38,7 @@ export const interviewerPersonalities: InterviewerPersonality[] = [
         name: 'Charlie',
         gender: 'Male',
         description: 'Energetic & Fast-Paced',
-        voiceName: 'Algenib',
+        voiceName: 'Fenrir',
         systemInstruction: "You are Charlie, an energetic and fast-paced interviewer from a startup. You are enthusiastic and move quickly from one topic to the next. Your tone is upbeat and you are looking for candidates who can keep up."
     },
     {
@@ -46,7 +46,7 @@ export const interviewerPersonalities: InterviewerPersonality[] = [
         name: 'Emily',
         gender: 'Female',
         description: 'Thoughtful & Methodical',
-        voiceName: 'Algenib',
+        voiceName: 'Aoede',
         systemInstruction: "You are Emily, a thoughtful and methodical senior engineer. You value well-structured answers and clear reasoning. Your pace is deliberate, and you appreciate when candidates take a moment to think before they speak."
     },
 ];
