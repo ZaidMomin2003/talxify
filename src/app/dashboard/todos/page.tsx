@@ -147,7 +147,7 @@ export default function TodosPage() {
     }
 
     return (
-        <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
+        <main className="flex flex-col flex-1 p-4 sm:p-6 lg:p-8 overflow-hidden">
              <CardHeader className="px-0">
                 <CardTitle className="flex items-center gap-3 text-2xl font-bold">
                     <ListChecks className="w-6 h-6 text-primary"/>
@@ -157,34 +157,36 @@ export default function TodosPage() {
                     Stay organized and focused on your interview preparation goals. Drag and drop tasks to update their status.
                 </CardDescription>
             </CardHeader>
-            <div className="mt-6">
-                <ScrollArea className="w-full whitespace-nowrap rounded-lg border">
-                    <KanbanProvider columns={initialColumns} tasks={tasks} onTasksChange={handleTasksChange} renderCard={(task) => <TaskCard task={task as TodoItem} />}>
-                        {initialColumns.map(column => (
-                             <KanbanColumn key={column.id} column={column}>
-                                <KanbanHeader>
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-2">
-                                            <div className="h-3 w-3 rounded-full" style={{ backgroundColor: column.color }} />
-                                            <span className="font-semibold">{column.name}</span>
-                                            <Badge variant="secondary" className="ml-1">
-                                                {tasks[column.id]?.length || 0}
-                                            </Badge>
+            <div className="mt-6 flex-1 overflow-hidden">
+                <ScrollArea className="w-full h-full pb-4">
+                    <div className="inline-block min-w-full">
+                        <KanbanProvider columns={initialColumns} tasks={tasks} onTasksChange={handleTasksChange} renderCard={(task) => <TaskCard task={task as TodoItem} />}>
+                            {initialColumns.map(column => (
+                                <KanbanColumn key={column.id} column={column}>
+                                    <KanbanHeader>
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-2">
+                                                <div className="h-3 w-3 rounded-full" style={{ backgroundColor: column.color }} />
+                                                <span className="font-semibold">{column.name}</span>
+                                                <Badge variant="secondary" className="ml-1">
+                                                    {tasks[column.id]?.length || 0}
+                                                </Badge>
+                                            </div>
+                                            {column.id === 'todo' && (
+                                                <Button variant="ghost" size="icon" onClick={() => setShowNewTaskForm(!showNewTaskForm)}>
+                                                    <Plus className="h-5 w-5" />
+                                                </Button>
+                                            )}
                                         </div>
-                                        {column.id === 'todo' && (
-                                            <Button variant="ghost" size="icon" onClick={() => setShowNewTaskForm(!showNewTaskForm)}>
-                                                <Plus className="h-5 w-5" />
-                                            </Button>
+                                        {column.id === 'todo' && showNewTaskForm && (
+                                            <NewTaskForm columnId={column.id} onTaskAdded={() => { fetchTasks(); setShowNewTaskForm(false); }}/>
                                         )}
-                                    </div>
-                                    {column.id === 'todo' && showNewTaskForm && (
-                                        <NewTaskForm columnId={column.id} onTaskAdded={() => { fetchTasks(); setShowNewTaskForm(false); }}/>
-                                    )}
-                                </KanbanHeader>
-                                <KanbanCards columnId={column.id} />
-                             </KanbanColumn>
-                        ))}
-                    </KanbanProvider>
+                                    </KanbanHeader>
+                                    <KanbanCards columnId={column.id} />
+                                </KanbanColumn>
+                            ))}
+                        </KanbanProvider>
+                    </div>
                 </ScrollArea>
             </div>
         </main>
