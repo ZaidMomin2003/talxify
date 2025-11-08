@@ -14,6 +14,7 @@ import { ListChecks, Plus, GripVertical, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 
 const initialColumns: Column[] = [
     { id: 'todo', name: 'To Do', color: '#6B7280' },
