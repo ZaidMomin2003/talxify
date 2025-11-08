@@ -321,8 +321,7 @@ export default function LiveInterviewPage() {
 
   const startInterview = useCallback(async () => {
     if (isInterviewing || !session) {
-        toast({ title: 'Not Ready', description: `Cannot start interview. Session not established.`, variant: 'destructive' });
-        return;
+      return;
     }
     if (!user) {
         toast({ title: 'Not Logged In', description: 'Please log in to start an interview.', variant: 'destructive' });
@@ -373,9 +372,6 @@ export default function LiveInterviewPage() {
         setElapsedTime(0);
         timerIntervalRef.current = setInterval(() => setElapsedTime(prev => prev + 1), 1000);
         
-        // This is now handled by the AI's system instruction to speak first
-        // setStatus("🔴 Your turn... Speak now.");
-
     } catch (err: any) {
         setStatus(`Error starting interview: ${err.message}`);
         console.error('Error starting interview:', err);
@@ -464,9 +460,9 @@ export default function LiveInterviewPage() {
             <AIPanel characterName={character.name} isInterviewing={isInterviewing} />
              {!isInterviewing && (
                 <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30">
-                    <Button onClick={startInterview} size="lg" className="h-16 rounded-full px-8" disabled={!session || isInterviewing}>
-                        {!session ? <Loader2 className="mr-3 h-6 w-6 animate-spin"/> : <Play className="mr-3 h-6 w-6"/>}
-                        {!session ? status : 'Start Interview'}
+                    <Button onClick={startInterview} size="lg" className="h-16 rounded-full px-8" disabled={!session || isInterviewing || status !== 'Ready to start'}>
+                        {!session || status !== 'Ready to start' ? <Loader2 className="mr-3 h-6 w-6 animate-spin"/> : <Play className="mr-3 h-6 w-6"/>}
+                        {!session ? 'Connecting...' : (status !== 'Ready to start' ? status : 'Start Interview')}
                     </Button>
                 </div>
             )}
@@ -485,3 +481,5 @@ export default function LiveInterviewPage() {
     </div>
   );
 }
+
+    

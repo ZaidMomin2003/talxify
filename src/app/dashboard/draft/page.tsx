@@ -196,7 +196,7 @@ export default function DraftPage() {
         const newSession = await client.live.connect({
           model: 'gemini-2.5-flash-native-audio-preview-09-2025',
           callbacks: {
-            onopen: () => setStatus('Waiting for Mark to start...'),
+            onopen: () => setStatus('Ready to start'),
             onmessage: (message: LiveServerMessage) => {
               if (message.serverContent?.interrupted) stopAllPlayback();
 
@@ -390,9 +390,9 @@ export default function DraftPage() {
             <AIPanel isInterviewing={isInterviewing} />
              {!isInterviewing && (
                 <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30">
-                    <Button onClick={startInterview} size="lg" className="h-16 rounded-full px-8" disabled={!session || isInterviewing}>
-                        {!session ? <Loader2 className="mr-3 h-6 w-6 animate-spin"/> : <Play className="mr-3 h-6 w-6"/>}
-                        {!session ? 'Connecting...' : 'Start Interview'}
+                    <Button onClick={startInterview} size="lg" className="h-16 rounded-full px-8" disabled={!session || isInterviewing || status !== 'Ready to start'}>
+                        {!session || status !== 'Ready to start' ? <Loader2 className="mr-3 h-6 w-6 animate-spin"/> : <Play className="mr-3 h-6 w-6"/>}
+                        {!session ? 'Connecting...' : (status !== 'Ready to start' ? status : 'Start Interview')}
                     </Button>
                 </div>
             )}
@@ -411,3 +411,5 @@ export default function DraftPage() {
     </div>
   );
 }
+
+    
