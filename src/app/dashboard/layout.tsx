@@ -58,150 +58,6 @@ import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
 
-function TodoListPopup({ todos, userId, onDataRefresh }: { todos: TodoItem[], userId: string, onDataRefresh: () => void }) {
-    const { toast } = useToast();
-    const [newTaskText, setNewTaskText] = useState('');
-    const [isAdding, setIsAdding] = useState(false);
-    const [activeTab, setActiveTab] = useState('incomplete');
-    
-    const handleToggle = async (id: string, currentStatus: boolean) => {
-        try {
-            await updateTodo(userId, id, { completed: !currentStatus });
-            onDataRefresh();
-        } catch (error) {
-            console.error("Failed to update to-do:", error);
-            toast({ title: "Error", description: "Could not update task.", variant: "destructive" });
-        }
-    };
-    
-    const handleAddTask = async () => {
-        if (newTaskText.trim()) {
-             try {
-                await addTodo(userId, newTaskText.trim());
-                onDataRefresh();
-                setNewTaskText('');
-                setIsAdding(false);
-                setActiveTab('incomplete'); 
-            } catch (error) {
-                console.error("Failed to add to-do:", error);
-                toast({ title: "Error", description: "Could not add task.", variant: "destructive" });
-            }
-        }
-    };
-    
-    const sortedTodos = useMemo(() => {
-        return (todos || []).sort((a, b) => {
-            const timeA = a.createdAt?.seconds || 0;
-            const timeB = b.createdAt?.seconds || 0;
-            return timeB - timeA; // Sort descending
-        });
-    }, [todos]);
-
-    const incompleteTasks = sortedTodos.filter(item => !item.completed);
-    const completedTasks = sortedTodos.filter(item => item.completed);
-
-
-    return (
-        <Dialog>
-            <DialogTrigger asChild>
-                 <div className="group cursor-pointer rounded-lg bg-gradient-to-br from-primary/10 to-background border border-primary/20 p-4 text-left hover:border-primary transition-all">
-                     <div className="flex items-start gap-4">
-                         <div className="rounded-lg bg-primary/10 p-3 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
-                            <ListChecks className="h-6 w-6" />
-                        </div>
-                        <div>
-                            <p className="font-semibold text-foreground">My To-Do List</p>
-                            <p className="text-xs text-muted-foreground">Stay on track with your prep</p>
-                        </div>
-                    </div>
-                </div>
-            </DialogTrigger>
-            <DialogContent className="max-w-md">
-                <DialogHeader>
-                    <DialogTitle className="text-2xl font-bold flex items-center gap-3">
-                        <ListChecks className="w-6 h-6 text-primary"/>
-                        My Prep To-Do List
-                    </DialogTitle>
-                    <DialogDescription>
-                        Stay organized and focused on your interview preparation goals.
-                    </DialogDescription>
-                </DialogHeader>
-
-                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                    <TabsList className="grid w-full grid-cols-2">
-                        <TabsTrigger value="incomplete">Incomplete</TabsTrigger>
-                        <TabsTrigger value="completed">Completed</TabsTrigger>
-                    </TabsList>
-                    <TabsContent value="incomplete">
-                        <div className="h-[60vh] sm:h-[400px] overflow-y-auto pr-2 space-y-3 mt-4">
-                            {incompleteTasks.map(item => (
-                                <Card key={item.id} className="p-3">
-                                    <div className="flex items-center gap-3">
-                                        <Checkbox id={`todo-${item.id}`} checked={item.completed} onCheckedChange={() => handleToggle(item.id, item.completed)} />
-                                        <label
-                                            htmlFor={`todo-${item.id}`}
-                                            className="flex-1 text-sm font-medium cursor-pointer"
-                                        >
-                                            {item.text}
-                                        </label>
-                                    </div>
-                                </Card>
-                            ))}
-                            {incompleteTasks.length === 0 && (
-                                <div className="text-center text-muted-foreground pt-16">
-                                    <p>No pending tasks. Great job!</p>
-                                </div>
-                            )}
-                        </div>
-                    </TabsContent>
-                    <TabsContent value="completed">
-                         <div className="h-[60vh] sm:h-[400px] overflow-y-auto pr-2 space-y-3 mt-4">
-                            {completedTasks.map(item => (
-                                <Card key={item.id} className="p-3 bg-muted/50">
-                                    <div className="flex items-center gap-3">
-                                        <Checkbox id={`todo-${item.id}`} checked={item.completed} onCheckedChange={() => handleToggle(item.id, item.completed)} />
-                                        <label
-                                            htmlFor={`todo-${item.id}`}
-                                            className="flex-1 text-sm font-medium cursor-pointer text-muted-foreground line-through"
-                                        >
-                                            {item.text}
-                                        </label>
-                                    </div>
-                                </Card>
-                            ))}
-                             {completedTasks.length === 0 && (
-                                <div className="text-center text-muted-foreground pt-16">
-                                    <p>No tasks completed yet.</p>
-                                </div>
-                            )}
-                        </div>
-                    </TabsContent>
-                </Tabs>
-                
-                 <DialogFooter className="pt-4">
-                    {isAdding ? (
-                        <div className="flex w-full gap-2">
-                            <Input 
-                                placeholder="Add a new task..." 
-                                value={newTaskText} 
-                                onChange={(e) => setNewTaskText(e.target.value)}
-                                onKeyDown={(e) => { if(e.key === 'Enter') handleAddTask() }}
-                                autoFocus
-                            />
-                            <Button onClick={handleAddTask}>Add</Button>
-                            <Button variant="ghost" size="icon" onClick={() => setIsAdding(false)}><X className="h-4 w-4"/></Button>
-                        </div>
-                    ) : (
-                        <Button variant="outline" className="w-full" onClick={() => setIsAdding(true)}>
-                            <Plus className="mr-2 h-4 w-4" /> Add New Task
-                        </Button>
-                    )}
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
-    )
-}
-
 function GettingStartedList({ activity, onDataRefresh }: { activity: StoredActivity[], onDataRefresh: () => void }) {
     const { user } = useAuth();
     const router = useRouter();
@@ -558,7 +414,17 @@ function DashboardLayoutContent({
         </SidebarContent>
         <SidebarFooter>
            <div className="p-2 space-y-2">
-            <TodoListPopup todos={userData.todos || []} userId={user.uid} onDataRefresh={fetchUserData} />
+                <Link href="/dashboard/todos" className="group cursor-pointer rounded-lg bg-gradient-to-br from-primary/10 to-background border border-primary/20 p-4 text-left hover:border-primary transition-all block">
+                     <div className="flex items-start gap-4">
+                         <div className="rounded-lg bg-primary/10 p-3 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+                            <ListChecks className="h-6 w-6" />
+                        </div>
+                        <div>
+                            <p className="font-semibold text-foreground">My To-Do List</p>
+                            <p className="text-xs text-muted-foreground">Stay on track with your prep</p>
+                        </div>
+                    </div>
+                </Link>
             
             {isFreePlan ? (
                  <Button asChild className="w-full bg-gradient-to-r from-purple-500 to-blue-500 text-white hover:from-purple-600 hover:to-blue-600 shadow-lg">
