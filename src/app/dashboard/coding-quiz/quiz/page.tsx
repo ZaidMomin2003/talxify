@@ -46,7 +46,7 @@ export default function CodingQuizPage() {
     }
     setIsLoading(true);
 
-    const usageCheck = await checkAndIncrementUsage(user.uid);
+    const usageCheck = await checkAndIncrementUsage(user.uid, 'codingQuiz');
     if (!usageCheck.success) {
         toast({ title: "Usage Limit Reached", description: usageCheck.message, variant: "destructive" });
         router.push('/dashboard/pricing');
