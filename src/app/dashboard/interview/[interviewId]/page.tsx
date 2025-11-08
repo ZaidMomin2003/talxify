@@ -2,7 +2,7 @@
 
 'use client';
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams, useRouter, useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Mic, MicOff, Video, VideoOff, Phone, BrainCircuit, Loader2, Play } from 'lucide-react';
@@ -15,6 +15,7 @@ import { cn } from '@/lib/utils';
 import { GoogleGenAI, LiveServerMessage, Modality, Session } from '@google/genai';
 import { createBlob, decode, decodeAudioData } from '@/lib/utils';
 import { extractIcebreakerInfo } from '@/ai/flows/extract-icebreaker-info';
+import { interviewerPersonalities } from '@/lib/interviewer-personalities';
 
 
 // --- Sub-components for better structure ---
@@ -36,7 +37,7 @@ const InterviewHeader = ({ status, elapsedTime }: { status: string; elapsedTime:
   );
 };
 
-const AIPanel = ({ isInterviewing }: { isInterviewing: boolean; }) => {
+const AIPanel = ({ characterName, isInterviewing }: { characterName: string, isInterviewing: boolean; }) => {
   return (
     <div className="relative flex flex-col items-center justify-center w-full h-full bg-muted/20 rounded-2xl overflow-hidden border">
        <div className="absolute inset-0 bg-dot-pattern opacity-10"/>
@@ -50,7 +51,7 @@ const AIPanel = ({ isInterviewing }: { isInterviewing: boolean; }) => {
           <AvatarFallback>AI</AvatarFallback>
         </Avatar>
       </div>
-      <p className="mt-6 text-2xl font-bold font-headline text-foreground">Mark</p>
+      <p className="mt-6 text-2xl font-bold font-headline text-foreground">{characterName}</p>
       <p className="text-muted-foreground">AI Interviewer</p>
     </div>
   );
@@ -112,6 +113,11 @@ export default function LiveInterviewPage() {
   const { user } = useAuth();
   const { toast } = useToast();
 
+  const character = useMemo(() => {
+    const charId = searchParams.get('character') || interviewerPersonalities[0].id;
+    return interviewerPersonalities.find(p => p.id === charId) || interviewerPersonalities[0];
+  }, [searchParams]);
+
   const [isInterviewing, setIsInterviewing] = useState(false);
   const [status, setStatus] = useState('Initializing...');
   const [isMuted, setIsMuted] = useState(false);
@@ -139,22 +145,25 @@ export default function LiveInterviewPage() {
     const role = searchParams.get('role') || 'Software Engineer';
     const company = searchParams.get('company') || undefined;
 
-    if (name) {
-      let instruction = `You are Mark, an expert interviewer. Continue the interview with ${name}. Ask your next question about ${topic} for the ${role} role. Your speech should be concise. Do not repeat questions.`;
-      if (company) {
-        instruction += ` Keep the ${company} company style in mind.`
-      }
-      return instruction;
-    }
+    let baseInstruction = character.systemInstruction;
     
-    // Initial icebreaker prompt
-    let systemInstruction = `You are Mark, an expert technical interviewer at Talxify. Your first task is to start the interview with a friendly icebreaker. Ask the candidate to introduce themselves. Specifically ask for their name, where they are from, their college, and a few of their skills and hobbies. Keep your introduction very brief and direct. Your speech should be concise.`;
-    return systemInstruction;
-  }, [searchParams]);
+    // Initial icebreaker prompt is now implicitly handled by the character's base instruction
+    if (topic.toLowerCase().includes('icebreaker')) {
+         return `${baseInstruction} Your first task is to start the interview with a friendly icebreaker. Ask the candidate to introduce themselves. Specifically ask for their name, where they are from, their college, and a few of their skills and hobbies. Keep your introduction very brief and direct.`;
+    }
+
+    // After icebreaker
+    let instruction = `${baseInstruction} You are continuing an interview with ${name || 'the candidate'}. Ask your next question about ${topic} for the ${role} role. Your speech should be concise. Do not repeat questions.`;
+    if (company) {
+        instruction += ` Keep the ${company} company style in mind.`
+    }
+    return instruction;
+  }, [searchParams, character]);
 
   const handleTurnComplete = useCallback(async () => {
     // This block runs after the user has finished speaking their first turn (the introduction).
-    if (transcriptRef.current.length === 2 && !candidateName.current) {
+    const topic = searchParams.get('topic') || '';
+    if (topic.toLowerCase().includes('icebreaker') && transcriptRef.current.length === 2 && !candidateName.current) {
         setStatus("Analyzing introduction...");
         const userIntroText = transcriptRef.current.find(t => t.speaker === 'user')?.text || '';
         
@@ -173,7 +182,7 @@ export default function LiveInterviewPage() {
         await session?.reinitialize({ systemInstruction: getSystemInstruction(candidateName.current) });
     }
     setStatus("🔴 Your turn... Speak now.");
-  }, [getSystemInstruction, session, toast, user]);
+  }, [getSystemInstruction, session, toast, user, searchParams]);
 
     useEffect(() => {
         const AudioContext = (window as any).AudioContext || (window as any).webkitAudioContext;
@@ -236,7 +245,7 @@ export default function LiveInterviewPage() {
 
                             if (message.serverContent?.outputTranscription) {
                                 const newText = message.serverContent.outputTranscription.text;
-                                setStatus("Mark is speaking...");
+                                setStatus(`Mark is speaking...`);
                                 if (lastEntry?.speaker === 'ai' && message.serverContent.outputTranscription.partial) {
                                     // This is a partial update to the AI's speech, we don't add to transcript yet.
                                 } else if (lastEntry?.speaker === 'ai' && !message.serverContent.outputTranscription.partial) {
@@ -274,7 +283,7 @@ export default function LiveInterviewPage() {
                     },
                     config: {
                         responseModalities: [Modality.AUDIO],
-                        speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Algenib' } } },
+                        speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: character.voiceName } } },
                         inputAudioTranscription: {},
                         outputAudioTranscription: {},
                         systemInstruction: getSystemInstruction(),
@@ -298,7 +307,7 @@ export default function LiveInterviewPage() {
             if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
         };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [character]);
 
 
   const startInterview = useCallback(async () => {
@@ -442,7 +451,7 @@ export default function LiveInterviewPage() {
         <div className="absolute inset-0 thermal-gradient-bg z-0"/>
         <InterviewHeader status={status} elapsedTime={elapsedTime}/>
         <main className="flex-1 relative z-10 flex items-center justify-center">
-            <AIPanel isInterviewing={isInterviewing} />
+            <AIPanel characterName={character.name} isInterviewing={isInterviewing} />
              {!isInterviewing && (
                 <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30">
                     <Button onClick={startInterview} size="lg" className="h-16 rounded-full px-8" disabled={status !== 'Ready to start' || isInterviewing}>

@@ -5,11 +5,12 @@ import React, { useState } from 'react';
 import { useSearchParams, useParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ShieldCheck, MessageSquare, Bot, ArrowRight, Video, Building, BarChartHorizontal, Sparkles, Wifi, Loader2 } from 'lucide-react';
+import { ShieldCheck, MessageSquare, Bot, ArrowRight, Video, Building, Sparkles, Wifi, Loader2, User } from 'lucide-react';
 import Link from 'next/link';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { interviewerPersonalities, type InterviewerPersonality } from '@/lib/interviewer-personalities';
 
 export default function InterviewInstructionsPage() {
     const searchParams = useSearchParams();
@@ -22,7 +23,7 @@ export default function InterviewInstructionsPage() {
     const level = searchParams.get('level');
     
     const [company, setCompany] = useState(searchParams.get('company') || '');
-    const [difficulty, setDifficulty] = useState('moderate');
+    const [characterId, setCharacterId] = useState<string>(interviewerPersonalities[0].id);
     const [isNavigating, setIsNavigating] = useState(false);
 
     const handleStart = () => {
@@ -32,7 +33,7 @@ export default function InterviewInstructionsPage() {
             role: role || '',
             level: level || '',
             company,
-            difficulty,
+            character: characterId,
         });
         router.push(`/dashboard/interview/${interviewId}?${startUrl.toString()}`);
     }
@@ -47,7 +48,7 @@ export default function InterviewInstructionsPage() {
                         </div>
                         <CardTitle className="font-headline text-4xl font-bold">Mock Interview Instructions</CardTitle>
                         <CardDescription className="text-lg">
-                            You're about to start a mock interview with Mark, our AI interviewer.
+                            You're about to start a mock interview with one of our AI interviewers.
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-8 px-8 py-6">
@@ -64,15 +65,17 @@ export default function InterviewInstructionsPage() {
                                     <Input id="company" placeholder="e.g., Google, Amazon" value={company} onChange={(e) => setCompany(e.target.value)} />
                                 </div>
                                 <div>
-                                     <Label htmlFor="difficulty" className="flex items-center gap-2 mb-2"><BarChartHorizontal className="w-4 h-4"/> Difficulty</Label>
-                                     <Select value={difficulty} onValueChange={setDifficulty}>
-                                        <SelectTrigger id="difficulty">
-                                            <SelectValue placeholder="Select difficulty" />
+                                     <Label htmlFor="character" className="flex items-center gap-2 mb-2"><User className="w-4 h-4"/> Interviewer Character</Label>
+                                     <Select value={characterId} onValueChange={setCharacterId}>
+                                        <SelectTrigger id="character">
+                                            <SelectValue placeholder="Select a character" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="easy">Easy</SelectItem>
-                                            <SelectItem value="moderate">Moderate</SelectItem>
-                                            <SelectItem value="difficult">Difficult</SelectItem>
+                                            {interviewerPersonalities.map(char => (
+                                                <SelectItem key={char.id} value={char.id}>
+                                                    {char.name} - {char.description} ({char.gender})
+                                                </SelectItem>
+                                            ))}
                                         </SelectContent>
                                     </Select>
                                 </div>
@@ -88,7 +91,7 @@ export default function InterviewInstructionsPage() {
                                     </div>
                                     <div>
                                         <h3 className="font-semibold">Conversational AI</h3>
-                                        <p className="text-muted-foreground text-sm">Mark will ask you technical and behavioral questions just like a real interviewer.</p>
+                                        <p className="text-muted-foreground text-sm">The AI will ask you technical and behavioral questions just like a real interviewer.</p>
                                     </div>
                                 </div>
                                 <div className="flex items-start gap-4">
