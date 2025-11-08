@@ -366,7 +366,8 @@ export default function LiveInterviewPage() {
         setElapsedTime(0);
         timerIntervalRef.current = setInterval(() => setElapsedTime(prev => prev + 1), 1000);
         
-        setStatus("🔴 Your turn... Speak now.");
+        // This is now handled by the AI's system instruction to speak first
+        // setStatus("🔴 Your turn... Speak now.");
 
     } catch (err: any) {
         setStatus(`Error starting interview: ${err.message}`);
