@@ -58,8 +58,16 @@ Difficulty: {{difficulty}}
 Here is an example of a good, well-defined question: "{{example}}"
 {{/if}}
 
-Each question you generate must be a clear, self-contained problem that a developer can solve in {{language}}. Ensure you generate the exact number of questions requested.
-IMPORTANT: Format the entire question text as a valid HTML string. Use tags like <strong> for bold text, <ul> and <li> for lists, and <code> for inline code. For multi-line code blocks, wrap the code in <pre><code>...</code></pre> tags. This HTML will be rendered directly in the browser.
+Each question you generate must be a clear, self-contained problem that a developer can solve in {{language}}.
+IMPORTANT: Your entire response for each question must be formatted as a single, valid HTML string.
+- Use tags like <strong> for bold text, <ul> and <li> for lists, and <code> for inline code.
+- For multi-line code blocks, you MUST wrap the code in <pre><code>...</code></pre> tags.
+
+Here is an example of the required HTML formatting for a question:
+<p>Write a function <code>myFunction(arr)</code> that takes an array of numbers and returns a new array with only the even numbers.</p><strong>Example:</strong><pre><code>const numbers = [1, 2, 3, 4, 5];
+const evens = myFunction(numbers);
+console.log(evens); // Output: [2, 4]</code></pre>
+Follow this formatting structure precisely.
 `,
 });
 
