@@ -140,25 +140,26 @@ export default function LiveInterviewPage() {
   const audioBufferSources = useRef(new Set<AudioBufferSourceNode>());
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
   
-  const getSystemInstruction = useCallback((name: string | null = null) => {
+  const getSystemInstruction = useCallback((stage: 'icebreaker' | 'main' = 'icebreaker', userName: string | null = null, skills: string[] = []) => {
     const topic = searchParams.get('topic') || 'general software engineering';
     const role = searchParams.get('role') || 'Software Engineer';
     const company = searchParams.get('company') || undefined;
 
     let baseInstruction = character.systemInstruction;
+    const candidateDisplayName = userName || user?.displayName || 'Candidate';
     
-    const candidateDisplayName = name || user?.displayName || 'Candidate';
-    
-    // Initial icebreaker prompt is now implicitly handled by the character's base instruction
-    if (topic.toLowerCase().includes('icebreaker')) {
-         return `${baseInstruction} You must speak first. Your first task is to start the interview with a friendly icebreaker. Start by saying "Hello, ${candidateDisplayName}" and then ask the candidate to introduce themselves. Specifically ask for their name, where they are from, their college, and a few of their skills and hobbies. Keep your introduction very brief and direct.`;
+    if (stage === 'icebreaker') {
+        return `${baseInstruction} You MUST speak first. Your first task is to start the interview with a friendly icebreaker. Start by saying "Hello, ${candidateDisplayName}" and then ask the candidate to briefly introduce themselves, including their name, skills, and hobbies. Keep your introduction very brief and direct.`;
     }
 
     // After icebreaker
-    let instruction = `${baseInstruction} You must speak first. You are continuing an interview with ${candidateDisplayName}. Start by saying "Hello, ${candidateDisplayName}" and then ask your next question about ${topic} for the ${role} role. Your speech should be concise. Do not repeat questions.`;
-    if (company) {
-        instruction += ` Keep the ${company} company style in mind.`
-    }
+    const skillText = skills.length > 0 ? `The candidate mentioned skills in: ${skills.join(', ')}.` : '';
+    let instruction = `${baseInstruction} You are continuing an interview with ${candidateDisplayName}. ${skillText} You must follow this multi-stage interview format precisely:
+1.  **Skill Follow-up (1 question):** Ask one simple, open-ended question related to their stated skills.
+2.  **Behavioral Section (2 questions):** Ask two linked behavioral questions (e.g., "Tell me about a difficult project," followed by "How did you handle disagreements with your team on that project?"). After each user response, provide a brief, natural conversational comment like "Thanks for sharing that" or "That's an interesting approach" before asking the next question.
+3.  **Technical Section (2 questions):** Present two situational technical problems (e.g., "Imagine our user database is slow. How would you diagnose the issue?").
+4.  **Conclusion (1 response):** After the final technical question, you must end the interview. Provide a brief, encouraging verbal summary of their performance. Mention one specific strength you observed and one area for improvement. Do not ask any more questions. End by saying "That's all the questions I have for you. Thank you for your time."`;
+
     return instruction;
   }, [searchParams, character, user]);
 
@@ -171,17 +172,23 @@ export default function LiveInterviewPage() {
         
         if (userIntroText) {
             const icebreakerData = await extractIcebreakerInfo(userIntroText);
-            if (icebreakerData.isIcebreaker && icebreakerData.name) {
-                candidateName.current = icebreakerData.name;
-                toast({ title: `Nice to meet you, ${icebreakerData.name}!` });
-                 if(user) {
+            if (icebreakerData.isIcebreaker) {
+                if(icebreakerData.name) {
+                    candidateName.current = icebreakerData.name;
+                    toast({ title: `Nice to meet you, ${icebreakerData.name}!` });
+                }
+                if(user) {
                   await updateUserFromIcebreaker(user.uid, icebreakerData);
                 }
+                // Re-initialize session with the main interview flow
+                await session?.reinitialize({ systemInstruction: getSystemInstruction('main', icebreakerData.name, icebreakerData.skills || []) });
+                return; // Return early to let the re-initialized session take over
             }
         }
         
-        // Re-initialize session with the new context
-        await session?.reinitialize({ systemInstruction: getSystemInstruction(candidateName.current) });
+        // Fallback if icebreaker extraction fails
+        await session?.reinitialize({ systemInstruction: getSystemInstruction('main', null, []) });
+
     }
     setStatus("🔴 Your turn... Speak now.");
   }, [getSystemInstruction, session, toast, user, searchParams]);
@@ -364,7 +371,7 @@ export default function LiveInterviewPage() {
         
         setIsInterviewing(true);
         setElapsedTime(0);
-        timerIntervalRef.current = setInterval(() => setElapsedTime(prev => prev + 1), 1000);
+        timerIntervalRef.current = setInterval(() => setElapsedTime(prev => prev + 1000), 1000);
         
         // This is now handled by the AI's system instruction to speak first
         // setStatus("🔴 Your turn... Speak now.");
