@@ -320,8 +320,8 @@ export default function LiveInterviewPage() {
 
 
   const startInterview = useCallback(async () => {
-    if (isInterviewing || !session || status !== 'Ready to start') {
-        toast({ title: 'Not Ready', description: `Cannot start interview. Current status: ${status}`, variant: 'destructive' });
+    if (isInterviewing || !session) {
+        toast({ title: 'Not Ready', description: `Cannot start interview. Session not established.`, variant: 'destructive' });
         return;
     }
     if (!user) {
@@ -371,7 +371,7 @@ export default function LiveInterviewPage() {
         
         setIsInterviewing(true);
         setElapsedTime(0);
-        timerIntervalRef.current = setInterval(() => setElapsedTime(prev => prev + 1000), 1000);
+        timerIntervalRef.current = setInterval(() => setElapsedTime(prev => prev + 1), 1000);
         
         // This is now handled by the AI's system instruction to speak first
         // setStatus("🔴 Your turn... Speak now.");
@@ -380,7 +380,7 @@ export default function LiveInterviewPage() {
         setStatus(`Error starting interview: ${err.message}`);
         console.error('Error starting interview:', err);
     }
-  }, [session, user, toast, router, isInterviewing, status]);
+  }, [session, user, toast, router, isInterviewing]);
 
   const endSession = useCallback(async (shouldNavigate = true) => {
     if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
@@ -464,9 +464,9 @@ export default function LiveInterviewPage() {
             <AIPanel characterName={character.name} isInterviewing={isInterviewing} />
              {!isInterviewing && (
                 <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30">
-                    <Button onClick={startInterview} size="lg" className="h-16 rounded-full px-8" disabled={status !== 'Ready to start' || isInterviewing}>
-                        {status !== 'Ready to start' ? <Loader2 className="mr-3 h-6 w-6 animate-spin"/> : <Play className="mr-3 h-6 w-6"/>}
-                        {status !== 'Ready to start' ? status : 'Start Interview'}
+                    <Button onClick={startInterview} size="lg" className="h-16 rounded-full px-8" disabled={!session || isInterviewing}>
+                        {!session ? <Loader2 className="mr-3 h-6 w-6 animate-spin"/> : <Play className="mr-3 h-6 w-6"/>}
+                        {!session ? status : 'Start Interview'}
                     </Button>
                 </div>
             )}
