@@ -282,7 +282,7 @@ export default function CodingQuizPage() {
           <CardContent>
             <Textarea
               placeholder="Write your code here..."
-              className="min-h-[300px] font-code text-sm"
+              className="min-h-[300px] font-mono text-sm"
               value={userAnswers[currentQuestionIndex]}
               onChange={handleAnswerChange}
             />

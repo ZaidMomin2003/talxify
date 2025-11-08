@@ -11,18 +11,21 @@ import { useRouter } from 'next/navigation';
 import type { CodingQuestion } from '@/ai/flows/generate-coding-questions';
 
 const demoQuestion: CodingQuestion = {
-    questionText: `You are given a function \`findDuplicates(nums)\` that takes an array of integers \`nums\` as input. Each integer in the array is between 1 and n (inclusive), where n is the length of the array. Each integer appears once or twice.
-
-Your task is to write the body of the function to return an array of all the integers that appear twice.
-
-**Example:**
-*   **Input:** \`nums = [4,3,2,7,8,2,3,1]\`
-*   **Output:** \`[2,3]\`
-
-**Constraints:**
-*   You must not modify the input array.
-*   Your algorithm should run in O(n) time complexity.
-*   Your algorithm should use O(1) extra space.`,
+    questionText: `
+        <p>You are given a function <code>findDuplicates(nums)</code> that takes an array of integers <code>nums</code> as input. Each integer in the array is between 1 and n (inclusive), where n is the length of the array. Each integer appears once or twice.</p>
+        <p>Your task is to write the body of the function to return an array of all the integers that appear twice.</p>
+        <strong>Example:</strong>
+        <ul>
+            <li><strong>Input:</strong> <code>nums = [4,3,2,7,8,2,3,1]</code></li>
+            <li><strong>Output:</strong> <code>[2,3]</code></li>
+        </ul>
+        <strong>Constraints:</strong>
+        <ul>
+            <li>You must not modify the input array.</li>
+            <li>Your algorithm should run in O(n) time complexity.</li>
+            <li>Your algorithm should use O(1) extra space.</li>
+        </ul>
+    `,
 };
 
 
@@ -48,7 +51,7 @@ export default function CodingQuizDemoPage() {
           <CardHeader>
             <CardTitle className="text-2xl font-semibold">Question 1</CardTitle>
             <CardDescription className="prose dark:prose-invert max-w-none text-base">
-                <div dangerouslySetInnerHTML={{ __html: demoQuestion.questionText.replace(/\n/g, '<br />') }} />
+                <div dangerouslySetInnerHTML={{ __html: demoQuestion.questionText }} />
             </CardDescription>
           </CardHeader>
           <CardContent>
