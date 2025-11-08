@@ -1,10 +1,9 @@
 
-
 'use client';
 
 import { doc, getDoc, setDoc, updateDoc, arrayUnion, collection, getDocs, addDoc, serverTimestamp, runTransaction, deleteDoc, increment, arrayRemove, Timestamp } from 'firebase/firestore';
 import { db } from './firebase';
-import type { UserData, Portfolio, StoredActivity, OnboardingData, SurveySubmission, IcebreakerData, TodoItem, SubscriptionPlan, UsageType } from './types';
+import type { UserData, Portfolio, StoredActivity, OnboardingData, SurveySubmission, IcebreakerData, TodoItem, SubscriptionPlan, UsageType, ColumnId } from './types';
 import { initialPortfolioData } from './initial-data';
 import { format, differenceInHours, addMonths, addYears } from 'date-fns';
 import { getUserBySlug } from '@/app/zaidmin/actions';
@@ -340,39 +339,16 @@ export const getRetakeCount = async (userId: string, topic: string): Promise<num
 
 
 // --- To-Do List ---
-export const addTodo = async (userId: string, taskText: string): Promise<void> => {
+export const addTodo = async (userId: string, taskText: string, columnId: string): Promise<void> => {
     const userRef = doc(db, 'users', userId);
-    try {
-        await runTransaction(db, async (transaction) => {
-            const userDoc = await transaction.get(userRef);
-            if (!userDoc.exists()) {
-                throw "User document does not exist!";
-            }
-            const userData = userDoc.data();
-            const currentTodos = userData.todos || [];
-
-            const newTodo: TodoItem = {
-                id: doc(collection(db, 'temp')).id, // Firestore-like offline ID generation
-                text: taskText,
-                completed: false,
-                createdAt: new Date().toISOString(), // Use client-side timestamp for immediate consistency
-            };
-
-            const newTodosArray = [...currentTodos, newTodo];
-            transaction.update(userRef, { todos: newTodosArray });
-        });
-    } catch (e) {
-        console.error("Add to-do transaction failed: ", e);
-        // If the transaction fails, it might be because the 'todos' field doesn't exist.
-        // As a fallback, we can try to create it with setDoc and merge.
-        const newTodo: TodoItem = {
-            id: doc(collection(db, 'temp')).id,
-            text: taskText,
-            completed: false,
-            createdAt: new Date().toISOString(),
-        };
-        await setDoc(userRef, { todos: arrayUnion(newTodo) }, { merge: true });
-    }
+    const newTodo: TodoItem = {
+        id: doc(collection(db, 'temp')).id, // Firestore-like offline ID generation
+        text: taskText,
+        completed: false,
+        createdAt: new Date().toISOString(),
+        status: columnId as ColumnId,
+    };
+    await updateDoc(userRef, { todos: arrayUnion(newTodo) });
 };
 
 export const updateTodo = async (userId: string, todoId: string, updates: Partial<Omit<TodoItem, 'id'>>): Promise<void> => {

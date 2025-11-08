@@ -121,11 +121,20 @@ export const IcebreakerDataSchema = z.object({
 });
 export type IcebreakerData = z.infer<typeof IcebreakerDataSchema>;
 
+export type ColumnId = 'todo' | 'inprogress' | 'done';
+
+export interface Column {
+  id: ColumnId;
+  name: string;
+  color: string;
+}
+
 export interface TodoItem {
     id: string;
     text: string;
     completed: boolean;
-    createdAt?: any; // Can be serverTimestamp or string
+    createdAt: string; 
+    status: ColumnId;
 }
 
 
