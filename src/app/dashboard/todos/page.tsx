@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
-import { KanbanProvider, KanbanColumn, KanbanHeader, KanbanCards, KanbanCard, useKanban } from '@/components/ui/kanban';
+import { KanbanProvider, KanbanColumn, KanbanHeader, KanbanCards, KanbanCard } from '@/components/ui/kanban';
 import type { TodoItem, Column } from '@/lib/types';
 import { useAuth } from '@/context/auth-context';
 import { addTodo, getUserData, updateTodo } from '@/lib/firebase-service';
@@ -158,7 +158,7 @@ export default function TodosPage() {
                 </CardDescription>
             </CardHeader>
             <div className="mt-6">
-                <ScrollArea className="w-full whitespace-nowrap">
+                <ScrollArea className="w-full whitespace-nowrap rounded-lg border">
                     <KanbanProvider columns={initialColumns} tasks={tasks} onTasksChange={handleTasksChange} renderCard={(task) => <TaskCard task={task as TodoItem} />}>
                         {initialColumns.map(column => (
                              <KanbanColumn key={column.id} column={column}>
