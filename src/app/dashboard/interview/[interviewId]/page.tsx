@@ -147,18 +147,20 @@ export default function LiveInterviewPage() {
 
     let baseInstruction = character.systemInstruction;
     
+    const candidateDisplayName = name || user?.displayName || 'Candidate';
+    
     // Initial icebreaker prompt is now implicitly handled by the character's base instruction
     if (topic.toLowerCase().includes('icebreaker')) {
-         return `${baseInstruction} Your first task is to start the interview with a friendly icebreaker. Ask the candidate to introduce themselves. Specifically ask for their name, where they are from, their college, and a few of their skills and hobbies. Keep your introduction very brief and direct.`;
+         return `${baseInstruction} You must speak first. Your first task is to start the interview with a friendly icebreaker. Start by saying "Hello, ${candidateDisplayName}" and then ask the candidate to introduce themselves. Specifically ask for their name, where they are from, their college, and a few of their skills and hobbies. Keep your introduction very brief and direct.`;
     }
 
     // After icebreaker
-    let instruction = `${baseInstruction} You are continuing an interview with ${name || 'the candidate'}. Ask your next question about ${topic} for the ${role} role. Your speech should be concise. Do not repeat questions.`;
+    let instruction = `${baseInstruction} You must speak first. You are continuing an interview with ${candidateDisplayName}. Start by saying "Hello, ${candidateDisplayName}" and then ask your next question about ${topic} for the ${role} role. Your speech should be concise. Do not repeat questions.`;
     if (company) {
         instruction += ` Keep the ${company} company style in mind.`
     }
     return instruction;
-  }, [searchParams, character]);
+  }, [searchParams, character, user]);
 
   const handleTurnComplete = useCallback(async () => {
     // This block runs after the user has finished speaking their first turn (the introduction).
@@ -245,7 +247,7 @@ export default function LiveInterviewPage() {
 
                             if (message.serverContent?.outputTranscription) {
                                 const newText = message.serverContent.outputTranscription.text;
-                                setStatus(`Mark is speaking...`);
+                                setStatus(`${character.name} is speaking...`);
                                 if (lastEntry?.speaker === 'ai' && message.serverContent.outputTranscription.partial) {
                                     // This is a partial update to the AI's speech, we don't add to transcript yet.
                                 } else if (lastEntry?.speaker === 'ai' && !message.serverContent.outputTranscription.partial) {
