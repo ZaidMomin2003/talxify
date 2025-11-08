@@ -4,9 +4,9 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Textarea } from '@/components/ui/textarea';
+import CodeEditor from '@/components/ui/code-editor';
 import { Progress } from '@/components/ui/progress';
-import { AlertTriangle, ChevronLeft } from 'lucide-react';
+import { ChevronLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import type { CodingQuestion } from '@/ai/flows/generate-coding-questions';
 
@@ -31,7 +31,7 @@ const demoQuestion: CodingQuestion = {
 
 export default function CodingQuizDemoPage() {
   const router = useRouter();
-  const [userAnswer, setUserAnswer] = useState('');
+  const [userAnswer, setUserAnswer] = useState('// Your code here');
 
   return (
     <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
@@ -55,11 +55,10 @@ export default function CodingQuizDemoPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Textarea
-              placeholder="Write your JavaScript code here..."
-              className="min-h-[300px] font-mono text-sm"
-              value={userAnswer}
-              onChange={(e) => setUserAnswer(e.target.value)}
+            <CodeEditor 
+                value={userAnswer}
+                onChange={(value) => setUserAnswer(value || '')}
+                language="javascript"
             />
           </CardContent>
           <CardFooter className="flex justify-between">

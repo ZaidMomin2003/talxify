@@ -5,7 +5,7 @@ import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Textarea } from '@/components/ui/textarea';
+import CodeEditor from '@/components/ui/code-editor';
 import { generateCodingQuestions, GenerateCodingQuestionsInput, CodingQuestion } from '@/ai/flows/generate-coding-questions';
 import { Progress } from '@/components/ui/progress';
 import { Loader2, AlertTriangle, Save } from 'lucide-react';
@@ -36,6 +36,7 @@ export default function CodingQuizPage() {
   const topics = useMemo(() => searchParams.get('topics') || '', [searchParams]);
   const difficulty = useMemo(() => searchParams.get('difficulty') || 'easy', [searchParams]);
   const numQuestions = useMemo(() => parseInt(searchParams.get('numQuestions') || '3', 10), [searchParams]);
+  const language = useMemo(() => searchParams.get('language') || 'JavaScript', [searchParams]);
   
   const storageKey = `quiz_progress_${topics}_${difficulty}_${numQuestions}`;
 
@@ -66,7 +67,7 @@ export default function CodingQuizPage() {
     try {
       const input: GenerateCodingQuestionsInput = {
         topics: topics,
-        language: 'JavaScript',
+        language: language,
         difficulty: difficulty as any,
         count: numQuestions,
         example: 'Write a function to reverse a string.'
@@ -94,7 +95,7 @@ export default function CodingQuizPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [topics, difficulty, numQuestions, router, toast, user]);
+  }, [topics, difficulty, numQuestions, router, toast, user, language]);
   
   useEffect(() => {
     const savedProgress = localStorage.getItem(storageKey);
@@ -138,9 +139,9 @@ export default function CodingQuizPage() {
     }
   }, [userAnswers, currentQuestionIndex, questions.length, saveProgress]);
 
-  const handleAnswerChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+  const handleAnswerChange = (value: string | undefined) => {
     const newAnswers = [...userAnswers];
-    newAnswers[currentQuestionIndex] = e.target.value;
+    newAnswers[currentQuestionIndex] = value || '';
     setUserAnswers(newAnswers);
   };
 
@@ -276,15 +277,14 @@ export default function CodingQuizPage() {
         </div>
         <Card className="shadow-lg">
           <CardHeader>
-            <CardTitle className="text-2xl font-semibold">Question {currentQuestionIndex + 1}</CardTitle>
+            <CardTitle className="text-xl font-semibold">Question {currentQuestionIndex + 1}</CardTitle>
             <CardDescription className="prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: currentQuestion.questionText }} />
           </CardHeader>
           <CardContent>
-            <Textarea
-              placeholder="Write your code here..."
-              className="min-h-[300px] font-mono text-sm"
-              value={userAnswers[currentQuestionIndex]}
-              onChange={handleAnswerChange}
+             <CodeEditor
+                value={userAnswers[currentQuestionIndex]}
+                onChange={handleAnswerChange}
+                language={language}
             />
           </CardContent>
           <CardFooter className="flex justify-between">

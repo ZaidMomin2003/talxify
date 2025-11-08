@@ -5,7 +5,7 @@ import React, { useEffect, useState, useMemo, useCallback, Suspense, useRef } fr
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Textarea } from '@/components/ui/textarea';
+import CodeEditor from '@/components/ui/code-editor';
 import { generateCodingQuestions, GenerateCodingQuestionsInput, CodingQuestion } from '@/ai/flows/generate-coding-questions';
 import { analyzeCodingAnswers, AnswerAnalysis } from '@/ai/flows/analyze-coding-answers';
 import { Loader2, Sparkles, CheckCircle, XCircle, ChevronLeft, Trophy, Timer } from 'lucide-react';
@@ -115,7 +115,7 @@ function CodingGymComponent() {
 
     // Only check usage on the very first question of a new session
     if (questionCount === 0) {
-        const usageCheck = await checkAndIncrementUsage(user.uid);
+        const usageCheck = await checkAndIncrementUsage(user.uid, 'codingQuiz');
         if (!usageCheck.success) {
             toast({ title: "Usage Limit Reached", description: usageCheck.message, variant: "destructive" });
             router.push('/dashboard/pricing');
@@ -276,14 +276,13 @@ function CodingGymComponent() {
                 <>
                 <CardHeader>
                     <CardTitle className="text-xl font-semibold text-foreground">Question {questionCount}</CardTitle>
-                    <CardDescription className="prose dark:prose-invert max-w-none text-foreground text-lg" dangerouslySetInnerHTML={{ __html: question.questionText }} />
+                    <CardDescription className="prose dark:prose-invert max-w-none text-foreground text-base" dangerouslySetInnerHTML={{ __html: question.questionText }} />
                 </CardHeader>
                 <CardContent className="flex-grow flex flex-col">
-                    <Textarea
-                        placeholder="Write your JavaScript code here..."
-                        className="min-h-[300px] font-mono text-sm flex-grow"
+                     <CodeEditor
                         value={userAnswer}
-                        onChange={(e) => setUserAnswer(e.target.value)}
+                        onChange={(value) => setUserAnswer(value || '')}
+                        language="javascript"
                     />
                 </CardContent>
                 <CardFooter className="flex justify-end">
