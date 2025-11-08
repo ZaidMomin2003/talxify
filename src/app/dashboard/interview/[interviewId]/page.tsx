@@ -149,7 +149,7 @@ export default function LiveInterviewPage() {
     const candidateDisplayName = userName || user?.displayName || 'Candidate';
     
     if (stage === 'icebreaker') {
-        return `${baseInstruction} You MUST speak first. Your first task is to start the interview with a friendly icebreaker. Start by saying "Hello, ${candidateDisplayName}" and then ask the candidate to briefly introduce themselves, including their name, skills, and hobbies. Keep your introduction very brief and direct.`;
+        return `${baseInstruction} Your first task is to start the interview with a friendly icebreaker. You MUST speak first. Start by saying "Hello, ${candidateDisplayName}" and then ask the candidate to briefly introduce themselves, including their name, skills, and hobbies. Keep your introduction very brief and direct.`;
     }
 
     // After icebreaker
@@ -248,13 +248,15 @@ export default function LiveInterviewPage() {
                             if (message.serverContent?.interrupted) stopAllPlayback();
 
                             const audio = message.serverContent?.modelTurn?.parts[0]?.inlineData;
-                            if (audio) playAudio(audio.data);
+                            if (audio) {
+                                playAudio(audio.data);
+                                setStatus(`${character.name} is speaking...`);
+                            }
                             
                             const lastEntry = transcriptRef.current[transcriptRef.current.length - 1];
 
                             if (message.serverContent?.outputTranscription) {
                                 const newText = message.serverContent.outputTranscription.text;
-                                setStatus(`${character.name} is speaking...`);
                                 if (lastEntry?.speaker === 'ai' && message.serverContent.outputTranscription.partial) {
                                     // This is a partial update to the AI's speech, we don't add to transcript yet.
                                 } else if (lastEntry?.speaker === 'ai' && !message.serverContent.outputTranscription.partial) {
@@ -296,7 +298,8 @@ export default function LiveInterviewPage() {
                         inputAudioTranscription: {},
                         outputAudioTranscription: {},
                         systemInstruction: getSystemInstruction(),
-                        contextWindowCompression: { slidingWindow: {} }
+                        contextWindowCompression: { slidingWindow: {} },
+                        temperature: 0.3
                     },
                 });
                 setSession(newSession);
@@ -350,8 +353,6 @@ export default function LiveInterviewPage() {
             userVideoEl.current.play();
         }
 
-        setStatus('Microphone access granted. Connecting...');
-        
         const inputCtx = inputAudioContextRef.current!;
         sourceNodeRef.current = inputCtx.createMediaStreamSource(stream);
 
@@ -460,8 +461,8 @@ export default function LiveInterviewPage() {
             <AIPanel characterName={character.name} isInterviewing={isInterviewing} />
              {!isInterviewing && (
                 <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30">
-                    <Button onClick={startInterview} size="lg" className="h-16 rounded-full px-8" disabled={!session || isInterviewing || status !== 'Ready to start'}>
-                        {!session || status !== 'Ready to start' ? <Loader2 className="mr-3 h-6 w-6 animate-spin"/> : <Play className="mr-3 h-6 w-6"/>}
+                    <Button onClick={startInterview} size="lg" className="h-16 rounded-full px-8" disabled={!session || isInterviewing}>
+                        {!session ? <Loader2 className="mr-3 h-6 w-6 animate-spin"/> : <Play className="mr-3 h-6 w-6"/>}
                         {!session ? 'Connecting...' : (status !== 'Ready to start' ? status : 'Start Interview')}
                     </Button>
                 </div>
@@ -481,5 +482,3 @@ export default function LiveInterviewPage() {
     </div>
   );
 }
-
-    
