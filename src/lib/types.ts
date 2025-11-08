@@ -133,7 +133,7 @@ export interface TodoItem {
     id: string;
     text: string;
     completed: boolean;
-    createdAt: string; 
+    createdAt: any; 
     status: ColumnId;
 }
 

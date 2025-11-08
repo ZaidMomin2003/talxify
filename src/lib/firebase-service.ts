@@ -351,6 +351,12 @@ export const addTodo = async (userId: string, taskText: string, columnId: string
     await updateDoc(userRef, { todos: arrayUnion(newTodo) });
 };
 
+export const updateTodosBatch = async (userId: string, todos: TodoItem[]): Promise<void> => {
+    const userRef = doc(db, 'users', userId);
+    await updateDoc(userRef, { todos: todos });
+};
+
+
 export const updateTodo = async (userId: string, todoId: string, updates: Partial<Omit<TodoItem, 'id'>>): Promise<void> => {
     const userRef = doc(db, 'users', userId);
     const userData = await getUserData(userId);

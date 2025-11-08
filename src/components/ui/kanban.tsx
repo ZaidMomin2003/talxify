@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { createContext, useContext, useMemo, useState, ReactNode, useEffect } from 'react';
+import React, { createContext, useContext, useMemo, useState, ReactNode } from 'react';
 import {
   DndContext,
   closestCorners,
@@ -12,12 +12,13 @@ import {
   useSensor,
   useSensors,
   DragOverlay,
+  Announcements,
+  UniqueIdentifier,
 } from '@dnd-kit/core';
-import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
+import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { PlusCircle, GripVertical } from 'lucide-react';
+import { GripVertical } from 'lucide-react';
 import type { TodoItem, Column } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
@@ -26,9 +27,6 @@ import { cn } from '@/lib/utils';
 interface KanbanContextType {
   columns: Column[];
   tasks: Record<string, TodoItem[]>;
-  onDragEnd: (event: DragEndEvent) => void;
-  onDragOver: (event: DragOverEvent) => void;
-  onDragStart: (event: DragStartEvent) => void;
   activeTask: TodoItem | null;
   renderCard: (task: TodoItem) => ReactNode;
 }
@@ -53,102 +51,93 @@ interface KanbanProviderProps {
 
 export function KanbanProvider({ children, columns, tasks, onTasksChange, renderCard }: KanbanProviderProps) {
   const [activeTask, setActiveTask] = useState<TodoItem | null>(null);
-  const tasksId = useMemo(() => {
-    return Object.values(tasks).flat().map(t => t.id);
-  }, [tasks]);
-
+  
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { distance: 5 },
     })
   );
-  
-  function findColumn(taskId: string) {
-    if (!taskId) return null;
-    for (const [columnId, taskItems] of Object.entries(tasks)) {
-      if (taskItems.some(t => t.id === taskId)) {
-        return columnId;
-      }
-    }
-    return null;
-  }
 
-  function onDragStart(event: DragStartEvent) {
+  const findContainer = (id: UniqueIdentifier) => {
+    if (id in tasks) {
+      return id as string;
+    }
+    return Object.keys(tasks).find((key) => tasks[key].some(item => item.id === id));
+  };
+
+  const onDragStart = (event: DragStartEvent) => {
     const { active } = event;
     const task = Object.values(tasks).flat().find(t => t.id === active.id);
     if (task) {
       setActiveTask(task);
     }
-  }
+  };
 
-  function onDragEnd(event: DragEndEvent) {
+  const onDragOver = (event: DragOverEvent) => {
     const { active, over } = event;
-    if (!over || active.id === over.id) {
-        setActiveTask(null);
-        return;
+    if (!over) return;
+
+    const activeId = active.id;
+    const overId = over.id;
+
+    if (activeId === overId) return;
+
+    const activeContainer = findContainer(activeId);
+    const overContainer = findContainer(overId);
+
+    if (!activeContainer || !overContainer || activeContainer === overContainer) {
+      return;
     }
-    
-    const originalColumnId = findColumn(active.id as string);
-    const newColumnId = findColumn(over.id as string) || over.id as string;
-    
-    if (!originalColumnId || !newColumnId || originalColumnId === newColumnId) {
-        setActiveTask(null);
-        return;
-    }
-    
+
     const newTasks = { ...tasks };
-    const taskToMove = newTasks[originalColumnId].find(t => t.id === active.id);
+    const activeItems = newTasks[activeContainer];
+    const overItems = newTasks[overContainer];
+    const activeIndex = activeItems.findIndex((item) => item.id === activeId);
+    const overIndex = overItems.findIndex((item) => item.id === overId);
 
-    if (taskToMove) {
-        newTasks[originalColumnId] = newTasks[originalColumnId].filter(t => t.id !== active.id);
-        
-        // Find insert position
-        const overTaskIndex = newTasks[newColumnId].findIndex(t => t.id === over.id);
-        
-        if (overTaskIndex !== -1) {
-            newTasks[newColumnId].splice(overTaskIndex, 0, { ...taskToMove, status: newColumnId as Column['id']});
-        } else {
-            // If dropping on a column, not a task, add to the end
-            newTasks[newColumnId].push({ ...taskToMove, status: newColumnId as Column['id']});
-        }
+    const [movedItem] = activeItems.splice(activeIndex, 1);
+    movedItem.status = overContainer as Column['id'];
+    
+    if (overId in newTasks) {
+       overItems.push(movedItem);
+    } else {
+       overItems.splice(overIndex, 0, movedItem);
+    }
+    
+    onTasksChange(newTasks);
+  };
 
+  const onDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over) {
+        setActiveTask(null);
+        return;
+    }
+
+    const activeContainer = findContainer(active.id);
+    const overContainer = findContainer(over.id);
+
+    if (!activeContainer || !overContainer || activeContainer !== overContainer) {
+        setActiveTask(null);
+        return;
+    }
+
+    const activeIndex = tasks[activeContainer].findIndex((task) => task.id === active.id);
+    const overIndex = tasks[overContainer].findIndex((task) => task.id === over.id);
+
+    if (activeIndex !== overIndex) {
+        const newTasks = {
+            ...tasks,
+            [activeContainer]: arrayMove(tasks[activeContainer], activeIndex, overIndex)
+        };
         onTasksChange(newTasks);
     }
-    
     setActiveTask(null);
-  }
-
-  function onDragOver(event: DragOverEvent) {
-    const { active, over } = event;
-    if (!over || active.id === over.id) return;
-    
-    const activeId = active.id as string;
-    const overId = over.id as string;
-
-    const originalColumn = findColumn(activeId);
-    const overColumn = findColumn(overId);
-
-    if (!originalColumn || !overColumn || originalColumn === overColumn) {
-        return;
-    }
-    
-    const newTasks = { ...tasks };
-    const taskToMove = newTasks[originalColumn].find(t => t.id === activeId);
-
-    if (taskToMove) {
-        newTasks[originalColumn] = newTasks[originalColumn].filter(t => t.id !== activeId);
-        
-        const overIndex = newTasks[overColumn].findIndex(t => t.id === overId);
-        newTasks[overColumn].splice(overIndex, 0, { ...taskToMove, status: overColumn as Column['id']});
-        
-        onTasksChange(newTasks);
-    }
-  }
-
+  };
 
   return (
     <KanbanContext.Provider value={{ columns, tasks, onDragStart, onDragEnd, onDragOver, activeTask, renderCard }}>
-      <DndContext sensors={sensors} collisionDetection={closestCorners} onDragStart={onDragStart} onDragEnd={onDragEnd} onDragOver={onDragOver}>
+      <DndContext sensors={sensors} collisionDetection={closestCorners} onDragStart={onDragStart} onDragOver={onDragOver} onDragEnd={onDragEnd}>
         <div className="flex gap-6 items-start">
             {children}
         </div>
@@ -172,14 +161,12 @@ export function KanbanColumn({ column, children }: KanbanColumnProps) {
   const columnTasks = tasks[column.id] || [];
   const taskIds = useMemo(() => columnTasks.map(t => t.id), [columnTasks]);
   
-  const { setNodeRef, isOver } = useSortable({ id: column.id, data: { type: 'column' }});
+  const { setNodeRef } = useSortable({ id: column.id, data: { type: 'column' }});
 
   return (
      <div
       ref={setNodeRef}
-      className={cn("inline-flex flex-col w-72 min-w-72 max-w-sm rounded-lg bg-muted/50 border",
-        isOver && "ring-2 ring-primary"
-      )}
+      className="inline-flex flex-col w-72 min-w-72 max-w-sm rounded-lg bg-muted/50 border"
     >
       <SortableContext items={taskIds} strategy={verticalListSortingStrategy}>
         {children}
