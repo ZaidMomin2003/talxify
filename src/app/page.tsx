@@ -58,8 +58,6 @@ export default function LandingPage() {
       <main className="flex-1 relative z-20">
         <AppHero />
         
-        <LandingFeatureSteps />
-        
         {/* Video Section */}
         <section id="see-in-action" className="py-16 sm:py-24 bg-transparent">
             <div className="container mx-auto max-w-7xl px-4 md:px-6 text-center">
@@ -87,6 +85,8 @@ export default function LandingPage() {
                 </div>
             </div>
         </section>
+        
+        <LandingFeatureSteps />
         
         <LandingValueProposition />
         <LandingProductFeatures />
