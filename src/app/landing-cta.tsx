@@ -1,8 +1,9 @@
 
+      
 'use client';
 
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Video } from "lucide-react";
+import { ArrowRight, DollarSign } from "lucide-react";
 import Link from "next/link";
 
 
@@ -43,9 +44,9 @@ export default function LandingCta() {
                 className="rounded-full border-primary-foreground/30 bg-transparent text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"
                 size="lg"
               >
-                <Link href="#see-in-action">
-                    <Video className="mr-2" />
-                  See It In Action
+                <Link href="/salary-calculator">
+                    <DollarSign className="mr-2" />
+                  Calculate Your Salary
                 </Link>
             </Button>
         </div>
@@ -53,3 +54,5 @@ export default function LandingCta() {
     </div>
   );
 }
+
+    
