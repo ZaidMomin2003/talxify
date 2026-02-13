@@ -3,29 +3,36 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams, useRouter, useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Mic, MicOff, Video, VideoOff, Phone, BrainCircuit, Loader2, Play } from 'lucide-react';
+import { Mic, MicOff, Video, VideoOff, Phone, BrainCircuit, Loader2, Play, Radio, Signal, Cpu, Activity, User as UserIcon } from 'lucide-react';
 import { addActivity, checkAndIncrementUsage, updateUserFromIcebreaker } from '@/lib/firebase-service';
 import { useAuth } from '@/context/auth-context';
 import type { InterviewActivity, TranscriptEntry, UsageType } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { GoogleGenAI, LiveServerMessage, Modality, Session } from '@google/genai';
 import { createBlob, decode, decodeAudioData } from '@/lib/utils';
 import { extractIcebreakerInfo } from '@/ai/flows/extract-icebreaker-info';
 import { interviewerPersonalities } from '@/lib/interviewer-personalities';
+import { motion, AnimatePresence } from 'framer-motion';
 
 
 // --- Memoized Sub-components for better performance ---
 const InterviewHeader = React.memo(({ status, isInterviewing }: { status: string; isInterviewing: boolean }) => {
   return (
-    <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20">
-      <div className={cn("flex items-center gap-4 bg-background/50 border rounded-full px-4 py-2 text-sm text-muted-foreground backdrop-blur-sm", status.toLowerCase().includes('error') && 'bg-destructive/20 border-destructive text-destructive-foreground')}>
-        <span className={cn("w-2 h-2 rounded-full", status.toLowerCase().includes('your turn') ? 'bg-red-500 animate-pulse' : (status.toLowerCase().includes('error') ? 'bg-destructive' : 'bg-yellow-500'))} />
-        <span>{status}</span>
+    <motion.div
+      initial={{ y: -20, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      className="absolute top-6 left-6 z-50 flex items-center gap-4"
+    >
+      <div className="flex items-center gap-3 bg-black/40 border border-white/10 rounded-2xl px-4 py-2 backdrop-blur-xl shadow-xl">
+        <div className="relative flex items-center justify-center">
+          <div className={cn("w-2 h-2 rounded-full", status.toLowerCase().includes('your turn') ? 'bg-red-500 animate-pulse' : (status.toLowerCase().includes('error') ? 'bg-destructive' : 'bg-green-500'))} />
+        </div>
+        <span className="text-[11px] font-bold uppercase tracking-wider text-white/90">{status}</span>
         {isInterviewing && <Timer />}
       </div>
-    </div>
+    </motion.div>
   );
 });
 InterviewHeader.displayName = 'InterviewHeader';
@@ -47,26 +54,57 @@ const Timer = React.memo(() => {
     return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
 
-  return <span className="font-mono border-l pl-4 ml-2">{formatTime(elapsedTime)}</span>;
+  return <span className="text-[11px] font-mono text-white/40 border-l border-white/10 pl-3 ml-1">{formatTime(elapsedTime)}</span>;
 });
 Timer.displayName = 'Timer';
 
 const AIPanel = React.memo(({ characterName, isAISpeaking }: { characterName: string, isAISpeaking: boolean; }) => {
   return (
-    <div className="relative flex flex-col items-center justify-center w-full h-full bg-muted/20 rounded-2xl overflow-hidden border">
-      <div className="absolute inset-0 bg-dot-pattern opacity-10" />
-      <div className={cn("relative flex items-center justify-center w-48 h-48 rounded-full transition-all duration-500", isAISpeaking ? 'scale-105' : 'scale-100')}>
-        <div className={cn("absolute inset-0 rounded-full bg-primary/10 transition-all duration-1000", isAISpeaking && 'animate-pulse scale-150')} />
-        <div className={cn("absolute inset-2 rounded-full bg-primary/20 transition-all duration-1500", isAISpeaking && 'animate-pulse scale-125')} />
-        <Avatar className={cn("w-32 h-32 border-4 border-background transition-all duration-300", isAISpeaking && "border-primary/50 shadow-[0_0_20px_rgba(var(--primary),0.3)]")}>
-          <div className="w-full h-full flex items-center justify-center bg-primary/10 text-primary">
-            <BrainCircuit className={cn("w-16 h-16 transition-transform duration-300", isAISpeaking && "scale-110")} />
+    <div className="relative flex flex-col items-center justify-center w-full max-w-4xl h-[70vh] bg-zinc-900/50 rounded-[2.5rem] overflow-hidden border border-white/5 shadow-inner group transition-all duration-500 backdrop-blur-sm">
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/5 to-transparent opacity-20" />
+
+      <div className="relative z-10 flex flex-col items-center gap-8">
+        <div className="relative">
+          <div className={cn(
+            "relative flex items-center justify-center w-56 h-56 rounded-full transition-all duration-700",
+            isAISpeaking ? 'scale-105' : 'scale-100'
+          )}>
+            {/* Soft Glow */}
+            <div className={cn(
+              "absolute inset-0 rounded-full bg-primary/20 blur-3xl transition-all duration-1000",
+              isAISpeaking ? 'opacity-100' : 'opacity-0'
+            )} />
+
+            <Avatar className={cn(
+              "w-full h-full border-4 border-zinc-800 transition-all duration-500",
+              isAISpeaking && "border-primary/40 shadow-[0_0_40px_rgba(var(--primary),0.2)]"
+            )}>
+              <div className="w-full h-full flex items-center justify-center bg-zinc-800 text-white">
+                <BrainCircuit className={cn("w-20 h-20 transition-all duration-500", isAISpeaking ? "text-primary scale-110" : "text-zinc-500")} />
+              </div>
+            </Avatar>
+
+            {/* Speaking Waveform (Simple) */}
+            {isAISpeaking && (
+              <div className="absolute -bottom-4 flex gap-1 h-8 items-center">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <motion.div
+                    key={i}
+                    animate={{ height: [4, 16, 4] }}
+                    transition={{ duration: 0.5, repeat: Infinity, delay: i * 0.1 }}
+                    className="w-1 bg-primary rounded-full"
+                  />
+                ))}
+              </div>
+            )}
           </div>
-          <AvatarFallback>AI</AvatarFallback>
-        </Avatar>
+        </div>
+
+        <div className="text-center space-y-1">
+          <p className="text-3xl font-bold tracking-tight text-white">{characterName}</p>
+          <p className="text-zinc-500 font-medium">Interviewer</p>
+        </div>
       </div>
-      <p className="mt-6 text-2xl font-bold font-headline text-foreground">{characterName}</p>
-      <p className="text-muted-foreground">AI Interviewer</p>
     </div>
   );
 });
@@ -75,7 +113,7 @@ AIPanel.displayName = 'AIPanel';
 const UserVideo = React.memo(({ videoRef, isVideoOn }: { videoRef: React.RefObject<HTMLVideoElement>; isVideoOn: boolean; }) => {
   return (
     <div className={cn(
-      "absolute bottom-6 right-6 w-56 h-56 rounded-full overflow-hidden border-2 border-border bg-black shadow-lg transition-all duration-300",
+      "absolute bottom-24 right-8 w-72 h-44 rounded-2xl overflow-hidden border border-white/10 bg-black shadow-2xl z-40 transition-all duration-500",
       !isVideoOn && "flex items-center justify-center"
     )}>
       <video
@@ -88,11 +126,19 @@ const UserVideo = React.memo(({ videoRef, isVideoOn }: { videoRef: React.RefObje
         )}
       ></video>
       {!isVideoOn && (
-        <div className="flex flex-col items-center text-muted-foreground">
-          <VideoOff className="w-8 h-8" />
-          <p className="text-sm mt-2">Camera is off</p>
+        <div className="flex flex-col items-center gap-2">
+          <Avatar className="w-16 h-16 border-2 border-zinc-800">
+            <div className="w-full h-full flex items-center justify-center bg-zinc-800 text-zinc-500">
+              <UserIcon className="w-8 h-8" />
+            </div>
+          </Avatar>
         </div>
       )}
+
+      {/* Name Tag */}
+      <div className="absolute bottom-3 left-3 px-2 py-1 rounded-lg bg-black/60 backdrop-blur-md border border-white/5 text-[10px] text-white/80 font-medium">
+        You
+      </div>
     </div>
   );
 });
@@ -107,17 +153,40 @@ const ControlBar = React.memo(({ onMuteToggle, onVideoToggle, onEndCall, isMuted
   isSessionLive: boolean;
 }) => {
   return (
-    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex items-center gap-4 rounded-full bg-background/50 border p-3 backdrop-blur-md">
-      <Button onClick={onMuteToggle} size="icon" className="w-14 h-14 rounded-full" variant={isMuted ? 'destructive' : 'secondary'}>
-        {isMuted ? <MicOff /> : <Mic />}
+    <motion.div
+      initial={{ y: 20, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      className="absolute bottom-8 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 backdrop-blur-2xl bg-zinc-900/80 border border-white/10 p-2 rounded-2xl shadow-2xl"
+    >
+      <Button
+        onClick={onMuteToggle}
+        size="icon"
+        variant="ghost"
+        className={cn("w-12 h-12 rounded-xl transition-all", isMuted ? 'bg-red-500/10 text-red-500 hover:bg-red-500/20' : 'text-white hover:bg-white/5')}
+      >
+        {isMuted ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
       </Button>
-      <Button onClick={onVideoToggle} size="icon" className="w-14 h-14 rounded-full" variant={!isVideoOn ? 'destructive' : 'secondary'}>
-        {isVideoOn ? <Video /> : <VideoOff />}
+
+      <Button
+        onClick={onVideoToggle}
+        size="icon"
+        variant="ghost"
+        className={cn("w-12 h-12 rounded-xl transition-all", !isVideoOn ? 'bg-red-500/10 text-red-500 hover:bg-red-500/20' : 'text-white hover:bg-white/5')}
+      >
+        {!isVideoOn ? <VideoOff className="w-5 h-5" /> : <Video className="w-5 h-5" />}
       </Button>
-      <Button onClick={onEndCall} size="icon" className="w-14 h-14 rounded-full bg-red-600 hover:bg-red-700 text-white" disabled={!isSessionLive}>
-        <Phone />
+
+      <div className="w-[1px] h-8 bg-white/10 mx-2" />
+
+      <Button
+        onClick={onEndCall}
+        className="h-12 px-6 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold transition-all shadow-lg"
+        disabled={!isSessionLive}
+      >
+        <Phone className="mr-2 w-4 h-4 fill-current rotate-[135deg]" />
+        Leave Call
       </Button>
-    </div>
+    </motion.div>
   );
 });
 ControlBar.displayName = 'ControlBar';
@@ -368,8 +437,22 @@ export default function LiveInterviewPage() {
 
     setStatus('Requesting device access...');
 
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      const errorMsg = 'Your browser does not support media recording or you are not on a secure connection (HTTPS).';
+      setStatus(`Error: ${errorMsg}`);
+      toast({ title: 'Device Error', description: errorMsg, variant: 'destructive' });
+      return;
+    }
+
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+        video: true
+      });
       mediaStreamRef.current = stream;
 
       if (userVideoEl.current) {
@@ -396,7 +479,23 @@ export default function LiveInterviewPage() {
       setIsInterviewing(true);
 
     } catch (err: any) {
-      setStatus(`Error starting interview: ${err.message}`);
+      let friendlyMessage = err.message || 'Failed to start interview devices.';
+
+      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        friendlyMessage = 'Microphone or camera access denied. Please click the camera icon in your address bar to allow access and refresh.';
+        setStatus('Permission Denied');
+      } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+        friendlyMessage = 'No microphone or camera found. Please connect your devices and try again.';
+        setStatus('Hardware Not Found');
+      } else {
+        setStatus(`Error starting interview: ${err.message}`);
+      }
+
+      toast({
+        title: 'Device Access Error',
+        description: friendlyMessage,
+        variant: 'destructive',
+      });
       console.error('Error starting interview:', err);
     }
   }, [session, user, toast, router, isInterviewing]);
@@ -474,31 +573,61 @@ export default function LiveInterviewPage() {
   }, [isVideoOn])
 
   return (
-    <div className="relative flex flex-col h-screen w-full p-4 sm:p-6 bg-background">
-      <div className="absolute inset-0 thermal-gradient-bg z-0" />
+    <div className="relative flex flex-col h-screen w-full bg-[#0a0a0a] overflow-hidden font-sans">
+      {/* Subtle Background Glow */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-primary/2 blur-[120px] pointer-events-none" />
+
       <InterviewHeader status={status} isInterviewing={isInterviewing} />
-      <main className="flex-1 relative z-10 flex items-center justify-center">
+
+      <main className="flex-1 relative z-10 flex flex-col items-center justify-center p-8">
         <AIPanel characterName={character.name} isAISpeaking={isAISpeaking} />
+
         {!isInterviewing && (
-          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30">
-            <Button onClick={startInterview} size="lg" className="h-16 rounded-full px-8" disabled={!session || isInterviewing}>
-              {!session ? <Loader2 className="mr-3 h-6 w-6 animate-spin" /> : <Play className="mr-3 h-6 w-6" />}
-              {!session ? 'Connecting...' : (status !== 'Ready to start' ? status : 'Start Interview')}
+          <motion.div
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            className="mt-12 z-30 flex flex-col items-center gap-6"
+          >
+            <div className="text-center space-y-2 max-w-md">
+              <h2 className="text-2xl font-bold text-white">Join Interview</h2>
+              <p className="text-zinc-500 text-sm">Review your audio and video settings before joining the meeting.</p>
+            </div>
+
+            <Button
+              onClick={startInterview}
+              size="lg"
+              className="h-14 rounded-xl px-10 bg-primary text-black font-bold text-lg hover:scale-105 transition-all shadow-xl"
+              disabled={!session || isInterviewing}
+            >
+              {!session ? (
+                <>
+                  <Loader2 className="mr-3 h-5 w-5 animate-spin" />
+                  Connecting...
+                </>
+              ) : (
+                'Enter MatchRoom'
+              )}
             </Button>
-          </div>
+          </motion.div>
         )}
       </main>
-      <UserVideo videoRef={userVideoEl} isVideoOn={isVideoOn} />
+
       {isInterviewing && (
-        <ControlBar
-          onMuteToggle={toggleMute}
-          onVideoToggle={toggleVideo}
-          onEndCall={() => endSession()}
-          isMuted={isMuted}
-          isVideoOn={isVideoOn}
-          isSessionLive={isInterviewing}
-        />
+        <UserVideo videoRef={userVideoEl} isVideoOn={isVideoOn} />
       )}
+
+      <AnimatePresence>
+        {isInterviewing && (
+          <ControlBar
+            onMuteToggle={toggleMute}
+            onVideoToggle={toggleVideo}
+            onEndCall={() => endSession()}
+            isMuted={isMuted}
+            isVideoOn={isVideoOn}
+            isSessionLive={isInterviewing}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -73,33 +73,33 @@ export default function InterviewInstructionsPage() {
             >
                 <div className="text-center space-y-4">
                     <motion.div variants={itemVariants} className="inline-flex items-center justify-center p-4 rounded-3xl bg-primary/10 border border-primary/20 mb-2">
-                        <MessageSquare className="h-10 w-10 text-primary" />
+                        <User className="h-10 w-10 text-primary" />
                     </motion.div>
-                    <motion.h1 variants={itemVariants} className="text-4xl md:text-5xl font-black tracking-tight italic uppercase text-white leading-none">
-                        Interview <span className="text-primary">Briefing</span>
+                    <motion.h1 variants={itemVariants} className="text-4xl md:text-5xl font-bold tracking-tight text-white leading-none">
+                        Interview <span className="text-primary">Preparation</span>
                     </motion.h1>
-                    <motion.p variants={itemVariants} className="max-w-2xl mx-auto text-muted-foreground text-lg font-medium">
-                        Synchronizing with AI assessment logic. Treatment as high-stakes industrial evaluation required.
+                    <motion.p variants={itemVariants} className="max-w-2xl mx-auto text-zinc-400 text-lg font-medium">
+                        Configure your assessment environment and interviewer preferences for the upcoming session.
                     </motion.p>
                 </div>
 
                 <motion.div variants={itemVariants}>
-                    <Card className="rounded-[2.5rem] border-white/10 bg-black/40 backdrop-blur-xl shadow-2xl overflow-hidden border">
-                        <CardHeader className="p-8 md:p-10 border-b border-white/5 bg-white/5">
+                    <Card className="rounded-[2rem] border-white/5 bg-zinc-900/50 backdrop-blur-xl shadow-2xl overflow-hidden">
+                        <CardHeader className="p-8 md:p-10 border-b border-white/5 bg-white/[0.02]">
                             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                                 <div>
-                                    <CardTitle className="text-2xl font-black uppercase tracking-tight italic flex items-center gap-3">
+                                    <CardTitle className="text-xl font-bold tracking-tight flex items-center gap-3 text-white">
                                         <Building className="w-6 h-6 text-primary" />
-                                        Deployment Setup
+                                        Assessment Configuration
                                     </CardTitle>
-                                    <CardDescription className="text-base mt-2">Adjust mission parameters for target organization.</CardDescription>
+                                    <CardDescription className="text-sm mt-1 text-zinc-400">Set the context for your interview evaluation.</CardDescription>
                                 </div>
                                 <div className="flex flex-wrap gap-2">
-                                    <Badge variant="secondary" className="h-8 px-4 rounded-lg font-black uppercase text-[10px] tracking-widest bg-white/5 border-white/10">
+                                    <Badge variant="secondary" className="px-3 py-1 rounded-lg font-bold bg-zinc-800 text-zinc-300 border-none">
                                         {topic}
                                     </Badge>
                                     {role && (
-                                        <Badge variant="outline" className="h-8 px-4 rounded-lg font-black uppercase text-[10px] tracking-widest border-primary/30 text-primary">
+                                        <Badge variant="outline" className="px-3 py-1 rounded-lg font-bold border-primary/20 text-primary bg-primary/5">
                                             {role}
                                         </Badge>
                                     )}
@@ -143,42 +143,41 @@ export default function InterviewInstructionsPage() {
                             </div>
 
                             <div className="space-y-6">
-                                <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary flex items-center gap-4">
-                                    <span className="h-px bg-primary/20 flex-1"></span>
-                                    Operational Protocols
-                                    <span className="h-px bg-primary/20 flex-1"></span>
+                                <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500 flex items-center gap-4">
+                                    <span className="h-px bg-white/5 flex-1"></span>
+                                    Guidelines for Success
+                                    <span className="h-px bg-white/5 flex-1"></span>
                                 </h3>
                                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                                     <ProtocolItem
                                         icon={<Bot className="h-5 w-5" />}
-                                        title="AI SYNTHESIS"
-                                        desc="Native neural processing of technical and behavioral responses."
+                                        title="AI EVALUATOR"
+                                        desc="Our AI will evaluate your responses based on industry standards."
                                     />
                                     <ProtocolItem
                                         icon={<Video className="h-5 w-5" />}
-                                        title="OPTIC & AUDIO"
-                                        desc="Live monitoring via camera and mic for full behavioral analysis."
+                                        title="AUDIO & VIDEO"
+                                        desc="Ensure your camera and microphone are properly configured."
                                     />
                                     <ProtocolItem
                                         icon={<Wifi className="h-5 w-5" />}
-                                        title="UPLINK STABILITY"
-                                        desc="Stable connection mandatory. Session interruptions result in termination."
-                                        variant="destructive"
+                                        title="NETWORK"
+                                        desc="A stable internet connection is required for the best experience."
                                     />
                                     <ProtocolItem
                                         icon={<ShieldCheck className="h-5 w-5" />}
-                                        title="ELITE CONDUCT"
-                                        desc="Maintain zero-latency professionalism and structured reasoning."
+                                        title="PROFESSIONALISM"
+                                        desc="Treat this as a real interview with professional conduct."
                                     />
                                     <ProtocolItem
                                         icon={<Sparkles className="h-5 w-5" />}
-                                        title="DETAILED OUTPUT"
-                                        desc="Detailed telemetry required for high-precision performance score."
+                                        title="ANALYTICS"
+                                        desc="Receive a detailed breakdown of your performance after the session."
                                     />
                                     <ProtocolItem
                                         icon={<ArrowRight className="h-5 w-5" />}
-                                        title="READY STATUS"
-                                        desc="Initiate session when operational readiness is confirmed."
+                                        title="NEXT STEPS"
+                                        desc="Click the button below to start your interview assessment."
                                     />
                                 </div>
                             </div>
@@ -188,13 +187,13 @@ export default function InterviewInstructionsPage() {
                                     onClick={handleStart}
                                     size="lg"
                                     disabled={isNavigating}
-                                    className="h-16 px-12 rounded-2xl font-black uppercase tracking-widest text-sm italic shadow-lg shadow-primary/20 group hover:scale-[1.02] active:scale-[0.98] transition-all min-w-[280px]"
+                                    className="h-16 px-12 rounded-xl bg-primary text-black font-bold text-lg hover:scale-[1.02] active:scale-[0.98] transition-all min-w-[280px] shadow-xl"
                                 >
                                     {isNavigating ? (
                                         <Loader2 className="mr-2 h-6 w-6 animate-spin" />
                                     ) : (
                                         <>
-                                            Engage Interview
+                                            Start Interview
                                             <ArrowRight className="ml-3 h-6 w-6 group-hover:translate-x-1 transition-transform" />
                                         </>
                                     )}

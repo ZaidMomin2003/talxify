@@ -10,18 +10,88 @@ import { generateInterviewFeedback } from '@/ai/flows/generate-interview-feedbac
 import { useAuth } from '@/context/auth-context';
 import { getActivity, updateActivity } from '@/lib/firebase-service';
 import type { InterviewActivity, GenerateInterviewFeedbackOutput } from '@/lib/types';
-import { AlertTriangle, BarChart3, Bot, BrainCircuit, Check, CheckCircle, ChevronLeft, Flag, Gauge, Info, Loader2, MessageSquare, Percent, Sparkles, Star, Target, TrendingUp, User as UserIcon } from 'lucide-react';
+import { AlertTriangle, BarChart3, Bot, BrainCircuit, Check, CheckCircle, ChevronLeft, Flag, Gauge, Info, Loader2, MessageSquare, Percent, Sparkles, Star, Target, TrendingUp, User as UserIcon, Activity, Cpu, Terminal, Zap } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
+import { motion } from 'framer-motion';
 
 function ResultsLoader() {
+    const [statusIndex, setStatusIndex] = useState(0);
+    const statuses = [
+        "Analyzing speech patterns...",
+        "Evaluating technical accuracy...",
+        "Processing behavioral responses...",
+        "Measuring conversational fluency...",
+        "Generating final evaluation report..."
+    ];
+
+    useEffect(() => {
+        const timer = setInterval(() => {
+            setStatusIndex((prev) => (prev + 1) % statuses.length);
+        }, 2500);
+        return () => clearInterval(timer);
+    }, []);
+
     return (
-        <div className="flex h-screen w-full flex-col items-center justify-center p-4 text-center">
-            <div className="flex flex-col items-center gap-4">
-                <Loader2 className="h-16 w-16 animate-spin text-primary" />
-                <h2 className="text-2xl font-semibold">Analyzing Your Interview...</h2>
-                <p className="max-w-md text-muted-foreground">Our AI Coach is reviewing your transcript to provide detailed feedback. This might take a moment.</p>
+        <div className="flex h-screen w-full flex-col items-center justify-center p-4 bg-zinc-950 relative overflow-hidden font-sans">
+            {/* Animated Background Layers */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/5 rounded-full blur-[120px] animate-pulse pointer-events-none" />
+            <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.02),transparent)] pointer-events-none" />
+
+            <div className="flex flex-col items-center gap-12 text-center relative z-10">
+                <div className="relative flex items-center justify-center">
+                    {/* Ring Animations */}
+                    <motion.div
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                        className="w-32 h-32 rounded-full border-t-2 border-b-2 border-primary/30"
+                    />
+                    <motion.div
+                        animate={{ rotate: -360 }}
+                        transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                        className="absolute w-24 h-24 rounded-full border-l-2 border-r-2 border-primary/50"
+                    />
+
+                    <div className="absolute flex items-center justify-center">
+                        <BrainCircuit className="h-10 w-10 text-primary animate-pulse" />
+                    </div>
+
+                    {/* Subtle Glow */}
+                    <div className="absolute inset-0 bg-primary/10 blur-3xl animate-pulse" />
+                </div>
+
+                <div className="space-y-4 max-w-xs">
+                    <motion.div
+                        key={statusIndex}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className="h-6"
+                    >
+                        <h2 className="text-xl font-bold text-white tracking-tight">
+                            {statuses[statusIndex]}
+                        </h2>
+                    </motion.div>
+                    <p className="text-zinc-500 text-sm font-medium leading-relaxed">
+                        Please wait while our AI engine compiles your detailed performance metrics and technical audit.
+                    </p>
+                </div>
+
+                {/* Progress Bar (Indeterminate) */}
+                <div className="w-48 h-1 bg-zinc-900 rounded-full overflow-hidden">
+                    <motion.div
+                        animate={{
+                            x: [-192, 192],
+                        }}
+                        transition={{
+                            duration: 1.5,
+                            repeat: Infinity,
+                            ease: "easeInOut"
+                        }}
+                        className="w-full h-full bg-primary"
+                    />
+                </div>
             </div>
         </div>
     )
@@ -29,22 +99,18 @@ function ResultsLoader() {
 
 function ResultsError({ message }: { message: string }) {
     return (
-        <div className="flex h-screen w-full flex-col items-center justify-center p-4">
-            <Card className="max-w-md w-full text-center shadow-lg">
-                <CardHeader>
-                    <div className="mx-auto bg-destructive/10 text-destructive rounded-full p-3 w-fit">
-                        <AlertTriangle className="h-8 w-8" />
-                    </div>
-                    <CardTitle className="text-2xl font-bold">Analysis Failed</CardTitle>
-                    <CardDescription>
-                        {message || "We couldn't find the interview or process the results. Please try again later or return to your dashboard."}
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <Button asChild>
-                        <a href="/dashboard">Back to Dashboard</a>
-                    </Button>
-                </CardContent>
+        <div className="flex h-screen w-full flex-col items-center justify-center p-4 bg-zinc-950">
+            <Card className="max-w-md w-full text-center border-white/5 bg-zinc-900/50 backdrop-blur-xl p-8 rounded-3xl">
+                <div className="mx-auto bg-red-500/10 text-red-500 rounded-2xl p-4 w-fit mb-6">
+                    <AlertTriangle className="h-8 w-8" />
+                </div>
+                <CardTitle className="text-2xl font-bold text-white mb-2">Evaluation Failed</CardTitle>
+                <CardDescription className="text-zinc-400 mb-8">
+                    {message || "We encountered an issue processing your interview results."}
+                </CardDescription>
+                <Button asChild className="w-full h-12 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white border-white/5">
+                    <a href="/dashboard">Return to Dashboard</a>
+                </Button>
             </Card>
         </div>
     );
@@ -52,50 +118,47 @@ function ResultsError({ message }: { message: string }) {
 
 const ScoreGauge = ({ score = 0, label, icon: Icon, color }: { score?: number, label: string, icon: React.ElementType, color: string }) => {
     const validScore = typeof score === 'number' && !isNaN(score) ? score : 0;
-    const circumference = 2 * Math.PI * 45; // 2 * pi * radius
+    const circumference = 2 * Math.PI * 45;
     const offset = circumference - (validScore / 100) * circumference;
-    const gradientId = `gradient-${label.replace(/\s+/g, '-')}`;
 
     return (
-        <Card className={cn("relative flex flex-col items-center justify-center text-center p-6 overflow-hidden border-muted-foreground/10 bg-muted/5 backdrop-blur-sm rounded-[2rem]", color)}>
-            <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-current/5 via-transparent to-transparent opacity-50"></div>
-            <div className="relative w-36 h-36">
-                <svg className="w-full h-full" viewBox="0 0 100 100">
-                    <defs>
-                        <linearGradient id={gradientId} x1="0%" y1="0%" x2="0%" y2="100%">
-                            <stop offset="0%" stopColor="currentColor" />
-                            <stop offset="100%" stopColor="currentColor" stopOpacity={0.5} />
-                        </linearGradient>
-                    </defs>
+        <Card className="relative flex flex-col items-center justify-center text-center p-8 border-white/5 bg-zinc-900/50 backdrop-blur-sm rounded-[2rem] transition-all duration-300 hover:border-white/10 group">
+            <div className="relative w-32 h-32">
+                <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
                     <circle
-                        className="opacity-10"
-                        strokeWidth="8"
+                        className="text-zinc-800"
+                        strokeWidth="6"
                         stroke="currentColor"
                         fill="transparent"
                         r="45"
                         cx="50"
                         cy="50"
                     />
-                    <circle
-                        strokeWidth="8"
-                        strokeDasharray={circumference.toString()}
-                        strokeDashoffset={offset.toString()}
+                    <motion.circle
+                        initial={{ strokeDashoffset: circumference }}
+                        animate={{ strokeDashoffset: offset }}
+                        transition={{ duration: 1.5, ease: "easeOut" }}
+                        strokeWidth="6"
+                        strokeDasharray={circumference}
                         strokeLinecap="round"
-                        stroke={`url(#${gradientId})`}
+                        stroke="currentColor"
+                        className={cn("transition-all duration-500", color)}
                         fill="transparent"
                         r="45"
                         cx="50"
                         cy="50"
-                        transform="rotate(-90 50 50)"
-                        className="transition-all duration-1000 ease-out drop-shadow-[0_0_8px_rgba(var(--primary),0.3)]"
                     />
                 </svg>
+
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <Icon className="w-6 h-6 opacity-60 mb-1" />
-                    <span className="text-4xl font-black tracking-tighter">{Math.round(validScore)}<span className="text-xl opacity-40">%</span></span>
+                    <span className="text-3xl font-bold text-white tracking-tighter">{Math.round(validScore)}%</span>
                 </div>
             </div>
-            <p className="mt-4 text-[10px] uppercase font-black tracking-[0.2em] opacity-60">{label}</p>
+
+            <div className="mt-4 flex flex-col items-center gap-1">
+                <p className="text-xs font-bold text-zinc-500 uppercase tracking-widest">{label}</p>
+                <Icon className={cn("w-4 h-4 opacity-30 group-hover:opacity-60 transition-opacity", color)} />
+            </div>
         </Card>
     );
 };
@@ -182,124 +245,108 @@ export default function InterviewResultsPage() {
     if (error || !analysis || !interview) return <ResultsError message={error || "Could not retrieve analysis."} />;
 
     return (
-        <main className="p-6 lg:p-10 overflow-auto min-h-screen relative">
-            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px] pointer-events-none" />
-            <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-blue-500/5 rounded-full blur-[120px] pointer-events-none" />
+        <main className="p-4 sm:p-8 lg:p-12 overflow-auto min-h-screen relative font-sans bg-zinc-950 text-zinc-300">
+            <div className="absolute top-0 left-0 w-full h-[500px] bg-gradient-to-b from-primary/5 to-transparent pointer-events-none" />
 
-            <div className="max-w-6xl mx-auto space-y-10 relative z-10">
+            <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="max-w-5xl mx-auto space-y-12 relative z-10"
+            >
                 <div className="flex items-center justify-between">
-                    <Button variant="ghost" size="sm" onClick={() => router.push('/dashboard')} className="rounded-xl hover:bg-primary/10 hover:text-primary transition-all">
-                        <ChevronLeft className="mr-2 h-4 w-4" /> Back to Dashboard
+                    <Button variant="ghost" size="sm" onClick={() => router.push('/dashboard')} className="rounded-xl hover:bg-white/5 text-zinc-400 hover:text-white transition-all">
+                        <ChevronLeft className="mr-2 h-4 w-4" /> Exit to Dashboard
                     </Button>
-                    <div className="flex items-center gap-2">
-                        <Sparkles className="h-4 w-4 text-primary animate-pulse" />
-                        <span className="text-[10px] uppercase font-black tracking-widest text-primary/80">AI Analysis Complete</span>
+                    <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-900 border border-white/5 shadow-xl">
+                        <Activity className="h-3 w-3 text-primary" />
+                        <span className="text-[10px] uppercase font-bold tracking-widest text-zinc-400">Official Report</span>
                     </div>
                 </div>
 
                 {/* Header Section */}
-                <div className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-primary via-indigo-600 to-blue-800 p-8 md:p-12 text-primary-foreground shadow-2xl">
-                    <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />
-                    <div className="relative flex flex-col md:flex-row items-center justify-between gap-8">
-                        <div className="space-y-4 text-center md:text-left">
-                            <Badge className="bg-white/20 hover:bg-white/30 text-white border-none py-1 px-4 rounded-full text-xs font-bold tracking-wide">
-                                {interview.details.topic} Simulation
-                            </Badge>
-                            <h1 className="text-4xl md:text-6xl font-black tracking-tighter leading-tight">
-                                Performance <br />Report
-                            </h1>
-                            <p className="text-primary-foreground/70 max-w-md font-medium">
-                                Comprehensive breakdown of your conversational flow and technical accuracy.
-                            </p>
-                        </div>
-                        <div className="flex flex-col items-center justify-center p-8 rounded-[2rem] bg-white/10 backdrop-blur-xl border border-white/20 shadow-inner">
-                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/60 mb-2">Cracking Chance</span>
-                            <div className="flex items-baseline gap-1">
-                                <span className="text-7xl font-black tracking-tighter text-white">{analysis.crackingChance}</span>
-                                <span className="text-2xl font-black text-white/60">%</span>
-                            </div>
-                            <div className="mt-4 flex items-center gap-2 px-3 py-1 rounded-full bg-green-400/20 text-green-300 text-[10px] font-black uppercase tracking-widest border border-green-400/30">
-                                <TrendingUp size={12} />
-                                Technical Proficiency
-                            </div>
-                        </div>
+                <div className="flex flex-col md:flex-row items-center justify-between gap-12 pt-8">
+                    <div className="space-y-6 text-center md:text-left">
+                        <Badge variant="secondary" className="bg-primary/10 text-primary border-none py-1 px-4 rounded-full text-xs font-bold tracking-tight">
+                            {interview.details.topic} Interview Assessment
+                        </Badge>
+                        <h1 className="text-4xl md:text-6xl font-black tracking-tight text-white leading-[1.1]">
+                            Technical Evaluation <br /> <span className="text-zinc-500">Statement.</span>
+                        </h1>
+                        <p className="text-zinc-400 max-w-lg font-medium text-lg leading-relaxed">
+                            This report provides a granular breakdown of your performance, technical expertise, and role compatibility.
+                        </p>
                     </div>
+
+                    <Card className="flex flex-col items-center justify-center p-10 rounded-[2.5rem] bg-zinc-900 border-white/5 shadow-2xl relative">
+                        <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500 mb-2">Overall Score</span>
+                        <div className="flex items-baseline gap-1">
+                            <span className="text-7xl font-black tracking-tighter text-white">{analysis.crackingChance}</span>
+                            <span className="text-2xl font-bold text-primary">%</span>
+                        </div>
+                        <div className="mt-4 flex items-center gap-2 px-4 py-1.5 rounded-full bg-zinc-800 text-zinc-300 text-[10px] font-bold uppercase tracking-widest border border-white/5">
+                            Confidence Index
+                        </div>
+                    </Card>
                 </div>
 
                 {/* Metrics Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                    <ScoreGauge score={analysis.fluencyScore} label="Fluency" icon={MessageSquare} color="bg-blue-500/10 text-blue-500 border-blue-500/20" />
-                    <ScoreGauge score={analysis.knowledgeScore} label="Tech Knowledge" icon={BrainCircuit} color="bg-orange-500/10 text-orange-500 border-orange-500/20" />
-                    <ScoreGauge score={analysis.confidenceScore} label="Confidence" icon={Star} color="bg-pink-500/10 text-pink-500 border-pink-500/20" />
+                    <ScoreGauge score={analysis.fluencyScore} label="Fluency" icon={MessageSquare} color="text-blue-500" />
+                    <ScoreGauge score={analysis.knowledgeScore} label="Domain Expertise" icon={BrainCircuit} color="text-orange-500" />
+                    <ScoreGauge score={analysis.confidenceScore} label="Communication" icon={Star} color="text-pink-500" />
                 </div>
 
                 {/* Summary Card */}
-                <Card className="border-muted-foreground/10 bg-muted/20 backdrop-blur-sm relative overflow-hidden rounded-[2rem]">
-                    <div className="absolute top-0 right-0 p-4 opacity-10">
-                        <Bot size={120} className="text-primary rotate-12" />
-                    </div>
-                    <CardHeader className="p-8 pb-0">
-                        <CardTitle className="text-2xl font-bold flex items-center gap-3">
-                            <div className="p-2.5 rounded-xl bg-primary/10 text-primary">
-                                <TrendingUp className="w-6 h-6" />
-                            </div>
-                            The Action Plan
-                        </CardTitle>
-                        <CardDescription className="text-base">AI-generated strategy for your upcoming real interview.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="p-8">
-                        <p className="text-lg text-foreground/80 leading-relaxed font-medium whitespace-pre-wrap">
+                <Card className="border-white/5 bg-zinc-900/50 backdrop-blur-xl rounded-[2.5rem] p-8 md:p-12">
+                    <div className="flex flex-col gap-6">
+                        <div className="flex items-center gap-3">
+                            <Zap className="w-5 h-5 text-primary" />
+                            <h3 className="text-xl font-bold text-white tracking-tight">Executive Summary</h3>
+                        </div>
+                        <p className="text-lg text-zinc-400 leading-relaxed font-medium whitespace-pre-wrap">
                             {analysis.summary}
                         </p>
-                    </CardContent>
+                    </div>
                 </Card>
 
                 {/* Concepts Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <Card className="border-green-500/10 bg-green-500/5 backdrop-blur-sm rounded-[2rem]">
+                    <Card className="border-white/5 bg-zinc-900/40 rounded-[2.5rem] overflow-hidden">
                         <CardHeader className="p-8 pb-4">
-                            <CardTitle className="text-xl font-bold flex items-center gap-3">
-                                <div className="p-2 rounded-lg bg-green-500/20 text-green-600">
+                            <CardTitle className="text-lg font-bold flex items-center gap-3 text-white tracking-tight">
+                                <div className="p-2 rounded-xl bg-green-500/10 text-green-500">
                                     <CheckCircle className="w-5 h-5" />
                                 </div>
-                                Mastery Indicators
+                                Key Strengths
                             </CardTitle>
                         </CardHeader>
-                        <CardContent className="p-8 pt-0">
-                            <div className="grid gap-3">
+                        <CardContent className="p-8 pt-4">
+                            <div className="flex flex-wrap gap-2">
                                 {(analysis.strongConcepts || []).map((concept, i) => (
-                                    <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-background/40 border border-green-500/10 hover:border-green-500/30 transition-all">
-                                        <div className="h-2 w-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]" />
-                                        <span className="font-bold text-foreground/80 text-sm capitalize">{concept}</span>
-                                    </div>
+                                    <Badge key={i} variant="outline" className="border-white/5 bg-zinc-800 text-zinc-300 py-1.5 px-4 rounded-xl text-xs font-medium">
+                                        {concept}
+                                    </Badge>
                                 ))}
-                                {(!analysis.strongConcepts || analysis.strongConcepts.length === 0) && (
-                                    <p className="text-sm text-muted-foreground italic opacity-60">Consolidating performance data...</p>
-                                )}
                             </div>
                         </CardContent>
                     </Card>
 
-                    <Card className="border-destructive/10 bg-destructive/5 backdrop-blur-sm rounded-[2rem]">
+                    <Card className="border-white/5 bg-zinc-900/40 rounded-[2.5rem] overflow-hidden">
                         <CardHeader className="p-8 pb-4">
-                            <CardTitle className="text-xl font-bold flex items-center gap-3">
-                                <div className="p-2 rounded-lg bg-destructive/10 text-destructive">
+                            <CardTitle className="text-lg font-bold flex items-center gap-3 text-white tracking-tight">
+                                <div className="p-2 rounded-xl bg-orange-500/10 text-orange-500">
                                     <Target className="w-5 h-5" />
                                 </div>
-                                Growth Opportunities
+                                Areas for Development
                             </CardTitle>
                         </CardHeader>
-                        <CardContent className="p-8 pt-0">
-                            <div className="grid gap-3">
+                        <CardContent className="p-8 pt-4">
+                            <div className="flex flex-wrap gap-2">
                                 {(analysis.weakConcepts || []).map((concept, i) => (
-                                    <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-background/40 border border-destructive/10 hover:border-destructive/30 transition-all">
-                                        <div className="h-2 w-2 rounded-full bg-destructive shadow-[0_0_8px_rgba(239,68,68,0.5)]" />
-                                        <span className="font-bold text-foreground/80 text-sm capitalize">{concept}</span>
-                                    </div>
+                                    <Badge key={i} variant="outline" className="border-white/5 bg-zinc-800 text-zinc-300 py-1.5 px-4 rounded-xl text-xs font-medium">
+                                        {concept}
+                                    </Badge>
                                 ))}
-                                {(!analysis.weakConcepts || analysis.weakConcepts.length === 0) && (
-                                    <p className="text-sm text-muted-foreground italic opacity-60">No major gaps detected.</p>
-                                )}
                             </div>
                         </CardContent>
                     </Card>
@@ -307,46 +354,34 @@ export default function InterviewResultsPage() {
 
                 {/* Transcript Analysis */}
                 {interview.transcript && interview.transcript.length > 0 && (
-                    <div className="space-y-6 pt-10">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2.5 rounded-xl bg-muted text-muted-foreground flex items-center justify-center">
-                                <MessageSquare className="h-5 w-5" />
-                            </div>
-                            <h2 className="text-2xl font-black tracking-tight font-headline uppercase leading-none">Full Transcript Review</h2>
+                    <div className="space-y-6 pt-12 border-t border-white/5">
+                        <div className="flex items-center gap-3 mb-8">
+                            <MessageSquare className="h-5 w-5 text-zinc-500" />
+                            <h2 className="text-2xl font-bold text-white tracking-tight">Conversation History</h2>
                         </div>
-                        <Card className="border-muted-foreground/10 bg-muted/10 backdrop-blur-sm rounded-[2.5rem] overflow-hidden">
-                            <CardContent className="p-8 max-h-[600px] overflow-y-auto scrollbar-thin scrollbar-thumb-muted-foreground/20">
-                                <div className="space-y-6">
-                                    {interview.transcript.map((entry, index) => (
-                                        <div key={index} className={`flex items-start gap-4 ${entry.speaker === 'user' ? 'flex-row-reverse' : ''}`}>
-                                            <div className={cn(
-                                                "w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 shadow-lg transition-transform hover:scale-110",
-                                                entry.speaker === 'ai' ? 'bg-primary text-primary-foreground' : 'bg-background border border-muted-foreground/20 text-muted-foreground'
-                                            )}>
-                                                {entry.speaker === 'ai' ? <Bot className="w-5 h-5" /> : <UserIcon className="w-5 h-5" />}
-                                            </div>
-                                            <div className={cn(
-                                                "rounded-[1.5rem] p-5 max-w-[80%] relative group transition-all duration-300",
-                                                entry.speaker === 'user'
-                                                    ? 'bg-primary text-primary-foreground shadow-xl shadow-primary/10 rounded-tr-none'
-                                                    : 'bg-background border border-muted-foreground/10 text-foreground rounded-tl-none hover:border-primary/20'
-                                            )}>
-                                                <div className={cn(
-                                                    "text-[10px] font-black tracking-widest uppercase mb-1 opacity-50",
-                                                    entry.speaker === 'user' ? 'text-right' : 'text-left'
-                                                )}>
-                                                    {entry.speaker === 'ai' ? 'AI Interviewer' : 'You'}
-                                                </div>
-                                                <p className="leading-relaxed font-medium">{entry.text}</p>
-                                            </div>
-                                        </div>
-                                    ))}
+
+                        <div className="space-y-6">
+                            {interview.transcript.map((entry, index) => (
+                                <div key={index} className={`flex flex-col gap-2 ${entry.speaker === 'user' ? 'items-end' : 'items-start'}`}>
+                                    <div className="flex items-center gap-2 mb-1 px-1">
+                                        <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-600">
+                                            {entry.speaker === 'ai' ? 'Interviewer' : 'Candidate'}
+                                        </span>
+                                    </div>
+                                    <div className={cn(
+                                        "rounded-2xl p-4 max-w-[85%] text-sm font-medium leading-relaxed",
+                                        entry.speaker === 'user'
+                                            ? 'bg-primary text-black font-bold'
+                                            : 'bg-zinc-900 border border-white/5 text-zinc-300'
+                                    )}>
+                                        {entry.text}
+                                    </div>
                                 </div>
-                            </CardContent>
-                        </Card>
+                            ))}
+                        </div>
                     </div>
                 )}
-            </div>
+            </motion.div>
         </main>
     );
 }
