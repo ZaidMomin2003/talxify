@@ -102,11 +102,14 @@ export async function getUserBySlug(slug: string): Promise<any | null> {
         const userData = userDoc.data();
 
         // SECURITY FIX: Only return the portfolio and necessary public info
-        // Do NOT return subscription, activity, or todos to the public.
+        // We include activity for stats, but strip sensitive content like transcripts
         const publicData = {
             id: userDoc.id,
             portfolio: userData.portfolio,
-            // Add other non-sensitive fields if needed
+            activity: (userData.activity || []).map((act: any) => {
+                const { transcript, feedback, ...rest } = act;
+                return rest;
+            }),
         };
 
         return convertTimestamps(publicData);

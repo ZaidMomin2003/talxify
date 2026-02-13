@@ -22,10 +22,10 @@ import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 
 const codingQuizSchema = z.object({
-  topics: z.string().min(3, { message: "Please enter at least one topic." }),
-  difficulty: z.enum(['easy', 'moderate', 'difficult']),
-  numQuestions: z.coerce.number().int().min(1).max(10),
-  language: z.string().min(1),
+    topics: z.string().min(3, { message: "Please enter at least one topic." }),
+    difficulty: z.enum(['easy', 'moderate', 'difficult']),
+    numQuestions: z.coerce.number().int().min(1).max(10),
+    language: z.string().min(1),
 });
 
 type CodingQuizFormValues = z.infer<typeof codingQuizSchema>;
@@ -36,219 +36,290 @@ const getOverallScore = (analysis: QuizResult['analysis']) => {
     return `${Math.round((totalScore / analysis.length) * 100)}%`;
 };
 
+import { motion } from 'framer-motion';
+import { cn } from "@/lib/utils";
+import { formatDistanceToNow } from 'date-fns';
+
+const containerVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+        opacity: 1,
+        y: 0,
+        transition: {
+            duration: 0.6,
+            staggerChildren: 0.1
+        }
+    }
+};
+
+const itemVariants = {
+    hidden: { opacity: 0, scale: 0.95 },
+    visible: { opacity: 1, scale: 1 }
+};
+
 export default function LevelUpPage() {
-  const router = useRouter();
-  const { user } = useAuth();
-  const { toast } = useToast();
-  const [userData, setUserData] = useState<UserData | null>(null);
-  const [isDataLoading, setIsDataLoading] = useState(true);
+    const router = useRouter();
+    const { user } = useAuth();
+    const { toast } = useToast();
+    const [userData, setUserData] = useState<UserData | null>(null);
+    const [isDataLoading, setIsDataLoading] = useState(true);
 
-  const form = useForm<CodingQuizFormValues>({
-    resolver: zodResolver(codingQuizSchema),
-    defaultValues: {
-      topics: '',
-      difficulty: 'moderate',
-      numQuestions: 3,
-      language: 'JavaScript',
-    },
-  });
-  
-  const fetchUserData = useCallback(async () => {
-    if (user) {
-      setIsDataLoading(true);
-      const data = await getUserData(user.uid);
-      setUserData(data);
-      setIsDataLoading(false);
-    }
-  }, [user]);
-
-  useEffect(() => {
-    fetchUserData();
-  }, [fetchUserData]);
-
-  const quizHistory = useMemo(() => {
-    if (!userData || !userData.activity) return [];
-    // Filter for non-arena quizzes. Arena quizzes usually have a difficulty of "Izanami Mode"
-    return (userData.activity.filter(a => a.type === 'quiz' && a.details.difficulty !== 'Izanami Mode') as QuizResult[])
-      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-  }, [userData]);
-
-
-  function onSubmit(values: CodingQuizFormValues) {
-    if (!user) {
-        toast({
-            title: "Not Authenticated",
-            description: "You need to be logged in to start a quiz.",
-            variant: "destructive"
-        });
-        router.push('/login');
-        return;
-    }
-    const params = new URLSearchParams({
-        topics: values.topics,
-        difficulty: values.difficulty,
-        numQuestions: String(values.numQuestions),
-        language: values.language,
+    const form = useForm<CodingQuizFormValues>({
+        resolver: zodResolver(codingQuizSchema),
+        defaultValues: {
+            topics: '',
+            difficulty: 'moderate',
+            numQuestions: 3,
+            language: 'JavaScript',
+        },
     });
-    router.push(`/dashboard/coding-quiz/instructions?${params.toString()}`);
-  }
 
-  return (
-    <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
-      <div className="max-w-5xl mx-auto">
-        {/* Hero Section */}
-        <section className="relative text-center rounded-2xl p-8 md:p-12 overflow-hidden bg-gradient-to-br from-primary/80 to-blue-500/80 text-primary-foreground shadow-2xl mb-12">
-           <div className="absolute inset-0 bg-dot-pattern opacity-10"></div>
-           <div className="relative z-10">
-                <div className="mx-auto bg-white/20 text-primary-foreground rounded-full p-4 w-fit mb-6">
-                    <Rocket className="h-10 w-10" />
+    const fetchUserData = useCallback(async () => {
+        if (user) {
+            setIsDataLoading(true);
+            const data = await getUserData(user.uid);
+            setUserData(data);
+            setIsDataLoading(false);
+        }
+    }, [user]);
+
+    useEffect(() => {
+        fetchUserData();
+    }, [fetchUserData]);
+
+    const quizHistory = useMemo(() => {
+        if (!userData || !userData.activity) return [];
+        // Filter for non-arena quizzes. Arena quizzes usually have a difficulty of "Izanami Mode"
+        return (userData.activity.filter(a => a.type === 'quiz' && a.details.difficulty !== 'Izanami Mode') as QuizResult[])
+            .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    }, [userData]);
+
+
+    function onSubmit(values: CodingQuizFormValues) {
+        if (!user) {
+            toast({
+                title: "Not Authenticated",
+                description: "You need to be logged in to start a quiz.",
+                variant: "destructive"
+            });
+            router.push('/login');
+            return;
+        }
+        const params = new URLSearchParams({
+            topics: values.topics,
+            difficulty: values.difficulty,
+            numQuestions: String(values.numQuestions),
+            language: values.language,
+        });
+        router.push(`/dashboard/coding-quiz/instructions?${params.toString()}`);
+    }
+
+    return (
+        <main className="flex-1 p-4 sm:p-6 lg:p-10 bg-background/50 relative overflow-x-hidden min-h-screen">
+            {/* Decorative Background Elements */}
+            <div className="absolute top-0 right-0 -mt-20 -mr-20 h-64 w-64 rounded-full bg-primary/10 blur-[100px] pointer-events-none" />
+            <div className="absolute bottom-0 left-0 -mb-20 -ml-20 h-64 w-64 rounded-full bg-primary/5 blur-[100px] pointer-events-none" />
+
+            <motion.div
+                className="max-w-5xl mx-auto space-y-12 relative z-10"
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
+            >
+                {/* Header Section */}
+                <div className="text-center space-y-4">
+                    <motion.div variants={itemVariants} className="inline-flex items-center justify-center p-3 rounded-2xl bg-primary/10 border border-primary/20 mb-2">
+                        <Rocket className="h-8 w-8 text-primary" />
+                    </motion.div>
+                    <motion.h1 variants={itemVariants} className="text-4xl md:text-6xl font-black tracking-tight italic uppercase text-white leading-none">
+                        Skill <span className="text-primary">Forge</span>
+                    </motion.h1>
+                    <motion.p variants={itemVariants} className="max-w-2xl mx-auto text-muted-foreground text-lg font-medium">
+                        Engineer your growth. AI-architected coding assessments built to expose and eliminate your technical blind spots.
+                    </motion.p>
                 </div>
-                <h1 className="font-headline text-5xl font-bold tracking-tighter">Level Up Your Programming Skills</h1>
-                <p className="mt-4 text-lg text-primary-foreground/80 max-w-2xl mx-auto">
-                    Create custom coding challenges to target your weak spots and master any topic. Our AI will generate a unique quiz based on your needs.
-                </p>
-           </div>
-        </section>
 
-        {/* Form Section */}
-        <section>
-            <Card className="shadow-lg">
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-3"><Sparkles className="w-6 h-6 text-primary"/> Create Your Custom Quiz</CardTitle>
-                    <CardDescription>Specify your requirements below and let our AI build a tailored practice session for you.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <Form {...form}>
-                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                            <div className="space-y-6">
-                                <FormField
-                                    control={form.control}
-                                    name="topics"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Topics</FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="e.g., Arrays, Sorting, Dynamic Programming" {...field} />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
-                                    <FormField
-                                        control={form.control}
-                                        name="difficulty"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Difficulty</FormLabel>
-                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                    <FormControl><SelectTrigger><SelectValue placeholder="Select difficulty" /></SelectTrigger></FormControl>
-                                                    <SelectContent>
-                                                        <SelectItem value="easy">Easy</SelectItem>
-                                                        <SelectItem value="moderate">Moderate</SelectItem>
-                                                        <SelectItem value="difficult">Difficult</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                    <FormField
-                                        control={form.control}
-                                        name="numQuestions"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Number of Questions</FormLabel>
-                                                <FormControl><Input type="number" min="1" max="10" {...field} /></FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                    <FormField
-                                        control={form.control}
-                                        name="language"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Language</FormLabel>
-                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                    <FormControl><SelectTrigger><SelectValue placeholder="Select language" /></SelectTrigger></FormControl>
-                                                    <SelectContent>
-                                                        <SelectItem value="JavaScript">JavaScript</SelectItem>
-                                                        <SelectItem value="Python">Python</SelectItem>
-                                                        <SelectItem value="Java">Java</SelectItem>
-                                                        <SelectItem value="TypeScript">TypeScript</SelectItem>
-                                                        <SelectItem value="C++">C++</SelectItem>
-                                                        <SelectItem value="Go">Go</SelectItem>
-                                                        <SelectItem value="Rust">Rust</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                </div>
-                            </div>
-                            <div className="pt-4 text-right">
-                                <Button type="submit" size="lg">Generate Quiz</Button>
-                            </div>
-                        </form>
-                    </Form>
-                </CardContent>
-            </Card>
-        </section>
-
-        <section className="mt-12">
-            <Card className="shadow-lg">
-                <CardHeader>
-                    <CardTitle>Custom Quiz History</CardTitle>
-                    <CardDescription>Review your performance on quizzes you've generated.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    {isDataLoading ? (
-                        <div className="text-center text-muted-foreground p-8">
-                            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2"/>
-                            <p>Loading history...</p>
-                        </div>
-                    ) : quizHistory.length > 0 ? (
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Topic</TableHead>
-                                    <TableHead>Difficulty</TableHead>
-                                    <TableHead>Score</TableHead>
-                                    <TableHead className="text-right">Actions</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {quizHistory.map(quiz => (
-                                    <TableRow key={quiz.id}>
-                                        <TableCell className="font-medium capitalize">{quiz.topics}</TableCell>
-                                        <TableCell>
-                                            <Badge variant={
-                                                quiz.difficulty === 'easy' ? 'default' :
-                                                quiz.difficulty === 'moderate' ? 'secondary' : 'destructive'
-                                            } className="capitalize">{quiz.difficulty}</Badge>
-                                        </TableCell>
-                                        <TableCell className="font-semibold">{getOverallScore(quiz.analysis)}</TableCell>
-                                        <TableCell className="text-right">
-                                             <Button asChild variant="outline" size="sm" disabled={getOverallScore(quiz.analysis) === 'N/A'}>
-                                                <Link href={`/dashboard/coding-quiz/analysis?id=${quiz.id}`}>
-                                                    <BarChart className="mr-2 h-4 w-4" />
-                                                    View Result
-                                                </Link>
+                <section>
+                    <motion.div variants={itemVariants}>
+                        <Card className="rounded-[2.5rem] border-white/10 bg-black/40 backdrop-blur-xl shadow-2xl overflow-hidden border">
+                            <CardHeader className="p-8 md:p-10 border-b border-white/5 bg-white/5">
+                                <CardTitle className="text-2xl font-black uppercase tracking-tight italic flex items-center gap-3">
+                                    <Sparkles className="w-6 h-6 text-primary animate-pulse" />
+                                    Configure Assessment
+                                </CardTitle>
+                                <CardDescription className="text-base">Define your stack and intensity. We'll build the challenge.</CardDescription>
+                            </CardHeader>
+                            <CardContent className="p-8 md:p-10">
+                                <Form {...form}>
+                                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                                        <div className="space-y-6">
+                                            <FormField
+                                                control={form.control}
+                                                name="topics"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Focus Topics</FormLabel>
+                                                        <FormControl>
+                                                            <Input placeholder="e.g., Kafka, System Design, Graph Theory" {...field} className="bg-black/20 border-white/5 h-14 focus:ring-primary/20 rounded-2xl text-lg px-6" />
+                                                        </FormControl>
+                                                        <FormMessage className="text-[10px] font-bold" />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
+                                                <FormField
+                                                    control={form.control}
+                                                    name="difficulty"
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                            <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Intensity</FormLabel>
+                                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                                <FormControl>
+                                                                    <SelectTrigger className="bg-black/20 border-white/5 h-14 rounded-2xl focus:ring-primary/20">
+                                                                        <SelectValue placeholder="Select intensity" />
+                                                                    </SelectTrigger>
+                                                                </FormControl>
+                                                                <SelectContent className="bg-zinc-900 border-white/10 rounded-xl">
+                                                                    <SelectItem value="easy">Easy (Fundamentals)</SelectItem>
+                                                                    <SelectItem value="moderate">Moderate (Industrial)</SelectItem>
+                                                                    <SelectItem value="difficult">Difficult (Elite)</SelectItem>
+                                                                </SelectContent>
+                                                            </Select>
+                                                            <FormMessage className="text-[10px] font-bold" />
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                                <FormField
+                                                    control={form.control}
+                                                    name="numQuestions"
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                            <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Quest Count</FormLabel>
+                                                            <FormControl>
+                                                                <Input type="number" min="1" max="10" {...field} className="bg-black/20 border-white/5 h-14 focus:ring-primary/20 rounded-2xl text-lg px-6" />
+                                                            </FormControl>
+                                                            <FormMessage className="text-[10px] font-bold" />
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                                <FormField
+                                                    control={form.control}
+                                                    name="language"
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                            <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Environment</FormLabel>
+                                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                                <FormControl>
+                                                                    <SelectTrigger className="bg-black/20 border-white/5 h-14 rounded-2xl focus:ring-primary/20">
+                                                                        <SelectValue placeholder="Select language" />
+                                                                    </SelectTrigger>
+                                                                </FormControl>
+                                                                <SelectContent className="bg-zinc-900 border-white/10 rounded-xl">
+                                                                    <SelectItem value="JavaScript">JavaScript</SelectItem>
+                                                                    <SelectItem value="Python">Python</SelectItem>
+                                                                    <SelectItem value="Java">Java</SelectItem>
+                                                                    <SelectItem value="TypeScript">TypeScript</SelectItem>
+                                                                    <SelectItem value="C++">C++</SelectItem>
+                                                                    <SelectItem value="Go">Go</SelectItem>
+                                                                    <SelectItem value="Rust">Rust</SelectItem>
+                                                                </SelectContent>
+                                                            </Select>
+                                                            <FormMessage className="text-[10px] font-bold" />
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="pt-4 flex justify-end">
+                                            <Button
+                                                type="submit"
+                                                size="lg"
+                                                className="h-14 px-10 rounded-2xl font-black uppercase tracking-widest text-xs italic shadow-lg shadow-primary/20 group hover:scale-[1.02] active:scale-[0.98] transition-all min-w-[240px]"
+                                            >
+                                                Initiate Assessment
+                                                <Rocket className="ml-3 h-5 w-5 group-hover:-translate-y-1 group-hover:translate-x-1 transition-transform" />
                                             </Button>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    ) : (
-                        <p className="text-center text-muted-foreground p-8">You haven't completed any custom quizzes yet.</p>
-                    )}
-                </CardContent>
-            </Card>
-        </section>
-      </div>
-    </main>
-  );
+                                        </div>
+                                    </form>
+                                </Form>
+                            </CardContent>
+                        </Card>
+                    </motion.div>
+                </section>
+
+                <section>
+                    <motion.div variants={itemVariants}>
+                        <Card className="rounded-[2.5rem] border-white/10 bg-black/40 backdrop-blur-xl shadow-2xl overflow-hidden border">
+                            <CardHeader className="p-8 md:p-10 border-b border-white/5 bg-white/5">
+                                <CardTitle className="text-2xl font-black uppercase tracking-tight italic flex items-center gap-3">
+                                    <RefreshCw className="w-6 h-6 text-primary" />
+                                    Performance Archives
+                                </CardTitle>
+                                <CardDescription className="text-base">Review your historical data and assessment metrics.</CardDescription>
+                            </CardHeader>
+                            <CardContent className="p-0">
+                                {isDataLoading ? (
+                                    <div className="p-20 text-center">
+                                        <Loader2 className="w-10 h-10 animate-spin mx-auto mb-4 text-primary opacity-50" />
+                                        <p className="text-muted-foreground font-black uppercase tracking-widest text-xs">Accessing archives...</p>
+                                    </div>
+                                ) : quizHistory.length > 0 ? (
+                                    <div className="overflow-x-auto">
+                                        <Table>
+                                            <TableHeader className="bg-white/5">
+                                                <TableRow className="hover:bg-transparent border-none">
+                                                    <TableHead className="text-[10px] font-black uppercase tracking-[0.2em] py-5 px-8">Topic / Tech</TableHead>
+                                                    <TableHead className="text-[10px] font-black uppercase tracking-[0.2em] py-5">Intensity</TableHead>
+                                                    <TableHead className="text-[10px] font-black uppercase tracking-[0.2em] py-5">Efficiency</TableHead>
+                                                    <TableHead className="text-right text-[10px] font-black uppercase tracking-[0.2em] py-5 px-8">Actions</TableHead>
+                                                </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                                {quizHistory.map(quiz => (
+                                                    <TableRow key={quiz.id} className="group border-b-white/5 hover:bg-primary/5 transition-all duration-300">
+                                                        <TableCell className="py-6 px-8">
+                                                            <span className="font-bold text-white group-hover:text-primary transition-colors block capitalize text-lg tracking-tight">
+                                                                {quiz.topics}
+                                                            </span>
+                                                            <span className="text-[10px] text-muted-foreground uppercase font-black tracking-widest">
+                                                                Environment: {quiz.language || 'Code'}
+                                                            </span>
+                                                        </TableCell>
+                                                        <TableCell className="py-6">
+                                                            <Badge variant={
+                                                                quiz.difficulty === 'easy' ? 'default' :
+                                                                    quiz.difficulty === 'moderate' ? 'secondary' : 'destructive'
+                                                            } className="h-6 text-[9px] font-black uppercase tracking-widest px-3 rounded-lg">
+                                                                {quiz.difficulty}
+                                                            </Badge>
+                                                        </TableCell>
+                                                        <TableCell className="py-6 font-black italic text-xl">
+                                                            {getOverallScore(quiz.analysis)}
+                                                        </TableCell>
+                                                        <TableCell className="text-right py-6 px-8">
+                                                            <Button asChild variant="ghost" size="sm" className="h-10 rounded-xl font-bold text-xs hover:bg-primary hover:text-white transition-all px-5" disabled={getOverallScore(quiz.analysis) === 'N/A'}>
+                                                                <Link href={`/dashboard/coding-quiz/analysis?id=${quiz.id}`}>
+                                                                    <BarChart className="mr-2 h-4 w-4" />
+                                                                    View Intel
+                                                                </Link>
+                                                            </Button>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
+                                    </div>
+                                ) : (
+                                    <div className="p-20 text-center space-y-4 opacity-30">
+                                        <Rocket className="w-16 h-16 mx-auto" />
+                                        <p className="font-black uppercase tracking-[0.2em] text-sm">No Missions Logged</p>
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+                    </motion.div>
+                </section>
+            </motion.div>
+        </main>
+    );
 }
