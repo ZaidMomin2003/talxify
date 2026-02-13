@@ -1,0 +1,538 @@
+
+
+'use client';
+
+import React, { useState, useRef, useCallback, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
+import { FileText, PlusCircle, Trash2, Mail, Phone, Linkedin, Github, Globe, Download, Loader2, Gem, CheckCircle, Sparkles, Wand2 } from 'lucide-react';
+import { Slider } from '@/components/ui/slider';
+import { cn } from '@/lib/utils';
+import { useAuth } from '@/context/auth-context';
+import { getUserData, checkAndIncrementResumeExports, checkAndIncrementUsage } from '@/lib/firebase-service';
+import type { UserData, ResumeData } from '@/lib/types';
+import Link from 'next/link';
+import { useToast } from '@/hooks/use-toast';
+import { enhanceResume } from '@/ai/flows/enhance-resume';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
+
+// Simplified types for resume
+type ResumeExperience = { company: string; role: string; duration: string; description: string; };
+type ResumeEducation = { institution: string; degree: string; year: string; };
+type ResumeSkill = { name: string; };
+type ResumeLanguage = { name: string; proficiency: string; level: number; };
+type ResumeHobby = { name: string; };
+
+
+const initialResumeState = {
+    personalInfo: {
+        name: 'Diya Agarwal',
+        profession: 'Retail Sales Professional',
+        email: 'd.agarwal@sample.in',
+        phone: '+91 11 5555 3345',
+        address: 'New Delhi, India 110034',
+        linkedin: 'linkedin.com/in/diya-agarwal',
+        github: 'github.com/diya-agarwal',
+        website: 'diya-agarwal.dev',
+        summary: 'Customer-focused Retail Sales professional with solid understanding of retail dynamics, marketing and customer service. Offering 5 years of experience providing quality product recommendations and solutions to meet customer needs and exceed expectations. Demonstrated record of exceeding revenue targets by leveraging communication skills and sales expertise.'
+    },
+    themeColor: '#374151',
+    experience: [
+        { company: 'ZARA', role: 'Retail Sales Associate', duration: '02/2017 - Current', description: '- Increased monthly sales 10% by effectively upselling and cross-selling products to maximize profitability.\n- Prevented store losses by leveraging awareness, attention to detail, and integrity to identify and investigate concerns.\n- Processed payments and maintained accurate drawers to meet financial targets.' },
+        { company: "Dunkin' Donuts", role: 'Barista', duration: '03/2015 - 01/2017', description: '- Upsold seasonal drinks and pastries, boosting average store sales by ₹1500 weekly.\n- Managed morning rush of over 300 customers daily with efficient, levelheaded customer service.\n- Trained entire staff of 15 baristas in new smoothie program offerings and procedures.' }
+    ],
+    education: [
+        { institution: 'Oxford Software Institute & Oxford School Of English', degree: 'Diploma In Financial Accounting', year: '2016' }
+    ],
+    skills: [
+        { name: 'Cash register operation' }, { name: 'POS system operation' }, { name: 'Sales expertise' }, { name: 'Teamwork' }, { name: 'Inventory management' }
+    ],
+    languages: [
+        { name: 'Hindi', proficiency: 'Native Speaker', level: 100 },
+        { name: 'English', proficiency: 'Proficient', level: 85 },
+        { name: 'Bengali', proficiency: 'Upper-intermediate', level: 60 },
+    ],
+    hobbies: [
+        { name: 'Recreational Football League' }, { name: 'Team captain' }, { name: 'Red Cross Volunteer' }
+    ]
+}
+
+const colorOptions = [
+    { name: 'Default', hex: '#374151' },
+    { name: 'Forest Green', hex: '#225740' },
+    { name: 'Midnight Blue', hex: '#1C3A5E' },
+    { name: 'Ruby Red', hex: '#6B0F1A' },
+    { name: 'Royal Purple', hex: '#4B0082' },
+];
+
+
+const ResumePreview = React.forwardRef<HTMLDivElement, { resumeData: typeof initialResumeState }>(({ resumeData }, ref) => {
+    return (
+        <div ref={ref} id="resume-preview" className="bg-white text-black shadow-lg font-sans w-full p-8" style={{ fontFamily: "'Inter', sans-serif" }}>
+            <div className="flex h-full">
+                {/* Left Column */}
+                <div className="text-white p-6 flex flex-col" style={{ width: '35%', backgroundColor: resumeData.themeColor }}>
+                    <div className="text-sm space-y-6">
+                        <div>
+                            <h3 className="font-bold text-base mb-2 uppercase tracking-wider">Contact</h3>
+                            <div className="space-y-1 text-xs">
+                                {resumeData.personalInfo.email && <p className="flex items-start gap-2"><Mail className="w-3 h-3 mt-0.5 shrink-0"/> <span>{resumeData.personalInfo.email}</span></p>}
+                                {resumeData.personalInfo.phone && <p className="flex items-start gap-2"><Phone className="w-3 h-3 mt-0.5 shrink-0"/> <span>{resumeData.personalInfo.phone}</span></p>}
+                                {resumeData.personalInfo.linkedin && <p className="flex items-start gap-2"><Linkedin className="w-3 h-3 mt-0.5 shrink-0"/> <span>{resumeData.personalInfo.linkedin}</span></p>}
+                                {resumeData.personalInfo.github && <p className="flex items-start gap-2"><Github className="w-3 h-3 mt-0.5 shrink-0"/> <span>{resumeData.personalInfo.github}</span></p>}
+                            </div>
+                        </div>
+                        <div>
+                            <h3 className="font-bold text-base mb-2 uppercase tracking-wider">Skills</h3>
+                            <ul className="list-disc list-inside text-xs space-y-1 pl-1">
+                                {resumeData.skills.map(skill => <li key={skill.name}>{skill.name}</li>)}
+                            </ul>
+                        </div>
+                        <div>
+                            <h3 className="font-bold text-base mb-2 uppercase tracking-wider">Languages</h3>
+                            {resumeData.languages.map((lang, i) => (
+                                <div key={i} className="text-xs mb-3">
+                                    <div className="flex justify-between items-center mb-1">
+                                        <span>{lang.name}</span>
+                                        <span className="font-semibold">{lang.proficiency}</span>
+                                    </div>
+                                    <div className="w-full bg-gray-600 rounded-full h-1.5">
+                                        <div className="bg-gray-300 h-1.5 rounded-full" style={{ width: `${lang.level}%` }}></div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                        <div>
+                            <h3 className="font-bold text-base mb-2 uppercase tracking-wider">Hobbies</h3>
+                                <ul className="list-disc list-inside text-xs space-y-1 pl-1">
+                                {resumeData.hobbies.map(hobby => <li key={hobby.name}>{hobby.name}</li>)}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                {/* Right Column */}
+                <div className="p-6 flex flex-col" style={{ width: '65%' }}>
+                    <h1 className="text-4xl font-bold mb-1" style={{color: resumeData.themeColor}}>{resumeData.personalInfo.name}</h1>
+                    <p className="text-lg font-semibold text-gray-500 mb-6">{resumeData.personalInfo.profession}</p>
+                    <div className="border-l-2 pl-4 space-y-6" style={{ borderColor: resumeData.themeColor }}>
+                        <div>
+                            <h2 className="text-base font-bold uppercase tracking-widest text-gray-700 mb-2">Summary</h2>
+                            <p className="text-xs text-gray-600 leading-relaxed">{resumeData.personalInfo.summary}</p>
+                        </div>
+                        
+                        <div>
+                            <h2 className="text-base font-bold uppercase tracking-widest text-gray-700 mb-2">Education</h2>
+                             <div className="space-y-4">
+                                {resumeData.education.map((edu, i) => (
+                                    <div key={i}>
+                                        <h3 className="font-bold text-sm">{edu.institution}</h3>
+                                        <p className="text-xs text-gray-500 font-semibold mb-1">{edu.degree} - {edu.year}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div>
+                            <h2 className="text-base font-bold uppercase tracking-widest text-gray-700 mb-2">Experience</h2>
+                            <div className="space-y-4">
+                            {resumeData.experience.map((exp, i) =>(
+                                <div key={i}>
+                                    <h3 className="font-bold text-sm">{exp.company} - <span className="font-normal">{exp.role}</span></h3>
+                                    <p className="text-xs text-gray-500 font-semibold mb-1">{exp.duration}</p>
+                                    <ul className="list-disc list-inside text-xs text-gray-600 leading-snug space-y-1 pl-2">
+                                        {exp.description.split('\n').map((item, key) => item.trim() && <li key={key}>{item.replace(/^- /, '')}</li>)}
+                                    </ul>
+                                </div>
+                            ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+});
+ResumePreview.displayName = 'ResumePreview';
+
+export default function ResumeBuilderPage() {
+    const { user } = useAuth();
+    const [userData, setUserData] = useState<UserData | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [resumeData, setResumeData] = useState(initialResumeState);
+    const resumePreviewRef = useRef<HTMLDivElement>(null);
+    const [isDownloading, setIsDownloading] = useState(false);
+    const [isEnhancing, setIsEnhancing] = useState(false);
+    const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
+    const { toast } = useToast();
+
+    useEffect(() => {
+        const fetchUserData = async () => {
+            if (user) {
+                const data = await getUserData(user.uid);
+                setUserData(data);
+
+                // Pre-fill resume data from user's portfolio if available
+                if (data?.portfolio) {
+                    const portfolio = data.portfolio;
+                    setResumeData({
+                        personalInfo: {
+                            name: portfolio.personalInfo.name || initialResumeState.personalInfo.name,
+                            profession: portfolio.personalInfo.profession || initialResumeState.personalInfo.profession,
+                            email: portfolio.personalInfo.email || initialResumeState.personalInfo.email,
+                            phone: portfolio.personalInfo.phone || initialResumeState.personalInfo.phone,
+                            address: portfolio.personalInfo.address || initialResumeState.personalInfo.address,
+                            linkedin: portfolio.socials.linkedin || initialResumeState.personalInfo.linkedin,
+                            github: portfolio.socials.github || initialResumeState.personalInfo.github,
+                            website: portfolio.socials.website || initialResumeState.personalInfo.website,
+                            summary: portfolio.personalInfo.bio || initialResumeState.personalInfo.summary,
+                        },
+                        themeColor: portfolio.themeColor || initialResumeState.themeColor,
+                        experience: portfolio.experience.map(e => ({ company: e.company, role: e.role, duration: e.duration, description: e.description })) || initialResumeState.experience,
+                        education: portfolio.education.map(e => ({ institution: e.institution, degree: e.degree, year: e.year })) || initialResumeState.education,
+                        skills: portfolio.skills.map(s => ({ name: s.skill })) || initialResumeState.skills,
+                        languages: portfolio.skills.map(s => ({ name: s.skill, proficiency: 'Proficient', level: s.expertise })) || initialResumeState.languages,
+                        hobbies: portfolio.hobbies || initialResumeState.hobbies,
+                    });
+                }
+            }
+            setIsLoading(false);
+        };
+        fetchUserData();
+    }, [user]);
+
+    const startDownload = async (dataToDownload: typeof initialResumeState) => {
+        const resumeElement = resumePreviewRef.current;
+        if (!resumeElement) return;
+
+        setIsDownloading(true);
+
+        // Temporarily render the data to be downloaded, then render back
+        const originalData = { ...resumeData };
+        setResumeData(dataToDownload);
+        
+        await new Promise(resolve => setTimeout(resolve, 100)); // Allow DOM to update
+
+        html2canvas(resumeElement, { scale: 2, useCORS: true, logging: false })
+            .then(canvas => {
+                const imgData = canvas.toDataURL('image/png');
+                const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const pdfHeight = pdf.internal.pageSize.getHeight();
+                const ratio = canvas.width / canvas.height;
+                let finalWidth = pdfWidth;
+                let finalHeight = pdfWidth / ratio;
+                if (finalHeight > pdfHeight) {
+                    finalHeight = pdfHeight;
+                    finalWidth = pdfHeight * ratio;
+                }
+                const x = (pdfWidth - finalWidth) / 2;
+                pdf.addImage(imgData, 'PNG', x, 0, finalWidth, finalHeight);
+                pdf.save(`${dataToDownload.personalInfo.name}_Resume.pdf`);
+                toast({ title: "Download Started", description: "Your resume PDF is being prepared." });
+            })
+            .catch(err => {
+                console.error("Error generating PDF:", err);
+                toast({ title: "Download Failed", description: "An error occurred while generating the PDF.", variant: "destructive" });
+            })
+            .finally(() => {
+                setIsDownloading(false);
+                setResumeData(originalData); // Restore original data to the editor
+                setIsDownloadModalOpen(false);
+            });
+    };
+    
+    const handleDownloadClick = async () => {
+        if (!user) {
+            toast({ title: "Please log in", description: "You need to be logged in to download a resume.", variant: "destructive" });
+            return;
+        }
+        const usageCheck = await checkAndIncrementResumeExports(user.uid);
+        if (!usageCheck.success) {
+            toast({ title: "Limit Reached", description: usageCheck.message, variant: "destructive" });
+            return;
+        }
+        setIsDownloadModalOpen(true);
+    };
+
+    const handleEnhanceAndDownload = async () => {
+        if (!user) {
+            toast({ title: "Please log in", variant: "destructive"});
+            return;
+        }
+        
+        const usageCheck = await checkAndIncrementUsage(user.uid, 'aiEnhancements');
+        if (!usageCheck.success) {
+            toast({ title: "Usage Limit Reached", description: usageCheck.message, variant: 'destructive' });
+            return;
+        }
+
+        setIsEnhancing(true);
+        try {
+            // Map the current state to the format expected by the AI flow
+            const inputForAI: ResumeData = {
+                personalInfo: resumeData.personalInfo,
+                experience: resumeData.experience,
+                education: resumeData.education,
+                skills: resumeData.skills.map(s => ({ skill: s.name, expertise: 80 })), // map to expected format
+                languages: resumeData.languages,
+                hobbies: resumeData.hobbies,
+            };
+
+            const enhancedResult = await enhanceResume(inputForAI);
+            
+            // Create a new resume data object with the enhanced content
+            const enhancedData = JSON.parse(JSON.stringify(resumeData)); // Deep copy
+            enhancedData.personalInfo.summary = enhancedResult.enhancedSummary;
+            enhancedResult.enhancedExperience.forEach(enhancedExp => {
+                const originalExp = enhancedData.experience.find((exp: ResumeExperience) => exp.role === enhancedExp.originalRole);
+                if (originalExp) {
+                    originalExp.description = enhancedExp.enhancedDescription;
+                }
+            });
+            
+            toast({ title: "Resume Enhanced!", description: "AI has rewritten your content. Preparing PDF..." });
+            await startDownload(enhancedData);
+
+        } catch (error) {
+            console.error("Failed to enhance resume:", error);
+            toast({ title: "Enhancement Failed", description: "Could not enhance resume content. Please try again.", variant: "destructive" });
+        } finally {
+            setIsEnhancing(false);
+        }
+    };
+
+
+    const handleInfoChange = (field: keyof typeof resumeData.personalInfo, value: string) => {
+        setResumeData(prev => ({ ...prev, personalInfo: { ...prev.personalInfo, [field]: value }}));
+    }
+
+    const handleSectionChange = <T extends ResumeExperience | ResumeEducation | ResumeSkill | ResumeLanguage | ResumeHobby>(
+        section: 'experience' | 'education' | 'skills' | 'languages' | 'hobbies', 
+        index: number, 
+        field: keyof T, 
+        value: string | number
+    ) => {
+         setResumeData(prev => {
+            const newSection = [...prev[section]];
+            // @ts-ignore
+            newSection[index][field] = value;
+            return { ...prev, [section]: newSection };
+        });
+    };
+
+    const handleAddItem = (section: 'experience' | 'education' | 'skills' | 'languages' | 'hobbies') => {
+        let newItem;
+        if (section === 'experience') newItem = { company: '', role: '', duration: '', description: '' };
+        else if (section === 'education') newItem = { institution: '', degree: '', year: '' };
+        else if (section === 'languages') newItem = { name: '', proficiency: '', level: 50 };
+        else if (section === 'hobbies') newItem = { name: '' };
+        else newItem = { name: '' };
+        
+        // @ts-ignore
+        setResumeData(prev => ({ ...prev, [section]: [...prev[section], newItem]}));
+    };
+    
+    const handleRemoveItem = (section: 'experience' | 'education' | 'skills' | 'languages' | 'hobbies', index: number) => {
+        setResumeData(prev => ({
+            ...prev,
+            [section]: prev[section].filter((_, i) => i !== index)
+        }));
+    };
+
+    if (isLoading) {
+        return <div className="flex h-screen items-center justify-center"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>;
+    }
+
+    return (
+        <>
+        <main className="flex-1 overflow-hidden">
+            <div className="grid grid-cols-1 lg:grid-cols-3 h-[calc(100vh-4rem)]">
+                {/* Editor Panel */}
+                <div className="lg:col-span-1 overflow-y-auto p-6 space-y-6">
+                    <div className="flex items-center justify-between">
+                         <div className="flex items-center gap-3">
+                            <FileText className="w-8 h-8"/>
+                            <div>
+                                <h1 className="text-3xl font-bold font-headline">Resume Builder</h1>
+                                <div className="flex items-center gap-2 text-sm text-green-600 font-semibold">
+                                    <Gem className="w-4 h-4" />
+                                    <span>Forever Free</span>
+                                </div>
+                            </div>
+                         </div>
+                         <Button onClick={handleDownloadClick} disabled={isDownloading}>
+                            {isDownloading ? <Loader2 className="mr-2 animate-spin"/> : <Download className="mr-2"/>} 
+                            Download PDF
+                         </Button>
+                    </div>
+
+                    <Card>
+                        <CardHeader><CardTitle>Theme Customization</CardTitle></CardHeader>
+                        <CardContent>
+                            <div className="flex flex-wrap gap-4">
+                                {colorOptions.map((color) => (
+                                    <div key={color.name} className="flex items-center gap-2">
+                                    <button
+                                        onClick={() => setResumeData({...resumeData, themeColor: color.hex})}
+                                        className={cn(
+                                        "w-8 h-8 rounded-full border-2 transition-transform transform",
+                                        resumeData.themeColor === color.hex ? "border-ring scale-110" : "border-transparent"
+                                        )}
+                                        style={{ backgroundColor: color.hex }}
+                                        aria-label={`Select ${color.name} theme`}
+                                    />
+                                    <label>{color.name}</label>
+                                    </div>
+                                ))}
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader><CardTitle>Personal Information</CardTitle></CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="grid grid-cols-2 gap-4">
+                                <Input aria-label="Full Name" placeholder="Full Name" value={resumeData.personalInfo.name} onChange={(e) => handleInfoChange('name', e.target.value)} />
+                                <Input aria-label="Profession" placeholder="Profession" value={resumeData.personalInfo.profession} onChange={(e) => handleInfoChange('profession', e.target.value)} />
+                            </div>
+                             <Input aria-label="Email" placeholder="Email" value={resumeData.personalInfo.email} onChange={(e) => handleInfoChange('email', e.target.value)} />
+                             <Input aria-label="Phone" placeholder="Phone" value={resumeData.personalInfo.phone} onChange={(e) => handleInfoChange('phone', e.target.value)} />
+                             <Input aria-label="Address" placeholder="Address" value={resumeData.personalInfo.address} onChange={(e) => handleInfoChange('address', e.target.value)} />
+                             <Input aria-label="LinkedIn Profile URL" placeholder="LinkedIn Profile URL" value={resumeData.personalInfo.linkedin} onChange={(e) => handleInfoChange('linkedin', e.target.value)} />
+                             <Input aria-label="GitHub Profile URL" placeholder="GitHub Profile URL" value={resumeData.personalInfo.github} onChange={(e) => handleInfoChange('github', e.target.value)} />
+                            <Textarea aria-label="Professional Summary" placeholder="Professional Summary" value={resumeData.personalInfo.summary} onChange={(e) => handleInfoChange('summary', e.target.value)} />
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader><CardTitle>Skills</CardTitle></CardHeader>
+                        <CardContent className="space-y-4">
+                            {resumeData.skills.map((skill, index) => (
+                                <div key={index} className="flex items-center gap-2">
+                                    <Input aria-label={`Skill ${index + 1}`} placeholder="e.g., React" value={skill.name} onChange={(e) => handleSectionChange('skills', index, 'name', e.target.value)} />
+                                    <Button variant="ghost" size="icon" onClick={() => handleRemoveItem('skills', index)} aria-label={`Remove skill ${index + 1}`}><Trash2 className="w-4 h-4 text-destructive" /></Button>
+                                </div>
+                            ))}
+                            <Button variant="outline" className="w-full" onClick={() => handleAddItem('skills')}><PlusCircle className="mr-2"/> Add Skill</Button>
+                        </CardContent>
+                    </Card>
+
+                     <Card>
+                        <CardHeader><CardTitle>Education</CardTitle></CardHeader>
+                        <CardContent className="space-y-4">
+                            {resumeData.education.map((edu, index) => (
+                                <div key={index} className="p-4 border rounded-lg space-y-3 relative">
+                                    <Button variant="ghost" size="icon" className="absolute top-1 right-1" onClick={() => handleRemoveItem('education', index)} aria-label={`Remove education ${index + 1}`}><Trash2 className="w-4 h-4 text-destructive" /></Button>
+                                    <Input aria-label={`Institution ${index + 1}`} placeholder="Institution Name" value={edu.institution} onChange={(e) => handleSectionChange('education', index, 'institution', e.target.value)} />
+                                    <Input aria-label={`Degree ${index + 1}`} placeholder="Degree / Certificate" value={edu.degree} onChange={(e) => handleSectionChange('education', index, 'degree', e.target.value)} />
+                                    <Input aria-label={`Year of Completion ${index + 1}`} placeholder="Year of Completion" value={edu.year} onChange={(e) => handleSectionChange('education', index, 'year', e.target.value)} />
+                                </div>
+                            ))}
+                            <Button variant="outline" className="w-full" onClick={() => handleAddItem('education')}><PlusCircle className="mr-2"/> Add Education</Button>
+                        </CardContent>
+                    </Card>
+                    
+                    <Card>
+                        <CardHeader><CardTitle>Languages</CardTitle></CardHeader>
+                        <CardContent className="space-y-4">
+                            {resumeData.languages.map((lang, index) => (
+                                <div key={index} className="p-4 border rounded-lg space-y-3 relative">
+                                    <Button variant="ghost" size="icon" className="absolute top-1 right-1" onClick={() => handleRemoveItem('languages', index)} aria-label={`Remove language ${index + 1}`}><Trash2 className="w-4 h-4 text-destructive" /></Button>
+                                    <Input aria-label={`Language ${index + 1}`} placeholder="Language" value={lang.name} onChange={(e) => handleSectionChange('languages', index, 'name', e.target.value)} />
+                                    <Input aria-label={`Proficiency ${index + 1}`} placeholder="Proficiency (e.g., Proficient)" value={lang.proficiency} onChange={(e) => handleSectionChange('languages', index, 'proficiency', e.target.value)} />
+                                    <Slider defaultValue={[lang.level]} max={100} step={1} onValueChange={(value) => handleSectionChange('languages', index, 'level', value[0])} />
+                                </div>
+                            ))}
+                            <Button variant="outline" className="w-full" onClick={() => handleAddItem('languages')}><PlusCircle className="mr-2"/> Add Language</Button>
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader><CardTitle>Hobbies & Interests</CardTitle></CardHeader>
+                        <CardContent className="space-y-4">
+                            {resumeData.hobbies.map((hobby, index) => (
+                                <div key={index} className="flex items-center gap-2">
+                                    <Input aria-label={`Hobby ${index + 1}`} placeholder="e.g., Recreational Football" value={hobby.name} onChange={(e) => handleSectionChange('hobbies', index, 'name', e.target.value)} />
+                                    <Button variant="ghost" size="icon" onClick={() => handleRemoveItem('hobbies', index)} aria-label={`Remove hobby ${index + 1}`}><Trash2 className="w-4 h-4 text-destructive" /></Button>
+                                </div>
+                            ))}
+                            <Button variant="outline" className="w-full" onClick={() => handleAddItem('hobbies')}><PlusCircle className="mr-2"/> Add Hobby</Button>
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader><CardTitle>Work Experience</CardTitle></CardHeader>
+                        <CardContent className="space-y-4">
+                            {resumeData.experience.map((exp, index) => (
+                                <div key={index} className="p-4 border rounded-lg space-y-3 relative">
+                                    <Button variant="ghost" size="icon" className="absolute top-1 right-1" onClick={() => handleRemoveItem('experience', index)} aria-label={`Remove experience ${index + 1}`}><Trash2 className="w-4 h-4 text-destructive" /></Button>
+                                    <Input aria-label={`Company ${index + 1}`} placeholder="Company Name" value={exp.company} onChange={(e) => handleSectionChange('experience', index, 'company', e.target.value)} />
+                                    <Input aria-label={`Role ${index + 1}`} placeholder="Role / Position" value={exp.role} onChange={(e) => handleSectionChange('experience', index, 'role', e.target.value)} />
+                                    <Input aria-label={`Duration ${index + 1}`} placeholder="Duration (e.g., Jan 2022 - Present)" value={exp.duration} onChange={(e) => handleSectionChange('experience', index, 'duration', e.target.value)} />
+                                    <Textarea aria-label={`Description ${index + 1}`} placeholder="Description of responsibilities and achievements..." value={exp.description} onChange={(e) => handleSectionChange('experience', index, 'description', e.target.value)} />
+                                </div>
+                            ))}
+                            <Button variant="outline" className="w-full" onClick={() => handleAddItem('experience')}><PlusCircle className="mr-2"/> Add Experience</Button>
+                        </CardContent>
+                    </Card>
+
+                </div>
+
+                {/* Preview Panel */}
+                <div className="bg-muted hidden lg:flex items-start justify-center overflow-y-auto p-8 relative lg:col-span-2">
+                    <div className="w-full max-w-[210mm] mx-auto shadow-2xl" style={{ aspectRatio: '1 / 1.414' /* A4 ratio */ }}>
+                        <ResumePreview resumeData={resumeData} ref={resumePreviewRef} />
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <Dialog open={isDownloadModalOpen} onOpenChange={setIsDownloadModalOpen}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle className="flex items-center gap-3 text-2xl"><Sparkles className="w-6 h-6 text-primary"/>Enhance Your Resume?</DialogTitle>
+                    <DialogDescription>
+                        Would you like our AI to review and improve your resume's content before you download it?
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="my-6 space-y-4">
+                   <Button 
+                        variant="outline" 
+                        size="lg" 
+                        className="w-full justify-start h-auto py-3"
+                        onClick={() => startDownload(resumeData)}
+                        disabled={isDownloading || isEnhancing}
+                    >
+                         <Download className="mr-4 w-5 h-5"/>
+                         <div>
+                            <p className="font-semibold text-base">Download As Is</p>
+                            <p className="text-sm text-muted-foreground text-left">Download the PDF with your current content.</p>
+                         </div>
+                   </Button>
+                   <Button 
+                        size="lg" 
+                        className="w-full justify-start h-auto py-3 bg-gradient-to-r from-purple-500 to-blue-500 text-white hover:opacity-90"
+                        onClick={handleEnhanceAndDownload}
+                        disabled={isDownloading || isEnhancing}
+                    >
+                        {isEnhancing ? <Loader2 className="mr-4 w-5 h-5 animate-spin"/> : <Wand2 className="mr-4 w-5 h-5"/>}
+                        <div>
+                             <p className="font-semibold text-base">Enhance with AI & Download</p>
+                            <p className="text-sm text-white/80 text-left">Let our AI rewrite your resume for maximum impact.</p>
+                        </div>
+                   </Button>
+                </div>
+                <DialogFooter>
+                    <DialogClose asChild>
+                        <Button type="button" variant="secondary">Cancel</Button>
+                    </DialogClose>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+        </>
+    );
+}

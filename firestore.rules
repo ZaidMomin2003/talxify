@@ -1,0 +1,46 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    function isPublicPortfolio() {
+        return true; 
+    }
+
+    // Users can read their own data and public portfolio data.
+    // They can only write to their own data.
+    // Users can read and write their own documents.
+    // Sensitive fields like 'subscription' and 'activity' are protected from direct client writes.
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId) 
+                    && (!request.resource.data.diff(resource.data).affectedKeys()
+                        .hasAny(['subscription', 'activity', 'id']));
+    }
+    
+    // Users can create orders for themselves.
+    match /orders/{orderId} {
+      allow create: if request.auth != null && request.resource.data.uid == request.auth.uid;
+      // Cloud functions will update this doc, so no other write access is needed.
+      allow read, update, delete: if false;
+    }
+
+    // Survey submissions can be created by anyone, but not read, updated, or deleted.
+    match /surveySubmissions/{submissionId} {
+      allow read, update, delete: if false;
+      allow create: if true;
+    }
+
+    // Waitlist submissions can be created by anyone, but not read, updated, or deleted.
+    match /waitlist/{submissionId} {
+      allow read, update, delete: if false;
+      allow create: if true;
+    }
+  }
+}

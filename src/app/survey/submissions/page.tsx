@@ -1,0 +1,202 @@
+
+
+'use client';
+
+import React, { useState, useEffect, useCallback } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Loader2, AlertTriangle, LogIn, Bot, BadgeHelp, Download } from 'lucide-react';
+import { getSurveySubmissions } from '@/app/zaidmin/actions';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Badge } from '@/components/ui/badge';
+import { format } from 'date-fns';
+import type { SurveySubmission } from '@/lib/types';
+import { useAuth } from '@/context/auth-context';
+import { useRouter } from 'next/navigation';
+
+export default function SurveySubmissionsPage() {
+    const { user, loading } = useAuth();
+    const router = useRouter();
+    
+    const [submissions, setSubmissions] = useState<SurveySubmission[]>([]);
+    const [isLoadingData, setIsLoadingData] = useState(false);
+    const [error, setError] = useState('');
+
+    const fetchSubmissions = useCallback(async () => {
+        setIsLoadingData(true);
+        try {
+            const data = await getSurveySubmissions();
+            setSubmissions(data);
+        } catch (err) {
+            console.error(err);
+            setError('Failed to fetch submissions.');
+        } finally {
+            setIsLoadingData(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        if (!loading) {
+            if (user && user.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL) {
+                fetchSubmissions();
+            }
+        }
+    }, [user, loading, fetchSubmissions]);
+
+    const exportToCSV = () => {
+        if (submissions.length === 0) return;
+
+        const headers = [
+            "Timestamp", "Name", "Email", "Biggest Challenge", "AI Practice Value (1-10)", "Practice Method", "Helpful Tools", "Price Point", "Desired Languages", "Feedback Importance (1-10)", "Experience Level", "Likelihood to Use (1-10)", "Other Feedback"
+        ];
+        
+        const rows = submissions.map(sub => {
+            const timestamp = sub.timestamp ? `"${format(new Date(sub.timestamp.seconds * 1000), 'yyyy-MM-dd HH:mm:ss')}"` : 'N/A';
+            const name = `"${sub.name || ''}"`;
+            const email = `"${sub.email || ''}"`;
+            const challenge = `"${(sub.challenge || '').replace(/"/g, '""')}"`;
+            const aiValue = sub.aiValue || '';
+            const practiceMethod = `"${sub.practiceMethod?.join(', ') || ''}"`;
+            const helpfulTools = `"${sub.helpfulTools?.join(', ') || ''}"`;
+            const pricePoint = `"${sub.pricePoint || ''}"`;
+            const languages = `"${sub.languages?.join(', ') || ''}"`;
+            const feedbackImportance = sub.feedbackImportance || '';
+            const experienceLevel = `"${sub.experienceLevel || ''}"`;
+            const likelihood = sub.likelihood || '';
+            const otherFeedback = `"${(sub.otherFeedback || '').replace(/"/g, '""')}"`;
+
+            return [
+                timestamp, name, email, challenge, aiValue, practiceMethod, helpfulTools, 
+                pricePoint, languages, feedbackImportance, experienceLevel, likelihood, otherFeedback
+            ].join(",");
+        });
+
+        const csvContent = "data:text/csv;charset=utf-8," 
+            + headers.join(",") + "\n" 
+            + rows.join("\n");
+
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "survey_submissions.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    if (loading) {
+        return <div className="flex h-screen items-center justify-center"><Loader2 className="w-16 h-16 animate-spin text-primary" /></div>;
+    }
+
+    if (!user || user.email !== process.env.NEXT_PUBLIC_ADMIN_EMAIL) {
+        return (
+             <div className="flex items-center justify-center min-h-screen bg-muted/40">
+                <Card className="w-full max-w-sm shadow-2xl text-center">
+                    <CardHeader>
+                        <div className="flex justify-center mb-4">
+                             <AlertTriangle className="h-14 w-14 text-destructive" />
+                        </div>
+                        <CardTitle className="text-2xl font-bold font-headline">Access Denied</CardTitle>
+                        <CardDescription>You do not have permission to view this page.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Button onClick={() => router.push('/dashboard')}>
+                            Go to Dashboard
+                        </Button>
+                    </CardContent>
+                </Card>
+            </div>
+        );
+    }
+    
+    if (isLoadingData) {
+        return <div className="flex h-screen items-center justify-center"><Loader2 className="w-16 h-16 animate-spin text-primary" /></div>;
+    }
+
+    return (
+        <main className="p-4 sm:p-6 lg:p-8">
+            <Card>
+                <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div>
+                        <CardTitle>Survey Submissions ({submissions.length})</CardTitle>
+                        <CardDescription>All user feedback submitted through the pre-launch survey.</CardDescription>
+                    </div>
+                    <Button onClick={exportToCSV} disabled={submissions.length === 0}>
+                        <Download className="mr-2 h-4 w-4" />
+                        Export to CSV
+                    </Button>
+                </CardHeader>
+                <CardContent>
+                    <Accordion type="single" collapsible className="w-full">
+                        {submissions.length > 0 ? submissions.map((sub, index) => (
+                            <AccordionItem value={`item-${index}`} key={sub.id}>
+                                <AccordionTrigger>
+                                    <div className="flex justify-between w-full pr-4 items-center flex-wrap gap-x-4 gap-y-2">
+                                        <div className="flex items-center gap-3">
+                                            <BadgeHelp className="h-5 w-5 text-primary"/>
+                                            <div className="text-left">
+                                                <p className="font-semibold">{sub.name || 'Anonymous'}</p>
+                                                <p className="text-sm text-muted-foreground">{sub.email}</p>
+                                            </div>
+                                        </div>
+                                        <p className="text-sm text-muted-foreground">
+                                           {sub.timestamp ? format(new Date(sub.timestamp.seconds * 1000), 'PPP p') : 'N/A'}
+                                        </p>
+                                    </div>
+                                </AccordionTrigger>
+                                <AccordionContent className="p-4 bg-muted/50 rounded-b-lg">
+                                    <div className="prose prose-sm dark:prose-invert max-w-none grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-4">
+                                        <div>
+                                            <h4>Biggest Challenge</h4>
+                                            <p>{sub.challenge || 'N/A'}</p>
+                                        </div>
+                                        <div>
+                                            <h4>AI Practice Value (1-10)</h4>
+                                            <p><Badge variant="secondary">{sub.aiValue || 'N/A'}</Badge></p>
+                                        </div>
+                                        <div>
+                                            <h4>Preferred practice methods</h4>
+                                            <p>{sub.practiceMethod?.join(', ') || 'N/A'}</p>
+                                        </div>
+                                        <div>
+                                            <h4>Most helpful AI tools</h4>
+                                            <p>{sub.helpfulTools?.join(', ') || 'N/A'}</p>
+                                        </div>
+                                        <div>
+                                            <h4>Willing to pay per month</h4>
+                                            <p><Badge>{sub.pricePoint || 'N/A'}</Badge></p>
+                                        </div>
+                                        <div>
+                                            <h4>Feedback Importance (1-10)</h4>
+                                            <p><Badge variant="secondary">{sub.feedbackImportance || 'N/A'}</Badge></p>
+                                        </div>
+                                        <div>
+                                            <h4>Experience Level</h4>
+                                            <p>{sub.experienceLevel || 'N/A'}</p>
+                                        </div>
+                                        <div>
+                                            <h4>Likelihood to use (1-10)</h4>
+                                            <p><Badge variant="secondary">{sub.likelihood || 'N/A'}</Badge></p>
+                                        </div>
+                                        <div className="md:col-span-2 lg:col-span-3">
+                                            <h4>Desired languages</h4>
+                                            <div className="flex flex-wrap gap-1">
+                                                {Array.isArray(sub.languages) ? sub.languages.map((lang: string) => <Badge key={lang} variant="outline">{lang}</Badge>) : 'N/A'}
+                                            </div>
+                                        </div>
+                                         <div className="md:col-span-2 lg:col-span-3">
+                                            <h4>Other feedback</h4>
+                                            <p>{sub.otherFeedback || 'None'}</p>
+                                        </div>
+                                    </div>
+                                </AccordionContent>
+                            </AccordionItem>
+                        )) : (
+                            <p className="text-center text-muted-foreground py-8">No submissions yet.</p>
+                        )}
+                    </Accordion>
+                </CardContent>
+            </Card>
+        </main>
+    )
+}
