@@ -22,6 +22,7 @@ import type { UserData, InterviewQuestionSetActivity, GenerateInterviewQuestions
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
+import { Badge } from '@/components/ui/badge';
 
 const questionsGeneratorSchema = z.object({
     role: z.string().min(2, "Please enter a job role."),
