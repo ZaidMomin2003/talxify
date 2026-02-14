@@ -4,68 +4,33 @@
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence, easeInOut } from 'framer-motion';
-import { Menu, X, ArrowRight, Bot, MessageSquare, Code, BrainCircuit, FileText, User, Swords, ChevronDown, Sparkles, UserRound, Check, DollarSign, Building } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Menu, X, ArrowRight, Bot, ChevronDown, Building, DollarSign, Calculator, Book, Info, Sparkles, TrendingUp } from 'lucide-react';
 import { useAuth } from "@/context/auth-context";
 import { usePathname } from 'next/navigation';
-import { Book, Calculator, Info } from "lucide-react";
 
-interface NavItem {
+interface MegaItem {
   name: string;
   href: string;
+  icon: any;
+  description: string;
 }
 
-const navItems: NavItem[] = [
-  { name: 'How it Works', href: '/#how-it-works' },
-  { name: 'FAQ', href: '/#faq' },
-  { name: 'Contact', href: '/#contact' },
+const partnershipItems: MegaItem[] = [
+  { name: 'Partnership', href: '/institutepartnership', icon: Building, description: 'Institutional collaboration protocols.' },
+  { name: 'Earn Money', href: '/earn-money', icon: DollarSign, description: 'Join our high-ticket affiliate ecosystem.' },
+  { name: 'About Us', href: '/about', icon: Info, description: 'Our mission and the elite team behind Talxify.' },
 ];
 
-const featureItems = [
-  { name: 'Interview Question Bank', href: '/dashboard/interview-questions-generator', icon: BrainCircuit, description: "Generate tailored questions for any role." },
-  { name: 'AI Mock Interviews', href: '/#features', icon: MessageSquare, description: 'Practice with a realistic AI that asks relevant questions.' },
-  { name: 'AI Coding Gym', href: '/#features', icon: Code, description: 'Solve problems with instant, line-by-line feedback.' },
-  { name: 'AI Study Notes', href: '/#features', icon: BrainCircuit, description: 'Generate in-depth study guides for any topic.' },
-  { name: 'Resume Builder', href: '/#features', icon: FileText, description: 'Craft a professional resume with our easy-to-use tool.' },
-  { name: 'Portfolio Builder', href: '/#features', icon: User, description: 'Showcase your skills with an automatically generated portfolio.' },
+const toolsItems: MegaItem[] = [
+  { name: 'Salary Calc', href: '/salary-calculator', icon: Calculator, description: 'AI-powered market value assessment.' },
+  { name: 'Blog', href: '/blog', icon: Book, description: 'Industry insights and interview strategy.' },
 ];
-
-const freePlanFeatures = [
-  'AI-Powered Mock Interview',
-  'AI-Analyzed Coding Quiz',
-  'AI-Generated Study Notes',
-  'Limited Portfolio Access',
-  'Limited Resume Downloads'
-];
-
-const proPlanFeatures = [
-  'Unlimited Mock Interviews',
-  'Unlimited Coding Questions',
-  'Interview Question Generator',
-  'Professional Resume Builder',
-  'And everything in Free...',
-];
-
-const toolsItems = [
-  { name: 'Salary Calculator', href: '/salary-calculator', icon: Calculator, description: 'Estimate your market value with our AI-powered tool.' },
-  { name: 'Blog', href: '/blog', icon: Book, description: 'Read articles on career growth and interview tips.' },
-];
-
-const aboutItems = [
-  { name: 'About Us', href: '/about', icon: Info, description: 'Learn about our mission and the team behind Talxify.' },
-  { name: 'For Institutes', href: '/institutepartnership', icon: Building, description: 'Partner with us to empower your students.' },
-  { name: 'Earn Money', href: '/#earn-money', icon: DollarSign, description: 'Join our affiliate program and earn for every sale.' },
-]
-
 
 export default function LandingHeader() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [hoveredItem, setHoveredItem] = useState<string | null>(null);
-  const [isFeaturesMenuOpen, setIsFeaturesMenuOpen] = useState(false);
-  const [isPricingMenuOpen, setIsPricingMenuOpen] = useState(false);
-  const [isToolsMenuOpen, setIsToolsMenuOpen] = useState(false);
-  const [isAboutMenuOpen, setIsAboutMenuOpen] = useState(false);
+  const [activeMega, setActiveMega] = useState<'partnership' | 'tools' | null>(null);
   const { user, loading } = useAuth();
   const pathname = usePathname();
 
@@ -78,547 +43,234 @@ export default function LandingHeader() {
   }, []);
 
   useEffect(() => {
-    // Close mobile menu on route change
     setIsMobileMenuOpen(false);
+    setActiveMega(null);
   }, [pathname]);
 
   const handleLinkClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     if (href.startsWith('/#')) {
-      e.preventDefault();
       const targetId = href.substring(2);
       const targetElement = document.getElementById(targetId);
       if (targetElement) {
+        e.preventDefault();
         targetElement.scrollIntoView({ behavior: 'smooth' });
-      } else {
-        window.location.href = href;
       }
     }
     setIsMobileMenuOpen(false);
-    setIsFeaturesMenuOpen(false);
-    setIsPricingMenuOpen(false);
-    setIsToolsMenuOpen(false);
-    setIsAboutMenuOpen(false);
-  };
-
-  const containerVariants = {
-    hidden: { opacity: 0, y: -20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        duration: 0.6,
-        staggerChildren: 0.1,
-      },
-    },
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: -10 },
-    visible: { opacity: 1, y: 0 },
-  };
-
-  const mobileMenuVariants = {
-    closed: {
-      opacity: 0,
-      x: '100%',
-      transition: {
-        duration: 0.3,
-        ease: easeInOut,
-      },
-    },
-    open: {
-      opacity: 1,
-      x: 0,
-      transition: {
-        duration: 0.3,
-        ease: easeInOut,
-        staggerChildren: 0.1,
-      },
-    },
-  };
-
-  const megaMenuVariants = {
-    hidden: { opacity: 0, y: -10, scale: 0.95 },
-    visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.2, ease: 'easeOut' } },
-    exit: { opacity: 0, y: -10, scale: 0.95, transition: { duration: 0.15, ease: 'easeIn' } },
-  };
-
-
-  const mobileItemVariants = {
-    closed: { opacity: 0, x: 20 },
-    open: { opacity: 1, x: 0 },
+    setActiveMega(null);
   };
 
   return (
-    <>
-      <motion.header
-        className={`fixed top-0 right-0 left-0 z-50 transition-all duration-500 ${isScrolled
-          ? 'border-border/50 bg-background/80 border-b shadow-sm backdrop-blur-md'
-          : 'bg-transparent'
-          }`}
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-      >
-        {/* Announcement Bar */}
-        <div className="bg-[#e63946] py-2 px-4 text-center">
-          <p className="text-white text-xs md:text-sm font-medium">
-            We're thrilled to be backed by <span className="font-bold underline underline-offset-2 decoration-2">AWS Startups</span>! 🎉
-          </p>
-        </div>
+    <header className={`fixed top-0 right-0 left-0 z-50 transition-all duration-300 ${isScrolled ? 'border-b border-border/40 bg-background/70 backdrop-blur-xl' : 'bg-transparent'
+      }`}>
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="flex h-20 items-center justify-between">
+          {/* Logo */}
+          <Link href="/" className="flex items-center space-x-3 group">
+            <div className="relative">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary shadow-lg group-hover:scale-110 transition-transform duration-300">
+                <Bot className="h-6 w-6 text-primary-foreground" />
+              </div>
+            </div>
+            <div className="flex flex-col">
+              <span className="text-xl font-black italic uppercase tracking-tighter text-foreground leading-none">
+                Talxify
+              </span>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground italic">AI Assistant</span>
+            </div>
+          </Link>
 
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex h-16 items-center justify-between">
-            <motion.div
-              className="flex items-center space-x-3"
-              variants={itemVariants}
-              whileHover={{ scale: 1.02 }}
-              transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+          {/* Desktop Nav */}
+          <nav className="hidden items-center space-x-2 lg:flex">
+            <Link href="/#features" onClick={(e) => handleLinkClick(e, '/#features')} className="px-4 py-2 text-sm font-bold uppercase italic tracking-widest text-muted-foreground hover:text-primary transition-colors">Features</Link>
+            <Link href="/#pricing" onClick={(e) => handleLinkClick(e, '/#pricing')} className="px-4 py-2 text-sm font-bold uppercase italic tracking-widest text-muted-foreground hover:text-primary transition-colors">Pricing</Link>
+
+            {/* Partnership Mega Menu */}
+            <div
+              className="relative group"
+              onMouseEnter={() => setActiveMega('partnership')}
+              onMouseLeave={() => setActiveMega(null)}
             >
-              <Link href="/" className="flex items-center space-x-3">
-                <div className="relative">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary shadow-lg">
-                    <Bot className="h-5 w-5 text-primary-foreground" />
-                  </div>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-lg font-bold text-foreground">
-                    Talxify
-                  </span>
-                  <span className="text-xs -mt-1 text-muted-foreground">AI Job Assistant</span>
-                </div>
-              </Link>
-            </motion.div>
+              <button className={`flex items-center gap-1 px-4 py-2 text-sm font-bold uppercase italic tracking-widest transition-colors ${activeMega === 'partnership' ? 'text-primary' : 'text-muted-foreground'}`}>
+                Partners <ChevronDown size={14} className={`transition-transform duration-300 ${activeMega === 'partnership' ? 'rotate-180' : ''}`} />
+              </button>
 
-            <nav className="hidden items-center space-x-1 lg:flex">
-              <motion.div
-                onMouseEnter={() => setIsFeaturesMenuOpen(true)}
-                onMouseLeave={() => setIsFeaturesMenuOpen(false)}
-                className="relative"
-                variants={itemVariants}
-              >
-                <div
-                  className={`relative flex items-center gap-1 rounded-lg px-4 py-2 text-sm font-medium transition-colors duration-200 text-foreground cursor-pointer hover:bg-muted`}
-                >
-                  <span>Features</span>
-                  <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isFeaturesMenuOpen ? 'rotate-180' : ''}`} />
-                </div>
-                <AnimatePresence>
-                  {isFeaturesMenuOpen && (
-                    <motion.div
-                      variants={megaMenuVariants}
-                      initial="hidden"
-                      animate="visible"
-                      exit="exit"
-                      className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-max origin-top"
-                    >
-                      <div className="bg-background border border-border rounded-xl shadow-lg p-4">
-                        <div className="grid grid-cols-2 gap-4 w-[34rem]">
-                          {featureItems.map(item => (
-                            <Link
-                              key={item.name}
-                              href={item.href}
-                              className="flex items-start gap-3 p-3 rounded-lg hover:bg-muted focus:bg-muted focus:outline-none transition-colors"
-                              onClick={(e) => handleLinkClick(e, item.href)}
-                            >
-                              <div className="bg-primary/10 text-primary rounded-md p-2 mt-0.5">
-                                <item.icon className="w-5 h-5" />
-                              </div>
-                              <div>
-                                <p className="font-semibold text-foreground">{item.name}</p>
-                                <p className="text-xs text-muted-foreground">{item.description}</p>
-                              </div>
-                            </Link>
-                          ))}
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </motion.div>
-
-              <motion.div
-                onMouseEnter={() => setIsPricingMenuOpen(true)}
-                onMouseLeave={() => setIsPricingMenuOpen(false)}
-                className="relative"
-                variants={itemVariants}
-              >
-                <div
-                  className={`relative flex items-center gap-1 rounded-lg px-4 py-2 text-sm font-medium transition-colors duration-200 text-foreground cursor-pointer hover:bg-muted`}
-                >
-                  <span>Pricing</span>
-                  <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isPricingMenuOpen ? 'rotate-180' : ''}`} />
-                </div>
-                <AnimatePresence>
-                  {isPricingMenuOpen && (
-                    <motion.div
-                      variants={megaMenuVariants}
-                      initial="hidden"
-                      animate="visible"
-                      exit="exit"
-                      className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-max origin-top"
-                    >
-                      <div className="bg-background border border-border rounded-xl shadow-lg grid grid-cols-2 w-[36rem]">
-                        <div className="p-6">
-                          <div className="flex items-center gap-3 mb-3">
-                            <UserRound className="w-6 h-6 text-muted-foreground" />
-                            <h3 className="font-bold text-lg">Free</h3>
-                          </div>
-                          <p className="text-muted-foreground text-sm mb-4">A glimpse into our powerful platform, forever free.</p>
-                          <ul className="space-y-2 text-sm mb-6">
-                            {freePlanFeatures.map(f => (
-                              <li key={f} className="flex items-start gap-2">
-                                <Check className="w-4 h-4 text-green-500 mt-0.5 shrink-0" />
-                                <span className="text-muted-foreground">{f}</span>
-                              </li>
-                            ))}
-                          </ul>
-                          <Button asChild variant="secondary" className="w-full" onClick={() => setIsPricingMenuOpen(false)}>
-                            <Link href="/signup">Start for Free</Link>
-                          </Button>
-                        </div>
-                        <div className="p-6 bg-primary/5 border-l">
-                          <div className="flex items-center gap-3 mb-3">
-                            <Sparkles className="w-6 h-6 text-primary" />
-                            <h3 className="font-bold text-lg">Pro</h3>
-                          </div>
-                          <p className="text-muted-foreground text-sm mb-4">Unlock your full potential and land your dream job.</p>
-                          <ul className="space-y-2 text-sm mb-6">
-                            {proPlanFeatures.map(f => (
-                              <li key={f} className="flex items-start gap-2">
-                                <Check className="w-4 h-4 text-primary mt-0.5 shrink-0" />
-                                <span className="text-muted-foreground">{f}</span>
-                              </li>
-                            ))}
-                          </ul>
-                          <Button asChild className="w-full" onClick={() => setIsPricingMenuOpen(false)}>
-                            <Link href="/#pricing">Choose Plan</Link>
-                          </Button>
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </motion.div>
-
-              <motion.div
-                onMouseEnter={() => setIsToolsMenuOpen(true)}
-                onMouseLeave={() => setIsToolsMenuOpen(false)}
-                className="relative"
-                variants={itemVariants}
-              >
-                <div
-                  className={`relative flex items-center gap-1 rounded-lg px-4 py-2 text-sm font-medium transition-colors duration-200 text-foreground cursor-pointer hover:bg-muted`}
-                >
-                  <span>Tools</span>
-                  <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isToolsMenuOpen ? 'rotate-180' : ''}`} />
-                </div>
-                <AnimatePresence>
-                  {isToolsMenuOpen && (
-                    <motion.div
-                      variants={megaMenuVariants}
-                      initial="hidden"
-                      animate="visible"
-                      exit="exit"
-                      className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-max origin-top"
-                    >
-                      <div className="bg-background border border-border rounded-xl shadow-lg p-4">
-                        <div className="grid grid-cols-1 gap-2 w-64">
-                          {toolsItems.map(item => (
-                            <Link
-                              key={item.name}
-                              href={item.href}
-                              className="flex items-start gap-3 p-3 rounded-lg hover:bg-muted focus:bg-muted focus:outline-none transition-colors"
-                              onClick={(e) => handleLinkClick(e, item.href)}
-                            >
-                              <div className="bg-primary/10 text-primary rounded-md p-2 mt-0.5">
-                                <item.icon className="w-5 h-5" />
-                              </div>
-                              <div>
-                                <p className="font-semibold text-foreground">{item.name}</p>
-                                <p className="text-xs text-muted-foreground">{item.description}</p>
-                              </div>
-                            </Link>
-                          ))}
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </motion.div>
-
-              <motion.div
-                onMouseEnter={() => setIsAboutMenuOpen(true)}
-                onMouseLeave={() => setIsAboutMenuOpen(false)}
-                className="relative"
-                variants={itemVariants}
-              >
-                <div
-                  className={`relative flex items-center gap-1 rounded-lg px-4 py-2 text-sm font-medium transition-colors duration-200 text-foreground cursor-pointer hover:bg-muted`}
-                >
-                  <span>About</span>
-                  <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isAboutMenuOpen ? 'rotate-180' : ''}`} />
-                </div>
-                <AnimatePresence>
-                  {isAboutMenuOpen && (
-                    <motion.div
-                      variants={megaMenuVariants}
-                      initial="hidden"
-                      animate="visible"
-                      exit="exit"
-                      className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-max origin-top"
-                    >
-                      <div className="bg-background border border-border rounded-xl shadow-lg p-4">
-                        <div className="grid grid-cols-1 gap-2 w-64">
-                          {aboutItems.map(item => (
-                            <Link
-                              key={item.name}
-                              href={item.href}
-                              className="flex items-start gap-3 p-3 rounded-lg hover:bg-muted focus:bg-muted focus:outline-none transition-colors"
-                              onClick={(e) => handleLinkClick(e, item.href)}
-                            >
-                              <div className="bg-primary/10 text-primary rounded-md p-2 mt-0.5">
-                                <item.icon className="w-5 h-5" />
-                              </div>
-                              <div>
-                                <p className="font-semibold text-foreground">{item.name}</p>
-                                <p className="text-xs text-muted-foreground">{item.description}</p>
-                              </div>
-                            </Link>
-                          ))}
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </motion.div>
-
-
-              {navItems.map((item) => (
-                <motion.div
-                  key={item.name}
-                  variants={itemVariants}
-                  className="relative"
-                  onMouseEnter={() => setHoveredItem(item.name)}
-                  onMouseLeave={() => setHoveredItem(null)}
-                >
-                  <Link
-                    href={item.href}
-                    onClick={(e) => handleLinkClick(e, item.href)}
-                    className={`relative rounded-lg px-4 py-2 text-sm font-medium transition-colors duration-200 text-foreground`}
+              <AnimatePresence>
+                {activeMega === 'partnership' && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    transition={{ duration: 0.2 }}
+                    className="absolute top-full left-1/2 -translate-x-1/2 pt-4 w-[380px]"
                   >
-                    {hoveredItem === item.name && (
-                      <motion.div
-                        className="bg-muted absolute inset-0 rounded-lg"
-                        layoutId="navbar-hover"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{
-                          type: 'spring',
-                          stiffness: 400,
-                          damping: 30,
-                        }}
-                      />
-                    )}
-                    <span className="relative z-10">{item.name}</span>
+                    <div className="bg-background/95 border border-border/50 backdrop-blur-2xl rounded-[2.5rem] shadow-2xl overflow-hidden p-6 grid grid-cols-1 gap-2">
+                      <div className="absolute top-0 right-0 p-8 opacity-[0.03] pointer-events-none text-primary">
+                        <Building size={120} />
+                      </div>
+                      {partnershipItems.map((item) => (
+                        <Link
+                          key={item.name}
+                          href={item.href}
+                          onClick={(e) => handleLinkClick(e, item.href)}
+                          className="group/item flex items-center gap-4 p-4 rounded-3xl hover:bg-primary/5 transition-all duration-300 border border-transparent hover:border-primary/20"
+                        >
+                          <div className="bg-primary/10 text-primary p-3 rounded-2xl group-hover/item:scale-110 transition-transform">
+                            <item.icon size={20} />
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="text-sm font-black italic uppercase tracking-tight text-foreground">{item.name}</span>
+                            <span className="text-[10px] font-medium italic text-muted-foreground">{item.description}</span>
+                          </div>
+                          <ArrowRight size={14} className="ml-auto opacity-0 -translate-x-2 group-hover/item:opacity-100 group-hover/item:translate-x-0 transition-all text-primary" />
+                        </Link>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* Tools Mega Menu */}
+            <div
+              className="relative group"
+              onMouseEnter={() => setActiveMega('tools')}
+              onMouseLeave={() => setActiveMega(null)}
+            >
+              <button className={`flex items-center gap-1 px-4 py-2 text-sm font-bold uppercase italic tracking-widest transition-colors ${activeMega === 'tools' ? 'text-primary' : 'text-muted-foreground'}`}>
+                Tools <ChevronDown size={14} className={`transition-transform duration-300 ${activeMega === 'tools' ? 'rotate-180' : ''}`} />
+              </button>
+
+              <AnimatePresence>
+                {activeMega === 'tools' && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    transition={{ duration: 0.2 }}
+                    className="absolute top-full left-1/2 -translate-x-1/2 pt-4 w-[380px]"
+                  >
+                    <div className="bg-background/95 border border-border/50 backdrop-blur-2xl rounded-[2.5rem] shadow-2xl overflow-hidden p-6 grid grid-cols-1 gap-2">
+                      <div className="absolute top-0 right-0 p-8 opacity-[0.03] pointer-events-none text-primary">
+                        <TrendingUp size={120} />
+                      </div>
+                      {toolsItems.map((item) => (
+                        <Link
+                          key={item.name}
+                          href={item.href}
+                          onClick={(e) => handleLinkClick(e, item.href)}
+                          className="group/item flex items-center gap-4 p-4 rounded-3xl hover:bg-primary/5 transition-all duration-300 border border-transparent hover:border-primary/20"
+                        >
+                          <div className="bg-primary/10 text-primary p-3 rounded-2xl group-hover/item:scale-110 transition-transform">
+                            <item.icon size={20} />
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="text-sm font-black italic uppercase tracking-tight text-foreground">{item.name}</span>
+                            <span className="text-[10px] font-medium italic text-muted-foreground">{item.description}</span>
+                          </div>
+                          <ArrowRight size={14} className="ml-auto opacity-0 -translate-x-2 group-hover/item:opacity-100 group-hover/item:translate-x-0 transition-all text-primary" />
+                        </Link>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </nav>
+
+          {/* Auth Actions */}
+          <div className="hidden items-center space-x-4 lg:flex">
+            {loading ? (
+              <div className="h-10 w-24 animate-pulse rounded-xl bg-muted"></div>
+            ) : user ? (
+              <Button asChild className="rounded-xl h-12 px-6 font-black uppercase italic tracking-widest shadow-xl shadow-primary/20 hover:scale-105 transition-all">
+                <Link href="/dashboard">
+                  Dashboard <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+            ) : (
+              <>
+                <Button asChild variant="ghost" className="font-bold uppercase italic tracking-widest text-muted-foreground hover:text-foreground">
+                  <Link href="/login">Sign In</Link>
+                </Button>
+                <Button asChild className="rounded-xl h-12 px-6 font-black uppercase italic tracking-widest shadow-xl shadow-primary/20 hover:scale-105 transition-all">
+                  <Link href="/signup">
+                    Get Started <ArrowRight className="ml-2 h-4 w-4" />
                   </Link>
-                </motion.div>
-              ))}
-            </nav>
-
-            <motion.div
-              className="hidden items-center space-x-3 lg:flex"
-              variants={itemVariants}
-            >
-              {loading ? (
-                <div className="h-9 w-32 animate-pulse rounded-md bg-muted"></div>
-              ) : user ? (
-                <motion.div
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <Button asChild>
-                    <Link href="/dashboard">
-                      <span>Dashboard</span>
-                      <ArrowRight className="h-4 w-4" />
-                    </Link>
-                  </Button>
-                </motion.div>
-              ) : (
-                <>
-                  <motion.div
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <Button asChild variant="ghost">
-                      <Link href="/login">
-                        <span>Sign In</span>
-                      </Link>
-                    </Button>
-                  </motion.div>
-                  <motion.div
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <Button asChild>
-                      <Link href="/signup">
-                        <span>Get Started</span>
-                        <ArrowRight className="h-4 w-4" />
-                      </Link>
-                    </Button>
-                  </motion.div>
-                </>
-              )}
-            </motion.div>
-
-            <motion.button
-              className={`p-2 transition-colors duration-200 lg:hidden text-foreground`}
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              variants={itemVariants}
-              whileTap={{ scale: 0.95 }}
-            >
-              {isMobileMenuOpen ? (
-                <X className="h-6 w-6" />
-              ) : (
-                <Menu className="h-6 w-6" />
-              )}
-            </motion.button>
+                </Button>
+              </>
+            )}
           </div>
-        </div>
-      </motion.header>
 
+          {/* Mobile Toggle */}
+          <button
+            className="p-2 lg:hidden text-foreground hover:bg-muted rounded-xl transition-colors"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          >
+            {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          </button>
+        </div>
+      </div>
+
+      {/* Mobile Menu */}
       <AnimatePresence>
         {isMobileMenuOpen && (
-          <>
-            <motion.div
-              className="fixed inset-0 z-40 bg-black/20 backdrop-blur-sm lg:hidden"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsMobileMenuOpen(false)}
-            />
-            <motion.div
-              className="border-border bg-background fixed top-4 right-4 z-50 w-80 overflow-hidden rounded-2xl border shadow-2xl lg:hidden"
-              variants={mobileMenuVariants}
-              initial="closed"
-              animate="open"
-              exit="closed"
-            >
-              <div className="space-y-6 p-6">
-                <div className="space-y-1">
-                  <motion.div variants={mobileItemVariants}>
-                    <Link
-                      href="/#features"
-                      className="block rounded-lg px-4 py-3 font-medium transition-colors duration-200 hover:bg-muted"
-                      onClick={(e) => handleLinkClick(e, '/#features')}
-                    >
-                      Features
-                    </Link>
-                  </motion.div>
-                  <motion.div variants={mobileItemVariants}>
-                    <Link
-                      href="/#pricing"
-                      className="block rounded-lg px-4 py-3 font-medium transition-colors duration-200 hover:bg-muted"
-                      onClick={(e) => handleLinkClick(e, '/#pricing')}
-                    >
-                      Pricing
-                    </Link>
-                  </motion.div>
-                  <motion.div variants={mobileItemVariants}>
-                    <Link
-                      href="/salary-calculator"
-                      className="block rounded-lg px-4 py-3 font-medium transition-colors duration-200 hover:bg-muted"
-                      onClick={(e) => handleLinkClick(e, '/salary-calculator')}
-                    >
-                      Salary Calculator
-                    </Link>
-                  </motion.div>
-                  <motion.div variants={mobileItemVariants}>
-                    <Link
-                      href="/blog"
-                      className="block rounded-lg px-4 py-3 font-medium transition-colors duration-200 hover:bg-muted"
-                      onClick={(e) => handleLinkClick(e, '/blog')}
-                    >
-                      Blog
-                    </Link>
-                  </motion.div>
-                  <motion.div variants={mobileItemVariants}>
-                    <Link
-                      href="/about"
-                      className="block rounded-lg px-4 py-3 font-medium transition-colors duration-200 hover:bg-muted"
-                      onClick={(e) => handleLinkClick(e, '/about')}
-                    >
-                      About
-                    </Link>
-                  </motion.div>
-                  <motion.div variants={mobileItemVariants}>
-                    <Link
-                      href="/institutepartnership"
-                      className="block rounded-lg px-4 py-3 font-medium transition-colors duration-200 hover:bg-muted"
-                      onClick={(e) => handleLinkClick(e, '/institutepartnership')}
-                    >
-                      For Institutes
-                    </Link>
-                  </motion.div>
-                  <motion.div variants={mobileItemVariants}>
-                    <Link
-                      href="/#earn-money"
-                      className="block rounded-lg px-4 py-3 font-medium transition-colors duration-200 hover:bg-muted"
-                      onClick={(e) => handleLinkClick(e, '/#earn-money')}
-                    >
-                      Earn Money
-                    </Link>
-                  </motion.div>
-                  {navItems.map((item) => (
-                    <motion.div key={item.name} variants={mobileItemVariants}>
-                      <Link
-                        href={item.href}
-                        className="block rounded-lg px-4 py-3 font-medium transition-colors duration-200 hover:bg-muted"
-                        onClick={(e) => handleLinkClick(e, item.href)}
-                      >
-                        {item.name}
-                      </Link>
-                    </motion.div>
-                  ))}
-                </div>
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="absolute top-full left-0 w-full bg-background/95 backdrop-blur-2xl border-b border-border p-6 lg:hidden max-h-[90vh] overflow-y-auto"
+          >
+            <div className="flex flex-col space-y-4">
+              <Link href="/#features" onClick={(e) => handleLinkClick(e, '/#features')} className="text-lg font-black italic uppercase tracking-tighter text-foreground py-2 border-b border-border/50">Features</Link>
+              <Link href="/#pricing" onClick={(e) => handleLinkClick(e, '/#pricing')} className="text-lg font-black italic uppercase tracking-tighter text-foreground py-2 border-b border-border/50">Pricing</Link>
 
-                <motion.div
-                  className="border-border space-y-3 border-t pt-6"
-                  variants={mobileItemVariants}
+              <p className="text-[10px] font-bold uppercase tracking-widest text-primary italic pt-4">Partnership</p>
+              {partnershipItems.map((item) => (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  onClick={(e) => handleLinkClick(e, item.href)}
+                  className="flex items-center gap-3 text-lg font-black italic uppercase tracking-tighter text-foreground/80 py-2 border-b border-border/50 pl-2"
                 >
-                  {user ? (
-                    <Link
-                      href="/dashboard"
-                      className="bg-primary text-primary-foreground block w-full rounded-lg py-3 text-center font-medium transition-all duration-200 hover:bg-primary/90"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                    >
-                      Go to Dashboard
-                    </Link>
-                  ) : (
-                    <>
-                      <Link
-                        href="/login"
-                        className="block w-full rounded-lg py-3 text-center font-medium transition-colors duration-200 hover:bg-muted"
-                        onClick={() => setIsMobileMenuOpen(false)}
-                      >
-                        Sign In
-                      </Link>
-                      <Link
-                        href="/signup"
-                        className="bg-primary text-primary-foreground block w-full rounded-lg py-3 text-center font-medium transition-all duration-200 hover:bg-primary/90"
-                        onClick={() => setIsMobileMenuOpen(false)}
-                      >
-                        Get Started
-                      </Link>
-                    </>
-                  )}
-                </motion.div>
+                  <item.icon size={18} className="text-primary" />
+                  {item.name}
+                </Link>
+              ))}
+
+              <p className="text-[10px] font-bold uppercase tracking-widest text-primary italic pt-4">Tools & Content</p>
+              {toolsItems.map((item) => (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  onClick={(e) => handleLinkClick(e, item.href)}
+                  className="flex items-center gap-3 text-lg font-black italic uppercase tracking-tighter text-foreground/80 py-2 border-b border-border/50 pl-2"
+                >
+                  <item.icon size={18} className="text-primary" />
+                  {item.name}
+                </Link>
+              ))}
+
+              <div className="pt-8 flex flex-col space-y-3">
+                {user ? (
+                  <Button asChild size="lg" className="w-full rounded-2xl font-black uppercase italic tracking-widest h-14">
+                    <Link href="/dashboard">Dashboard</Link>
+                  </Button>
+                ) : (
+                  <>
+                    <Button asChild variant="outline" size="lg" className="w-full rounded-2xl font-black uppercase italic tracking-widest h-14">
+                      <Link href="/login">Sign In</Link>
+                    </Button>
+                    <Button asChild size="lg" className="w-full rounded-2xl font-black uppercase italic tracking-widest h-14">
+                      <Link href="/signup">Get Started</Link>
+                    </Button>
+                  </>
+                )}
               </div>
-            </motion.div>
-          </>
+            </div>
+          </motion.div>
         )}
       </AnimatePresence>
-    </>
+    </header>
   );
 }

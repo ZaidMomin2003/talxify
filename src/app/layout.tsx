@@ -3,7 +3,6 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from '@/context/auth-context';
-import PromotionalPopup from '@/components/disclaimer-dialog';
 import { ThemeProvider } from '@/components/theme-provider';
 import GoogleAnalytics from '@/components/google-analytics';
 
@@ -30,7 +29,6 @@ export default function RootLayout({
           >
             <GoogleAnalytics />
             {children}
-            <PromotionalPopup />
           </ThemeProvider>
         </AuthProvider>
         <Toaster />

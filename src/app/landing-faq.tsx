@@ -1,11 +1,12 @@
-
 'use client';
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
-import { MinusIcon, PlusIcon } from 'lucide-react';
+import { MinusIcon, PlusIcon, ShieldQuestion } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 interface FaqItem {
   id: string;
@@ -95,37 +96,48 @@ export default function LandingFaq() {
   };
 
   return (
-    <section className="bg-transparent py-16" id="faq">
+    <section className="bg-transparent py-10" id="faq">
       <div className="container mx-auto max-w-6xl px-4 md:px-6">
-        <div className="mb-12 flex flex-col items-center">
-          <Badge
-            variant="outline"
-            className="border-primary mb-4 px-3 py-1 text-xs font-medium tracking-wider uppercase"
+        <div className="relative mb-10 flex flex-col items-center text-center space-y-3">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary mb-1"
           >
-            FAQs
-          </Badge>
-
-          <h2 className="text-foreground mb-6 text-center text-4xl font-bold tracking-tight md:text-5xl">
-            Frequently Asked Questions
-          </h2>
-
-          <p className="text-muted-foreground max-w-2xl text-center">
-            Find answers to common questions about Talxify and how to use our
-            platform to prepare for your next interview.
-          </p>
+            <ShieldQuestion size={14} className="fill-primary" />
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] italic">Help Center</span>
+          </motion.div>
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.1 }}
+            className="text-3xl font-black tracking-tight italic uppercase md:text-4xl lg:text-5xl text-foreground leading-[0.9]"
+          >
+            Common <span className="text-primary">Questions.</span>
+          </motion.h2>
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.2 }}
+            className="text-muted-foreground text-sm sm:text-base font-medium max-w-xl mx-auto italic"
+          >
+            Find quick answers to help you prepare for your next big interview.
+          </motion.p>
         </div>
 
-        {/* Category Tabs */}
-        <div className="mb-10 flex flex-wrap justify-center gap-2">
+        <div className="mb-12 flex flex-wrap justify-center gap-3">
           {categories.map((category) => (
             <button
               key={category.id}
               onClick={() => setActiveCategory(category.id)}
               className={cn(
-                'rounded-full px-4 py-2 text-sm font-medium transition-all',
+                'rounded-xl px-5 py-2 text-[10px] font-black uppercase tracking-widest transition-all italic border',
                 activeCategory === category.id
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
+                  ? 'bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/20 scale-105'
+                  : 'bg-muted/50 text-muted-foreground border-border/50 hover:bg-muted hover:border-border hover:text-foreground',
               )}
             >
               {category.label}
@@ -139,30 +151,35 @@ export default function LandingFaq() {
             {filteredFaqs.map((faq, index) => (
               <motion.div
                 key={faq.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.3, delay: index * 0.05 }}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.4, delay: index * 0.05 }}
                 className={cn(
-                  'border-border h-fit overflow-hidden rounded-xl border',
+                  'group relative overflow-hidden rounded-[1.5rem] border-border/50 dark:border-white/10 transition-all duration-500 bg-card/40 dark:bg-black/40 backdrop-blur-xl',
                   expandedId === faq.id
-                    ? 'shadow-3xl bg-card/50'
-                    : 'bg-card/50',
+                    ? 'shadow-2xl shadow-primary/5 ring-1 ring-primary/20'
+                    : 'hover:bg-card/60 hover:border-primary/20 hover:shadow-xl',
                 )}
-                style={{ minHeight: '88px' }}
               >
                 <button
                   onClick={() => toggleExpand(faq.id)}
-                  className="flex w-full items-center justify-between p-6 text-left"
+                  className="flex w-full items-center justify-between p-5 sm:p-6 text-left relative z-10"
                 >
-                  <h3 className="text-foreground text-lg font-medium">
+                  <h3 className={cn(
+                    "text-base font-black italic uppercase tracking-tighter transition-colors leading-tight pr-4",
+                    expandedId === faq.id ? "text-primary" : "text-foreground group-hover:text-primary/80"
+                  )}>
                     {faq.question}
                   </h3>
-                  <div className="ml-4 flex-shrink-0">
+                  <div className={cn(
+                    "flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center transition-all duration-500",
+                    expandedId === faq.id ? "bg-primary text-primary-foreground rotate-180" : "bg-muted/50 text-muted-foreground"
+                  )}>
                     {expandedId === faq.id ? (
-                      <MinusIcon className="text-primary h-5 w-5" />
+                      <MinusIcon className="h-3.5 w-3.5" />
                     ) : (
-                      <PlusIcon className="text-primary h-5 w-5" />
+                      <PlusIcon className="h-3.5 w-3.5" />
                     )}
                   </div>
                 </button>
@@ -173,36 +190,46 @@ export default function LandingFaq() {
                       initial={{ height: 0, opacity: 0 }}
                       animate={{ height: 'auto', opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.3 }}
-                      className="overflow-hidden"
+                      transition={{ duration: 0.5, ease: [0.19, 1, 0.22, 1] }}
+                      className="overflow-hidden relative z-10"
                     >
-                      <div className="border-border border-t px-6 pt-2 pb-6">
-                        <p className="text-muted-foreground">{faq.answer}</p>
+                      <div className="px-6 sm:px-8 pb-8">
+                        <p className="text-muted-foreground font-medium italic leading-relaxed pt-2 border-t border-border/20">
+                          {faq.answer}
+                        </p>
                       </div>
                     </motion.div>
                   )}
                 </AnimatePresence>
+
+                {/* Background Decoration */}
+                <div className={cn(
+                  "absolute -bottom-10 -right-10 w-32 h-32 bg-primary/5 blur-3xl rounded-full transition-opacity duration-700",
+                  expandedId === faq.id ? "opacity-100" : "opacity-0"
+                )} />
               </motion.div>
             ))}
           </AnimatePresence>
         </div>
 
-        {/* Contact CTA */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5, duration: 0.5 }}
-          className="mt-16 text-center"
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.3, duration: 0.5 }}
+          className="mt-14 text-center"
         >
-          <p className="text-muted-foreground mb-4">
-            Can't find what you're looking for?
-          </p>
-          <a
-            href="/#contact"
-            className="border-primary text-foreground hover:bg-primary hover:text-primary-foreground inline-flex items-center justify-center rounded-lg border-2 px-6 py-3 font-medium transition-colors"
-          >
-            Contact Support
-          </a>
+          <div className="inline-block p-1 rounded-2xl bg-muted/30 dark:bg-white/5 border border-border/50 backdrop-blur-md">
+            <div className="px-8 py-6 rounded-xl bg-background/40 dark:bg-black/40 border border-border/30 flex flex-col sm:flex-row items-center gap-6">
+              <div className="text-left">
+                <p className="text-lg font-black italic uppercase tracking-tighter text-foreground leading-tight">Need more help?</p>
+                <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest mt-1 italic">Our support team is active 24/7 for premium members.</p>
+              </div>
+              <Button asChild size="lg" className="h-12 px-6 rounded-xl bg-primary hover:scale-105 transition-all font-black uppercase tracking-widest italic text-xs shadow-lg shadow-primary/20">
+                <Link href="/#contact">Contact Support</Link>
+              </Button>
+            </div>
+          </div>
         </motion.div>
       </div>
     </section>

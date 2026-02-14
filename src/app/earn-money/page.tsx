@@ -2,41 +2,45 @@
 'use client';
 
 import React from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import LandingHeader from '../landing-header';
 import LandingFooter from '../landing-footer';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, DollarSign, Edit, Headset, Percent, Handshake, Users, CheckCircle } from 'lucide-react';
+import { ArrowRight, DollarSign, Edit, Headset, Percent, Handshake, Users, CheckCircle, Wallet, Rocket, ShieldCheck, TrendingUp, Sparkles, Send } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import Link from 'next/link';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 import CalEmbed from './cal-embed';
 
 
 const steps = [
     {
-        icon: Edit,
-        title: '1. Sign Up',
-        description: "Fill out the simple form below with your details. Let us know why you'd be a great partner for Talxify."
+        icon: Rocket,
+        title: 'Apply Now',
+        description: "Submit your partnership request. We're looking for passionate creators and student leaders."
     },
     {
-        icon: Headset,
-        title: '2. Connect With Us',
-        description: "Our partnership team will review your application and reach out to schedule a brief call to discuss the program and answer your questions."
+        icon: Handshake,
+        title: 'Strategic Sync',
+        description: "Quick 15-min call with our team to align on strategy and provide you with high-converting assets."
     },
     {
-        icon: Percent,
-        title: '3. Get Your Code & Earn',
-        description: "Once approved, you'll receive a unique affiliate code. Share it with your network and earn ₹1000 INR for every new Pro user who signs up with your code."
+        icon: Wallet,
+        title: 'Earn ₹1000/Sale',
+        description: "Get your unique protocol code. Earn ₹1000 for every Pro user you bring into the Talxify ecosystem."
     }
 ];
 
 const benefits = [
-    { icon: DollarSign, text: 'Generous commission on every sale.' },
-    { icon: Handshake, text: 'Partner with a growing EdTech brand.' },
-    { icon: Users, text: 'Empower students and professionals in your network.' },
+    { icon: DollarSign, title: 'High Commissions', text: '₹1000 per sale—one of the highest in the EdTech space.' },
+    { icon: TrendingUp, title: 'Passive Revenue', text: 'Build a recurring income stream by helping your network grow.' },
+    { icon: ShieldCheck, title: 'Trusted Brand', text: 'Promote a premium tool that actually helps developers land jobs.' },
+    { icon: Sparkles, title: 'Priority Access', text: 'Get first look at new AI features and beta-test upcoming tools.' },
 ];
 
 const faqs = [
@@ -76,96 +80,184 @@ export default function EarnMoneyPage() {
             <LandingHeader />
 
             {/* Hero Section */}
-            <section className="relative bg-primary/5 pt-24 pb-20 text-center overflow-hidden">
-                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-primary/20 via-background/80 to-background opacity-70"></div>
-                <div className="container mx-auto max-w-4xl px-4 md:px-6 relative py-12">
-                    <div className="mx-auto w-fit p-4 bg-primary/10 text-primary rounded-full mb-4">
-                        <DollarSign className="w-10 h-10" />
-                    </div>
-                    <h1 className="text-4xl sm:text-5xl md:text-6xl font-headline font-bold mb-4 tracking-tighter">Become a Talxify Affiliate</h1>
-                    <p className="max-w-2xl mx-auto text-lg text-muted-foreground mb-8">
-                        Join our mission to empower the next generation of tech talent and earn for every new user you bring to our Pro plan.
-                    </p>
+            <section className="relative pt-32 pb-20 sm:pt-40 text-center overflow-hidden">
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full -z-10 pointer-events-none">
+                    <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-primary/20 rounded-full blur-[150px] animate-pulse" />
+                    <div className="absolute bottom-[-10%] right-[-5%] w-[40%] h-[40%] bg-indigo-600/20 rounded-full blur-[120px]" />
+                </div>
+
+                <div className="container mx-auto px-4 md:px-6 relative">
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.8 }}
+                        className="max-w-4xl mx-auto"
+                    >
+                        <Badge variant="outline" className="mb-6 px-4 py-1 border-primary/30 bg-primary/5 text-primary text-[10px] font-black uppercase tracking-[0.3em] italic">
+                            Wealth Acceleration
+                        </Badge>
+                        <h1 className="text-5xl sm:text-7xl md:text-8xl font-black italic uppercase tracking-tighter mb-8 leading-[0.8] text-foreground">
+                            Earn and <br /> <span className="text-primary">Empower.</span>
+                        </h1>
+                        <p className="max-w-2xl mx-auto text-lg sm:text-2xl font-medium italic text-muted-foreground leading-relaxed mb-10">
+                            Partner with the world's most advanced AI interview platform and unlock high-ticket commissions for every professional you refer.
+                        </p>
+                        <div className="flex flex-col sm:flex-row justify-center gap-4">
+                            <Button asChild size="lg" className="h-16 px-10 rounded-2xl bg-primary hover:scale-105 transition-all font-black uppercase tracking-widest italic text-base shadow-2xl shadow-primary/30">
+                                <a href="#schedule-call">Join the Elite</a>
+                            </Button>
+                            <Button asChild variant="outline" size="lg" className="h-16 px-10 rounded-2xl bg-white/5 border-white/10 hover:bg-white/10 font-black uppercase tracking-widest italic text-base">
+                                <a href="#how-it-works">The Protocol <ArrowRight className="ml-2 h-4 w-4" /></a>
+                            </Button>
+                        </div>
+                    </motion.div>
                 </div>
             </section>
 
             <main className="container mx-auto max-w-6xl p-4 md:p-6 lg:p-8 space-y-24">
 
-                 {/* Commission Highlight */}
-                <section className="text-center">
-                    <Card className="max-w-2xl mx-auto bg-gradient-to-br from-primary/80 to-blue-500/80 text-primary-foreground shadow-2xl shadow-primary/20 p-8">
-                        <p className="text-2xl font-semibold">Earn a commission of</p>
-                        <p className="text-7xl font-bold tracking-tighter my-2">₹1000 INR</p>
-                        <p className="text-xl font-semibold">for every single Pro plan sale you refer.</p>
-                    </Card>
+                {/* Commission Spotlight */}
+                <section className="relative z-10">
+                    <motion.div
+                        initial={{ opacity: 0, y: 30 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        className="max-w-4xl mx-auto rounded-[3.5rem] border border-primary/20 bg-primary/5 dark:bg-black/50 backdrop-blur-3xl p-10 md:p-16 shadow-2xl overflow-hidden relative"
+                    >
+                        <div className="absolute top-0 right-0 p-12 opacity-[0.03] pointer-events-none">
+                            <TrendingUp size={300} className="text-primary" />
+                        </div>
+
+                        <div className="relative z-10 text-center space-y-4">
+                            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-primary italic">Signature Commission</span>
+                            <h2 className="text-2xl sm:text-4xl font-black italic uppercase tracking-tight text-foreground">Earn a flat commission of</h2>
+                            <div className="relative inline-block">
+                                <div className="absolute -inset-4 bg-primary/20 blur-3xl rounded-full opacity-50" />
+                                <p className="text-8xl sm:text-9xl font-black italic uppercase tracking-tighter text-primary leading-none relative">₹1000</p>
+                            </div>
+                            <p className="text-xl sm:text-2xl font-black italic uppercase tracking-tighter text-foreground">Per every single pro sale.</p>
+                            <div className="pt-6">
+                                <Badge variant="outline" className="px-6 py-2 border-primary/20 bg-background/50 rounded-full text-sm font-bold italic text-muted-foreground uppercase tracking-widest">
+                                    No Earnings Cap • Instant Payouts Available
+                                </Badge>
+                            </div>
+                        </div>
+                    </motion.div>
                 </section>
 
                 {/* How It Works Section */}
                 <section id="how-it-works">
-                    <div className="text-center mb-12">
-                        <h2 className="text-4xl font-bold font-headline">A Simple 3-Step Process</h2>
-                        <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">Getting started as a Talxify affiliate is quick and easy.</p>
+                    <div className="text-center mb-16">
+                        <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary mb-4"
+                        >
+                            <Send size={14} className="fill-primary" />
+                            <span className="text-[10px] font-black uppercase tracking-[0.2em] italic">The Execution Path</span>
+                        </motion.div>
+                        <h2 className="text-4xl sm:text-5xl font-black italic uppercase tracking-tighter leading-none mb-6 text-foreground">Simple <span className="text-primary">Onboarding.</span></h2>
+                        <p className="text-muted-foreground mt-2 max-w-2xl mx-auto font-medium italic">Execute these three moves to begin your revenue generation journey.</p>
                     </div>
-                    <div className="relative grid grid-cols-1 md:grid-cols-3 gap-8">
-                        <div className="absolute top-8 left-0 w-full h-px bg-border hidden md:block"></div>
-                        
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
                         {steps.map((step, index) => (
-                            <div key={index} className="relative flex flex-col items-center text-center">
-                                <div className="relative z-10 flex items-center justify-center h-16 w-16 rounded-full bg-background border-2 border-primary shadow-lg mb-6">
-                                    <step.icon className="w-8 h-8 text-primary" />
+                            <motion.div
+                                key={index}
+                                initial={{ opacity: 0, y: 20 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                viewport={{ once: true }}
+                                transition={{ delay: index * 0.1 }}
+                                className="relative flex flex-col items-center text-center p-8 rounded-[2.5rem] border border-border/50 bg-card/40 backdrop-blur-xl transition-all duration-500 hover:border-primary/30"
+                            >
+                                <div className="z-10 flex items-center justify-center h-20 w-20 rounded-3xl bg-primary/10 border border-primary/20 shadow-lg mb-6 group-hover:scale-110 transition-transform">
+                                    <step.icon className="w-10 h-10 text-primary" />
                                 </div>
-                                <h3 className="text-2xl font-bold mb-2">{step.title}</h3>
-                                <p className="text-muted-foreground">{step.description}</p>
-                            </div>
+                                <h3 className="text-2xl font-black italic uppercase tracking-tighter text-foreground mb-3 leading-none">{step.title}</h3>
+                                <p className="text-muted-foreground font-medium italic text-sm">{step.description}</p>
+                            </motion.div>
                         ))}
                     </div>
                 </section>
 
-                {/* Benefits Section */}
+                {/* Benefits Grid */}
                 <section>
-                    <div className="max-w-3xl mx-auto">
-                        <ul className="space-y-4">
-                            {benefits.map((benefit, index) => (
-                                <li key={index} className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg">
-                                    <div className="flex-shrink-0 bg-green-500/10 text-green-500 p-3 rounded-full">
-                                         <CheckCircle className="w-6 h-6" />
-                                    </div>
-                                    <span className="text-lg font-medium">{benefit.text}</span>
-                                </li>
-                            ))}
-                        </ul>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto pt-4">
+                        {benefits.map((benefit, index) => (
+                            <motion.div
+                                key={index}
+                                initial={{ opacity: 0, y: 20 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                viewport={{ once: true }}
+                                transition={{ delay: index * 0.1 }}
+                                className="rounded-[2rem] border border-border/50 dark:border-white/10 bg-card/20 dark:bg-white/[0.02] p-8 text-center backdrop-blur-md relative group hover:bg-card/40 transition-all duration-500 overflow-hidden"
+                            >
+                                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                                <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary mb-6 border border-primary/20 group-hover:rotate-6 transition-transform">
+                                    <benefit.icon className="h-6 w-6" />
+                                </div>
+                                <h4 className="text-lg font-black italic uppercase tracking-tighter text-foreground mb-2 leading-none">{benefit.title}</h4>
+                                <p className="text-xs font-medium text-muted-foreground leading-relaxed italic">{benefit.text}</p>
+                                <div className="absolute -bottom-10 -right-10 w-24 h-24 bg-primary/5 blur-3xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+                            </motion.div>
+                        ))}
                     </div>
                 </section>
 
-                 {/* FAQ Section */}
+                {/* FAQ Section */}
                 <section id="faq">
-                    <div className="text-center mb-12">
-                        <h2 className="text-4xl font-bold font-headline">Affiliate Program FAQs</h2>
-                        <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">Quick answers to common questions about our program.</p>
+                    <div className="text-center mb-16">
+                        <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary mb-4"
+                        >
+                            <ShieldCheck size={14} className="fill-primary" />
+                            <span className="text-[10px] font-black uppercase tracking-[0.2em] italic">Knowledge Base</span>
+                        </motion.div>
+                        <h2 className="text-4xl sm:text-5xl font-black italic uppercase tracking-tighter leading-none mb-6 text-foreground">Common <span className="text-primary">Queries.</span></h2>
+                        <p className="text-muted-foreground mt-2 max-w-2xl mx-auto font-medium italic">Everything you need to know about the partnership infrastructure.</p>
                     </div>
-                     <Accordion type="single" collapsible className="w-full max-w-3xl mx-auto">
+                    <Accordion type="single" collapsible className="w-full max-w-3xl mx-auto">
                         {faqs.map((faq, index) => (
-                            <AccordionItem value={`item-${index}`} key={index}>
-                                <AccordionTrigger className="text-lg text-left">{faq.question}</AccordionTrigger>
-                                <AccordionContent className="text-base text-muted-foreground">
+                            <AccordionItem value={`item-${index}`} key={index} className="border-border/50">
+                                <AccordionTrigger className="text-xl font-black italic uppercase tracking-tighter text-left hover:text-primary transition-colors">{faq.question}</AccordionTrigger>
+                                <AccordionContent className="text-lg font-medium italic text-muted-foreground leading-relaxed pl-2 border-l border-primary/20 mt-2">
                                     {faq.answer}
                                 </AccordionContent>
                             </AccordionItem>
                         ))}
                     </Accordion>
                 </section>
-                
+
                 {/* Calendly Embed Section */}
                 <section id="schedule-call">
-                    <div className="text-center mb-12">
-                        <h2 className="text-4xl font-bold font-headline">Connect With Us</h2>
-                        <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">Schedule a 30-minute call with our partnership team to get started.</p>
+                    <div className="text-center mb-16">
+                        <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary mb-4"
+                        >
+                            <Headset size={14} className="fill-primary" />
+                            <span className="text-[10px] font-black uppercase tracking-[0.2em] italic">Strategic Deep-Dive</span>
+                        </motion.div>
+                        <h2 className="text-4xl sm:text-5xl font-black italic uppercase tracking-tighter leading-none mb-6 text-foreground">Ready to <span className="text-primary">Launch?</span></h2>
+                        <p className="text-muted-foreground mt-2 max-w-2xl mx-auto font-medium italic">Schedule a tactical briefing with our partnership team to activate your affiliate code.</p>
                     </div>
-                    <Card className="max-w-4xl mx-auto shadow-lg overflow-hidden">
-                        <CardContent className="p-0">
-                           <CalEmbed />
-                        </CardContent>
-                    </Card>
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.98 }}
+                        whileInView={{ opacity: 1, scale: 1 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.6 }}
+                    >
+                        <Card className="max-w-5xl mx-auto shadow-[0_0_50px_rgba(var(--primary),0.1)] overflow-hidden rounded-[3.5rem] border border-border/50 bg-card/40 dark:bg-black/50 backdrop-blur-3xl p-1">
+                            <CardContent className="p-0 h-[700px] rounded-[3.4rem] overflow-hidden">
+                                <CalEmbed />
+                            </CardContent>
+                        </Card>
+                    </motion.div>
                 </section>
 
             </main>
