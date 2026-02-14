@@ -1,13 +1,14 @@
 
 'use client';
 
-import { useState } from 'react';
-import { Mail, Lock, Eye, EyeOff, Loader2, Bot, Code, Briefcase, BarChart, Github, User } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Mail, Lock, Eye, EyeOff, Loader2, Bot, Code, Briefcase, BarChart, Github, User, ArrowRight, ChevronRight, Sparkles } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { motion } from 'framer-motion';
 
 const getFriendlyAuthErrorMessage = (errorCode: string) => {
   switch (errorCode) {
@@ -24,7 +25,6 @@ const getFriendlyAuthErrorMessage = (errorCode: string) => {
   }
 };
 
-
 export default function SignupPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -33,10 +33,15 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [githubLoading, setGithubLoading] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
 
   const { signUp, signInWithGoogle, signInWithGitHub } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -91,145 +96,240 @@ export default function SignupPage() {
     }
   };
 
+  if (!isMounted) return null;
+
   return (
-    <div className="relative flex min-h-screen w-full items-center justify-center overflow-hidden p-4 bg-background">
-      <div className="z-10 w-full max-w-6xl">
-        <div className="bg-card/50 backdrop-blur-sm overflow-hidden rounded-2xl shadow-lg border border-border/20 md:rounded-3xl lg:grid lg:grid-cols-2">
-           {/* Left Side */}
-           <div className="brand-side relative hidden lg:block m-4 rounded-xl bg-[url('/popup.png')] bg-cover p-12 text-white" data-ai-hint="abstract technology">
-            <div className='absolute inset-0 bg-primary/80 rounded-xl'></div>
-            <div className="relative z-10 flex flex-col justify-between h-full">
+    <div className="relative flex min-h-screen w-full items-center justify-center overflow-hidden bg-[#050505] selection:bg-primary/30 selection:text-white">
+      {/* Dynamic Background */}
+      <div className="absolute inset-0 z-0">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/20 rounded-full blur-[120px] animate-pulse" />
+        <div className="absolute bottom-[10%] right-[-10%] w-[30%] h-[30%] bg-indigo-600/10 rounded-full blur-[100px]" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]" />
+      </div>
+
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.8, ease: [0.19, 1, 0.22, 1] }}
+        className="z-10 w-full max-w-5xl px-4"
+      >
+        <div className="group relative bg-[#0d0d0d]/80 backdrop-blur-2xl overflow-hidden rounded-[2.5rem] shadow-[0_0_50px_rgba(0,0,0,0.5)] border border-white/5 lg:grid lg:grid-cols-2">
+          {/* Left Side: Brand Panel */}
+          <div className="relative hidden lg:flex flex-col justify-between p-12 overflow-hidden border-r border-white/5 bg-[#0a0a0a]">
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-transparent opacity-50" />
+
+            <div className="relative z-10">
+              <Link href="/" className="flex items-center gap-3 mb-16 group/logo w-fit">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary shadow-[0_0_20px_rgba(230,57,70,0.4)] group-hover/logo:scale-110 transition-transform duration-300">
+                  <Bot className="h-7 w-7 text-white" />
+                </div>
                 <div>
-                    <div className="flex items-center gap-3 mb-12">
-                        <Bot size={32} />
-                        <h1 className="text-3xl font-headline font-bold">Talxify</h1>
-                    </div>
-                    <h2 className="mb-4 text-5xl font-bold font-headline leading-tight">
-                    Win your interviews with AI Assistance.
-                    </h2>
-                    <p className="mb-12 text-lg opacity-80">
-                    AI-powered mock interviews and coding assistance to land your dream job.
-                    </p>
+                  <h1 className="text-2xl font-black italic uppercase tracking-tighter text-white leading-none">Talxify</h1>
+                  <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary/80 italic">Smart Prep</span>
                 </div>
-                <div className="space-y-6">
-                  {[
-                    { icon: <Briefcase size={16} />, title: 'AI Mock Interviews', desc: 'Practice with an AI that simulates real interviews.' },
-                    { icon: <Code size={16} />, title: 'Coding Assistant', desc: 'Get hints, explanations, and code reviews.' },
-                    { icon: <BarChart size={16} />, title: 'Performance Analytics', desc: 'Track your progress and identify weak spots.' },
-                  ].map(({ icon, title, desc }, i) => (
-                    <div key={i} className="flex items-center">
-                      <div className="mr-4 flex h-8 w-8 items-center justify-center rounded-lg bg-white/20 backdrop-blur-sm">
-                        {icon}
-                      </div>
-                      <div>
-                        <div className="font-semibold">{title}</div>
-                        <div className="text-sm opacity-70">{desc}</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+              </Link>
+
+              <div className="space-y-6">
+                <motion.h2
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.2, duration: 0.8 }}
+                  className="text-5xl font-black italic uppercase tracking-tight leading-[0.9] text-white"
+                >
+                  Build Your <br />
+                  <span className="text-primary italic">Dream Career.</span>
+                </motion.h2>
+                <motion.p
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.3, duration: 0.8 }}
+                  className="text-lg text-zinc-400 font-medium italic max-w-sm"
+                >
+                  Create your account and start practicing with our AI interviewer today.
+                </motion.p>
+              </div>
             </div>
+
+            <div className="relative z-10 space-y-4">
+              {[
+                { icon: <Briefcase size={18} />, title: 'Mock Interviews', desc: 'Real-time practice with AI.' },
+                { icon: <Code size={18} />, title: 'Coding Practice', desc: 'Solve challenges with live feedback.' },
+              ].map(({ icon, title, desc }, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4 + (i * 0.1) }}
+                  className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/5 backdrop-blur-md group/item hover:bg-white/10 transition-all duration-300"
+                >
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary group-hover/item:scale-110 transition-transform duration-300">
+                    {icon}
+                  </div>
+                  <div>
+                    <div className="font-bold text-white uppercase italic tracking-wider text-sm">{title}</div>
+                    <div className="text-[11px] text-zinc-500 font-bold uppercase tracking-widest">{desc}</div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+
+            <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
           </div>
 
-          {/* Right Side */}
-          <div className="flex flex-col justify-center p-8 sm:p-12">
+          {/* Right Side: Form Panel */}
+          <div className="flex flex-col justify-center p-8 sm:p-12 lg:p-16">
             <div className="mx-auto w-full max-w-md">
-              <div className="mb-8 text-center">
-                 <div className="flex justify-center mb-4">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                    <Bot size={32} />
+              <div className="mb-10 text-center lg:text-left">
+                <div className="flex justify-center lg:justify-start mb-6 lg:hidden">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-white">
+                    <Bot size={28} />
                   </div>
                 </div>
-                <h2 className="text-3xl font-bold font-headline text-foreground">
-                  Create an Account
+                <h2 className="text-4xl font-black italic uppercase tracking-tighter text-white mb-2">
+                  Create <span className="text-primary">Account.</span>
                 </h2>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  Join Talxify today and start preparing for success.
+                <p className="text-zinc-500 font-medium italic text-sm">
+                  Sign up in seconds and start preparing.
                 </p>
               </div>
 
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div>
-                  <label htmlFor="name" className="mb-2 block text-sm font-medium text-foreground">
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="space-y-1.5">
+                  <label htmlFor="name" className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 pl-1 italic">
                     Full Name
                   </label>
-                  <div className="relative">
-                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                      <User className="h-5 w-5 text-muted-foreground" />
+                  <div className="relative group/input">
+                    <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-zinc-500 group-focus-within/input:text-primary transition-colors duration-300">
+                      <User className="h-4 w-4" />
                     </div>
                     <input
-                      id="name" type="text" value={name} onChange={(e) => setName(e.target.value)} required
-                      className="block w-full rounded-md border border-input bg-transparent py-3 pr-3 pl-10 text-sm placeholder:text-muted-foreground focus:ring-ring focus:ring-2 focus:outline-none"
-                      placeholder="Enter your full name"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label htmlFor="email" className="mb-2 block text-sm font-medium text-foreground">
-                    Email address
-                  </label>
-                  <div className="relative">
-                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                      <Mail className="h-5 w-5 text-muted-foreground" />
-                    </div>
-                    <input
-                      id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required
-                      className="block w-full rounded-md border border-input bg-transparent py-3 pr-3 pl-10 text-sm placeholder:text-muted-foreground focus:ring-ring focus:ring-2 focus:outline-none"
-                      placeholder="Enter your email"
+                      id="name"
+                      type="text"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      required
+                      className="block w-full rounded-2xl border border-white/10 bg-white/5 py-3.5 pl-12 pr-4 text-sm font-medium text-white placeholder:text-zinc-600 focus:border-primary/50 focus:bg-white/[0.08] focus:ring-0 focus:outline-none transition-all duration-300"
+                      placeholder="John Doe"
                     />
                   </div>
                 </div>
 
-                <div>
-                  <label htmlFor="password" className="mb-2 block text-sm font-medium text-foreground">
-                    Password
+                <div className="space-y-1.5">
+                  <label htmlFor="email" className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 pl-1 italic">
+                    Email Address
                   </label>
-                  <div className="relative">
-                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                      <Lock className="h-5 w-5 text-muted-foreground" />
+                  <div className="relative group/input">
+                    <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-zinc-500 group-focus-within/input:text-primary transition-colors duration-300">
+                      <Mail className="h-4 w-4" />
                     </div>
                     <input
-                      id="password" type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} required
-                      className="block w-full rounded-md border border-input bg-transparent py-3 pr-12 pl-10 text-sm placeholder:text-muted-foreground focus:ring-ring focus:ring-2 focus:outline-none"
-                      placeholder="Create a password"
+                      id="email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      className="block w-full rounded-2xl border border-white/10 bg-white/5 py-3.5 pl-12 pr-4 text-sm font-medium text-white placeholder:text-zinc-600 focus:border-primary/50 focus:bg-white/[0.08] focus:ring-0 focus:outline-none transition-all duration-300"
+                      placeholder="you@example.com"
                     />
-                    <button type="button" className="absolute inset-y-0 right-0 flex items-center pr-3" onClick={() => setShowPassword(!showPassword)}>
-                      {showPassword ? <EyeOff className="h-5 w-5 text-muted-foreground" /> : <Eye className="h-5 w-5 text-muted-foreground" />}
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label htmlFor="password" className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 pl-1 italic">
+                    Password
+                  </label>
+                  <div className="relative group/input">
+                    <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-zinc-500 group-focus-within/input:text-primary transition-colors duration-300">
+                      <Lock className="h-4 w-4" />
+                    </div>
+                    <input
+                      id="password"
+                      type={showPassword ? 'text' : 'password'}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      className="block w-full rounded-2xl border border-white/10 bg-white/5 py-3.5 pl-12 pr-12 text-sm font-medium text-white placeholder:text-zinc-600 focus:border-primary/50 focus:bg-white/[0.08] focus:ring-0 focus:outline-none transition-all duration-300"
+                      placeholder="Secure Password"
+                    />
+                    <button
+                      type="button"
+                      className="absolute inset-y-0 right-4 flex items-center text-zinc-500 hover:text-white transition-colors"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
                 </div>
 
-                <Button type="submit" className="w-full" size="lg" disabled={loading || googleLoading || githubLoading}>
-                  {loading ? <Loader2 className="animate-spin" /> : 'Create Account'}
+                <Button
+                  type="submit"
+                  className="w-full h-14 rounded-2xl bg-primary hover:bg-primary/90 text-white font-black italic uppercase tracking-widest text-base shadow-[0_0_20px_rgba(230,57,70,0.3)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 overflow-hidden group/btn disabled:opacity-70 mt-4"
+                  disabled={loading || googleLoading || githubLoading}
+                >
+                  {loading ? (
+                    <Loader2 className="animate-spin h-5 w-5" />
+                  ) : (
+                    <span className="flex items-center gap-2">
+                      Create Account <ArrowRight className="h-5 w-5 group-hover/btn:translate-x-1 transition-transform" />
+                    </span>
+                  )}
                 </Button>
 
-                <div className="relative text-center text-sm text-muted-foreground">
-                  <div className="absolute inset-0 flex items-center"> <div className="w-full border-t border-border"></div></div>
-                  <span className="relative bg-card px-2">Or sign up with</span>
+                <div className="relative py-4">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-white/5"></div>
+                  </div>
+                  <div className="relative flex justify-center">
+                    <span className="bg-[#0d0d0d] px-4 text-[10px] font-black uppercase tracking-[0.3em] text-zinc-600 italic">Or sign up with</span>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
-                    <Button variant="outline" type="button" onClick={handleGoogleSignIn} disabled={loading || googleLoading || githubLoading}>
-                        {googleLoading ? <Loader2 className="animate-spin" /> : <img src="https://www.svgrepo.com/show/475656/google-color.svg" className="h-5 w-5" alt="Google" />}
-                        <span className="ml-2">Google</span>
-                    </Button>
-                    <Button variant="outline" type="button" onClick={handleGitHubSignIn} disabled={loading || googleLoading || githubLoading}>
-                        {githubLoading ? <Loader2 className="animate-spin" /> : <Github className="h-5 w-5" />}
-                        <span className="ml-2">GitHub</span>
-                    </Button>
+                  <Button
+                    variant="outline"
+                    type="button"
+                    onClick={handleGoogleSignIn}
+                    disabled={loading || googleLoading || githubLoading}
+                    className="h-14 rounded-2xl border-white/10 bg-white/5 text-white font-bold tracking-tight hover:bg-white/10 hover:border-white/20 transition-all duration-300"
+                  >
+                    {googleLoading ? (
+                      <Loader2 className="animate-spin h-4 w-4" />
+                    ) : (
+                      <>
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" className="h-5 w-5 mr-3" alt="Google" />
+                        <span>Google</span>
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    type="button"
+                    onClick={handleGitHubSignIn}
+                    disabled={loading || googleLoading || githubLoading}
+                    className="h-14 rounded-2xl border-white/10 bg-white/5 text-white font-bold tracking-tight hover:bg-white/10 hover:border-white/20 transition-all duration-300"
+                  >
+                    {githubLoading ? (
+                      <Loader2 className="animate-spin h-4 w-4" />
+                    ) : (
+                      <>
+                        <Github className="h-5 w-5 mr-3" />
+                        <span>GitHub</span>
+                      </>
+                    )}
+                  </Button>
                 </div>
               </form>
 
-              <div className="text-muted-foreground mt-8 text-center text-sm">
-                Already have an account?{' '}
-                <Link href="/login" className="text-primary hover:text-primary/80 font-medium">
-                  Log In
+              <div className="mt-8 text-center font-medium italic text-sm">
+                <span className="text-zinc-500">Already have an account?</span>{' '}
+                <Link href="/login" className="text-primary font-black italic uppercase tracking-widest text-xs hover:text-primary/80 transition-colors ml-1 inline-flex items-center group/link">
+                  Log In <ChevronRight className="h-3 w-3 group-hover/link:translate-x-1 transition-transform" />
                 </Link>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }

@@ -2,18 +2,19 @@
 
 'use client';
 
-import { useState } from 'react';
-import { Mail, Lock, Eye, EyeOff, Loader2, Bot, Code, Briefcase, BarChart, Github } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Mail, Lock, Eye, EyeOff, Loader2, Bot, Code, Briefcase, BarChart, Github, ArrowRight, Sparkles, ChevronRight } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import type { SignInForm } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { sendPasswordResetEmail } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { motion, AnimatePresence } from 'framer-motion';
+import { cn } from '@/lib/utils';
 
 const getFriendlyAuthErrorMessage = (errorCode: string) => {
   switch (errorCode) {
@@ -26,12 +27,11 @@ const getFriendlyAuthErrorMessage = (errorCode: string) => {
     case 'auth/user-disabled':
       return 'This user account has been disabled.';
     case 'auth/too-many-requests':
-        return 'Access to this account has been temporarily disabled due to too many failed login attempts. You can reset your password or try again later.';
+      return 'Access to this account has been temporarily disabled due to too many failed login attempts. You can reset your password or try again later.';
     default:
       return 'An unexpected error occurred during sign-in. Please try again.';
   }
 };
-
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -43,10 +43,15 @@ export default function LoginPage() {
   const [isForgotPassOpen, setIsForgotPassOpen] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
   const [resetLoading, setResetLoading] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
 
   const { signIn, signInWithGoogle, signInWithGitHub } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -106,24 +111,23 @@ export default function LoginPage() {
       toast({ title: "Email required", description: "Please enter your email address.", variant: "destructive" });
       return;
     }
-    
+
     setResetLoading(true);
     try {
       await sendPasswordResetEmail(auth, resetEmail);
-      toast({ 
-          title: "Password Reset Email Sent", 
-          description: "If an account exists for this email, you will receive instructions to reset your password. Please also check your spam folder.",
-          duration: 7000
+      toast({
+        title: "Password Reset Email Sent",
+        description: "If an account exists for this email, you will receive instructions to reset your password. Please also check your spam folder.",
+        duration: 7000
       });
       setIsForgotPassOpen(false);
       setResetEmail("");
     } catch (error: any) {
       console.error(error);
-       // We show a generic message even on error to prevent email enumeration.
-       toast({ 
-          title: "Password Reset Email Sent", 
-          description: "If an account exists for this email, you will receive instructions to reset your password. Please also check your spam folder.",
-          duration: 7000
+      toast({
+        title: "Password Reset Email Sent",
+        description: "If an account exists for this email, you will receive instructions to reset your password. Please also check your spam folder.",
+        duration: 7000
       });
       setIsForgotPassOpen(false);
     } finally {
@@ -131,170 +135,278 @@ export default function LoginPage() {
     }
   };
 
+  if (!isMounted) return null;
 
   return (
     <>
-    <div className="relative flex min-h-screen w-full items-center justify-center overflow-hidden p-4 bg-background">
-      <div className="z-10 w-full max-w-6xl">
-        <div className="bg-card/50 backdrop-blur-sm overflow-hidden rounded-2xl shadow-lg border border-border/20 md:rounded-3xl lg:grid lg:grid-cols-2">
-          {/* Left Side */}
-          <div className="brand-side relative hidden lg:block m-4 rounded-xl bg-[url('/popup.png')] bg-cover p-12 text-white" data-ai-hint="abstract technology">
-            <div className='absolute inset-0 bg-primary/80 rounded-xl'></div>
-            <div className="relative z-10 flex flex-col justify-between h-full">
-                <div>
-                    <div className="flex items-center gap-3 mb-12">
-                        <Bot size={32} />
-                        <h1 className="text-3xl font-headline font-bold">Talxify</h1>
-                    </div>
-                    <h2 className="mb-4 text-5xl font-bold font-headline leading-tight">
-                    Win your interviews with AI Assistance.
-                    </h2>
-                    <p className="mb-12 text-lg opacity-80">
-                    AI-powered mock interviews and coding assistance to land your dream job.
-                    </p>
-                </div>
-                <div className="space-y-6">
-                  {[
-                    { icon: <Briefcase size={16} />, title: 'AI Mock Interviews', desc: 'Practice with an AI that simulates real interviews.' },
-                    { icon: <Code size={16} />, title: 'Coding Assistant', desc: 'Get hints, explanations, and code reviews.' },
-                    { icon: <BarChart size={16} />, title: 'Performance Analytics', desc: 'Track your progress and identify weak spots.' },
-                  ].map(({ icon, title, desc }, i) => (
-                    <div key={i} className="flex items-center">
-                      <div className="mr-4 flex h-8 w-8 items-center justify-center rounded-lg bg-white/20 backdrop-blur-sm">
-                        {icon}
-                      </div>
-                      <div>
-                        <div className="font-semibold">{title}</div>
-                        <div className="text-sm opacity-70">{desc}</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-            </div>
-          </div>
-
-          {/* Right Side */}
-          <div className="flex flex-col justify-center p-8 sm:p-12">
-            <div className="mx-auto w-full max-w-md">
-              <div className="mb-8 text-center">
-                <div className="flex justify-center mb-4">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                    <Bot size={32} />
-                  </div>
-                </div>
-                <h2 className="text-3xl font-bold font-headline text-foreground">
-                  Welcome Back
-                </h2>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  Sign in to continue your journey with Talxify.
-                </p>
-              </div>
-
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div>
-                  <label htmlFor="email" className="mb-2 block text-sm font-medium text-foreground">
-                    Email address
-                  </label>
-                  <div className="relative">
-                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                      <Mail className="h-5 w-5 text-muted-foreground" />
-                    </div>
-                    <input
-                      id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required
-                      className="block w-full rounded-md border border-input bg-transparent py-3 pr-3 pl-10 text-sm placeholder:text-muted-foreground focus:ring-ring focus:ring-2 focus:outline-none"
-                      placeholder="Enter your email"
-                      autoComplete="email"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label htmlFor="password" className="mb-2 block text-sm font-medium text-foreground">
-                    Password
-                  </label>
-                  <div className="relative">
-                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                      <Lock className="h-5 w-5 text-muted-foreground" />
-                    </div>
-                    <input
-                      id="password" type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} required
-                      className="block w-full rounded-md border border-input bg-transparent py-3 pr-12 pl-10 text-sm placeholder:text-muted-foreground focus:ring-ring focus:ring-2 focus:outline-none"
-                      placeholder="Enter your password"
-                      autoComplete="current-password"
-                    />
-                    <button type="button" aria-label="Toggle password visibility" className="absolute inset-y-0 right-0 flex items-center pr-3" onClick={() => setShowPassword(!showPassword)}>
-                      {showPassword ? <EyeOff className="h-5 w-5 text-muted-foreground" /> : <Eye className="h-5 w-5 text-muted-foreground" />}
-                    </button>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-end">
-                  <button type="button" onClick={() => setIsForgotPassOpen(true)} className="text-primary hover:text-primary/80 text-sm font-medium">
-                    Forgot password?
-                  </button>
-                </div>
-
-                <Button type="submit" className="w-full" size="lg" disabled={loading || googleLoading || githubLoading}>
-                  {loading ? <Loader2 className="animate-spin" /> : 'Sign In'}
-                </Button>
-
-                <div className="relative text-center text-sm text-muted-foreground">
-                  <div className="absolute inset-0 flex items-center"> <div className="w-full border-t border-border"></div></div>
-                  <span className="relative bg-card px-2">Or continue with</span>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                    <Button variant="outline" type="button" onClick={handleGoogleSignIn} disabled={loading || googleLoading || githubLoading}>
-                        {googleLoading ? <Loader2 className="animate-spin" /> : <img src="https://www.svgrepo.com/show/475656/google-color.svg" className="h-5 w-5" alt="Google" />}
-                        <span className="ml-2">Google</span>
-                    </Button>
-                    <Button variant="outline" type="button" onClick={handleGitHubSignIn} disabled={loading || googleLoading || githubLoading}>
-                        {githubLoading ? <Loader2 className="animate-spin" /> : <Github className="h-5 w-5" />}
-                        <span className="ml-2">GitHub</span>
-                    </Button>
-                </div>
-              </form>
-
-              <div className="text-muted-foreground mt-8 text-center text-sm">
-                Don't have an account?{' '}
-                <Link href="/signup" className="text-primary hover:text-primary/80 font-medium">
-                  Sign up for free
-                </Link>
-              </div>
-            </div>
-          </div>
+      <div className="relative flex min-h-screen w-full items-center justify-center overflow-hidden bg-[#050505] selection:bg-primary/30 selection:text-white">
+        {/* Dynamic Background */}
+        <div className="absolute inset-0 z-0">
+          <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/20 rounded-full blur-[120px] animate-pulse" />
+          <div className="absolute bottom-[10%] right-[-10%] w-[30%] h-[30%] bg-indigo-600/10 rounded-full blur-[100px]" />
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]" />
         </div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          className="z-10 w-full max-w-5xl px-4"
+        >
+          <div className="group relative bg-[#0d0d0d]/80 backdrop-blur-2xl overflow-hidden rounded-[2.5rem] shadow-[0_0_50px_rgba(0,0,0,0.5)] border border-white/5 lg:grid lg:grid-cols-2">
+            {/* Left Side: Brand Panel */}
+            <div className="relative hidden lg:flex flex-col justify-between p-12 overflow-hidden border-r border-white/5 bg-[#0a0a0a]">
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-transparent opacity-50" />
+
+              <div className="relative z-10">
+                <Link href="/" className="flex items-center gap-3 mb-16 group/logo w-fit">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary shadow-[0_0_20px_rgba(230,57,70,0.4)] group-hover/logo:scale-110 transition-transform duration-300">
+                    <Bot className="h-7 w-7 text-white" />
+                  </div>
+                  <div>
+                    <h1 className="text-2xl font-black italic uppercase tracking-tighter text-white leading-none">Talxify</h1>
+                    <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary/80 italic">AI Protocol</span>
+                  </div>
+                </Link>
+
+                <div className="space-y-6">
+                  <motion.h2
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.2, duration: 0.8 }}
+                    className="text-5xl font-black italic uppercase tracking-tight leading-[0.9] text-white"
+                  >
+                    Master Your <br />
+                    <span className="text-primary italic">Next Interview.</span>
+                  </motion.h2>
+                  <motion.p
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.3, duration: 0.8 }}
+                    className="text-lg text-zinc-400 font-medium italic max-w-sm"
+                  >
+                    Practice with AI-powered mock interviews and get the job you deserve.
+                  </motion.p>
+                </div>
+              </div>
+
+              <div className="relative z-10 space-y-4">
+                {[
+                  { icon: <Briefcase size={18} />, title: 'Mock Interviews', desc: 'Real-time voice and coding practice.' },
+                  { icon: <BarChart size={18} />, title: 'Detailed Feedback', desc: 'Analyze your performance instantly.' },
+                ].map(({ icon, title, desc }, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4 + (i * 0.1) }}
+                    className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/5 backdrop-blur-md group/item hover:bg-white/10 transition-all duration-300"
+                  >
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary group-hover/item:scale-110 transition-transform duration-300">
+                      {icon}
+                    </div>
+                    <div>
+                      <div className="font-bold text-white uppercase italic tracking-wider text-sm">{title}</div>
+                      <div className="text-[11px] text-zinc-500 font-bold uppercase tracking-widest">{desc}</div>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+
+              {/* Decorative circle */}
+              <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
+            </div>
+
+            {/* Right Side: Form Panel */}
+            <div className="flex flex-col justify-center p-8 sm:p-12 lg:p-16">
+              <div className="mx-auto w-full max-w-md">
+                <div className="mb-10 text-center lg:text-left">
+                  <div className="flex justify-center lg:justify-start mb-6 lg:hidden">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-white">
+                      <Bot size={28} />
+                    </div>
+                  </div>
+                  <h2 className="text-4xl font-black italic uppercase tracking-tighter text-white mb-2">
+                    Welcome <span className="text-primary">Back.</span>
+                  </h2>
+                  <p className="text-zinc-500 font-medium italic text-sm">
+                    Log in to your account and continue practicing.
+                  </p>
+                </div>
+
+                <form onSubmit={handleSubmit} className="space-y-5">
+                  <div className="space-y-1.5">
+                    <label htmlFor="email" className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 pl-1 italic">
+                      Email Address
+                    </label>
+                    <div className="relative group/input">
+                      <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-zinc-500 group-focus-within/input:text-primary transition-colors duration-300">
+                        <Mail className="h-4 w-4" />
+                      </div>
+                      <input
+                        id="email"
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                        className="block w-full rounded-2xl border border-white/10 bg-white/5 py-3.5 pl-12 pr-4 text-sm font-medium text-white placeholder:text-zinc-600 focus:border-primary/50 focus:bg-white/[0.08] focus:ring-0 focus:outline-none transition-all duration-300"
+                        placeholder="you@example.com"
+                        autoComplete="email"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <div className="flex justify-between items-center px-1">
+                      <label htmlFor="password" className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 italic">
+                        Password
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setIsForgotPassOpen(true)}
+                        className="text-[10px] font-black uppercase tracking-widest text-primary/60 hover:text-primary italic transition-colors"
+                      >
+                        Reset?
+                      </button>
+                    </div>
+                    <div className="relative group/input">
+                      <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-zinc-500 group-focus-within/input:text-primary transition-colors duration-300">
+                        <Lock className="h-4 w-4" />
+                      </div>
+                      <input
+                        id="password"
+                        type={showPassword ? 'text' : 'password'}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                        className="block w-full rounded-2xl border border-white/10 bg-white/5 py-3.5 pl-12 pr-12 text-sm font-medium text-white placeholder:text-zinc-600 focus:border-primary/50 focus:bg-white/[0.08] focus:ring-0 focus:outline-none transition-all duration-300"
+                        placeholder="Secure Password"
+                        autoComplete="current-password"
+                      />
+                      <button
+                        type="button"
+                        aria-label="Toggle password visibility"
+                        className="absolute inset-y-0 right-4 flex items-center text-zinc-500 hover:text-white transition-colors"
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <Button
+                    type="submit"
+                    className="w-full h-14 rounded-2xl bg-primary hover:bg-primary/90 text-white font-black italic uppercase tracking-widest text-base shadow-[0_0_20px_rgba(230,57,70,0.3)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 overflow-hidden group/btn disabled:opacity-70 disabled:hover:scale-100"
+                    disabled={loading || googleLoading || githubLoading}
+                  >
+                    {loading ? (
+                      <Loader2 className="animate-spin h-5 w-5" />
+                    ) : (
+                      <span className="flex items-center gap-2">
+                        Log In <ArrowRight className="h-5 w-5 group-hover/btn:translate-x-1 transition-transform" />
+                      </span>
+                    )}
+                  </Button>
+
+                  <div className="relative py-4">
+                    <div className="absolute inset-0 flex items-center">
+                      <div className="w-full border-t border-white/5"></div>
+                    </div>
+                    <div className="relative flex justify-center">
+                      <span className="bg-[#0d0d0d] px-4 text-[10px] font-black uppercase tracking-[0.3em] text-zinc-600 italic">Or continue with</span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <Button
+                      variant="outline"
+                      type="button"
+                      onClick={handleGoogleSignIn}
+                      disabled={loading || googleLoading || githubLoading}
+                      className="h-14 rounded-2xl border-white/10 bg-white/5 text-white font-bold tracking-tight hover:bg-white/10 hover:border-white/20 transition-all duration-300"
+                    >
+                      {googleLoading ? (
+                        <Loader2 className="animate-spin h-4 w-4" />
+                      ) : (
+                        <>
+                          <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" className="h-5 w-5 mr-3" alt="Google" />
+                          <span>Google</span>
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      type="button"
+                      onClick={handleGitHubSignIn}
+                      disabled={loading || googleLoading || githubLoading}
+                      className="h-14 rounded-2xl border-white/10 bg-white/5 text-white font-bold tracking-tight hover:bg-white/10 hover:border-white/20 transition-all duration-300"
+                    >
+                      {githubLoading ? (
+                        <Loader2 className="animate-spin h-4 w-4" />
+                      ) : (
+                        <>
+                          <Github className="h-5 w-5 mr-3" />
+                          <span>GitHub</span>
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </form>
+
+                <div className="mt-10 text-center">
+                  <p className="text-zinc-500 font-medium italic text-sm">
+                    Don't have an account? {' '}
+                    <Link href="/signup" className="text-primary font-black italic uppercase tracking-widest text-xs hover:text-primary/80 transition-colors ml-1 inline-flex items-center group/link">
+                      Sign Up <ChevronRight className="h-3 w-3 group-hover/link:translate-x-1 transition-transform" />
+                    </Link>
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </motion.div>
       </div>
-    </div>
-    <Dialog open={isForgotPassOpen} onOpenChange={setIsForgotPassOpen}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Reset Password</DialogTitle>
-          <DialogDescription>
-            Enter your email address below. If an account is associated with it, we'll send a link to reset your password.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="space-y-4 py-2">
-            <label htmlFor="reset-email" className="text-sm font-medium">Email</label>
-            <Input 
-                id="reset-email" 
-                type="email" 
+
+      <Dialog open={isForgotPassOpen} onOpenChange={setIsForgotPassOpen}>
+        <DialogContent className="bg-[#0d0d0d] border border-white/10 text-white rounded-[2rem] max-w-md p-8 overflow-hidden backdrop-blur-3xl">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 blur-[80px] rounded-full -z-10" />
+
+          <DialogHeader className="mb-6">
+            <DialogTitle className="text-2xl font-black italic uppercase tracking-tighter mb-2">Reset <span className="text-primary">Password.</span></DialogTitle>
+            <DialogDescription className="text-zinc-500 font-medium italic">
+              Enter your email and we'll send you reset instructions.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="space-y-1.5">
+              <label htmlFor="reset-email" className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 italic pl-1">Email Address</label>
+              <Input
+                id="reset-email"
+                type="email"
                 placeholder="you@example.com"
                 value={resetEmail}
                 onChange={(e) => setResetEmail(e.target.value)}
-            />
-        </div>
-        <DialogFooter>
-          <DialogClose asChild>
-            <Button type="button" variant="secondary">Cancel</Button>
-          </DialogClose>
-          <Button type="button" onClick={handlePasswordReset} disabled={resetLoading}>
-            {resetLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Send Reset Link
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+                className="h-12 rounded-xl bg-white/5 border-white/10 focus:border-primary/50 text-white font-medium italic"
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="mt-6 flex gap-3 sm:gap-0">
+            <DialogClose asChild>
+              <Button type="button" variant="ghost" className="rounded-xl font-bold uppercase tracking-widest text-xs text-zinc-500 hover:text-white hover:bg-white/5">Cancel</Button>
+            </DialogClose>
+            <Button
+              type="button"
+              onClick={handlePasswordReset}
+              disabled={resetLoading}
+              className="rounded-xl bg-primary hover:bg-primary/90 text-white font-black uppercase tracking-widest text-xs h-12 px-6"
+            >
+              {resetLoading ? <Loader2 className="animate-spin h-4 w-4" /> : 'Send Reset Link'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

@@ -173,7 +173,7 @@ const features = [
     title: 'Smart Study Prep',
     content:
       "Get custom study notes and coding challenges tailored for your dream job and target company.",
-    icon: <BrainCircuit className="text-primary h-6 w-6" />,
+    icon: <BrainCircuit className="h-6 w-6" />,
     prototype: featurePrototypes[0],
   },
   {
@@ -181,7 +181,7 @@ const features = [
     title: 'AI Mock Interview',
     content:
       'Practice with realistic AI interviews and coding challenges that feel like the real thing.',
-    icon: <Bot className="text-primary h-6 w-6" />,
+    icon: <Bot className="h-6 w-6" />,
     prototype: featurePrototypes[1],
   },
   {
@@ -189,7 +189,7 @@ const features = [
     title: 'Professional Profile',
     content:
       'Build a standout resume and professional portfolio with our AI-powered career tools.',
-    icon: <FileText className="text-primary h-6 w-6" />,
+    icon: <FileText className="h-6 w-6" />,
     prototype: featurePrototypes[2],
   },
   {
@@ -197,7 +197,7 @@ const features = [
     title: 'Job Offer Victory',
     content:
       'Build confidence for your interviews and land top-tier job offers with ease.',
-    icon: <Rocket className="text-primary h-6 w-6" />,
+    icon: <Rocket className="h-6 w-6" />,
     prototype: featurePrototypes[3],
   },
 ];
@@ -267,15 +267,15 @@ export default function LandingFeatureSteps() {
           </motion.p>
         </div>
 
-        <div className="grid grid-cols-1 gap-12 lg:grid-cols-12 lg:gap-20 items-center">
-          <div className="lg:col-span-5 space-y-4 md:space-y-6">
+        <div className="grid grid-cols-1 gap-12 lg:grid-cols-12 lg:gap-20 items-center justify-center">
+          <div className="lg:col-span-5 space-y-4 md:space-y-6 flex flex-col items-center lg:items-stretch">
             {features.map((feature, index) => {
               const isActive = index === currentFeature;
               return (
                 <motion.div
                   key={index}
                   className={cn(
-                    "group relative flex items-start gap-6 p-6 rounded-[2rem] transition-all duration-500 cursor-pointer border",
+                    "group relative flex flex-col items-center text-center md:items-start md:text-left gap-6 p-6 rounded-[2rem] transition-all duration-500 cursor-pointer border",
                     isActive
                       ? "bg-card/40 dark:bg-primary/5 border-primary/30 shadow-2xl shadow-primary/10 scale-[1.02]"
                       : "bg-transparent border-transparent hover:bg-muted/30 opacity-40 hover:opacity-100"
@@ -288,8 +288,8 @@ export default function LandingFeatureSteps() {
                   <div className={cn(
                     "flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl transition-all duration-500 border-2",
                     isActive
-                      ? "bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/30 rotate-3"
-                      : "bg-muted border-border group-hover:bg-primary/10 group-hover:text-primary group-hover:border-primary/20"
+                      ? "bg-primary text-white border-primary shadow-lg shadow-primary/30 rotate-3"
+                      : "bg-muted border-border text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary group-hover:border-primary/20"
                   )}>
                     <div className={cn("transition-transform duration-500", isActive && "scale-110")}>
                       {feature.icon}
@@ -320,7 +320,7 @@ export default function LandingFeatureSteps() {
                   {isActive && (
                     <motion.div
                       layoutId="active-indicator"
-                      className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-12 bg-primary rounded-r-full"
+                      className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-12 bg-primary rounded-r-full hidden md:block"
                     />
                   )}
                 </motion.div>
