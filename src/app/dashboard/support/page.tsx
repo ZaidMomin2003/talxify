@@ -20,6 +20,7 @@ const supportFormSchema = z.object({
     issue: z.enum(["billing", "technical", "feedback", "general"]),
     description: z.string().min(10, "Please provide a detailed description (min. 10 characters)."),
 });
+import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { cn } from "@/lib/utils";
 import { Headphones, Mail, MessageSquare, Clock } from "lucide-react";
@@ -120,14 +121,19 @@ export default function SupportPage() {
                         </motion.div>
 
                         <motion.div variants={itemVariants} className="p-6 rounded-3xl border border-white/10 bg-black/40 backdrop-blur-xl hidden lg:block">
-                            <h3 className="font-black text-white uppercase italic tracking-tighter text-xl mb-4">Quick Links</h3>
+                            <h3 className="font-black text-white uppercase italic tracking-tighter text-xl mb-4">Navigator</h3>
                             <ul className="space-y-3">
-                                {['Documentation', 'Video Tutorials', 'Community Forum', 'Update Logs'].map(link => (
-                                    <li key={link}>
-                                        <button className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-2 group">
+                                {[
+                                    { name: 'Resume Builder', href: '/dashboard/resume-builder' },
+                                    { name: 'Interview Practice', href: '/dashboard/interview' },
+                                    { name: 'AI Question Generator', href: '/dashboard/interview-questions-generator' },
+                                    { name: 'My Performance', href: '/dashboard/profile' }
+                                ].map(link => (
+                                    <li key={link.name}>
+                                        <Link href={link.href} className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-2 group">
                                             <div className="h-1.5 w-1.5 rounded-full bg-primary/30 group-hover:bg-primary transition-colors" />
-                                            {link}
-                                        </button>
+                                            {link.name}
+                                        </Link>
                                     </li>
                                 ))}
                             </ul>

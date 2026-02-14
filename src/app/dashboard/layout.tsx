@@ -41,6 +41,7 @@ import {
   SidebarGroupLabel,
 } from "@/components/ui/sidebar";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { motion } from "framer-motion";
 import { Bot, Code, LayoutGrid, MessageSquare, BarChart, Settings, History, Search, User, LogOut, Gem, LifeBuoy, Sun, Moon, Briefcase, CalendarDays, BrainCircuit, PlayCircle, X, CheckCircle, Circle, Swords, BookOpen, AlertTriangle, FileText, FlaskConical, Rocket, ListChecks, Plus, Edit, ShoppingCart, ChevronDown, Wand2, Bug } from "lucide-react";
 import type { StoredActivity, QuizResult, UserData, InterviewActivity, NoteGenerationActivity, TodoItem, InterviewQuestionSetActivity } from "@/lib/types";
 import { formatDistanceToNow, format } from 'date-fns';
@@ -342,10 +343,10 @@ function DashboardLayoutContent({
   return (
     <SidebarProvider>
       <Sidebar>
-        <SidebarHeader className="p-4">
+        <SidebarHeader className="p-4 pb-2">
           <div className="flex items-center gap-3">
             <div className="relative flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-primary via-purple-500 to-blue-500 text-primary-foreground shadow-lg shadow-primary/20 animate-vivid-gradient [background-size:200%_200%]">
-              <Bot size={26} />
+              <Bot size={24} />
               <div className="absolute inset-0 rounded-xl bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
             <div className="flex flex-col">
@@ -387,36 +388,37 @@ function DashboardLayoutContent({
               );
             })}
           </SidebarMenu>
-
-          <SidebarGroup className="p-0 mt-4">
+        </SidebarContent>
+        <SidebarFooter>
+          <div className="p-3 space-y-3">
+            {/* Showcase Grid (Moved here) */}
             <div className="grid grid-cols-2 gap-2 px-1">
               {showcaseItems.map(item => {
                 const isActive = pathname.startsWith(item.href);
                 return (
                   <Link key={item.href} href={item.href} className="group flex flex-col items-center justify-center">
                     <div className={cn(
-                      "relative w-full aspect-square flex flex-col items-center justify-center rounded-2xl transition-all duration-300 border backdrop-blur-sm overflow-hidden",
+                      "relative w-full py-3 flex flex-col items-center justify-center rounded-2xl transition-all duration-300 border backdrop-blur-sm overflow-hidden",
                       isActive
-                        ? "bg-primary/20 border-primary/40 text-primary shadow-[0_0_20px_rgba(var(--primary),0.2)]"
-                        : "bg-muted/40 border-white/5 text-muted-foreground hover:bg-muted/60 hover:border-white/10 hover:shadow-xl"
+                        ? "bg-primary/15 border-primary/40 text-primary shadow-[0_0_20px_rgba(var(--primary),0.1)]"
+                        : "bg-zinc-900/40 border-white/5 text-muted-foreground hover:bg-zinc-800/60 hover:border-white/10 hover:shadow-xl"
                     )}>
-                      {/* Active indicator */}
                       {isActive && (
                         <div className="absolute top-2 right-2 h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
                       )}
 
                       <div className={cn(
-                        "flex h-10 w-10 items-center justify-center rounded-xl transition-all duration-500 mb-2",
-                        isActive ? "bg-primary/20 text-primary scale-110 rotate-3" : "bg-black/20 text-muted-foreground group-hover:scale-110 group-hover:rotate-6"
+                        "flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-500 mb-2",
+                        isActive ? "bg-primary/20 text-primary scale-110" : "bg-black/20 text-muted-foreground group-hover:scale-110"
                       )}>
-                        <item.icon size={22} />
+                        <item.icon size={20} />
                       </div>
 
-                      <span className="text-[10px] font-black uppercase tracking-widest text-center px-1">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-center">
                         {item.label.split(' ')[0]}
                       </span>
 
-                      {/* Badges positioning */}
+                      {/* Badges */}
                       <div className="absolute top-2 left-2 flex gap-1">
                         {(item as any).isTesting && (
                           <div className="flex h-4 w-4 items-center justify-center rounded-sm bg-yellow-500/10 text-yellow-600 border border-yellow-500/20">
@@ -437,106 +439,158 @@ function DashboardLayoutContent({
                 );
               })}
             </div>
-          </SidebarGroup>
-        </SidebarContent>
-        <SidebarFooter>
-          <div className="p-2 space-y-2">
-            <Link href="/dashboard/todos" className="group cursor-pointer rounded-lg bg-gradient-to-br from-primary/10 to-background border border-primary/20 p-4 text-left hover:border-primary transition-all block">
-              <div className="flex items-start gap-4">
-                <div className="rounded-lg bg-primary/10 p-3 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
-                  <ListChecks className="h-6 w-6" />
+
+            <motion.div
+              whileHover={{ scale: 1.02, y: -2 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <Link
+                href="/dashboard/todos"
+                className="group relative cursor-pointer rounded-2xl bg-zinc-900/40 border border-white/5 p-4 text-left hover:border-primary/50 transition-all block overflow-hidden backdrop-blur-md shadow-2xl"
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="flex items-center gap-4 relative z-10">
+                  <div className="rounded-xl bg-zinc-800/80 p-2.5 text-primary border border-white/5 shadow-inner transition-colors group-hover:bg-primary group-hover:text-white">
+                    <ListChecks size={20} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-sm text-white tracking-tight">My To-Do List</p>
+                    <p className="text-[10px] text-zinc-500 font-medium truncate uppercase tracking-wider">Stay on track with prep</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="font-semibold text-foreground">My To-Do List</p>
-                  <p className="text-xs text-muted-foreground">Stay on track with your prep</p>
-                </div>
-              </div>
-            </Link>
+              </Link>
+            </motion.div>
 
             {isFreePlan ? (
-              <Button asChild className="w-full bg-gradient-to-r from-purple-500 to-blue-500 text-white hover:from-purple-600 hover:to-blue-600 shadow-lg">
-                <Link href="/dashboard/pricing">
-                  <Gem className="mr-2 h-4 w-4" />
-                  Upgrade to Pro
+              <motion.div
+                whileHover={{ scale: 1.02 }}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+              >
+                <Link
+                  href="/dashboard/pricing"
+                  className="relative group block rounded-2xl bg-gradient-to-br from-amber-500 via-orange-600 to-red-600 p-px overflow-hidden shadow-xl shadow-orange-500/20"
+                >
+                  <div className="relative bg-zinc-950/20 backdrop-blur-3xl rounded-[calc(rem-1px)] p-4 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="h-9 w-9 rounded-xl bg-white/10 flex items-center justify-center text-white backdrop-blur-md">
+                        <Gem size={20} className="animate-pulse" />
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-xs font-black text-white uppercase tracking-tighter">Limited Access</span>
+                        <span className="text-[10px] font-bold text-white/70 uppercase">Unlock Pro Tools</span>
+                      </div>
+                    </div>
+                    <Plus size={16} className="text-white opacity-50" />
+                  </div>
                 </Link>
-              </Button>
+              </motion.div>
             ) : (
-              <div className="rounded-lg bg-gradient-to-br from-purple-900 via-primary to-blue-800 p-4 text-center text-primary-foreground shadow-lg">
-                <div className="flex items-center justify-center gap-2 mb-2">
-                  <Gem className="h-5 w-5" />
-                  <p className="text-lg font-bold">Pro Member</p>
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="relative rounded-[1.5rem] bg-gradient-to-br from-orange-500 via-red-500 to-rose-600 p-4 overflow-hidden shadow-xl shadow-orange-500/30"
+              >
+                <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/20 blur-3xl rounded-full" />
+                <div className="flex items-center justify-between mb-2 relative z-10">
+                  <div className="flex items-center gap-2.5">
+                    <div className="h-9 w-9 rounded-xl bg-white/20 flex items-center justify-center text-white backdrop-blur-md border border-white/10">
+                      <Gem size={20} />
+                    </div>
+                    <p className="text-sm font-black text-white italic uppercase tracking-tighter">Pro Member</p>
+                  </div>
+                  <Badge variant="outline" className="bg-white/10 text-white border-white/20 text-[9px] h-5 px-2">ACTIVE</Badge>
                 </div>
                 {userData.subscription.endDate && (
-                  <p className="text-xs text-primary-foreground/80">
-                    Expires on {format(new Date(userData.subscription.endDate), 'MMM d, yyyy')}
-                  </p>
+                  <div className="flex items-center gap-2 text-[10px] text-white/90 font-bold uppercase tracking-widest relative z-10">
+                    <CalendarDays size={12} />
+                    <span>Expires on {format(new Date(userData.subscription.endDate), 'MMM d, yyy')}</span>
+                  </div>
                 )}
-              </div>
+              </motion.div>
             )}
           </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <div className="flex items-center gap-3 rounded-lg bg-muted p-2.5 cursor-pointer hover:bg-accent transition-colors">
-                <Avatar className="h-10 w-10 border-2 border-primary">
-                  <AvatarImage src={user.photoURL || undefined} alt="User avatar" />
-                  <AvatarFallback>{user.email?.[0].toUpperCase()}</AvatarFallback>
-                </Avatar>
-                <div className="flex-1 overflow-hidden">
-                  <p className="text-sm font-semibold truncate">{user.displayName || user.email}</p>
-                  <p className="text-xs text-muted-foreground capitalize">{subscriptionStatus}</p>
-                </div>
-                <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
-                  <Settings className="h-4 w-4" />
-                </Button>
-              </div>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-64 mb-2" align="end" forceMount>
-              <DropdownMenuLabel className="font-normal">
-                <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium leading-none">{user.displayName || 'User'}</p>
-                  <p className="text-xs leading-none text-muted-foreground">
-                    {user.email}
-                  </p>
-                </div>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <Link href="/dashboard/profile">
-                  <User className="mr-2 h-4 w-4" />
-                  <span>Profile</span>
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/dashboard/support">
-                  <LifeBuoy className="mr-2 h-4 w-4" />
-                  <span>Support</span>
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/dashboard/bug-report">
-                  <Bug className="mr-2 h-4 w-4" />
-                  <span>Bug Report</span>
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                <div className="flex justify-between items-center w-full">
-                  <div className="flex items-center">
-                    {theme === 'light' ? <Sun className="mr-2 h-4 w-4" /> : <Moon className="mr-2 h-4 w-4" />}
-                    <span>Theme</span>
+          <motion.div
+            whileHover={{ backgroundColor: 'rgba(255,255,255,0.03)' }}
+            className="mx-2 mb-2 rounded-2xl transition-colors overflow-hidden"
+          >
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <div className="flex items-center gap-3 p-3 cursor-pointer group">
+                  <div className="relative">
+                    <Avatar className="h-11 w-11 border-2 border-primary/20 transition-transform group-hover:scale-105 duration-500">
+                      <AvatarImage src={user.photoURL || undefined} alt="User avatar" />
+                      <AvatarFallback className="bg-zinc-800 text-primary font-bold">{user.email?.[0].toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                    <div className="absolute -bottom-1 -right-1 h-4 w-4 rounded-full bg-zinc-950 border-2 border-zinc-900 flex items-center justify-center">
+                      <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                    </div>
                   </div>
-                  <Switch
-                    checked={theme === 'dark'}
-                    onCheckedChange={() => setTheme(theme === 'light' ? 'dark' : 'light')}
-                  />
+
+                  <div className="flex-1 overflow-hidden">
+                    <p className="text-sm font-bold text-white truncate tracking-tight">{user.displayName || user.email?.split('@')[0]}</p>
+                    <div className="flex items-center gap-1.5">
+                      <div className={cn(
+                        "h-1.5 w-1.5 rounded-full",
+                        isFreePlan ? "bg-zinc-500" : "bg-primary shadow-[0_0_8px_rgba(var(--primary),0.5)]"
+                      )} />
+                      <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">{subscriptionStatus}</p>
+                    </div>
+                  </div>
+
+                  <div className="h-8 w-8 flex items-center justify-center rounded-xl bg-white/5 border border-white/5 text-zinc-500 group-hover:text-white group-hover:bg-primary/20 group-hover:border-primary/20 transition-all">
+                    <Settings size={16} />
+                  </div>
                 </div>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={logout} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
-                <LogOut className="mr-2 h-4 w-4" />
-                <span>Sign out</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-64 mb-2" align="end" forceMount>
+                <DropdownMenuLabel className="font-normal">
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium leading-none">{user.displayName || 'User'}</p>
+                    <p className="text-xs leading-none text-muted-foreground">
+                      {user.email}
+                    </p>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link href="/dashboard/profile">
+                    <User className="mr-2 h-4 w-4" />
+                    <span>Profile</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/dashboard/support">
+                    <LifeBuoy className="mr-2 h-4 w-4" />
+                    <span>Support</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/dashboard/bug-report">
+                    <Bug className="mr-2 h-4 w-4" />
+                    <span>Bug Report</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                  <div className="flex justify-between items-center w-full">
+                    <div className="flex items-center">
+                      {theme === 'light' ? <Sun className="mr-2 h-4 w-4" /> : <Moon className="mr-2 h-4 w-4" />}
+                      <span>Theme</span>
+                    </div>
+                    <Switch
+                      checked={theme === 'dark'}
+                      onCheckedChange={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+                    />
+                  </div>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={logout} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Sign out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </motion.div>
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
