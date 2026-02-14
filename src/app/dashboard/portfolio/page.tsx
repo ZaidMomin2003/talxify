@@ -110,8 +110,8 @@ const ImagePicker = ({ value, onChange, dataAiHint, isAvatar, isCloudinaryLoaded
     }
 
     const containerClasses = isAvatar
-        ? "w-32 h-32 rounded-full bg-black/40 border-2 border-dashed border-white/10 flex items-center justify-center overflow-hidden mx-auto shadow-2xl relative group"
-        : "aspect-video w-full rounded-2xl bg-black/40 border-2 border-dashed border-white/10 flex items-center justify-center overflow-hidden shadow-xl relative group";
+        ? "w-32 h-32 rounded-full bg-muted/40 dark:bg-black/40 border-2 border-dashed border-border dark:border-white/10 flex items-center justify-center overflow-hidden mx-auto shadow-2xl relative group"
+        : "aspect-video w-full rounded-2xl bg-muted/40 dark:bg-black/40 border-2 border-dashed border-border dark:border-white/10 flex items-center justify-center overflow-hidden shadow-xl relative group";
 
     return (
         <div className="space-y-4">
@@ -131,7 +131,7 @@ const ImagePicker = ({ value, onChange, dataAiHint, isAvatar, isCloudinaryLoaded
                 )}
             </div>
             <div className="grid grid-cols-2 gap-3">
-                <Button variant="outline" className="h-10 rounded-xl bg-white/5 border-white/10 hover:border-primary/50 text-[10px] font-black uppercase tracking-widest italic group" onClick={openWidget} disabled={!isCloudinaryLoaded}>
+                <Button variant="outline" className="h-10 rounded-xl bg-muted/50 dark:bg-white/5 border-border dark:border-white/10 hover:border-primary/50 text-[10px] font-black uppercase tracking-widest italic group" onClick={openWidget} disabled={!isCloudinaryLoaded}>
                     <UploadCloud className="h-3.5 w-3.5 mr-2 group-hover:text-primary transition-colors" />
                     <span>{isCloudinaryLoaded ? 'Sync Asset' : 'Loading...'}</span>
                 </Button>
@@ -340,7 +340,7 @@ export default function PortfolioPage() {
                         <motion.div variants={itemVariants} className="inline-flex items-center justify-center p-3 rounded-2xl bg-primary/10 border border-primary/20 mb-2">
                             <Gem className="w-8 h-8 text-primary" />
                         </motion.div>
-                        <motion.h1 variants={itemVariants} className="text-4xl md:text-5xl font-black tracking-tight italic uppercase text-white leading-none">
+                        <motion.h1 variants={itemVariants} className="text-4xl md:text-5xl font-black tracking-tight italic uppercase text-foreground leading-none">
                             Portfolio <span className="text-primary">Forge</span>
                         </motion.h1>
                         <motion.p variants={itemVariants} className="max-w-2xl text-muted-foreground text-lg font-medium">
@@ -349,23 +349,23 @@ export default function PortfolioPage() {
                     </div>
 
                     <motion.div variants={itemVariants} className="space-y-8">
-                        <Card className="rounded-[2.5rem] border-white/10 bg-black/40 backdrop-blur-xl shadow-2xl overflow-hidden border">
-                            <CardHeader className="p-8 md:p-10 border-b border-white/5 bg-white/5">
+                        <Card className="rounded-[2.5rem] border-border dark:border-white/10 bg-card/60 dark:bg-black/40 backdrop-blur-xl shadow-2xl overflow-hidden border">
+                            <CardHeader className="p-8 md:p-10 border-b border-border dark:border-white/5 bg-muted/20 dark:bg-white/5">
                                 <CardTitle className="text-2xl font-black uppercase tracking-tight italic flex items-center gap-3">
                                     <UserCheck className="w-6 h-6 text-primary" />
                                     Personnel Data
                                 </CardTitle>
-                                <CardDescription className="text-base mt-1">Core identification and bio-metrics for your public profile.</CardDescription>
+                                <CardDescription className="text-base mt-1 text-muted-foreground">Core identification and bio-metrics for your public profile.</CardDescription>
                             </CardHeader>
                             <CardContent className="p-8 md:p-10 space-y-8">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="space-y-2">
                                         <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Full Name</Label>
-                                        <Input placeholder="Enter your name" className="bg-black/20 border-white/5 h-12 rounded-xl focus:ring-primary/20" value={portfolio.personalInfo.name} onChange={(e) => setPortfolio({ ...portfolio, personalInfo: { ...portfolio.personalInfo, name: e.target.value } })} />
+                                        <Input placeholder="Enter your name" className="bg-muted dark:bg-black/20 border-border dark:border-white/5 h-12 rounded-xl focus:ring-primary/20 text-foreground" value={portfolio.personalInfo.name} onChange={(e) => setPortfolio({ ...portfolio, personalInfo: { ...portfolio.personalInfo, name: e.target.value } })} />
                                     </div>
                                     <div className="space-y-2">
                                         <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Current Role</Label>
-                                        <Input placeholder="e.g. Senior Developer" className="bg-black/20 border-white/5 h-12 rounded-xl focus:ring-primary/20" value={portfolio.personalInfo.profession} onChange={(e) => setPortfolio({ ...portfolio, personalInfo: { ...portfolio.personalInfo, profession: e.target.value } })} />
+                                        <Input placeholder="e.g. Senior Developer" className="bg-muted dark:bg-black/20 border-border dark:border-white/5 h-12 rounded-xl focus:ring-primary/20 text-foreground" value={portfolio.personalInfo.profession} onChange={(e) => setPortfolio({ ...portfolio, personalInfo: { ...portfolio.personalInfo, profession: e.target.value } })} />
                                     </div>
                                 </div>
                                 <div>
@@ -373,12 +373,12 @@ export default function PortfolioPage() {
                                         <LinkIcon className="w-4 h-4 text-primary" />
                                         Deployment URL
                                     </Label>
-                                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 overflow-hidden bg-black/20 border border-white/5 rounded-2xl p-1">
+                                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 overflow-hidden bg-muted/50 dark:bg-black/20 border border-border dark:border-white/5 rounded-2xl p-1">
                                         <div className="flex items-center flex-1">
-                                            <span className="text-xs font-bold text-muted-foreground px-4 py-2 bg-white/5 rounded-xl border border-white/5 hidden sm:inline-block">
+                                            <span className="text-xs font-bold text-muted-foreground px-4 py-2 bg-background dark:bg-white/5 rounded-xl border border-border dark:border-white/5 hidden sm:inline-block">
                                                 talxify.space/portfolio/
                                             </span>
-                                            <Input id="slug" value={portfolio.personalInfo.slug} onChange={handleSlugChange} className="border-0 focus-visible:ring-0 bg-transparent h-10 px-4 text-sm font-bold placeholder:text-muted-foreground/30" placeholder="your-unique-slug" />
+                                            <Input id="slug" value={portfolio.personalInfo.slug} onChange={handleSlugChange} className="border-0 focus-visible:ring-0 bg-transparent h-10 px-4 text-sm font-bold placeholder:text-muted-foreground/30 text-foreground" placeholder="your-unique-slug" />
                                         </div>
                                         <Button onClick={handleCheckSlug} disabled={isCheckingSlug} className="h-10 px-6 rounded-xl font-black uppercase tracking-widest text-[10px] italic">
                                             {isCheckingSlug ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Check Status'}
@@ -396,17 +396,17 @@ export default function PortfolioPage() {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="space-y-2">
                                         <Label htmlFor="bio" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Professional Abstract</Label>
-                                        <Textarea id="bio" placeholder="Brief personnel overview..." className="bg-black/20 border-white/5 min-h-[120px] rounded-xl focus:ring-primary/20 p-4" value={portfolio.personalInfo.bio} onChange={(e) => setPortfolio({ ...portfolio, personalInfo: { ...portfolio.personalInfo, bio: e.target.value } })} />
+                                        <Textarea id="bio" placeholder="Brief personnel overview..." className="bg-muted dark:bg-black/20 border-border dark:border-white/5 min-h-[120px] rounded-xl focus:ring-primary/20 p-4 text-foreground" value={portfolio.personalInfo.bio} onChange={(e) => setPortfolio({ ...portfolio, personalInfo: { ...portfolio.personalInfo, bio: e.target.value } })} />
                                     </div>
                                     <div className="space-y-2">
                                         <Label htmlFor="philosophy" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Development Creed</Label>
-                                        <Textarea id="philosophy" placeholder="Core architectural beliefs..." className="bg-black/20 border-white/5 min-h-[120px] rounded-xl focus:ring-primary/20 p-4" value={portfolio.personalInfo.developmentPhilosophy || ''} onChange={(e) => setPortfolio({ ...portfolio, personalInfo: { ...portfolio.personalInfo, developmentPhilosophy: e.target.value } })} />
+                                        <Textarea id="philosophy" placeholder="Core architectural beliefs..." className="bg-muted dark:bg-black/20 border-border dark:border-white/5 min-h-[120px] rounded-xl focus:ring-primary/20 p-4 text-foreground" value={portfolio.personalInfo.developmentPhilosophy || ''} onChange={(e) => setPortfolio({ ...portfolio, personalInfo: { ...portfolio.personalInfo, developmentPhilosophy: e.target.value } })} />
                                     </div>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                                     <div className="space-y-3">
                                         <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Neural ID Image</Label>
-                                        <div className="bg-black/20 p-6 rounded-3xl border border-white/5">
+                                        <div className="bg-muted dark:bg-black/20 p-6 rounded-3xl border border-border dark:border-white/5">
                                             <ImagePicker
                                                 value={portfolio.personalInfo.avatarUrl}
                                                 onChange={(value) => setPortfolio({ ...portfolio, personalInfo: { ...portfolio.personalInfo, avatarUrl: value } })}
@@ -418,7 +418,7 @@ export default function PortfolioPage() {
                                     </div>
                                     <div className="space-y-3">
                                         <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Operational Banner</Label>
-                                        <div className="bg-black/20 p-6 rounded-3xl border border-white/5 h-full">
+                                        <div className="bg-muted dark:bg-black/20 p-6 rounded-3xl border border-border dark:border-white/5 h-full">
                                             <ImagePicker
                                                 value={portfolio.personalInfo.bannerUrl}
                                                 onChange={(value) => setPortfolio({ ...portfolio, personalInfo: { ...portfolio.personalInfo, bannerUrl: value } })}
@@ -433,38 +433,38 @@ export default function PortfolioPage() {
                                         <ExternalLink className="w-4 h-4 text-primary" />
                                         Broadcast Integrated (YouTube)
                                     </Label>
-                                    <Input id="youtubeUrl" placeholder="Link to your mission briefing..." className="bg-black/20 border-white/5 h-12 rounded-xl focus:ring-primary/20 px-4" value={portfolio.personalInfo.youtubeVideoUrl} onChange={(e) => setPortfolio({ ...portfolio, personalInfo: { ...portfolio.personalInfo, youtubeVideoUrl: e.target.value } })} />
+                                    <Input id="youtubeUrl" placeholder="Link to your mission briefing..." className="bg-muted dark:bg-black/20 border-border dark:border-white/5 h-12 rounded-xl focus:ring-primary/20 px-4 text-foreground" value={portfolio.personalInfo.youtubeVideoUrl} onChange={(e) => setPortfolio({ ...portfolio, personalInfo: { ...portfolio.personalInfo, youtubeVideoUrl: e.target.value } })} />
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-                                    <div className="space-y-2"><Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">GitHub Sink</Label><Input className="bg-black/20 border-white/5 h-10 rounded-lg focus:ring-primary/20 px-4" value={portfolio.socials.github} onChange={(e) => setPortfolio({ ...portfolio, socials: { ...portfolio.socials, github: e.target.value } })} /></div>
-                                    <div className="space-y-2"><Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">LinkedIn Uplink</Label><Input className="bg-black/20 border-white/5 h-10 rounded-lg focus:ring-primary/20 px-4" value={portfolio.socials.linkedin} onChange={(e) => setPortfolio({ ...portfolio, socials: { ...portfolio.socials, linkedin: e.target.value } })} /></div>
-                                    <div className="space-y-2"><Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">X-Comms</Label><Input className="bg-black/20 border-white/5 h-10 rounded-lg focus:ring-primary/20 px-4" value={portfolio.socials.twitter} onChange={(e) => setPortfolio({ ...portfolio, socials: { ...portfolio.socials, twitter: e.target.value } })} /></div>
+                                    <div className="space-y-2"><Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">GitHub Sink</Label><Input className="bg-muted dark:bg-black/20 border-border dark:border-white/5 h-10 rounded-lg focus:ring-primary/20 px-4 text-foreground" value={portfolio.socials.github} onChange={(e) => setPortfolio({ ...portfolio, socials: { ...portfolio.socials, github: e.target.value } })} /></div>
+                                    <div className="space-y-2"><Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">LinkedIn Uplink</Label><Input className="bg-muted dark:bg-black/20 border-border dark:border-white/5 h-10 rounded-lg focus:ring-primary/20 px-4 text-foreground" value={portfolio.socials.linkedin} onChange={(e) => setPortfolio({ ...portfolio, socials: { ...portfolio.socials, linkedin: e.target.value } })} /></div>
+                                    <div className="space-y-2"><Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">X-Comms</Label><Input className="bg-muted dark:bg-black/20 border-border dark:border-white/5 h-10 rounded-lg focus:ring-primary/20 px-4 text-foreground" value={portfolio.socials.twitter} onChange={(e) => setPortfolio({ ...portfolio, socials: { ...portfolio.socials, twitter: e.target.value } })} /></div>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
                                     <div className="space-y-2">
                                         <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Primary Email</Label>
-                                        <Input type="email" className="bg-black/20 border-white/5 h-12 rounded-xl focus:ring-primary/20 px-4" value={portfolio.personalInfo.email} onChange={(e) => setPortfolio({ ...portfolio, personalInfo: { ...portfolio.personalInfo, email: e.target.value } })} />
+                                        <Input type="email" className="bg-muted dark:bg-black/20 border-border dark:border-white/5 h-12 rounded-xl focus:ring-primary/20 px-4 text-foreground" value={portfolio.personalInfo.email} onChange={(e) => setPortfolio({ ...portfolio, personalInfo: { ...portfolio.personalInfo, email: e.target.value } })} />
                                     </div>
                                     <div className="space-y-2">
                                         <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Comm Channel (Phone)</Label>
-                                        <Input type="tel" className="bg-black/20 border-white/5 h-12 rounded-xl focus:ring-primary/20 px-4" value={portfolio.personalInfo.phone} onChange={(e) => setPortfolio({ ...portfolio, personalInfo: { ...portfolio.personalInfo, phone: e.target.value } })} />
+                                        <Input type="tel" className="bg-muted dark:bg-black/20 border-border dark:border-white/5 h-12 rounded-xl focus:ring-primary/20 px-4 text-foreground" value={portfolio.personalInfo.phone} onChange={(e) => setPortfolio({ ...portfolio, personalInfo: { ...portfolio.personalInfo, phone: e.target.value } })} />
                                     </div>
                                 </div>
                             </CardContent>
                         </Card>
 
-                        <Card className="rounded-[2.5rem] border-white/10 bg-black/40 backdrop-blur-xl shadow-2xl overflow-hidden border">
-                            <CardHeader className="p-8 md:p-10 border-b border-white/5 bg-white/5">
+                        <Card className="rounded-[2.5rem] border-border dark:border-white/10 bg-card/60 dark:bg-black/40 backdrop-blur-xl shadow-2xl overflow-hidden border">
+                            <CardHeader className="p-8 md:p-10 border-b border-border dark:border-white/5 bg-muted/20 dark:bg-white/5">
                                 <CardTitle className="text-xl font-black uppercase tracking-tight italic flex items-center gap-3">
                                     <PlusCircle className="w-5 h-5 text-primary" />
                                     Visual Identity
                                 </CardTitle>
-                                <CardDescription className="mt-1">Define the chromatic signature for your profile.</CardDescription>
+                                <CardDescription className="mt-1 text-muted-foreground">Define the chromatic signature for your profile.</CardDescription>
                             </CardHeader>
                             <CardContent className="p-8 md:p-10">
                                 <div className="flex flex-wrap gap-4">
                                     {colorOptions.map((color) => (
-                                        <div key={color.name} className="flex items-center gap-3 bg-white/5 p-3 rounded-2xl border border-white/5 hover:border-white/10 transition-colors">
+                                        <div key={color.name} className="flex items-center gap-3 bg-muted/50 dark:bg-white/5 p-3 rounded-2xl border border-border dark:border-white/5 hover:border-border dark:hover:border-white/10 transition-colors">
                                             <button
                                                 onClick={() => setPortfolio({ ...portfolio, themeColor: color.hsl })}
                                                 className={cn(
@@ -480,16 +480,16 @@ export default function PortfolioPage() {
                             </CardContent>
                         </Card>
 
-                        <Card className="rounded-[2.5rem] border-white/10 bg-black/40 backdrop-blur-xl shadow-2xl overflow-hidden border">
-                            <CardHeader className="p-8 md:p-10 border-b border-white/5 bg-white/5 flex flex-row items-center justify-between">
+                        <Card className="rounded-[2.5rem] border-border dark:border-white/10 bg-card/60 dark:bg-black/40 backdrop-blur-xl shadow-2xl overflow-hidden border">
+                            <CardHeader className="p-8 md:p-10 border-b border-border dark:border-white/5 bg-muted/20 dark:bg-white/5 flex flex-row items-center justify-between">
                                 <div>
                                     <CardTitle className="text-xl font-black uppercase tracking-tight italic flex items-center gap-3">
                                         <PlusCircle className="w-5 h-5 text-primary" />
                                         Technical Arsenal
                                     </CardTitle>
-                                    <CardDescription className="mt-1">Quantifiable proficiency in core technologies.</CardDescription>
+                                    <CardDescription className="mt-1 text-muted-foreground">Quantifiable proficiency in core technologies.</CardDescription>
                                 </div>
-                                <div className="flex items-center gap-3 bg-black/20 p-2 rounded-xl border border-white/5">
+                                <div className="flex items-center gap-3 bg-muted dark:bg-black/20 p-2 rounded-xl border border-border dark:border-white/5">
                                     <Label htmlFor="show-skills" className="text-[10px] font-black uppercase tracking-widest">Visible</Label>
                                     <Switch id="show-skills" checked={portfolio.displayOptions.showSkills} onCheckedChange={(checked) => handleDisplayOptionChange('showSkills', checked)} />
                                 </div>
@@ -497,10 +497,10 @@ export default function PortfolioPage() {
                             <CardContent className="p-8 md:p-10 space-y-6">
                                 <div className="grid gap-6">
                                     {portfolio.skills.map((item, index) => (
-                                        <div key={index} className="flex items-center gap-6 bg-white/5 p-4 rounded-2xl border border-white/5 group/skill">
+                                        <div key={index} className="flex items-center gap-6 bg-muted/50 dark:bg-white/5 p-4 rounded-2xl border border-border dark:border-white/5 group/skill">
                                             <div className="flex-grow space-y-2">
                                                 <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Skill Name</Label>
-                                                <Input value={item.skill} onChange={(e) => handleFieldChange('skills', index, 'skill', e.target.value)} className="bg-black/20 border-white/5 h-10 rounded-lg group-hover/skill:border-primary/30 transition-colors focus:ring-primary/20" />
+                                                <Input value={item.skill} onChange={(e) => handleFieldChange('skills', index, 'skill', e.target.value)} className="bg-muted dark:bg-black/20 border-border dark:border-white/5 h-10 rounded-lg group-hover/skill:border-primary/30 transition-colors focus:ring-primary/20 text-foreground" />
                                             </div>
                                             <div className="w-1/3 space-y-3">
                                                 <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1 flex justify-between">
@@ -517,126 +517,126 @@ export default function PortfolioPage() {
                                         </div>
                                     ))}
                                 </div>
-                                <Button variant="outline" className="w-full h-12 rounded-xl border-dashed border-white/10 hover:border-primary/50 bg-white/5 font-black uppercase tracking-widest text-[10px] italic" onClick={() => handleAddItem('skills', { skill: 'New Skill', expertise: 50 })}><PlusCircle className="mr-2 h-4 w-4" /> Add Neural Asset</Button>
+                                <Button variant="outline" className="w-full h-12 rounded-xl border-dashed border-border dark:border-white/10 hover:border-primary/50 bg-muted/50 dark:bg-white/5 font-black uppercase tracking-widest text-[10px] italic" onClick={() => handleAddItem('skills', { skill: 'New Skill', expertise: 50 })}><PlusCircle className="mr-2 h-4 w-4" /> Add Neural Asset</Button>
                             </CardContent>
                         </Card>
 
-                        <Card className="rounded-[2.5rem] border-white/10 bg-black/40 backdrop-blur-xl shadow-2xl overflow-hidden border">
-                            <CardHeader className="p-8 md:p-10 border-b border-white/5 bg-white/5 flex flex-row items-center justify-between">
+                        <Card className="rounded-[2.5rem] border-border dark:border-white/10 bg-card/60 dark:bg-black/40 backdrop-blur-xl shadow-2xl overflow-hidden border">
+                            <CardHeader className="p-8 md:p-10 border-b border-border dark:border-white/5 bg-muted/20 dark:bg-white/5 flex flex-row items-center justify-between">
                                 <div>
                                     <CardTitle className="text-xl font-black uppercase tracking-tight italic flex items-center gap-3">
                                         <PlusCircle className="w-5 h-5 text-primary" />
                                         Operational History
                                     </CardTitle>
-                                    <CardDescription className="mt-1">Work experience and professional deployments.</CardDescription>
+                                    <CardDescription className="mt-1 text-muted-foreground">Work experience and professional deployments.</CardDescription>
                                 </div>
-                                <div className="flex items-center gap-3 bg-black/20 p-2 rounded-xl border border-white/5">
+                                <div className="flex items-center gap-3 bg-muted dark:bg-black/20 p-2 rounded-xl border border-border dark:border-white/5">
                                     <Label htmlFor="show-experience" className="text-[10px] font-black uppercase tracking-widest">Visible</Label>
                                     <Switch id="show-experience" checked={portfolio.displayOptions.showExperience} onCheckedChange={(checked) => handleDisplayOptionChange('showExperience', checked)} />
                                 </div>
                             </CardHeader>
                             <CardContent className="p-8 md:p-10 space-y-6">
                                 {portfolio.experience.map((item, index) => (
-                                    <div key={index} className="space-y-6 p-6 bg-white/5 rounded-3xl border border-white/5 relative group/exp hover:border-primary/20 transition-colors">
+                                    <div key={index} className="space-y-6 p-6 bg-muted/50 dark:bg-white/5 rounded-3xl border border-border dark:border-white/5 relative group/exp hover:border-primary/20 transition-colors">
                                         <Button variant="ghost" size="icon" className="absolute top-4 right-4 text-muted-foreground hover:text-destructive transition-colors" onClick={() => handleRemoveItem('experience', index)}><Trash2 className="w-4 h-4" /></Button>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                             <div className="space-y-2">
                                                 <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Designation</Label>
-                                                <Input value={item.role} onChange={(e) => handleFieldChange('experience', index, 'role', e.target.value)} className="bg-black/20 border-white/5 h-12 rounded-xl focus:ring-primary/20" />
+                                                <Input value={item.role} onChange={(e) => handleFieldChange('experience', index, 'role', e.target.value)} className="bg-muted dark:bg-black/20 border-border dark:border-white/5 h-12 rounded-xl focus:ring-primary/20 text-foreground" />
                                             </div>
                                             <div className="space-y-2">
                                                 <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">HQ / Company</Label>
-                                                <Input value={item.company} onChange={(e) => handleFieldChange('experience', index, 'company', e.target.value)} className="bg-black/20 border-white/5 h-12 rounded-xl focus:ring-primary/20" />
+                                                <Input value={item.company} onChange={(e) => handleFieldChange('experience', index, 'company', e.target.value)} className="bg-muted dark:bg-black/20 border-border dark:border-white/5 h-12 rounded-xl focus:ring-primary/20 text-foreground" />
                                             </div>
                                         </div>
                                         <div className="space-y-2">
                                             <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Timeframe</Label>
-                                            <Input value={item.duration} onChange={(e) => handleFieldChange('experience', index, 'duration', e.target.value)} className="bg-black/20 border-white/5 h-12 rounded-xl focus:ring-primary/20" />
+                                            <Input value={item.duration} onChange={(e) => handleFieldChange('experience', index, 'duration', e.target.value)} className="bg-muted dark:bg-black/20 border-border dark:border-white/5 h-12 rounded-xl focus:ring-primary/20 text-foreground" />
                                         </div>
                                         <div className="space-y-2">
                                             <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Mission Details</Label>
-                                            <Textarea value={item.description} onChange={(e) => handleFieldChange('experience', index, 'description', e.target.value)} className="bg-black/20 border-white/5 min-h-[100px] rounded-xl focus:ring-primary/20 p-4" />
+                                            <Textarea value={item.description} onChange={(e) => handleFieldChange('experience', index, 'description', e.target.value)} className="bg-muted dark:bg-black/20 border-border dark:border-white/5 min-h-[100px] rounded-xl focus:ring-primary/20 p-4 text-foreground" />
                                         </div>
                                     </div>
                                 ))}
-                                <Button variant="outline" className="w-full h-12 rounded-xl border-dashed border-white/10 hover:border-primary/50 bg-white/5 font-black uppercase tracking-widest text-[10px] italic" onClick={() => handleAddItem('experience', { role: '', company: '', duration: '', description: '' })}><PlusCircle className="mr-2 h-4 w-4" /> Log New Deployment</Button>
+                                <Button variant="outline" className="w-full h-12 rounded-xl border-dashed border-border dark:border-white/10 hover:border-primary/50 bg-muted/50 dark:bg-white/5 font-black uppercase tracking-widest text-[10px] italic" onClick={() => handleAddItem('experience', { role: '', company: '', duration: '', description: '' })}><PlusCircle className="mr-2 h-4 w-4" /> Log New Deployment</Button>
                             </CardContent>
                         </Card>
 
-                        <Card className="rounded-[2.5rem] border-white/10 bg-black/40 backdrop-blur-xl shadow-2xl overflow-hidden border">
-                            <CardHeader className="p-8 md:p-10 border-b border-white/5 bg-white/5 flex flex-row items-center justify-between">
+                        <Card className="rounded-[2.5rem] border-border dark:border-white/10 bg-card/60 dark:bg-black/40 backdrop-blur-xl shadow-2xl overflow-hidden border">
+                            <CardHeader className="p-8 md:p-10 border-b border-border dark:border-white/5 bg-muted/20 dark:bg-white/5 flex flex-row items-center justify-between">
                                 <div>
                                     <CardTitle className="text-xl font-black uppercase tracking-tight italic flex items-center gap-3">
                                         <PlusCircle className="w-5 h-5 text-primary" />
                                         Foundational Archives
                                     </CardTitle>
-                                    <CardDescription className="mt-1">Academic credentials and institutional background.</CardDescription>
+                                    <CardDescription className="mt-1 text-muted-foreground">Academic credentials and institutional background.</CardDescription>
                                 </div>
-                                <div className="flex items-center gap-3 bg-black/20 p-2 rounded-xl border border-white/5">
+                                <div className="flex items-center gap-3 bg-muted dark:bg-black/20 p-2 rounded-xl border border-border dark:border-white/5">
                                     <Label htmlFor="show-education" className="text-[10px] font-black uppercase tracking-widest">Visible</Label>
                                     <Switch id="show-education" checked={portfolio.displayOptions.showEducation} onCheckedChange={(checked) => handleDisplayOptionChange('showEducation', checked)} />
                                 </div>
                             </CardHeader>
                             <CardContent className="p-8 md:p-10 space-y-6">
                                 {portfolio.education.map((item, index) => (
-                                    <div key={index} className="space-y-6 p-6 bg-white/5 rounded-3xl border border-white/5 relative group/edu hover:border-primary/20 transition-colors">
+                                    <div key={index} className="space-y-6 p-6 bg-muted/50 dark:bg-white/5 rounded-3xl border border-border dark:border-white/5 relative group/edu hover:border-primary/20 transition-colors">
                                         <Button variant="ghost" size="icon" className="absolute top-4 right-4 text-muted-foreground hover:text-destructive transition-colors" onClick={() => handleRemoveItem('education', index)}><Trash2 className="w-4 h-4" /></Button>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                             <div className="space-y-2">
                                                 <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Degree / Cert</Label>
-                                                <Input value={item.degree} onChange={(e) => handleFieldChange('education', index, 'degree', e.target.value)} className="bg-black/20 border-white/5 h-12 rounded-xl focus:ring-primary/20" />
+                                                <Input value={item.degree} onChange={(e) => handleFieldChange('education', index, 'degree', e.target.value)} className="bg-muted dark:bg-black/20 border-border dark:border-white/5 h-12 rounded-xl focus:ring-primary/20 text-foreground" />
                                             </div>
                                             <div className="space-y-2">
                                                 <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Learning Institution</Label>
-                                                <Input value={item.institution} onChange={(e) => handleFieldChange('education', index, 'institution', e.target.value)} className="bg-black/20 border-white/5 h-12 rounded-xl focus:ring-primary/20" />
+                                                <Input value={item.institution} onChange={(e) => handleFieldChange('education', index, 'institution', e.target.value)} className="bg-muted dark:bg-black/20 border-border dark:border-white/5 h-12 rounded-xl focus:ring-primary/20 text-foreground" />
                                             </div>
                                         </div>
                                         <div className="space-y-2">
                                             <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Completion Cycle</Label>
-                                            <Input value={item.year} onChange={(e) => handleFieldChange('education', index, 'year', e.target.value)} className="bg-black/20 border-white/5 h-12 rounded-xl focus:ring-primary/20" />
+                                            <Input value={item.year} onChange={(e) => handleFieldChange('education', index, 'year', e.target.value)} className="bg-muted dark:bg-black/20 border-border dark:border-white/5 h-12 rounded-xl focus:ring-primary/20 text-foreground" />
                                         </div>
                                     </div>
                                 ))}
-                                <Button variant="outline" className="w-full h-12 rounded-xl border-dashed border-white/10 hover:border-primary/50 bg-white/5 font-black uppercase tracking-widest text-[10px] italic" onClick={() => handleAddItem('education', { degree: '', institution: '', year: '' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Academic Record</Button>
+                                <Button variant="outline" className="w-full h-12 rounded-xl border-dashed border-border dark:border-white/10 hover:border-primary/50 bg-muted/50 dark:bg-white/5 font-black uppercase tracking-widest text-[10px] italic" onClick={() => handleAddItem('education', { degree: '', institution: '', year: '' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Academic Record</Button>
                             </CardContent>
                         </Card>
 
-                        <Card className="rounded-[2.5rem] border-white/10 bg-black/40 backdrop-blur-xl shadow-2xl overflow-hidden border">
-                            <CardHeader className="p-8 md:p-10 border-b border-white/5 bg-white/5 flex flex-row items-center justify-between">
+                        <Card className="rounded-[2.5rem] border-border dark:border-white/10 bg-card/60 dark:bg-black/40 backdrop-blur-xl shadow-2xl overflow-hidden border">
+                            <CardHeader className="p-8 md:p-10 border-b border-border dark:border-white/5 bg-muted/20 dark:bg-white/5 flex flex-row items-center justify-between">
                                 <div>
                                     <CardTitle className="text-xl font-black uppercase tracking-tight italic flex items-center gap-3">
                                         <PlusCircle className="w-5 h-5 text-primary" />
                                         Project Matrix
                                     </CardTitle>
-                                    <CardDescription className="mt-1">Digital manifestations and operational constructs.</CardDescription>
+                                    <CardDescription className="mt-1 text-muted-foreground">Digital manifestations and operational constructs.</CardDescription>
                                 </div>
-                                <div className="flex items-center gap-3 bg-black/20 p-2 rounded-xl border border-white/5">
+                                <div className="flex items-center gap-3 bg-muted dark:bg-black/20 p-2 rounded-xl border border-border dark:border-white/5">
                                     <Label htmlFor="show-projects" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Visible</Label>
                                     <Switch id="show-projects" checked={portfolio.displayOptions.showProjects} onCheckedChange={(checked) => handleDisplayOptionChange('showProjects', checked)} />
                                 </div>
                             </CardHeader>
                             <CardContent className="p-8 md:p-10 space-y-8">
                                 {portfolio.projects.map((item, index) => (
-                                    <div key={index} className="space-y-6 p-6 bg-white/5 rounded-3xl border border-white/5 relative group/proj hover:border-primary/20 transition-all">
+                                    <div key={index} className="space-y-6 p-6 bg-muted/50 dark:bg-white/5 rounded-3xl border border-border dark:border-white/5 relative group/proj hover:border-primary/20 transition-all">
                                         <Button variant="ghost" size="icon" className="absolute top-4 right-4 text-muted-foreground hover:text-destructive transition-colors" onClick={() => handleRemoveItem('projects', index)}><Trash2 className="w-4 h-4" /></Button>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                             <div className="space-y-6">
                                                 <div className="space-y-2">
                                                     <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Mission Designation</Label>
-                                                    <Input value={item.title} onChange={(e) => handleFieldChange('projects', index, 'title', e.target.value)} className="bg-black/20 border-white/5 h-12 rounded-xl focus:ring-primary/20" />
+                                                    <Input value={item.title} onChange={(e) => handleFieldChange('projects', index, 'title', e.target.value)} className="bg-muted dark:bg-black/20 border-border dark:border-white/5 h-12 rounded-xl focus:ring-primary/20 text-foreground" />
                                                 </div>
                                                 <div className="space-y-2">
                                                     <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Encrypted Tags (CSV)</Label>
-                                                    <Input value={item.tags} onChange={(e) => handleFieldChange('projects', index, 'tags', e.target.value)} className="bg-black/20 border-white/5 h-12 rounded-xl focus:ring-primary/20" />
+                                                    <Input value={item.tags} onChange={(e) => handleFieldChange('projects', index, 'tags', e.target.value)} className="bg-muted dark:bg-black/20 border-border dark:border-white/5 h-12 rounded-xl focus:ring-primary/20 text-foreground" />
                                                 </div>
                                                 <div className="space-y-2">
                                                     <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Deployment Access (Link)</Label>
-                                                    <Input value={item.link} onChange={(e) => handleFieldChange('projects', index, 'link', e.target.value)} className="bg-black/20 border-white/5 h-12 rounded-xl focus:ring-primary/20" />
+                                                    <Input value={item.link} onChange={(e) => handleFieldChange('projects', index, 'link', e.target.value)} className="bg-muted dark:bg-black/20 border-border dark:border-white/5 h-12 rounded-xl focus:ring-primary/20 text-foreground" />
                                                 </div>
                                             </div>
                                             <div className="space-y-3">
                                                 <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Visual Log (Capture)</Label>
-                                                <div className="bg-black/20 p-4 rounded-2xl border border-white/5">
+                                                <div className="bg-muted dark:bg-black/20 p-4 rounded-2xl border border-border dark:border-white/5">
                                                     <ImagePicker
                                                         value={item.imageUrl}
                                                         onChange={(value) => handleFieldChange('projects', index, 'imageUrl', value)}
@@ -648,50 +648,50 @@ export default function PortfolioPage() {
                                         </div>
                                         <div className="space-y-2">
                                             <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Operational Summary</Label>
-                                            <Textarea value={item.description} onChange={(e) => handleFieldChange('projects', index, 'description', e.target.value)} className="bg-black/20 border-white/5 min-h-[120px] rounded-xl focus:ring-primary/20 p-4" />
+                                            <Textarea value={item.description} onChange={(e) => handleFieldChange('projects', index, 'description', e.target.value)} className="bg-muted dark:bg-black/20 border-border dark:border-white/5 min-h-[120px] rounded-xl focus:ring-primary/20 p-4 text-foreground" />
                                         </div>
                                     </div>
                                 ))}
-                                <Button variant="outline" className="w-full h-12 rounded-xl border-dashed border-white/10 hover:border-primary/50 bg-white/5 font-black uppercase tracking-widest text-[10px] italic" onClick={() => handleAddItem('projects', { title: '', description: '', link: '', tags: '', imageUrl: '' })}><PlusCircle className="mr-2 h-4 w-4" /> Initialize New Project</Button>
+                                <Button variant="outline" className="w-full h-12 rounded-xl border-dashed border-border dark:border-white/10 hover:border-primary/50 bg-muted/50 dark:bg-white/5 font-black uppercase tracking-widest text-[10px] italic" onClick={() => handleAddItem('projects', { title: '', description: '', link: '', tags: '', imageUrl: '' })}><PlusCircle className="mr-2 h-4 w-4" /> Initialize New Project</Button>
                             </CardContent>
                         </Card>
 
-                        <Card className="rounded-[2.5rem] border-white/10 bg-black/40 backdrop-blur-xl shadow-2xl overflow-hidden border">
-                            <CardHeader className="p-8 md:p-10 border-b border-white/5 bg-white/5 flex flex-row items-center justify-between">
+                        <Card className="rounded-[2.5rem] border-border dark:border-white/10 bg-card/60 dark:bg-black/40 backdrop-blur-xl shadow-2xl overflow-hidden border">
+                            <CardHeader className="p-8 md:p-10 border-b border-border dark:border-white/5 bg-muted/20 dark:bg-white/5 flex flex-row items-center justify-between">
                                 <div>
                                     <CardTitle className="text-xl font-black uppercase tracking-tight italic flex items-center gap-3">
                                         <PlusCircle className="w-5 h-5 text-primary" />
                                         Service Validation
                                     </CardTitle>
-                                    <CardDescription className="mt-1">Verified certifications and professional endorsements.</CardDescription>
+                                    <CardDescription className="mt-1 text-muted-foreground">Verified certifications and professional endorsements.</CardDescription>
                                 </div>
-                                <div className="flex items-center gap-2 bg-black/20 p-2 rounded-xl border border-white/5">
+                                <div className="flex items-center gap-2 bg-muted dark:bg-black/20 p-2 rounded-xl border border-border dark:border-white/5">
                                     <Label htmlFor="show-certificates" className="text-[10px] font-black uppercase tracking-widest">Visible</Label>
                                     <Switch id="show-certificates" checked={portfolio.displayOptions.showCertificates} onCheckedChange={(checked) => handleDisplayOptionChange('showCertificates', checked)} />
                                 </div>
                             </CardHeader>
                             <CardContent className="p-8 md:p-10 space-y-8">
                                 {portfolio.certificates.map((item, index) => (
-                                    <div key={index} className="space-y-6 p-6 bg-white/5 rounded-3xl border border-white/5 relative group/cert hover:border-primary/20 transition-all">
+                                    <div key={index} className="space-y-6 p-6 bg-muted/50 dark:bg-white/5 rounded-3xl border border-border dark:border-white/5 relative group/cert hover:border-primary/20 transition-all">
                                         <Button variant="ghost" size="icon" className="absolute top-4 right-4 text-muted-foreground hover:text-destructive transition-colors" onClick={() => handleRemoveItem('certificates', index)}><Trash2 className="w-4 h-4" /></Button>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                             <div className="space-y-6">
                                                 <div className="space-y-2">
                                                     <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Certificate ID</Label>
-                                                    <Input value={item.name} onChange={(e) => handleFieldChange('certificates', index, 'name', e.target.value)} className="bg-black/20 border-white/5 h-12 rounded-xl focus:ring-primary/20" />
+                                                    <Input value={item.name} onChange={(e) => handleFieldChange('certificates', index, 'name', e.target.value)} className="bg-muted dark:bg-black/20 border-border dark:border-white/5 h-12 rounded-xl focus:ring-primary/20 text-foreground" />
                                                 </div>
                                                 <div className="space-y-2">
                                                     <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Issuing Authority</Label>
-                                                    <Input value={item.body} onChange={(e) => handleFieldChange('certificates', index, 'body', e.target.value)} className="bg-black/20 border-white/5 h-12 rounded-xl focus:ring-primary/20" />
+                                                    <Input value={item.body} onChange={(e) => handleFieldChange('certificates', index, 'body', e.target.value)} className="bg-muted dark:bg-black/20 border-border dark:border-white/5 h-12 rounded-xl focus:ring-primary/20 text-foreground" />
                                                 </div>
                                                 <div className="space-y-2">
                                                     <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Validation Cycle (Date)</Label>
-                                                    <Input type="month" value={item.date} onChange={(e) => handleFieldChange('certificates', index, 'date', e.target.value)} className="bg-black/20 border-white/5 h-12 rounded-xl focus:ring-primary/20 px-4" />
+                                                    <Input type="month" value={item.date} onChange={(e) => handleFieldChange('certificates', index, 'date', e.target.value)} className="bg-muted dark:bg-black/20 border-border dark:border-white/5 h-12 rounded-xl focus:ring-primary/20 px-4 text-foreground" />
                                                 </div>
                                             </div>
                                             <div className="space-y-3">
                                                 <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Visual Credential</Label>
-                                                <div className="bg-black/20 p-4 rounded-2xl border border-white/5">
+                                                <div className="bg-muted dark:bg-black/20 p-4 rounded-2xl border border-border dark:border-white/5">
                                                     <ImagePicker
                                                         value={item.imageUrl}
                                                         onChange={(value) => handleFieldChange('certificates', index, 'imageUrl', value)}
@@ -703,36 +703,36 @@ export default function PortfolioPage() {
                                         </div>
                                     </div>
                                 ))}
-                                <Button variant="outline" className="w-full h-12 rounded-xl border-dashed border-white/10 hover:border-primary/50 bg-white/5 font-black uppercase tracking-widest text-[10px] italic" onClick={() => handleAddItem('certificates', { name: '', body: '', date: '', imageUrl: '' })}><PlusCircle className="mr-2 h-4 w-4" /> File New Credential</Button>
+                                <Button variant="outline" className="w-full h-12 rounded-xl border-dashed border-border dark:border-white/10 hover:border-primary/50 bg-muted/50 dark:bg-white/5 font-black uppercase tracking-widest text-[10px] italic" onClick={() => handleAddItem('certificates', { name: '', body: '', date: '', imageUrl: '' })}><PlusCircle className="mr-2 h-4 w-4" /> File New Credential</Button>
                             </CardContent>
                         </Card>
 
-                        <Card className="rounded-[2.5rem] border-white/10 bg-black/40 backdrop-blur-xl shadow-2xl overflow-hidden border">
-                            <CardHeader className="p-8 md:p-10 border-b border-white/5 bg-white/5 flex flex-row items-center justify-between">
+                        <Card className="rounded-[2.5rem] border-border dark:border-white/10 bg-card/60 dark:bg-black/40 backdrop-blur-xl shadow-2xl overflow-hidden border">
+                            <CardHeader className="p-8 md:p-10 border-b border-border dark:border-white/5 bg-muted/20 dark:bg-white/5 flex flex-row items-center justify-between">
                                 <div>
                                     <CardTitle className="text-xl font-black uppercase tracking-tight italic flex items-center gap-3">
                                         <PlusCircle className="w-5 h-5 text-primary" />
                                         Command Achievements
                                     </CardTitle>
-                                    <CardDescription className="mt-1">Operational milestones and neural recognition.</CardDescription>
+                                    <CardDescription className="mt-1 text-muted-foreground">Operational milestones and neural recognition.</CardDescription>
                                 </div>
-                                <div className="flex items-center gap-2 bg-black/20 p-2 rounded-xl border border-white/5">
+                                <div className="flex items-center gap-2 bg-muted dark:bg-black/20 p-2 rounded-xl border border-border dark:border-white/5">
                                     <Label htmlFor="show-achievements" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Visible</Label>
                                     <Switch id="show-achievements" checked={portfolio.displayOptions.showAchievements} onCheckedChange={(checked) => handleDisplayOptionChange('showAchievements', checked)} />
                                 </div>
                             </CardHeader>
                             <CardContent className="p-8 md:p-10 space-y-6">
                                 {portfolio.achievements.map((item, index) => (
-                                    <div key={index} className="space-y-6 p-6 bg-white/5 rounded-3xl border border-white/5 relative group/ach hover:border-primary/20 transition-all">
+                                    <div key={index} className="space-y-6 p-6 bg-muted/50 dark:bg-white/5 rounded-3xl border border-border dark:border-white/5 relative group/ach hover:border-primary/20 transition-all">
                                         <Button variant="ghost" size="icon" className="absolute top-4 right-4 text-muted-foreground hover:text-destructive transition-colors" onClick={() => handleRemoveItem('achievements', index)}><Trash2 className="w-4 h-4" /></Button>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                             <div className="space-y-3">
                                                 <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Achievement Signature</Label>
-                                                <Input value={item.description} onChange={(e) => handleFieldChange('achievements', index, 'description', e.target.value)} className="bg-black/20 border-white/5 h-12 rounded-xl focus:ring-primary/20" />
+                                                <Input value={item.description} onChange={(e) => handleFieldChange('achievements', index, 'description', e.target.value)} className="bg-muted dark:bg-black/20 border-border dark:border-white/5 h-12 rounded-xl focus:ring-primary/20 text-foreground" />
                                             </div>
                                             <div className="space-y-3">
                                                 <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Award Visualization</Label>
-                                                <div className="bg-black/20 p-4 rounded-2xl border border-white/5">
+                                                <div className="bg-muted dark:bg-black/20 p-4 rounded-2xl border border-border dark:border-white/5">
                                                     <ImagePicker
                                                         value={item.imageUrl}
                                                         onChange={(value) => handleFieldChange('achievements', index, 'imageUrl', value)}
@@ -744,76 +744,76 @@ export default function PortfolioPage() {
                                         </div>
                                     </div>
                                 ))}
-                                <Button variant="outline" className="w-full h-12 rounded-xl border-dashed border-white/10 hover:border-primary/50 bg-white/5 font-black uppercase tracking-widest text-[10px] italic" onClick={() => handleAddItem('achievements', { description: '', imageUrl: '' })}><PlusCircle className="mr-2 h-4 w-4" /> Log Achievement</Button>
+                                <Button variant="outline" className="w-full h-12 rounded-xl border-dashed border-border dark:border-white/10 hover:border-primary/50 bg-muted/50 dark:bg-white/5 font-black uppercase tracking-widest text-[10px] italic" onClick={() => handleAddItem('achievements', { description: '', imageUrl: '' })}><PlusCircle className="mr-2 h-4 w-4" /> Log Achievement</Button>
                             </CardContent>
                         </Card>
 
-                        <Card className="rounded-[2.5rem] border-white/10 bg-black/40 backdrop-blur-xl shadow-2xl overflow-hidden border">
-                            <CardHeader className="p-8 md:p-10 border-b border-white/5 bg-white/5 flex flex-row items-center justify-between">
+                        <Card className="rounded-[2.5rem] border-border dark:border-white/10 bg-card/60 dark:bg-black/40 backdrop-blur-xl shadow-2xl overflow-hidden border">
+                            <CardHeader className="p-8 md:p-10 border-b border-border dark:border-white/5 bg-muted/20 dark:bg-white/5 flex flex-row items-center justify-between">
                                 <div>
                                     <CardTitle className="text-xl font-black uppercase tracking-tight italic flex items-center gap-3">
                                         <PlusCircle className="w-5 h-5 text-primary" />
                                         Neural Feedback
                                     </CardTitle>
-                                    <CardDescription className="mt-1">Personnel endorsements and operative testimonials.</CardDescription>
+                                    <CardDescription className="mt-1 text-muted-foreground">Personnel endorsements and operative testimonials.</CardDescription>
                                 </div>
-                                <div className="flex items-center gap-2 bg-black/20 p-2 rounded-xl border border-white/5">
+                                <div className="flex items-center gap-2 bg-muted dark:bg-black/20 p-2 rounded-xl border border-border dark:border-white/5">
                                     <Label htmlFor="show-testimonials" className="text-[10px] font-black uppercase tracking-widest">Visible</Label>
                                     <Switch id="show-testimonials" checked={portfolio.displayOptions.showTestimonials} onCheckedChange={(checked) => handleDisplayOptionChange('showTestimonials', checked)} />
                                 </div>
                             </CardHeader>
                             <CardContent className="p-8 md:p-10 space-y-6">
                                 {portfolio.testimonials.map((item, index) => (
-                                    <div key={index} className="space-y-4 p-6 bg-white/5 rounded-3xl border border-white/5 relative group/test hover:border-primary/20 transition-all">
+                                    <div key={index} className="space-y-4 p-6 bg-muted/50 dark:bg-white/5 rounded-3xl border border-border dark:border-white/5 relative group/test hover:border-primary/20 transition-all">
                                         <Button variant="ghost" size="icon" className="absolute top-4 right-4 text-muted-foreground hover:text-destructive transition-colors" onClick={() => handleRemoveItem('testimonials', index)}><Trash2 className="w-4 h-4" /></Button>
                                         <div className="space-y-2">
                                             <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Feedback Log</Label>
-                                            <Textarea value={item.testimonial} onChange={(e) => handleFieldChange('testimonials', index, 'testimonial', e.target.value)} className="bg-black/20 border-white/5 min-h-[100px] rounded-xl p-4" />
+                                            <Textarea value={item.testimonial} onChange={(e) => handleFieldChange('testimonials', index, 'testimonial', e.target.value)} className="bg-muted dark:bg-black/20 border-border dark:border-white/5 min-h-[100px] rounded-xl p-4 text-foreground" />
                                         </div>
                                         <div className="space-y-2">
                                             <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Endorsing Operative</Label>
-                                            <Input value={item.author} onChange={(e) => handleFieldChange('testimonials', index, 'author', e.target.value)} className="bg-black/20 border-white/5 h-10 rounded-lg" />
+                                            <Input value={item.author} onChange={(e) => handleFieldChange('testimonials', index, 'author', e.target.value)} className="bg-muted dark:bg-black/20 border-border dark:border-white/5 h-10 rounded-lg text-foreground" />
                                         </div>
                                     </div>
                                 ))}
-                                <Button variant="outline" className="w-full h-12 rounded-xl border-dashed border-white/10 hover:border-primary/50 bg-white/5 font-black uppercase tracking-widest text-[10px] italic" onClick={() => handleAddItem('testimonials', { testimonial: '', author: '' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Feedback</Button>
+                                <Button variant="outline" className="w-full h-12 rounded-xl border-dashed border-border dark:border-white/10 hover:border-primary/50 bg-muted/50 dark:bg-white/5 font-black uppercase tracking-widest text-[10px] italic" onClick={() => handleAddItem('testimonials', { testimonial: '', author: '' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Feedback</Button>
                             </CardContent>
                         </Card>
 
-                        <Card className="rounded-[2.5rem] border-white/10 bg-black/40 backdrop-blur-xl shadow-2xl overflow-hidden border">
-                            <CardHeader className="p-8 md:p-10 border-b border-white/5 bg-white/5 flex flex-row items-center justify-between">
+                        <Card className="rounded-[2.5rem] border-border dark:border-white/10 bg-card/60 dark:bg-black/40 backdrop-blur-xl shadow-2xl overflow-hidden border">
+                            <CardHeader className="p-8 md:p-10 border-b border-border dark:border-white/5 bg-muted/20 dark:bg-white/5 flex flex-row items-center justify-between">
                                 <div>
                                     <CardTitle className="text-xl font-black uppercase tracking-tight italic flex items-center gap-3">
                                         <PlusCircle className="w-5 h-5 text-primary" />
                                         Query Protocols
                                     </CardTitle>
-                                    <CardDescription className="mt-1">Frequently addressed operational inquiries.</CardDescription>
+                                    <CardDescription className="mt-1 text-muted-foreground">Frequently addressed operational inquiries.</CardDescription>
                                 </div>
-                                <div className="flex items-center gap-2 bg-black/20 p-2 rounded-xl border border-white/5">
+                                <div className="flex items-center gap-2 bg-muted dark:bg-black/20 p-2 rounded-xl border border-border dark:border-white/5">
                                     <Label htmlFor="show-faqs" className="text-[10px] font-black uppercase tracking-widest">Visible</Label>
                                     <Switch id="show-faqs" checked={portfolio.displayOptions.showFaqs} onCheckedChange={(checked) => handleDisplayOptionChange('showFaqs', checked)} />
                                 </div>
                             </CardHeader>
                             <CardContent className="p-8 md:p-10 space-y-6">
                                 {portfolio.faqs.map((item, index) => (
-                                    <div key={index} className="space-y-4 p-6 bg-white/5 rounded-3xl border border-white/5 relative group/faq hover:border-primary/20 transition-all">
+                                    <div key={index} className="space-y-4 p-6 bg-muted/50 dark:bg-white/5 rounded-3xl border border-border dark:border-white/5 relative group/faq hover:border-primary/20 transition-all">
                                         <Button variant="ghost" size="icon" className="absolute top-4 right-4 text-muted-foreground hover:text-destructive transition-colors" onClick={() => handleRemoveItem('faqs', index)}><Trash2 className="w-4 h-4" /></Button>
                                         <div className="space-y-2">
                                             <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Protocol Question</Label>
-                                            <Input value={item.question} onChange={(e) => handleFieldChange('faqs', index, 'question', e.target.value)} className="bg-black/20 border-white/5 h-12 rounded-xl" />
+                                            <Input value={item.question} onChange={(e) => handleFieldChange('faqs', index, 'question', e.target.value)} className="bg-muted dark:bg-black/20 border-border dark:border-white/5 h-12 rounded-xl text-foreground" />
                                         </div>
                                         <div className="space-y-2">
                                             <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Resolution Protocol</Label>
-                                            <Textarea value={item.answer} onChange={(e) => handleFieldChange('faqs', index, 'answer', e.target.value)} className="bg-black/20 border-white/5 min-h-[100px] rounded-xl p-4" />
+                                            <Textarea value={item.answer} onChange={(e) => handleFieldChange('faqs', index, 'answer', e.target.value)} className="bg-muted dark:bg-black/20 border-border dark:border-white/5 min-h-[100px] rounded-xl p-4 text-foreground" />
                                         </div>
                                     </div>
                                 ))}
-                                <Button variant="outline" className="w-full h-12 rounded-xl border-dashed border-white/10 hover:border-primary/50 bg-white/5 font-black uppercase tracking-widest text-[10px] italic" onClick={() => handleAddItem('faqs', { question: '', answer: '' })}><PlusCircle className="mr-2 h-4 w-4" /> Log Query Protocol</Button>
+                                <Button variant="outline" className="w-full h-12 rounded-xl border-dashed border-border dark:border-white/10 hover:border-primary/50 bg-muted/50 dark:bg-white/5 font-black uppercase tracking-widest text-[10px] italic" onClick={() => handleAddItem('faqs', { question: '', answer: '' })}><PlusCircle className="mr-2 h-4 w-4" /> Log Query Protocol</Button>
                             </CardContent>
                         </Card>
 
                         <div className="flex flex-col sm:flex-row justify-end gap-4 pt-10 pb-20">
-                            <Button asChild variant="outline" size="lg" className="h-14 px-8 rounded-2xl border-white/10 hover:border-primary/50 bg-white/5 font-black uppercase tracking-tight italic flex items-center gap-2 group transition-all">
+                            <Button asChild variant="outline" size="lg" className="h-14 px-8 rounded-2xl border-border dark:border-white/10 hover:border-primary/50 bg-muted/50 dark:bg-white/5 font-black uppercase tracking-tight italic flex items-center gap-2 group transition-all">
                                 <a href={`/portfolio/${portfolio.personalInfo.slug}`} target="_blank" rel="noopener noreferrer">
                                     <ExternalLink className="w-5 h-5 group-hover:rotate-12 transition-transform" />
                                     Mission Preview

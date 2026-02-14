@@ -110,7 +110,7 @@ export default function NotesGeneratorPage() {
                     <motion.div variants={itemVariants} className="inline-flex items-center justify-center p-3 rounded-2xl bg-primary/10 border border-primary/20 mb-2">
                         <BookOpen className="h-8 w-8 text-primary" />
                     </motion.div>
-                    <motion.h1 variants={itemVariants} className="text-4xl md:text-6xl font-black tracking-tight italic uppercase text-white leading-none">
+                    <motion.h1 variants={itemVariants} className="text-4xl md:text-6xl font-black tracking-tight italic uppercase text-foreground leading-none">
                         Genius <span className="text-primary">Notes</span>
                     </motion.h1>
                     <motion.p variants={itemVariants} className="max-w-2xl mx-auto text-muted-foreground text-lg font-medium">
@@ -120,8 +120,8 @@ export default function NotesGeneratorPage() {
 
                 <section>
                     <motion.div variants={itemVariants}>
-                        <Card className="rounded-[2.5rem] border-white/10 bg-black/40 backdrop-blur-xl shadow-2xl overflow-hidden border">
-                            <CardHeader className="p-8 md:p-10 border-b border-white/5 bg-white/5">
+                        <Card className="rounded-[2.5rem] border-border dark:border-white/10 bg-card/60 dark:bg-black/40 backdrop-blur-xl shadow-2xl overflow-hidden border">
+                            <CardHeader className="p-8 md:p-10 border-b border-border dark:border-white/5 bg-muted/30 dark:bg-white/5">
                                 <CardTitle className="text-2xl font-black uppercase tracking-tight italic flex items-center gap-3">
                                     <Sparkles className="w-6 h-6 text-primary animate-pulse" />
                                     New Knowledge Base
@@ -138,7 +138,7 @@ export default function NotesGeneratorPage() {
                                                 <FormItem>
                                                     <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Learning Topic</FormLabel>
                                                     <FormControl>
-                                                        <Input placeholder="e.g., Kafka Architecture, React Performance, Docker Internals" {...field} className="bg-black/20 border-white/5 h-14 focus:ring-primary/20 rounded-2xl text-lg px-6" />
+                                                        <Input placeholder="e.g., Kafka Architecture, React Performance, Docker Internals" {...field} className="bg-muted/50 dark:bg-black/20 border-border dark:border-white/5 h-14 focus:ring-primary/20 rounded-2xl text-lg px-6" />
                                                     </FormControl>
                                                     <FormMessage className="text-[10px] font-bold" />
                                                 </FormItem>
@@ -163,8 +163,8 @@ export default function NotesGeneratorPage() {
 
                 <section>
                     <motion.div variants={itemVariants}>
-                        <Card className="rounded-[2.5rem] border-white/10 bg-black/40 backdrop-blur-xl shadow-2xl overflow-hidden border">
-                            <CardHeader className="p-8 md:p-10 border-b border-white/5 bg-white/5">
+                        <Card className="rounded-[2.5rem] border-border dark:border-white/10 bg-card/60 dark:bg-black/40 backdrop-blur-xl shadow-2xl overflow-hidden border">
+                            <CardHeader className="p-8 md:p-10 border-b border-border dark:border-white/5 bg-muted/30 dark:bg-white/5">
                                 <CardTitle className="text-2xl font-black uppercase tracking-tight italic flex items-center gap-3">
                                     <History className="w-6 h-6 text-primary" />
                                     Knowledge Vault
@@ -180,7 +180,7 @@ export default function NotesGeneratorPage() {
                                 ) : notesHistory.length > 0 ? (
                                     <div className="overflow-x-auto">
                                         <Table>
-                                            <TableHeader className="bg-white/5">
+                                            <TableHeader className="bg-muted dark:bg-white/5">
                                                 <TableRow className="hover:bg-transparent border-none">
                                                     <TableHead className="text-[10px] font-black uppercase tracking-[0.2em] py-5 px-8">Topic</TableHead>
                                                     <TableHead className="text-[10px] font-black uppercase tracking-[0.2em] py-5">Generated On</TableHead>
@@ -189,9 +189,9 @@ export default function NotesGeneratorPage() {
                                             </TableHeader>
                                             <TableBody>
                                                 {notesHistory.map(note => (
-                                                    <TableRow key={note.id} className="group border-b-white/5 hover:bg-primary/5 transition-all duration-300">
+                                                    <TableRow key={note.id} className="group border-b-border dark:border-b-white/5 hover:bg-primary/5 transition-all duration-300">
                                                         <TableCell className="py-6 px-8">
-                                                            <span className="font-bold text-white group-hover:text-primary transition-colors block capitalize text-lg tracking-tight">
+                                                            <span className="font-bold text-foreground group-hover:text-primary transition-colors block capitalize text-lg tracking-tight">
                                                                 {note.details.topic}
                                                             </span>
                                                         </TableCell>

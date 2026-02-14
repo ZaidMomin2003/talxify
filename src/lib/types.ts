@@ -11,8 +11,8 @@ import { type serverTimestamp } from "firebase/firestore";
 export type StoredActivity = QuizResult | InterviewActivity | NoteGenerationActivity | InterviewQuestionSetActivity;
 
 export const TranscriptEntrySchema = z.object({
-  speaker: z.enum(['user', 'ai']),
-  text: z.string(),
+    speaker: z.enum(['user', 'ai']),
+    text: z.string(),
 });
 export type TranscriptEntry = z.infer<typeof TranscriptEntrySchema>;
 
@@ -31,36 +31,37 @@ export interface BaseActivity {
 
 // A specific type for completed quiz results
 export interface QuizResult extends BaseActivity {
-  type: 'quiz';
-  quizState: QuizState;
-  analysis: AnswerAnalysis[];
-  topics: string; // for filtering, duplicated in details
-  difficulty: string; // for filtering, duplicated in details
-  details: {
-    topic: string;
-    difficulty: string;
-    score: string | 'Pending';
-  }
+    type: 'quiz';
+    quizState: QuizState;
+    analysis: AnswerAnalysis[];
+    topics: string; // for filtering, duplicated in details
+    difficulty: string; // for filtering, duplicated in details
+    details: {
+        topic: string;
+        difficulty: string;
+        score: string | 'Pending';
+        language?: string;
+    }
 }
 
 // --- Interview Feedback Schemas ---
 export const GenerateInterviewFeedbackInputSchema = z.object({
-  transcript: z.array(TranscriptEntrySchema).describe("The full transcript of the interview, alternating between the AI interviewer and the user."),
-  topic: z.string().describe("The main topic of the interview (e.g., 'React Hooks')."),
-  role: z.string().describe("The role the user was interviewing for (e.g., 'Frontend Developer')."),
-  company: z.string().optional().describe("The target company for the interview, if specified (e.g., 'Google').")
+    transcript: z.array(TranscriptEntrySchema).describe("The full transcript of the interview, alternating between the AI interviewer and the user."),
+    topic: z.string().describe("The main topic of the interview (e.g., 'React Hooks')."),
+    role: z.string().describe("The role the user was interviewing for (e.g., 'Frontend Developer')."),
+    company: z.string().optional().describe("The target company for the interview, if specified (e.g., 'Google').")
 });
 export type GenerateInterviewFeedbackInput = z.infer<typeof GenerateInterviewFeedbackInputSchema>;
 
 export const GenerateInterviewFeedbackOutputSchema = z.object({
-  crackingChance: z.number().min(0).max(100).describe("An estimated percentage (0-100) representing the candidate's likelihood of passing a real interview based on this performance."),
-  fluencyScore: z.number().min(0).max(100).describe("A score (0-100) for the candidate's language fluency and smoothness of speech."),
-  knowledgeScore: z.number().min(0).max(100).describe("A score (0-100) for the candidate's technical knowledge and accuracy."),
-  confidenceScore: z.number().min(0).max(100).describe("A score (0-100) for the candidate's perceived confidence and poise."),
-  overallScore: z.number().min(0).max(100).describe("A weighted average score (0-100) of all other scores."),
-  strongConcepts: z.array(z.string()).describe("A list of topics or concepts the candidate demonstrated strong understanding of."),
-  weakConcepts: z.array(z.string()).describe("A list of topics or concepts where the candidate showed weakness."),
-  summary: z.string().describe("A detailed summary of the candidate's overall performance, highlighting strengths, weaknesses, and providing specific, actionable advice for improvement.")
+    crackingChance: z.number().min(0).max(100).describe("An estimated percentage (0-100) representing the candidate's likelihood of passing a real interview based on this performance."),
+    fluencyScore: z.number().min(0).max(100).describe("A score (0-100) for the candidate's language fluency and smoothness of speech."),
+    knowledgeScore: z.number().min(0).max(100).describe("A score (0-100) for the candidate's technical knowledge and accuracy."),
+    confidenceScore: z.number().min(0).max(100).describe("A score (0-100) for the candidate's perceived confidence and poise."),
+    overallScore: z.number().min(0).max(100).describe("A weighted average score (0-100) of all other scores."),
+    strongConcepts: z.array(z.string()).describe("A list of topics or concepts the candidate demonstrated strong understanding of."),
+    weakConcepts: z.array(z.string()).describe("A list of topics or concepts where the candidate showed weakness."),
+    summary: z.string().describe("A detailed summary of the candidate's overall performance, highlighting strengths, weaknesses, and providing specific, actionable advice for improvement.")
 });
 export type GenerateInterviewFeedbackOutput = z.infer<typeof GenerateInterviewFeedbackOutputSchema>;
 
@@ -124,16 +125,16 @@ export type IcebreakerData = z.infer<typeof IcebreakerDataSchema>;
 export type ColumnId = 'todo' | 'inprogress' | 'done';
 
 export interface Column {
-  id: ColumnId;
-  name: string;
-  color: string;
+    id: ColumnId;
+    name: string;
+    color: string;
 }
 
 export interface TodoItem {
     id: string;
     text: string;
     completed: boolean;
-    createdAt: any; 
+    createdAt: any;
     status: ColumnId;
 }
 
@@ -293,16 +294,16 @@ export interface FAQ {
 // --- Resume Builder ---
 // This is the data structure for the resume enhancement AI flow.
 const ExperienceSchema = z.object({
-  company: z.string(),
-  role: z.string(),
-  duration: z.string(),
-  description: z.string(),
+    company: z.string(),
+    role: z.string(),
+    duration: z.string(),
+    description: z.string(),
 });
 
 const EducationSchema = z.object({
-  institution: z.string(),
-  degree: z.string(),
-  year: z.string(),
+    institution: z.string(),
+    degree: z.string(),
+    year: z.string(),
 });
 
 const SkillSchema = z.object({ skill: z.string(), expertise: z.number() });
@@ -310,53 +311,36 @@ const LanguageSchema = z.object({ name: z.string(), proficiency: z.string(), lev
 const HobbySchema = z.object({ name: z.string() });
 
 export const ResumeDataInputSchema = z.object({
-  personalInfo: z.object({
-    name: z.string(),
-    profession: z.string(),
-    email: z.string(),
-    phone: z.string(),
-    address: z.string().optional(),
-    linkedin: z.string(),
-    github: z.string(),
-    website: z.string(),
-    summary: z.string(),
-  }),
-  experience: z.array(ExperienceSchema),
-  education: z.array(EducationSchema),
-  skills: z.array(SkillSchema),
-  languages: z.array(LanguageSchema),
-  hobbies: z.array(HobbySchema),
+    personalInfo: z.object({
+        name: z.string(),
+        profession: z.string(),
+        email: z.string(),
+        phone: z.string(),
+        address: z.string().optional(),
+        linkedin: z.string(),
+        github: z.string(),
+        website: z.string(),
+        summary: z.string(),
+    }),
+    experience: z.array(ExperienceSchema),
+    education: z.array(EducationSchema),
+    skills: z.array(SkillSchema),
+    languages: z.array(LanguageSchema),
+    hobbies: z.array(HobbySchema),
 });
 export type ResumeDataInput = z.infer<typeof ResumeDataInputSchema>;
 
 export const EnhanceResumeOutputSchema = z.object({
-  enhancedSummary: z.string().describe("The rewritten, enhanced professional summary."),
-  enhancedExperience: z.array(z.object({
-    originalRole: z.string(),
-    enhancedDescription: z.string().describe("The rewritten, enhanced description for the work experience. Use action verbs and focus on achievements."),
-  })),
+    enhancedSummary: z.string().describe("The rewritten, enhanced professional summary."),
+    enhancedExperience: z.array(z.object({
+        originalRole: z.string(),
+        enhancedDescription: z.string().describe("The rewritten, enhanced description for the work experience. Use action verbs and focus on achievements."),
+    })),
 });
 export type EnhanceResumeOutput = z.infer<typeof EnhanceResumeOutputSchema>;
 
 
-export type ResumeData = {
-    personalInfo: {
-        name: string;
-        profession: string;
-        email: string;
-        phone: string;
-        address: string;
-        linkedin: string;
-        github: string;
-        website: string;
-        summary: string;
-    };
-    experience: { company: string; role: string; duration: string; description: string; }[];
-    education: { institution: string; degree: string; year: string; }[];
-    skills: { name: string; }[];
-    languages: { name: string; proficiency: string; level: number; }[];
-    hobbies: { name: string; }[];
-};
+export type ResumeData = ResumeDataInput;
 
 
 // --- Survey ---
@@ -391,10 +375,10 @@ export interface WaitlistSubmission {
 
 // --- Interview Question Generator Flow Schemas ---
 export const GenerateInterviewQuestionsInputSchema = z.object({
-  role: z.string().describe('The role for which interview questions are generated (e.g., "Software Engineer").'),
-  description: z.string().describe('The job description, which may include required technologies and responsibilities.'),
-  level: z.enum(['entry-level', 'mid-level', 'senior', 'principal']).describe('The seniority level of the role.'),
-  company: z.string().optional().describe('The target company, if any (e.g., "Google", "Netflix").'),
+    role: z.string().describe('The role for which interview questions are generated (e.g., "Software Engineer").'),
+    description: z.string().describe('The job description, which may include required technologies and responsibilities.'),
+    level: z.enum(['entry-level', 'mid-level', 'senior', 'principal']).describe('The seniority level of the role.'),
+    company: z.string().optional().describe('The target company, if any (e.g., "Google", "Netflix").'),
 });
 export type GenerateInterviewQuestionsInput = z.infer<typeof GenerateInterviewQuestionsInputSchema>;
 
@@ -407,31 +391,31 @@ const InterviewQuestionAndAnswerSchema = z.object({
 export type InterviewQuestionAndAnswer = z.infer<typeof InterviewQuestionAndAnswerSchema>;
 
 export const GenerateInterviewQuestionsOutputSchema = z.object({
-  questions: z.array(InterviewQuestionAndAnswerSchema).length(15).describe('An array of exactly 15 questions and answers.'),
+    questions: z.array(InterviewQuestionAndAnswerSchema).length(15).describe('An array of exactly 15 questions and answers.'),
 });
 export type GenerateInterviewQuestionsOutput = z.infer<typeof GenerateInterviewQuestionsOutputSchema>;
 
 
 // --- DEPRECATED Interview Flow Schemas ---
 export const InterviewFlowInputSchema = z.object({
-  topic: z.string(),
-  role: z.string(),
-  company: z.string().optional(),
-  history: z.array(TranscriptEntrySchema).optional(),
+    topic: z.string(),
+    role: z.string(),
+    company: z.string().optional(),
+    history: z.array(TranscriptEntrySchema).optional(),
 });
 
 export const InterviewFlowStateSchema = z.object({
-  status: z.string().optional(),
-  aiText: z.string().optional(),
-  userText: z.string().optional(),
-  aiAudio: z.string().optional(),
+    status: z.string().optional(),
+    aiText: z.string().optional(),
+    userText: z.string().optional(),
+    aiAudio: z.string().optional(),
 });
 export type InterviewFlowState = z.infer<typeof InterviewFlowStateSchema>;
 
 
 export const InterviewFlowOutputSchema = z.object({
-  transcript: z.array(TranscriptEntrySchema),
+    transcript: z.array(TranscriptEntrySchema),
 });
 export type InterviewFlowOutput = z.infer<typeof InterviewFlowOutputSchema>;
 
-    
+

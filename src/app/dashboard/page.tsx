@@ -471,7 +471,7 @@ export default function DashboardPage() {
                 </TableHeader>
                 <TableBody>
                   {filteredQuizzes.length > 0 ? filteredQuizzes.map((quiz) => (
-                    <TableRow key={quiz.id} className="group border-b-border/5 hover:bg-primary/5 transition-all duration-300">
+                    <TableRow key={quiz.id} className="group border-b-border dark:border-b-white/5 hover:bg-primary/5 transition-all duration-300">
                       <TableCell className="py-5 px-6">
                         <div className="flex flex-col">
                           <span className="font-bold text-base capitalize group-hover:text-primary transition-colors">{quiz.topics}</span>

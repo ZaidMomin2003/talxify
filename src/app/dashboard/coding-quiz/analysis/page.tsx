@@ -96,7 +96,7 @@ export default function CodingQuizAnalysisPage() {
 
   if (isLoading) {
     return (
-      <div className="flex h-screen w-full flex-col items-center justify-center p-4 bg-black relative overflow-hidden">
+      <div className="flex h-screen w-full flex-col items-center justify-center p-4 bg-background relative overflow-hidden">
         <div className="absolute top-0 right-0 -mt-32 -mr-32 h-[500px] w-[500px] rounded-full bg-primary/10 blur-[120px] pointer-events-none" />
         <div className="absolute bottom-0 left-0 -mb-32 -ml-32 h-[500px] w-[500px] rounded-full bg-primary/5 blur-[120px] pointer-events-none" />
 
@@ -123,7 +123,7 @@ export default function CodingQuizAnalysisPage() {
           </div>
 
           <div className="space-y-4">
-            <h2 className="text-4xl font-black italic uppercase tracking-tighter text-white">
+            <h2 className="text-4xl font-black italic uppercase tracking-tighter text-foreground">
               Processing <span className="text-primary italic">Results</span>
             </h2>
             <div className="flex flex-col items-center gap-2">
@@ -147,8 +147,8 @@ export default function CodingQuizAnalysisPage() {
 
   if (!analysis || !quizState) {
     return (
-      <div className="flex h-screen w-full flex-col items-center justify-center p-4 bg-black">
-        <Card className="max-w-md w-full text-center rounded-[2.5rem] border-white/10 bg-black/40 backdrop-blur-xl p-10 shadow-2xl overflow-hidden relative">
+      <div className="flex h-screen w-full flex-col items-center justify-center p-4 bg-background">
+        <Card className="max-w-md w-full text-center rounded-[2.5rem] border-border dark:border-white/10 bg-card/60 dark:bg-black/40 backdrop-blur-xl p-10 shadow-2xl overflow-hidden relative">
           <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none">
             <XCircle className="h-32 w-32" />
           </div>
@@ -156,7 +156,7 @@ export default function CodingQuizAnalysisPage() {
             <div className="mx-auto bg-destructive/10 text-destructive rounded-2xl p-4 w-fit border border-destructive/20 scale-125 mb-4">
               <XCircle className="h-8 w-8" />
             </div>
-            <CardTitle className="text-3xl font-black italic uppercase tracking-tighter text-white">Analysis <span className="text-destructive">Terminated</span></CardTitle>
+            <CardTitle className="text-3xl font-black italic uppercase tracking-tighter text-foreground">Analysis <span className="text-destructive">Terminated</span></CardTitle>
             <CardDescription className="text-muted-foreground italic font-medium">
               System was unable to retrieve performance data. The record may be corrupted or inaccessible.
             </CardDescription>
@@ -164,7 +164,7 @@ export default function CodingQuizAnalysisPage() {
           <CardContent className="pt-8">
             <Button
               onClick={() => router.push('/dashboard')}
-              className="w-full h-14 rounded-2xl font-black uppercase tracking-tight italic bg-white/10 text-white border border-white/10 hover:bg-white hover:text-black transition-all"
+              className="w-full h-14 rounded-2xl font-black uppercase tracking-tight italic bg-muted hover:bg-muted/80 text-foreground border border-border transition-all"
             >
               Return to Headquarters
             </Button>
@@ -190,7 +190,7 @@ export default function CodingQuizAnalysisPage() {
             <div className="flex items-center gap-2 text-primary font-black uppercase tracking-widest text-[10px] italic">
               <Activity className="w-3 h-3" /> Post-Mission Analysis
             </div>
-            <h1 className="text-4xl md:text-5xl font-black italic uppercase tracking-tighter text-white">
+            <h1 className="text-4xl md:text-5xl font-black italic uppercase tracking-tighter text-foreground">
               Performance <span className="text-primary opacity-50">Debrief</span>
             </h1>
           </div>
@@ -199,7 +199,7 @@ export default function CodingQuizAnalysisPage() {
             <Button
               variant="outline"
               onClick={() => router.push('/dashboard/coding-quiz/instructions')}
-              className="rounded-xl border-white/10 bg-white/5 font-black uppercase tracking-tighter italic h-12 px-6 hover:bg-white/10 transition-all text-muted-foreground hover:text-white"
+              className="rounded-xl border-border dark:border-white/10 bg-muted/50 dark:bg-white/5 font-black uppercase tracking-tighter italic h-12 px-6 hover:bg-muted transition-all text-muted-foreground hover:text-foreground"
             >
               <RefreshCw className="mr-2 h-4 w-4" />
               Re-Initialize
@@ -216,15 +216,15 @@ export default function CodingQuizAnalysisPage() {
 
         {/* Score Card */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card className="md:col-span-1 rounded-[2rem] border-white/10 bg-black/40 backdrop-blur-xl p-8 relative overflow-hidden flex flex-col items-center justify-center text-center">
+          <Card className="md:col-span-1 rounded-[2rem] border-border dark:border-white/10 bg-card/60 dark:bg-black/40 backdrop-blur-xl p-8 relative overflow-hidden flex flex-col items-center justify-center text-center">
             <div className="absolute inset-0 bg-primary/5 opacity-50" />
             <div className="relative z-10">
               <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground italic mb-2">Overall Score</p>
-              <div className="text-7xl font-black italic text-white tracking-tighter leading-none mb-2">
+              <div className="text-7xl font-black italic text-foreground tracking-tighter leading-none mb-2">
                 {overallScore}<span className="text-2xl text-primary">%</span>
               </div>
               <Badge variant="outline" className={cn(
-                "font-black uppercase tracking-widest italic border-white/10",
+                "font-black uppercase tracking-widest italic border-border dark:border-white/10",
                 overallScore >= 80 ? "bg-green-500/10 text-green-500" : overallScore >= 50 ? "bg-yellow-500/10 text-yellow-500" : "bg-red-500/10 text-red-500"
               )}>
                 {overallScore >= 80 ? "Exceptional" : overallScore >= 50 ? "Acceptable" : "Critical Failure"}
@@ -233,8 +233,8 @@ export default function CodingQuizAnalysisPage() {
           </Card>
 
           <div className="md:col-span-2 space-y-4">
-            <div className="p-6 rounded-[2rem] bg-white/5 border border-white/10 h-full backdrop-blur-xl flex flex-col justify-center">
-              <h3 className="text-xl font-black italic uppercase tracking-tight text-white mb-4">Mission Summary</h3>
+            <div className="p-6 rounded-[2rem] bg-muted/30 dark:bg-white/5 border border-border dark:border-white/10 h-full backdrop-blur-xl flex flex-col justify-center">
+              <h3 className="text-xl font-black italic uppercase tracking-tight text-foreground mb-4">Mission Summary</h3>
               <p className="text-muted-foreground font-medium italic leading-relaxed">
                 Evaluation complete. Below is a detailed breakdown of each objective.
                 Review the neural feedback to identify architectural weaknesses and optimize your logic for future deployments.
@@ -243,7 +243,7 @@ export default function CodingQuizAnalysisPage() {
           </div>
         </div>
 
-        <h2 className="text-2xl font-black italic uppercase tracking-tight text-white pl-2 border-l-4 border-primary">Detailed Logs</h2>
+        <h2 className="text-2xl font-black italic uppercase tracking-tight text-foreground pl-2 border-l-4 border-primary">Detailed Logs</h2>
 
         <div className="space-y-4">
           {quizState.map((state, index) => {
@@ -252,18 +252,18 @@ export default function CodingQuizAnalysisPage() {
             const isPassing = score >= 70;
 
             return (
-              <Card key={index} className="rounded-[2rem] border-white/10 bg-black/40 backdrop-blur-sm overflow-hidden group">
-                <div className="p-1 h-1 w-full bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-20" />
+              <Card key={index} className="rounded-[2rem] border-border dark:border-white/10 bg-card/60 dark:bg-black/40 backdrop-blur-sm overflow-hidden group">
+                <div className="p-1 h-1 w-full bg-gradient-to-r from-transparent via-border dark:via-white/10 to-transparent opacity-20" />
 
                 <div className="p-6 md:p-8 space-y-6">
                   {/* Question Header */}
                   <div className="flex flex-col md:flex-row gap-6 justify-between items-start">
                     <div className="space-y-3 flex-1">
                       <div className="flex items-center gap-3">
-                        <Badge variant="outline" className="rounded-lg border-white/10 bg-white/5 text-muted-foreground font-black italic">
+                        <Badge variant="outline" className="rounded-lg border-border dark:border-white/10 bg-muted/50 dark:bg-white/5 text-muted-foreground font-black italic">
                           #{index + 1}
                         </Badge>
-                        <h3 className="text-lg font-bold text-white italic">Execution Objective</h3>
+                        <h3 className="text-lg font-bold text-foreground italic">Execution Objective</h3>
                       </div>
                       <div
                         className="text-muted-foreground/90 text-sm font-medium italic leading-relaxed prose dark:prose-invert max-w-none"
@@ -282,11 +282,11 @@ export default function CodingQuizAnalysisPage() {
                   </div>
 
                   {/* Analysis Content */}
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-6 border-t border-white/5">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-6 border-t border-border dark:border-white/5">
                     {/* User Code */}
                     <div className="space-y-3">
                       <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70 italic pl-1">Source Code</p>
-                      <div className="rounded-xl border border-white/5 bg-black/50 p-4 font-mono text-xs text-muted-foreground overflow-x-auto">
+                      <div className="rounded-xl border border-border dark:border-white/5 bg-black/10 dark:bg-black/50 p-4 font-mono text-xs text-muted-foreground overflow-x-auto">
                         <pre>{state.userAnswer || "// No code submitted"}</pre>
                       </div>
                     </div>
@@ -303,7 +303,7 @@ export default function CodingQuizAnalysisPage() {
 
                   {/* Solution (if failed) */}
                   {!isPassing && (
-                    <div className="pt-6 border-t border-white/5 space-y-3">
+                    <div className="pt-6 border-t border-border dark:border-white/5 space-y-3">
                       <p className="text-[10px] font-black uppercase tracking-widest text-green-500/70 italic pl-1">Optimal Solution</p>
                       <div className="rounded-xl border border-green-500/10 bg-green-500/5 p-4 font-mono text-xs text-green-400/90 overflow-x-auto">
                         <pre>{result.correctSolution}</pre>

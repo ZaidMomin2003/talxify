@@ -220,7 +220,7 @@ export default function ProfilePage() {
                 animate="visible"
             >
                 {/* Profile Header */}
-                <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-black/40 p-8 shadow-2xl backdrop-blur-xl">
+                <div className="relative overflow-hidden rounded-3xl border border-border dark:border-white/10 bg-card/60 dark:bg-black/40 p-8 shadow-2xl backdrop-blur-xl">
                     <div className="absolute top-0 right-0 -mt-10 -mr-10 h-40 w-40 rounded-full bg-primary/20 blur-3xl" />
                     <div className="relative flex flex-col md:flex-row items-center gap-6">
                         <div className="relative">
@@ -234,7 +234,7 @@ export default function ProfilePage() {
                             </div>
                         </div>
                         <div className="text-center md:text-left space-y-1">
-                            <h2 className="text-3xl font-black text-white tracking-tight italic uppercase">
+                            <h2 className="text-3xl font-black text-foreground tracking-tight italic uppercase">
                                 {displayName || "New Member"}
                             </h2>
                             <p className="text-muted-foreground font-medium">{user.email}</p>
@@ -242,7 +242,7 @@ export default function ProfilePage() {
                                 <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20 px-3 font-bold uppercase tracking-widest text-[10px]">
                                     {isSocialLogin ? "Social Account" : "Standard Account"}
                                 </Badge>
-                                <Badge variant="outline" className="border-white/10 text-white/50 px-3 font-bold uppercase tracking-widest text-[10px]">
+                                <Badge variant="outline" className="border-border dark:border-white/10 text-muted-foreground px-3 font-bold uppercase tracking-widest text-[10px]">
                                     Member since {new Date(user.metadata.creationTime || Date.now()).toLocaleDateString()}
                                 </Badge>
                             </div>
@@ -252,7 +252,7 @@ export default function ProfilePage() {
                             <div className="flex items-center gap-2">
                                 <span className="text-4xl font-black text-primary italic leading-none">{completedDays}</span>
                                 <div className="flex flex-col">
-                                    <span className="text-xs font-black uppercase text-white/80 leading-none">Days</span>
+                                    <span className="text-xs font-black uppercase text-foreground/80 leading-none">Days</span>
                                     <span className="text-[10px] font-medium text-muted-foreground leading-none">Completed</span>
                                 </div>
                             </div>
@@ -264,9 +264,9 @@ export default function ProfilePage() {
                     {/* Left Column: Account Settings */}
                     <div className="lg:col-span-2 space-y-8">
                         <motion.div variants={itemVariants}>
-                            <Card className="border-white/10 bg-black/40 backdrop-blur-xl shadow-xl overflow-hidden">
-                                <CardHeader className="border-b border-white/5 bg-white/5">
-                                    <CardTitle className="flex items-center gap-3 text-lg font-black uppercase tracking-tight italic">
+                            <Card className="border-border dark:border-white/10 bg-card/60 dark:bg-black/40 backdrop-blur-xl shadow-xl overflow-hidden">
+                                <CardHeader className="border-b border-border dark:border-white/5 bg-muted/30 dark:bg-white/5">
+                                    <CardTitle className="flex items-center gap-3 text-lg font-black uppercase tracking-tight italic text-foreground">
                                         <User className="h-5 w-5 text-primary" /> Personal Details
                                     </CardTitle>
                                 </CardHeader>
@@ -279,7 +279,7 @@ export default function ProfilePage() {
                                                     value={displayName}
                                                     onChange={(e) => setDisplayName(e.target.value)}
                                                     disabled={!isEditingName}
-                                                    className="bg-black/20 border-white/5 h-11 focus:ring-primary/20 transition-all"
+                                                    className="bg-muted/50 dark:bg-black/20 border-border dark:border-white/5 h-11 focus:ring-primary/20 transition-all"
                                                 />
                                                 {!isEditingName && <div className="absolute inset-0 bg-transparent cursor-not-allowed" />}
                                             </div>
@@ -288,12 +288,12 @@ export default function ProfilePage() {
                                                     <Button size="icon" className="h-11 w-11 rounded-xl shadow-lg shadow-primary/20" onClick={handleNameUpdate} disabled={isUpdating}>
                                                         {isUpdating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                                                     </Button>
-                                                    <Button size="icon" variant="outline" className="h-11 w-11 rounded-xl border-white/10 bg-white/5" onClick={() => { setIsEditingName(false); setDisplayName(user.displayName || ''); }}>
+                                                    <Button size="icon" variant="outline" className="h-11 w-11 rounded-xl border-border dark:border-white/10 bg-muted dark:bg-white/5" onClick={() => { setIsEditingName(false); setDisplayName(user.displayName || ''); }}>
                                                         <X className="h-4 w-4" />
                                                     </Button>
                                                 </div>
                                             ) : (
-                                                <Button size="icon" variant="outline" className="h-11 w-11 rounded-xl border-white/10 bg-white/5 group-hover:border-primary/50 transition-colors" onClick={() => setIsEditingName(true)}>
+                                                <Button size="icon" variant="outline" className="h-11 w-11 rounded-xl border-border dark:border-white/10 bg-muted dark:bg-white/5 group-hover:border-primary/50 transition-colors" onClick={() => setIsEditingName(true)}>
                                                     <Edit className="h-4 w-4" />
                                                 </Button>
                                             )}
@@ -301,16 +301,16 @@ export default function ProfilePage() {
                                     </div>
                                     <div className="space-y-2">
                                         <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Registered Email</Label>
-                                        <Input value={user.email || 'Not set'} disabled className="bg-black/40 border-white/5 h-11 opacity-60" />
+                                        <Input value={user.email || 'Not set'} disabled className="bg-muted dark:bg-black/40 border-border dark:border-white/5 h-11 opacity-60" />
                                     </div>
                                 </CardContent>
                             </Card>
                         </motion.div>
 
                         <motion.div variants={itemVariants}>
-                            <Card className="border-white/10 bg-black/40 backdrop-blur-xl shadow-xl overflow-hidden">
-                                <CardHeader className="border-b border-white/5 bg-white/5">
-                                    <CardTitle className="flex items-center gap-3 text-lg font-black uppercase tracking-tight italic">
+                            <Card className="border-border dark:border-white/10 bg-card/60 dark:bg-black/40 backdrop-blur-xl shadow-xl overflow-hidden">
+                                <CardHeader className="border-b border-border dark:border-white/5 bg-muted/30 dark:bg-white/5">
+                                    <CardTitle className="flex items-center gap-3 text-lg font-black uppercase tracking-tight italic text-foreground">
                                         <KeyRound className="h-5 w-5 text-primary" /> Security
                                     </CardTitle>
                                 </CardHeader>
@@ -319,7 +319,7 @@ export default function ProfilePage() {
                                         <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 flex gap-4 items-start">
                                             <ShieldAlert className="h-6 w-6 text-primary shrink-0" />
                                             <div>
-                                                <p className="text-sm font-bold text-white mb-1">Managed by Provider</p>
+                                                <p className="text-sm font-bold text-foreground mb-1">Managed by Provider</p>
                                                 <p className="text-xs text-muted-foreground">
                                                     You signed in with Google/GitHub. Security settings are handled on their respective platforms.
                                                 </p>
@@ -329,15 +329,15 @@ export default function ProfilePage() {
                                         <form onSubmit={handlePasswordUpdate} className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div className="md:col-span-2 space-y-2">
                                                 <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1" htmlFor="current-password">Current Password</Label>
-                                                <Input id="current-password" type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} required className="bg-black/20 border-white/5 h-11" />
+                                                <Input id="current-password" type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} required className="bg-muted dark:bg-black/20 border-border dark:border-white/5 h-11" />
                                             </div>
                                             <div className="space-y-2">
                                                 <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1" htmlFor="new-password">New Password</Label>
-                                                <Input id="new-password" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required className="bg-black/20 border-white/5 h-11" />
+                                                <Input id="new-password" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required className="bg-muted dark:bg-black/20 border-border dark:border-white/5 h-11" />
                                             </div>
                                             <div className="space-y-2">
                                                 <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1" htmlFor="confirm-password">Confirm Password</Label>
-                                                <Input id="confirm-password" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required className="bg-black/20 border-white/5 h-11" />
+                                                <Input id="confirm-password" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required className="bg-muted dark:bg-black/20 border-border dark:border-white/5 h-11" />
                                             </div>
                                             <div className="md:col-span-2 pt-2">
                                                 <Button type="submit" disabled={isUpdating} className="h-11 px-8 rounded-xl font-bold uppercase tracking-wider text-xs">
@@ -354,11 +354,11 @@ export default function ProfilePage() {
 
                     {/* Right Column: Profile & Danger Zone */}
                     <div className="space-y-8">
-                        {userData && (userData.portfolio?.education?.length > 0 || userData.onboardingInfo?.roles?.length > 0) && (
+                        {userData && (userData.portfolio?.education?.length > 0 || (userData.onboardingInfo?.roles?.length ?? 0) > 0) && (
                             <motion.div variants={itemVariants}>
-                                <Card className="border-white/10 bg-black/40 backdrop-blur-xl shadow-xl overflow-hidden">
-                                    <CardHeader className="border-b border-white/5 bg-white/5">
-                                        <CardTitle className="flex items-center gap-3 text-lg font-black uppercase tracking-tight italic">
+                                <Card className="border-border dark:border-white/10 bg-card/60 dark:bg-black/40 backdrop-blur-xl shadow-xl overflow-hidden">
+                                    <CardHeader className="border-b border-border dark:border-white/5 bg-muted/30 dark:bg-white/5">
+                                        <CardTitle className="flex items-center gap-3 text-lg font-black uppercase tracking-tight italic text-foreground">
                                             <Briefcase className="h-5 w-5 text-primary" /> Career
                                         </CardTitle>
                                     </CardHeader>
@@ -366,9 +366,9 @@ export default function ProfilePage() {
                                         {userData.portfolio.education?.[0]?.institution && (
                                             <div className="space-y-2">
                                                 <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Institution</Label>
-                                                <div className="flex items-center gap-3 p-3 rounded-xl border border-white/5 bg-white/5">
+                                                <div className="flex items-center gap-3 p-3 rounded-xl border border-border dark:border-white/5 bg-muted/30 dark:bg-white/5">
                                                     <GraduationCap className="h-5 w-5 text-primary shrink-0" />
-                                                    <p className="text-sm font-semibold truncate text-white/90">{userData.portfolio.education[0].institution}</p>
+                                                    <p className="text-sm font-semibold truncate text-foreground/90">{userData.portfolio.education[0].institution}</p>
                                                 </div>
                                             </div>
                                         )}
@@ -377,7 +377,7 @@ export default function ProfilePage() {
                                                 <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Target Roles</Label>
                                                 <div className="flex flex-wrap gap-2">
                                                     {userData.onboardingInfo.roles.map(role => (
-                                                        <Badge key={role} variant="secondary" className="bg-white/5 border-white/10 text-white/70 hover:bg-white/10 transition-colors">
+                                                        <Badge key={role} variant="secondary" className="bg-muted dark:bg-white/5 border-border dark:border-white/10 text-muted-foreground dark:text-white/70 hover:bg-muted-foreground/10 transition-colors">
                                                             {role}
                                                         </Badge>
                                                     ))}

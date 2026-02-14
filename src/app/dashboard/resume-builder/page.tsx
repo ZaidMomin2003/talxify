@@ -14,7 +14,7 @@ import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/auth-context';
 import { getUserData, checkAndIncrementResumeExports, checkAndIncrementUsage } from '@/lib/firebase-service';
-import type { UserData, ResumeData } from '@/lib/types';
+import type { UserData, ResumeData, ResumeDataInput } from '@/lib/types';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { enhanceResume } from '@/ai/flows/enhance-resume';
@@ -346,11 +346,14 @@ export default function ResumeBuilderPage() {
         setIsEnhancing(true);
         try {
             // Map the current state to the format expected by the AI flow
-            const inputForAI: ResumeData = {
-                personalInfo: resumeData.personalInfo,
+            const inputForAI: ResumeDataInput = {
+                personalInfo: {
+                    ...resumeData.personalInfo,
+                    address: resumeData.personalInfo.address // matches optional address
+                },
                 experience: resumeData.experience,
                 education: resumeData.education,
-                skills: resumeData.skills.map(s => ({ skill: s.name, expertise: 80 })), // map to expected format
+                skills: resumeData.skills.map(s => ({ skill: s.name, expertise: 80 })),
                 languages: resumeData.languages,
                 hobbies: resumeData.hobbies,
             };
@@ -383,10 +386,10 @@ export default function ResumeBuilderPage() {
         setResumeData(prev => ({ ...prev, personalInfo: { ...prev.personalInfo, [field]: value } }));
     }
 
-    const handleSectionChange = <T extends ResumeExperience | ResumeEducation | ResumeSkill | ResumeLanguage | ResumeHobby>(
+    const handleSectionChange = (
         section: 'experience' | 'education' | 'skills' | 'languages' | 'hobbies',
         index: number,
-        field: keyof T,
+        field: string,
         value: string | number
     ) => {
         setResumeData(prev => {
@@ -420,10 +423,10 @@ export default function ResumeBuilderPage() {
 
     if (isLoading) {
         return (
-            <div className="flex h-screen items-center justify-center bg-zinc-950">
+            <div className="flex h-screen items-center justify-center bg-background">
                 <div className="flex flex-col items-center gap-4">
                     <Loader2 className="h-12 w-12 animate-spin text-primary opacity-50" />
-                    <p className="text-zinc-500 font-medium animate-pulse">Designing your workbench...</p>
+                    <p className="text-muted-foreground font-medium animate-pulse">Designing your workbench...</p>
                 </div>
             </div>
         );
@@ -431,23 +434,23 @@ export default function ResumeBuilderPage() {
 
     return (
         <>
-            <main className="flex-1 h-screen overflow-hidden bg-zinc-950 relative font-sans">
+            <main className="flex-1 h-screen overflow-hidden bg-background relative font-sans">
                 {/* Background elements */}
                 <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px] pointer-events-none" />
                 <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-blue-500/5 rounded-full blur-[120px] pointer-events-none" />
 
                 <div className="flex h-full relative z-10">
                     {/* Editor Sidebar */}
-                    <div className="w-full lg:w-[400px] flex flex-col border-r border-white/5 bg-zinc-900/40 backdrop-blur-xl">
-                        <div className="p-6 border-b border-white/5 space-y-4">
+                    <div className="w-full lg:w-[400px] flex flex-col border-r border-border dark:border-white/5 bg-card/60 dark:bg-zinc-900/40 backdrop-blur-xl">
+                        <div className="p-6 border-b border-border dark:border-white/5 space-y-4">
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
                                     <div className="p-2 rounded-xl bg-primary/10 text-primary">
                                         <FileText size={20} />
                                     </div>
-                                    <h1 className="text-xl font-bold text-white tracking-tight">Resume Builder</h1>
+                                    <h1 className="text-xl font-bold text-foreground tracking-tight">Resume Builder</h1>
                                 </div>
-                                <Button size="icon" variant="ghost" className="rounded-full text-zinc-400 hover:text-white" onClick={handleDownloadClick}>
+                                <Button size="icon" variant="ghost" className="rounded-full text-muted-foreground hover:text-foreground" onClick={handleDownloadClick}>
                                     <Download size={20} />
                                 </Button>
                             </div>
@@ -489,11 +492,11 @@ export default function ResumeBuilderPage() {
                                         <InputItem label="Phone" value={resumeData.personalInfo.phone} onChange={(val) => handleInfoChange('phone', val)} />
                                         <InputItem label="Address/Location" value={resumeData.personalInfo.address} onChange={(val) => handleInfoChange('address', val)} />
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 ml-1">Professional Summary</label>
+                                            <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Professional Summary</label>
                                             <Textarea
                                                 value={resumeData.personalInfo.summary}
                                                 onChange={(e) => handleInfoChange('summary', e.target.value)}
-                                                className="bg-zinc-800/50 border-white/5 min-h-[120px] rounded-xl text-sm focus:ring-primary/20 text-white"
+                                                className="bg-muted/50 dark:bg-zinc-800/50 border-border dark:border-white/5 min-h-[120px] rounded-xl text-sm focus:ring-primary/20 text-foreground"
                                             />
                                         </div>
                                     </div>
@@ -509,14 +512,14 @@ export default function ResumeBuilderPage() {
                                                 <Input
                                                     value={skill.name}
                                                     onChange={(e) => handleSectionChange('skills', index, 'name', e.target.value)}
-                                                    className="bg-zinc-800/50 border-white/5 h-11 rounded-xl text-sm text-white"
+                                                    className="bg-muted/50 dark:bg-zinc-800/50 border-border dark:border-white/5 h-11 rounded-xl text-sm text-foreground"
                                                 />
                                                 <Button variant="ghost" size="icon" onClick={() => handleRemoveItem('skills', index)} className="opacity-0 group-hover:opacity-100 text-red-400">
                                                     <Trash2 size={16} />
                                                 </Button>
                                             </div>
                                         ))}
-                                        <Button variant="outline" className="w-full border-dashed border-white/10 text-zinc-400 h-11" onClick={() => handleAddItem('skills')}>
+                                        <Button variant="outline" className="w-full border-dashed border-border dark:border-white/10 text-muted-foreground h-11" onClick={() => handleAddItem('skills')}>
                                             <PlusCircle className="mr-2" size={16} /> Add Skill
                                         </Button>
                                     </div>
@@ -528,7 +531,7 @@ export default function ResumeBuilderPage() {
                                     <SectionHeader title="Work Experience" color="#f59e0b" />
                                     <div className="space-y-4">
                                         {resumeData.experience.map((exp, index) => (
-                                            <div key={index} className="p-5 bg-zinc-800/30 border border-white/5 rounded-[1.5rem] space-y-4 relative group">
+                                            <div key={index} className="p-5 bg-muted/40 dark:bg-zinc-800/30 border border-border dark:border-white/5 rounded-[1.5rem] space-y-4 relative group">
                                                 <Button variant="ghost" size="icon" className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 text-red-400" onClick={() => handleRemoveItem('experience', index)}>
                                                     <Trash2 size={16} />
                                                 </Button>
@@ -536,12 +539,12 @@ export default function ResumeBuilderPage() {
                                                 <InputItem label="Role" value={exp.role} onChange={(v) => handleSectionChange('experience', index, 'role', v)} />
                                                 <InputItem label="Duration" value={exp.duration} onChange={(v) => handleSectionChange('experience', index, 'duration', v)} />
                                                 <div className="space-y-2">
-                                                    <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Responsibilities</label>
-                                                    <Textarea value={exp.description} onChange={(e) => handleSectionChange('experience', index, 'description', e.target.value)} className="bg-zinc-800/50 border-white/5 text-sm rounded-xl min-h-[100px] text-white" />
+                                                    <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Responsibilities</label>
+                                                    <Textarea value={exp.description} onChange={(e) => handleSectionChange('experience', index, 'description', e.target.value)} className="bg-muted/50 dark:bg-zinc-800/50 border-border dark:border-white/5 text-sm rounded-xl min-h-[100px] text-foreground" />
                                                 </div>
                                             </div>
                                         ))}
-                                        <Button variant="outline" className="w-full border-dashed border-white/10 text-zinc-400 h-12 rounded-xl" onClick={() => handleAddItem('experience')}>
+                                        <Button variant="outline" className="w-full border-dashed border-border dark:border-white/10 text-muted-foreground h-12 rounded-xl" onClick={() => handleAddItem('experience')}>
                                             <PlusCircle className="mr-2" size={16} /> Add Role
                                         </Button>
                                     </div>
@@ -553,7 +556,7 @@ export default function ResumeBuilderPage() {
                                     <SectionHeader title="Education" color="#8b5cf6" />
                                     <div className="space-y-4">
                                         {resumeData.education.map((edu, index) => (
-                                            <div key={index} className="p-5 bg-zinc-800/30 border border-white/5 rounded-[1.5rem] space-y-4 relative group">
+                                            <div key={index} className="p-5 bg-muted/40 dark:bg-zinc-800/30 border border-border dark:border-white/5 rounded-[1.5rem] space-y-4 relative group">
                                                 <Button variant="ghost" size="icon" className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 text-red-400" onClick={() => handleRemoveItem('education', index)}>
                                                     <Trash2 size={16} />
                                                 </Button>
@@ -562,7 +565,7 @@ export default function ResumeBuilderPage() {
                                                 <InputItem label="Year" value={edu.year} onChange={(v) => handleSectionChange('education', index, 'year', v)} />
                                             </div>
                                         ))}
-                                        <Button variant="outline" className="w-full border-dashed border-white/10 text-zinc-400 h-12 rounded-xl" onClick={() => handleAddItem('education')}>
+                                        <Button variant="outline" className="w-full border-dashed border-border dark:border-white/10 text-muted-foreground h-12 rounded-xl" onClick={() => handleAddItem('education')}>
                                             <PlusCircle className="mr-2" size={16} /> Add Study
                                         </Button>
                                     </div>
@@ -586,14 +589,14 @@ export default function ResumeBuilderPage() {
                                         <SectionHeader title="Languages" color="#10b981" />
                                         <div className="space-y-4">
                                             {resumeData.languages.map((lang, index) => (
-                                                <div key={index} className="p-5 bg-zinc-800/30 border border-white/5 rounded-[1.5rem] space-y-4 relative group">
+                                                <div key={index} className="p-5 bg-muted/40 dark:bg-zinc-800/30 border border-border dark:border-white/5 rounded-[1.5rem] space-y-4 relative group">
                                                     <Button variant="ghost" size="icon" className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 text-red-400" onClick={() => handleRemoveItem('languages', index)}>
                                                         <Trash2 size={16} />
                                                     </Button>
                                                     <InputItem label="Language" value={lang.name} onChange={(v) => handleSectionChange('languages', index, 'name', v)} />
                                                     <InputItem label="Proficiency (e.g. Native)" value={lang.proficiency} onChange={(v) => handleSectionChange('languages', index, 'proficiency', v)} />
                                                     <div className="space-y-3">
-                                                        <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest text-zinc-500">
+                                                        <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                                                             <span>Level</span>
                                                             <span className="text-primary">{lang.level}%</span>
                                                         </div>
@@ -622,7 +625,7 @@ export default function ResumeBuilderPage() {
                                                     <Input
                                                         value={hobby.name}
                                                         onChange={(e) => handleSectionChange('hobbies', index, 'name', e.target.value)}
-                                                        className="bg-zinc-800/50 border-white/5 h-11 rounded-xl text-sm text-white"
+                                                        className="bg-muted/50 dark:bg-zinc-800/50 border-border dark:border-white/5 h-11 rounded-xl text-sm text-foreground"
                                                         placeholder="e.g. Photography"
                                                     />
                                                     <Button variant="ghost" size="icon" onClick={() => handleRemoveItem('hobbies', index)} className="opacity-0 group-hover:opacity-100 text-red-400">
@@ -630,7 +633,7 @@ export default function ResumeBuilderPage() {
                                                     </Button>
                                                 </div>
                                             ))}
-                                            <Button variant="outline" className="w-full border-dashed border-white/10 text-zinc-400 h-11" onClick={() => handleAddItem('hobbies')}>
+                                            <Button variant="outline" className="w-full border-dashed border-border dark:border-white/10 text-muted-foreground h-11" onClick={() => handleAddItem('hobbies')}>
                                                 <PlusCircle className="mr-2" size={16} /> Add Interest
                                             </Button>
                                         </div>
@@ -714,7 +717,7 @@ function NavButton({ active, icon: Icon, label, onClick }: any) {
             onClick={onClick}
             className={cn(
                 "flex flex-col items-center justify-center min-w-[64px] py-2 px-1 rounded-xl transition-all gap-1 border border-transparent",
-                active ? "bg-white/5 border-white/10 text-primary shadow-xl" : "text-zinc-500 hover:text-zinc-300"
+                active ? "bg-muted dark:bg-white/5 border-border dark:border-white/10 text-primary shadow-xl" : "text-muted-foreground hover:text-foreground"
             )}
         >
             <Icon size={18} className={active ? "scale-110" : ""} />
@@ -727,7 +730,7 @@ function SectionHeader({ title, color }: { title: string, color: string }) {
     return (
         <div className="flex items-center gap-3">
             <div className="w-1.5 h-6 rounded-full" style={{ backgroundColor: color }} />
-            <h3 className="text-sm font-bold text-white uppercase tracking-widest leading-none">{title}</h3>
+            <h3 className="text-sm font-bold text-foreground dark:text-white uppercase tracking-widest leading-none">{title}</h3>
         </div>
     );
 }
@@ -735,12 +738,12 @@ function SectionHeader({ title, color }: { title: string, color: string }) {
 function InputItem({ label, value, onChange, type = "text" }: { label: string, value: string, onChange: (v: string) => void, type?: string }) {
     return (
         <div className="space-y-2">
-            <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 ml-1">{label}</label>
+            <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">{label}</label>
             <Input
                 type={type}
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
-                className="bg-zinc-800/50 border-white/5 h-11 rounded-xl text-sm focus:ring-primary/20 text-white"
+                className="bg-muted/50 dark:bg-zinc-800/50 border-border dark:border-white/5 h-11 rounded-xl text-sm focus:ring-primary/20 text-foreground"
             />
         </div>
     );
@@ -750,7 +753,7 @@ function HUDButton({ icon: Icon, onClick }: { icon: any, onClick: () => void }) 
     return (
         <button
             onClick={onClick}
-            className="w-12 h-12 rounded-2xl bg-zinc-900 border border-white/10 text-white flex items-center justify-center hover:bg-white hover:text-black transition-all shadow-2xl"
+            className="w-12 h-12 rounded-2xl bg-card dark:bg-zinc-900 border border-border dark:border-white/10 text-foreground dark:text-white flex items-center justify-center hover:bg-white hover:text-black transition-all shadow-2xl"
         >
             <Icon size={20} />
         </button>

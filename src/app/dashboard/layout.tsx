@@ -400,8 +400,8 @@ function DashboardLayoutContent({
                     <div className={cn(
                       "relative w-full py-3 flex flex-col items-center justify-center rounded-2xl transition-all duration-300 border backdrop-blur-sm overflow-hidden",
                       isActive
-                        ? "bg-primary/15 border-primary/40 text-primary shadow-[0_0_20px_rgba(var(--primary),0.1)]"
-                        : "bg-zinc-900/40 border-white/5 text-muted-foreground hover:bg-zinc-800/60 hover:border-white/10 hover:shadow-xl"
+                        ? "bg-primary/10 border-primary/30 dark:bg-primary/15 dark:border-primary/40 text-primary shadow-[0_0_20px_rgba(var(--primary),0.1)]"
+                        : "bg-background/80 dark:bg-zinc-900/40 border-border dark:border-white/5 text-muted-foreground hover:bg-zinc-100/60 dark:hover:bg-zinc-800/60 hover:shadow-xl"
                     )}>
                       {isActive && (
                         <div className="absolute top-2 right-2 h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
@@ -409,7 +409,7 @@ function DashboardLayoutContent({
 
                       <div className={cn(
                         "flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-500 mb-2",
-                        isActive ? "bg-primary/20 text-primary scale-110" : "bg-black/20 text-muted-foreground group-hover:scale-110"
+                        isActive ? "bg-primary/20 text-primary scale-110" : "bg-muted dark:bg-black/20 text-muted-foreground group-hover:scale-110"
                       )}>
                         <item.icon size={20} />
                       </div>
@@ -428,7 +428,7 @@ function DashboardLayoutContent({
                         {(item as any).isPro && (
                           <div className={cn(
                             "flex h-4 w-4 items-center justify-center rounded-sm border",
-                            isFreePlan ? "bg-muted text-muted-foreground border-white/5" : "bg-primary/20 text-primary border-primary/30"
+                            isFreePlan ? "bg-muted text-muted-foreground border-border dark:border-white/5" : "bg-primary/20 text-primary border-primary/30"
                           )}>
                             <Gem className="w-2.5 h-2.5" />
                           </div>
@@ -446,16 +446,16 @@ function DashboardLayoutContent({
             >
               <Link
                 href="/dashboard/todos"
-                className="group relative cursor-pointer rounded-2xl bg-zinc-900/40 border border-white/5 p-4 text-left hover:border-primary/50 transition-all block overflow-hidden backdrop-blur-md shadow-2xl"
+                className="group relative cursor-pointer rounded-2xl bg-card/60 dark:bg-zinc-900/40 border border-border dark:border-white/5 p-4 text-left hover:border-primary/50 transition-all block overflow-hidden backdrop-blur-md shadow-2xl"
               >
                 <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                 <div className="flex items-center gap-4 relative z-10">
-                  <div className="rounded-xl bg-zinc-800/80 p-2.5 text-primary border border-white/5 shadow-inner transition-colors group-hover:bg-primary group-hover:text-white">
+                  <div className="rounded-xl bg-muted dark:bg-zinc-800/80 p-2.5 text-primary border border-border dark:border-white/5 shadow-inner transition-colors group-hover:bg-primary group-hover:text-white">
                     <ListChecks size={20} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-bold text-sm text-white tracking-tight">My To-Do List</p>
-                    <p className="text-[10px] text-zinc-500 font-medium truncate uppercase tracking-wider">Stay on track with prep</p>
+                    <p className="font-bold text-sm text-foreground tracking-tight">My To-Do List</p>
+                    <p className="text-[10px] text-muted-foreground font-medium truncate uppercase tracking-wider">Stay on track with prep</p>
                   </div>
                 </div>
               </Link>
@@ -520,74 +520,90 @@ function DashboardLayoutContent({
                   <div className="relative">
                     <Avatar className="h-11 w-11 border-2 border-primary/20 transition-transform group-hover:scale-105 duration-500">
                       <AvatarImage src={user.photoURL || undefined} alt="User avatar" />
-                      <AvatarFallback className="bg-zinc-800 text-primary font-bold">{user.email?.[0].toUpperCase()}</AvatarFallback>
+                      <AvatarFallback className="bg-muted dark:bg-zinc-800 text-primary font-bold">{user.email?.[0].toUpperCase()}</AvatarFallback>
                     </Avatar>
-                    <div className="absolute -bottom-1 -right-1 h-4 w-4 rounded-full bg-zinc-950 border-2 border-zinc-900 flex items-center justify-center">
+                    <div className="absolute -bottom-1 -right-1 h-4 w-4 rounded-full bg-background dark:bg-zinc-950 border-2 border-border dark:border-zinc-900 flex items-center justify-center">
                       <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
                     </div>
                   </div>
 
                   <div className="flex-1 overflow-hidden">
-                    <p className="text-sm font-bold text-white truncate tracking-tight">{user.displayName || user.email?.split('@')[0]}</p>
+                    <p className="text-sm font-bold text-foreground truncate tracking-tight">{user.displayName || user.email?.split('@')[0]}</p>
                     <div className="flex items-center gap-1.5">
                       <div className={cn(
                         "h-1.5 w-1.5 rounded-full",
-                        isFreePlan ? "bg-zinc-500" : "bg-primary shadow-[0_0_8px_rgba(var(--primary),0.5)]"
+                        isFreePlan ? "bg-zinc-400" : "bg-primary shadow-[0_0_8px_rgba(var(--primary),0.5)]"
                       )} />
-                      <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">{subscriptionStatus}</p>
+                      <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">{subscriptionStatus}</p>
                     </div>
                   </div>
 
-                  <div className="h-8 w-8 flex items-center justify-center rounded-xl bg-white/5 border border-white/5 text-zinc-500 group-hover:text-white group-hover:bg-primary/20 group-hover:border-primary/20 transition-all">
+                  <div className="h-8 w-8 flex items-center justify-center rounded-xl bg-muted/60 dark:bg-white/5 border border-border dark:border-white/5 text-muted-foreground group-hover:text-foreground group-hover:bg-primary/20 group-hover:border-primary/20 transition-all">
                     <Settings size={16} />
                   </div>
                 </div>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-64 mb-2" align="end" forceMount>
-                <DropdownMenuLabel className="font-normal">
-                  <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">{user.displayName || 'User'}</p>
-                    <p className="text-xs leading-none text-muted-foreground">
+              <DropdownMenuContent className="w-72 mb-4 p-2 rounded-[1.8rem] bg-card/60 dark:bg-zinc-950/80 backdrop-blur-2xl border-border dark:border-white/10 shadow-2xl" align="end" side="right" sideOffset={14}>
+                <DropdownMenuLabel className="p-4">
+                  <div className="flex flex-col gap-1">
+                    <p className="text-sm font-black uppercase tracking-tight text-foreground">{user.displayName || user.email?.split('@')[0]}</p>
+                    <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-[0.15em] opacity-70">
                       {user.email}
                     </p>
                   </div>
                 </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link href="/dashboard/profile">
-                    <User className="mr-2 h-4 w-4" />
-                    <span>Profile</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/dashboard/support">
-                    <LifeBuoy className="mr-2 h-4 w-4" />
-                    <span>Support</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/dashboard/bug-report">
-                    <Bug className="mr-2 h-4 w-4" />
-                    <span>Bug Report</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                  <div className="flex justify-between items-center w-full">
-                    <div className="flex items-center">
-                      {theme === 'light' ? <Sun className="mr-2 h-4 w-4" /> : <Moon className="mr-2 h-4 w-4" />}
-                      <span>Theme</span>
+                <DropdownMenuSeparator className="bg-border dark:bg-white/5 mx-2" />
+                <div className="p-1.5 space-y-1">
+                  <DropdownMenuItem asChild className="rounded-[1.2rem] py-3 px-4 focus:bg-primary/10 focus:text-primary cursor-pointer transition-all">
+                    <Link href="/dashboard/profile" className="flex items-center w-full">
+                      <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center mr-3">
+                        <User size={16} />
+                      </div>
+                      <span className="text-xs font-bold uppercase tracking-widest">Profile</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild className="rounded-[1.2rem] py-3 px-4 focus:bg-primary/10 focus:text-primary cursor-pointer transition-all">
+                    <Link href="/dashboard/support" className="flex items-center w-full">
+                      <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center mr-3">
+                        <LifeBuoy size={16} />
+                      </div>
+                      <span className="text-xs font-bold uppercase tracking-widest">Support</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild className="rounded-[1.2rem] py-3 px-4 focus:bg-primary/10 focus:text-primary cursor-pointer transition-all">
+                    <Link href="/dashboard/bug-report" className="flex items-center w-full">
+                      <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center mr-3">
+                        <Bug size={16} />
+                      </div>
+                      <span className="text-xs font-bold uppercase tracking-widest">Bug Report</span>
+                    </Link>
+                  </DropdownMenuItem>
+
+                  <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="rounded-[1.2rem] py-3 px-4 focus:bg-transparent cursor-default">
+                    <div className="flex justify-between items-center w-full">
+                      <div className="flex items-center">
+                        <div className="w-8 h-8 rounded-lg bg-zinc-500/10 flex items-center justify-center mr-3">
+                          {theme === 'light' ? <Sun size={16} /> : <Moon size={16} />}
+                        </div>
+                        <span className="text-xs font-bold uppercase tracking-widest">Theme</span>
+                      </div>
+                      <Switch
+                        checked={theme === 'dark'}
+                        onCheckedChange={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+                        className="data-[state=checked]:bg-primary"
+                      />
                     </div>
-                    <Switch
-                      checked={theme === 'dark'}
-                      onCheckedChange={() => setTheme(theme === 'light' ? 'dark' : 'light')}
-                    />
-                  </div>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={logout} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>Sign out</span>
-                </DropdownMenuItem>
+                  </DropdownMenuItem>
+                </div>
+                <DropdownMenuSeparator className="bg-border dark:bg-white/5 mx-2" />
+                <div className="p-1.5">
+                  <DropdownMenuItem onClick={logout} className="rounded-[1.2rem] py-3 px-4 text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer transition-all">
+                    <div className="w-8 h-8 rounded-lg bg-destructive/10 flex items-center justify-center mr-3">
+                      <LogOut size={16} />
+                    </div>
+                    <span className="text-xs font-bold uppercase tracking-widest italic">Sign out</span>
+                  </DropdownMenuItem>
+                </div>
               </DropdownMenuContent>
             </DropdownMenu>
           </motion.div>

@@ -81,7 +81,7 @@ export default function SupportPage() {
                     <motion.div variants={itemVariants} className="inline-flex items-center justify-center p-3 rounded-2xl bg-primary/10 border border-primary/20 mb-2">
                         <LifeBuoy className="h-8 w-8 text-primary" />
                     </motion.div>
-                    <motion.h1 variants={itemVariants} className="text-4xl md:text-5xl font-black tracking-tight italic uppercase text-white leading-none">
+                    <motion.h1 variants={itemVariants} className="text-4xl md:text-5xl font-black tracking-tight italic uppercase text-foreground leading-none">
                         Support <span className="text-primary">Center</span>
                     </motion.h1>
                     <motion.p variants={itemVariants} className="max-w-2xl mx-auto text-muted-foreground text-lg">
@@ -92,26 +92,26 @@ export default function SupportPage() {
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                     {/* Info Column */}
                     <div className="lg:col-span-4 space-y-6">
-                        <motion.div variants={itemVariants} className="p-6 rounded-3xl border border-white/10 bg-black/40 backdrop-blur-xl space-y-6">
+                        <motion.div variants={itemVariants} className="p-6 rounded-3xl border border-border dark:border-white/10 bg-card/60 dark:bg-black/40 backdrop-blur-xl space-y-6">
                             <div className="flex items-start gap-4">
-                                <div className="h-10 w-10 flex items-center justify-center rounded-xl bg-white/5 border border-white/10 shrink-0">
+                                <div className="h-10 w-10 flex items-center justify-center rounded-xl bg-muted/50 dark:bg-white/5 border border-border dark:border-white/10 shrink-0">
                                     <Clock className="h-5 w-5 text-primary" />
                                 </div>
                                 <div>
-                                    <h3 className="font-bold text-white uppercase text-[10px] tracking-widest mb-1">Response Time</h3>
+                                    <h3 className="font-bold text-foreground uppercase text-[10px] tracking-widest mb-1">Response Time</h3>
                                     <p className="text-sm text-muted-foreground">Typically within 24 hours.</p>
                                 </div>
                             </div>
                             <div className="flex items-start gap-4">
-                                <div className="h-10 w-10 flex items-center justify-center rounded-xl bg-white/5 border border-white/10 shrink-0">
+                                <div className="h-10 w-10 flex items-center justify-center rounded-xl bg-muted/50 dark:bg-white/5 border border-border dark:border-white/10 shrink-0">
                                     <Mail className="h-5 w-5 text-primary" />
                                 </div>
                                 <div>
-                                    <h3 className="font-bold text-white uppercase text-[10px] tracking-widest mb-1">Email Us Directly</h3>
+                                    <h3 className="font-bold text-foreground uppercase text-[10px] tracking-widest mb-1">Email Us Directly</h3>
                                     <p className="text-sm text-primary font-medium">hii@talxify.space</p>
                                 </div>
                             </div>
-                            <div className="pt-4 border-t border-white/5">
+                            <div className="pt-4 border-t border-border dark:border-white/5">
                                 <div className="rounded-2xl bg-primary/5 border border-primary/10 p-4">
                                     <p className="text-xs text-muted-foreground italic leading-relaxed">
                                         "We value every piece of feedback as it helps us build a better tool for your career journey."
@@ -120,8 +120,8 @@ export default function SupportPage() {
                             </div>
                         </motion.div>
 
-                        <motion.div variants={itemVariants} className="p-6 rounded-3xl border border-white/10 bg-black/40 backdrop-blur-xl hidden lg:block">
-                            <h3 className="font-black text-white uppercase italic tracking-tighter text-xl mb-4">Navigator</h3>
+                        <motion.div variants={itemVariants} className="p-6 rounded-3xl border border-border dark:border-white/10 bg-card/60 dark:bg-black/40 backdrop-blur-xl hidden lg:block">
+                            <h3 className="font-black text-foreground uppercase italic tracking-tighter text-xl mb-4">Navigator</h3>
                             <ul className="space-y-3">
                                 {[
                                     { name: 'Resume Builder', href: '/dashboard/resume-builder' },
@@ -142,9 +142,9 @@ export default function SupportPage() {
 
                     {/* Form Column */}
                     <motion.div variants={itemVariants} className="lg:col-span-8">
-                        <Card className="rounded-3xl border-white/10 bg-black/40 backdrop-blur-xl shadow-2xl overflow-hidden border">
-                            <CardHeader className="p-8 border-b border-white/5 bg-white/5">
-                                <CardTitle className="text-2xl font-black uppercase tracking-tight italic">Send a Message</CardTitle>
+                        <Card className="rounded-3xl border-border dark:border-white/10 bg-card/60 dark:bg-black/40 backdrop-blur-xl shadow-2xl overflow-hidden border">
+                            <CardHeader className="p-8 border-b border-border dark:border-white/5 bg-muted/30 dark:bg-white/5">
+                                <CardTitle className="text-2xl font-black uppercase tracking-tight italic text-foreground">Send a Message</CardTitle>
                                 <CardDescription>Fill out the details and our team will get in touch.</CardDescription>
                             </CardHeader>
                             <CardContent className="p-8">
@@ -158,7 +158,7 @@ export default function SupportPage() {
                                                     <FormItem>
                                                         <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Full Name</FormLabel>
                                                         <FormControl>
-                                                            <Input placeholder="e.g., John Doe" {...field} className="bg-black/20 border-white/5 h-12 focus:ring-primary/20 rounded-xl" />
+                                                            <Input placeholder="e.g., John Doe" {...field} className="bg-muted/50 dark:bg-black/20 border-border dark:border-white/5 h-12 focus:ring-primary/20 rounded-xl" />
                                                         </FormControl>
                                                         <FormMessage className="text-[10px] font-bold" />
                                                     </FormItem>
@@ -171,7 +171,7 @@ export default function SupportPage() {
                                                     <FormItem>
                                                         <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Email Address</FormLabel>
                                                         <FormControl>
-                                                            <Input type="email" placeholder="e.g., john@example.com" {...field} className="bg-black/20 border-white/5 h-12 focus:ring-primary/20 rounded-xl" />
+                                                            <Input type="email" placeholder="e.g., john@example.com" {...field} className="bg-muted/50 dark:bg-black/20 border-border dark:border-white/5 h-12 focus:ring-primary/20 rounded-xl" />
                                                         </FormControl>
                                                         <FormMessage className="text-[10px] font-bold" />
                                                     </FormItem>
@@ -186,7 +186,7 @@ export default function SupportPage() {
                                                     <FormItem>
                                                         <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">WhatsApp (Optional)</FormLabel>
                                                         <FormControl>
-                                                            <Input placeholder="+1 234..." {...field} className="bg-black/20 border-white/5 h-12 focus:ring-primary/20 rounded-xl" />
+                                                            <Input placeholder="+1 234..." {...field} className="bg-muted/50 dark:bg-black/20 border-border dark:border-white/5 h-12 focus:ring-primary/20 rounded-xl" />
                                                         </FormControl>
                                                         <FormMessage className="text-[10px] font-bold" />
                                                     </FormItem>
@@ -200,11 +200,11 @@ export default function SupportPage() {
                                                         <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Related Issue</FormLabel>
                                                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                                                             <FormControl>
-                                                                <SelectTrigger className="bg-black/20 border-white/5 h-12 focus:ring-primary/20 rounded-xl">
+                                                                <SelectTrigger className="bg-muted/50 dark:bg-black/20 border-border dark:border-white/5 h-12 focus:ring-primary/20 rounded-xl">
                                                                     <SelectValue placeholder="Select issue type" />
                                                                 </SelectTrigger>
                                                             </FormControl>
-                                                            <SelectContent className="bg-secondary/90 backdrop-blur-xl border-white/10">
+                                                            <SelectContent className="bg-popover border-border dark:border-white/10">
                                                                 <SelectItem value="billing">Billing Issue</SelectItem>
                                                                 <SelectItem value="technical">Technical Problem</SelectItem>
                                                                 <SelectItem value="feedback">Feedback & Suggestions</SelectItem>
@@ -225,7 +225,7 @@ export default function SupportPage() {
                                                     <FormControl>
                                                         <Textarea
                                                             placeholder="Please tell us more about your request..."
-                                                            className="min-h-[120px] bg-black/20 border-white/5 focus:ring-primary/20 rounded-xl resize-none"
+                                                            className="min-h-[120px] bg-muted/50 dark:bg-black/20 border-border dark:border-white/5 focus:ring-primary/20 rounded-xl resize-none"
                                                             {...field}
                                                         />
                                                     </FormControl>

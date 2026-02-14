@@ -50,7 +50,7 @@ export default function CodingQuizInstructionsPage() {
         animate="visible"
         className="max-w-4xl w-full"
       >
-        <Card className="rounded-[2.5rem] border-white/10 bg-black/40 backdrop-blur-xl shadow-2xl overflow-hidden border relative">
+        <Card className="rounded-[2.5rem] border-border dark:border-white/10 bg-card/60 dark:bg-black/40 backdrop-blur-xl shadow-2xl overflow-hidden border relative">
           <div className="absolute top-0 right-0 p-12 opacity-5 pointer-events-none">
             <Code className="h-64 w-64" />
           </div>
@@ -61,7 +61,7 @@ export default function CodingQuizInstructionsPage() {
                 <Code className="h-10 w-10" />
               </div>
             </motion.div>
-            <motion.h1 variants={itemVariants} className="text-4xl md:text-5xl font-black uppercase tracking-tight italic text-white mb-4">
+            <motion.h1 variants={itemVariants} className="text-4xl md:text-5xl font-black uppercase tracking-tight italic text-foreground mb-4">
               Mission <span className="text-primary">Briefing</span>
             </motion.h1>
             <motion.p variants={itemVariants} className="text-lg text-muted-foreground/80 font-medium max-w-2xl mx-auto italic">
@@ -76,7 +76,7 @@ export default function CodingQuizInstructionsPage() {
                 { label: "Complexity", value: difficulty, icon: <Sparkles className="h-4 w-4" />, isBadge: true },
                 { label: "Objectives", value: `${numQuestions} Tasks`, icon: <CheckCircle className="h-4 w-4" /> }
               ].map((item, i) => (
-                <div key={i} className="p-6 rounded-3xl bg-white/5 border border-white/10 flex flex-col items-center text-center group hover:bg-white/10 transition-all">
+                <div key={i} className="p-6 rounded-3xl bg-muted/50 dark:bg-white/5 border border-border dark:border-white/10 flex flex-col items-center text-center group hover:bg-muted dark:hover:bg-white/10 transition-all">
                   <div className="text-primary mb-3 opacity-50 group-hover:opacity-100 transition-opacity">
                     {item.icon}
                   </div>
@@ -86,7 +86,7 @@ export default function CodingQuizInstructionsPage() {
                       {item.value}
                     </Badge>
                   ) : (
-                    <p className="text-xl font-black text-white italic truncate w-full">{item.value}</p>
+                    <p className="text-xl font-black text-foreground italic truncate w-full">{item.value}</p>
                   )}
                 </div>
               ))}
@@ -112,12 +112,12 @@ export default function CodingQuizInstructionsPage() {
                     icon: <CheckCircle className="h-6 w-6" />
                   }
                 ].map((step, i) => (
-                  <div key={i} className="flex items-center gap-6 p-6 rounded-3xl bg-white/5 border border-white/5 hover:border-white/10 transition-all group">
+                  <div key={i} className="flex items-center gap-6 p-6 rounded-3xl bg-muted/50 dark:bg-white/5 border border-border dark:border-white/5 hover:border-border dark:hover:border-white/10 transition-all group">
                     <div className="bg-primary/10 text-primary rounded-2xl p-4 group-hover:bg-primary group-hover:text-primary-foreground transition-all">
                       {step.icon}
                     </div>
                     <div>
-                      <h3 className="font-black text-lg text-white uppercase italic tracking-tight mb-1">{step.title}</h3>
+                      <h3 className="font-black text-lg text-foreground uppercase italic tracking-tight mb-1">{step.title}</h3>
                       <p className="text-muted-foreground/70 text-sm italic font-medium leading-relaxed">{step.desc}</p>
                     </div>
                   </div>

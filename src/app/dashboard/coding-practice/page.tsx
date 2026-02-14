@@ -131,7 +131,7 @@ export default function LevelUpPage() {
                     <motion.div variants={itemVariants} className="inline-flex items-center justify-center p-3 rounded-2xl bg-primary/10 border border-primary/20 mb-2">
                         <Rocket className="h-8 w-8 text-primary" />
                     </motion.div>
-                    <motion.h1 variants={itemVariants} className="text-4xl md:text-6xl font-black tracking-tight italic uppercase text-white leading-none">
+                    <motion.h1 variants={itemVariants} className="text-4xl md:text-6xl font-black tracking-tight italic uppercase text-foreground leading-none">
                         Skill <span className="text-primary">Forge</span>
                     </motion.h1>
                     <motion.p variants={itemVariants} className="max-w-2xl mx-auto text-muted-foreground text-lg font-medium">
@@ -141,8 +141,8 @@ export default function LevelUpPage() {
 
                 <section>
                     <motion.div variants={itemVariants}>
-                        <Card className="rounded-[2.5rem] border-white/10 bg-black/40 backdrop-blur-xl shadow-2xl overflow-hidden border">
-                            <CardHeader className="p-8 md:p-10 border-b border-white/5 bg-white/5">
+                        <Card className="rounded-[2.5rem] border-border dark:border-white/10 bg-card/60 dark:bg-black/40 backdrop-blur-xl shadow-2xl overflow-hidden border">
+                            <CardHeader className="p-8 md:p-10 border-b border-border dark:border-white/5 bg-muted/30 dark:bg-white/5">
                                 <CardTitle className="text-2xl font-black uppercase tracking-tight italic flex items-center gap-3">
                                     <Sparkles className="w-6 h-6 text-primary animate-pulse" />
                                     Configure Assessment
@@ -160,7 +160,7 @@ export default function LevelUpPage() {
                                                     <FormItem>
                                                         <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Focus Topics</FormLabel>
                                                         <FormControl>
-                                                            <Input placeholder="e.g., Kafka, System Design, Graph Theory" {...field} className="bg-black/20 border-white/5 h-14 focus:ring-primary/20 rounded-2xl text-lg px-6" />
+                                                            <Input placeholder="e.g., Kafka, System Design, Graph Theory" {...field} className="bg-muted/50 dark:bg-black/20 border-border dark:border-white/5 h-14 focus:ring-primary/20 rounded-2xl text-lg px-6" />
                                                         </FormControl>
                                                         <FormMessage className="text-[10px] font-bold" />
                                                     </FormItem>
@@ -175,11 +175,11 @@ export default function LevelUpPage() {
                                                             <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Intensity</FormLabel>
                                                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                                                                 <FormControl>
-                                                                    <SelectTrigger className="bg-black/20 border-white/5 h-14 rounded-2xl focus:ring-primary/20">
+                                                                    <SelectTrigger className="bg-muted/50 dark:bg-black/20 border-border dark:border-white/5 h-14 rounded-2xl focus:ring-primary/20">
                                                                         <SelectValue placeholder="Select intensity" />
                                                                     </SelectTrigger>
                                                                 </FormControl>
-                                                                <SelectContent className="bg-zinc-900 border-white/10 rounded-xl">
+                                                                <SelectContent className="bg-popover border-border dark:border-white/10 rounded-xl">
                                                                     <SelectItem value="easy">Easy (Fundamentals)</SelectItem>
                                                                     <SelectItem value="moderate">Moderate (Industrial)</SelectItem>
                                                                     <SelectItem value="difficult">Difficult (Elite)</SelectItem>
@@ -196,7 +196,7 @@ export default function LevelUpPage() {
                                                         <FormItem>
                                                             <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Quest Count</FormLabel>
                                                             <FormControl>
-                                                                <Input type="number" min="1" max="10" {...field} className="bg-black/20 border-white/5 h-14 focus:ring-primary/20 rounded-2xl text-lg px-6" />
+                                                                <Input type="number" min="1" max="10" {...field} className="bg-muted/50 dark:bg-black/20 border-border dark:border-white/5 h-14 focus:ring-primary/20 rounded-2xl text-lg px-6" />
                                                             </FormControl>
                                                             <FormMessage className="text-[10px] font-bold" />
                                                         </FormItem>
@@ -210,11 +210,11 @@ export default function LevelUpPage() {
                                                             <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Environment</FormLabel>
                                                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                                                                 <FormControl>
-                                                                    <SelectTrigger className="bg-black/20 border-white/5 h-14 rounded-2xl focus:ring-primary/20">
+                                                                    <SelectTrigger className="bg-muted/50 dark:bg-black/20 border-border dark:border-white/5 h-14 rounded-2xl focus:ring-primary/20">
                                                                         <SelectValue placeholder="Select language" />
                                                                     </SelectTrigger>
                                                                 </FormControl>
-                                                                <SelectContent className="bg-zinc-900 border-white/10 rounded-xl">
+                                                                <SelectContent className="bg-popover border-border dark:border-white/10 rounded-xl">
                                                                     <SelectItem value="JavaScript">JavaScript</SelectItem>
                                                                     <SelectItem value="Python">Python</SelectItem>
                                                                     <SelectItem value="Java">Java</SelectItem>
@@ -249,8 +249,8 @@ export default function LevelUpPage() {
 
                 <section>
                     <motion.div variants={itemVariants}>
-                        <Card className="rounded-[2.5rem] border-white/10 bg-black/40 backdrop-blur-xl shadow-2xl overflow-hidden border">
-                            <CardHeader className="p-8 md:p-10 border-b border-white/5 bg-white/5">
+                        <Card className="rounded-[2.5rem] border-border dark:border-white/10 bg-card/60 dark:bg-black/40 backdrop-blur-xl shadow-2xl overflow-hidden border">
+                            <CardHeader className="p-8 md:p-10 border-b border-border dark:border-white/5 bg-muted/30 dark:bg-white/5">
                                 <CardTitle className="text-2xl font-black uppercase tracking-tight italic flex items-center gap-3">
                                     <RefreshCw className="w-6 h-6 text-primary" />
                                     Performance Archives
@@ -266,7 +266,7 @@ export default function LevelUpPage() {
                                 ) : quizHistory.length > 0 ? (
                                     <div className="overflow-x-auto">
                                         <Table>
-                                            <TableHeader className="bg-white/5">
+                                            <TableHeader className="bg-muted dark:bg-white/5">
                                                 <TableRow className="hover:bg-transparent border-none">
                                                     <TableHead className="text-[10px] font-black uppercase tracking-[0.2em] py-5 px-8">Topic / Tech</TableHead>
                                                     <TableHead className="text-[10px] font-black uppercase tracking-[0.2em] py-5">Intensity</TableHead>
@@ -276,13 +276,13 @@ export default function LevelUpPage() {
                                             </TableHeader>
                                             <TableBody>
                                                 {quizHistory.map(quiz => (
-                                                    <TableRow key={quiz.id} className="group border-b-white/5 hover:bg-primary/5 transition-all duration-300">
+                                                    <TableRow key={quiz.id} className="group border-b-border dark:border-b-white/5 hover:bg-primary/5 transition-all duration-300">
                                                         <TableCell className="py-6 px-8">
-                                                            <span className="font-bold text-white group-hover:text-primary transition-colors block capitalize text-lg tracking-tight">
+                                                            <span className="font-bold text-foreground group-hover:text-primary transition-colors block capitalize text-lg tracking-tight">
                                                                 {quiz.topics}
                                                             </span>
                                                             <span className="text-[10px] text-muted-foreground uppercase font-black tracking-widest">
-                                                                Environment: {quiz.language || 'Code'}
+                                                                Environment: {quiz.details.language || 'Code'}
                                                             </span>
                                                         </TableCell>
                                                         <TableCell className="py-6">

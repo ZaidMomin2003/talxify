@@ -149,7 +149,7 @@ export default function InterviewQuestionsGeneratorPage() {
                     <motion.div variants={itemVariants} className="inline-flex items-center justify-center p-3 rounded-2xl bg-primary/10 border border-primary/20 mb-2">
                         <MessageSquare className="h-8 w-8 text-primary" />
                     </motion.div>
-                    <motion.h1 variants={itemVariants} className="text-4xl md:text-6xl font-black tracking-tight italic uppercase text-white leading-none">
+                    <motion.h1 variants={itemVariants} className="text-4xl md:text-6xl font-black tracking-tight italic uppercase text-foreground leading-none">
                         Q&A <span className="text-primary">Engine</span>
                     </motion.h1>
                     <motion.p variants={itemVariants} className="max-w-2xl mx-auto text-muted-foreground text-lg font-medium">
@@ -159,8 +159,8 @@ export default function InterviewQuestionsGeneratorPage() {
 
                 <section>
                     <motion.div variants={itemVariants}>
-                        <Card className="rounded-[2.5rem] border-white/10 bg-black/40 backdrop-blur-xl shadow-2xl overflow-hidden border">
-                            <CardHeader className="p-8 md:p-10 border-b border-white/5 bg-white/5">
+                        <Card className="rounded-[2.5rem] border-border dark:border-white/10 bg-card/60 dark:bg-black/40 backdrop-blur-xl shadow-2xl overflow-hidden border">
+                            <CardHeader className="p-8 md:p-10 border-b border-border dark:border-white/5 bg-muted/30 dark:bg-white/5">
                                 <CardTitle className="text-2xl font-black uppercase tracking-tight italic flex items-center gap-3">
                                     <Sparkles className="w-6 h-6 text-primary animate-pulse" />
                                     Configure Assessment
@@ -178,7 +178,7 @@ export default function InterviewQuestionsGeneratorPage() {
                                                     <FormItem>
                                                         <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Job Role / Technology</FormLabel>
                                                         <FormControl>
-                                                            <Input placeholder="e.g., Senior React Developer" {...field} className="bg-black/20 border-white/5 h-14 focus:ring-primary/20 rounded-2xl text-base" />
+                                                            <Input placeholder="e.g., Senior React Developer" {...field} className="bg-muted/50 dark:bg-black/20 border-border dark:border-white/5 h-14 focus:ring-primary/20 rounded-2xl text-base" />
                                                         </FormControl>
                                                         <FormMessage className="text-[10px] font-bold" />
                                                     </FormItem>
@@ -192,11 +192,11 @@ export default function InterviewQuestionsGeneratorPage() {
                                                         <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Experience Level</FormLabel>
                                                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                                                             <FormControl>
-                                                                <SelectTrigger className="bg-black/20 border-white/5 h-14 focus:ring-primary/20 rounded-2xl text-base">
+                                                                <SelectTrigger className="bg-muted/50 dark:bg-black/20 border-border dark:border-white/5 h-14 focus:ring-primary/20 rounded-2xl text-base">
                                                                     <SelectValue placeholder="Select level" />
                                                                 </SelectTrigger>
                                                             </FormControl>
-                                                            <SelectContent className="bg-secondary/90 backdrop-blur-xl border-white/10">
+                                                            <SelectContent className="bg-popover border-border dark:border-white/10">
                                                                 <SelectItem value="entry-level">Entry-Level</SelectItem>
                                                                 <SelectItem value="mid-level">Mid-Level</SelectItem>
                                                                 <SelectItem value="senior">Senior</SelectItem>
@@ -217,7 +217,7 @@ export default function InterviewQuestionsGeneratorPage() {
                                                     <FormControl>
                                                         <Textarea
                                                             placeholder="Quickly summarize the core requirements or paste a job snippet here..."
-                                                            className="min-h-[120px] bg-black/20 border-white/5 focus:ring-primary/20 rounded-2xl resize-none text-base p-4"
+                                                            className="min-h-[120px] bg-muted/50 dark:bg-black/20 border-border dark:border-white/5 focus:ring-primary/20 rounded-2xl resize-none text-base p-4"
                                                             {...field}
                                                         />
                                                     </FormControl>
@@ -232,7 +232,7 @@ export default function InterviewQuestionsGeneratorPage() {
                                                 <FormItem>
                                                     <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Specific Company (Optional)</FormLabel>
                                                     <FormControl>
-                                                        <Input placeholder="e.g., Google, Amazon, OpenAI" {...field} className="bg-black/20 border-white/5 h-14 focus:ring-primary/20 rounded-2xl text-base" />
+                                                        <Input placeholder="e.g., Google, Amazon, OpenAI" {...field} className="bg-muted/50 dark:bg-black/20 border-border dark:border-white/5 h-14 focus:ring-primary/20 rounded-2xl text-base" />
                                                     </FormControl>
                                                     <FormMessage className="text-[10px] font-bold" />
                                                 </FormItem>
@@ -258,8 +258,8 @@ export default function InterviewQuestionsGeneratorPage() {
 
                 <section>
                     <motion.div variants={itemVariants}>
-                        <Card className="rounded-[2.5rem] border-white/10 bg-black/40 backdrop-blur-xl shadow-2xl overflow-hidden border">
-                            <CardHeader className="p-8 md:p-10 border-b border-white/5 bg-white/5">
+                        <Card className="rounded-[2.5rem] border-border dark:border-white/10 bg-card/60 dark:bg-black/40 backdrop-blur-xl shadow-2xl overflow-hidden border">
+                            <CardHeader className="p-8 md:p-10 border-b border-border dark:border-white/5 bg-muted/30 dark:bg-white/5">
                                 <CardTitle className="text-2xl font-black uppercase tracking-tight italic flex items-center gap-3">
                                     <History className="w-6 h-6 text-primary" />
                                     Archive
@@ -275,7 +275,7 @@ export default function InterviewQuestionsGeneratorPage() {
                                 ) : questionHistory.length > 0 ? (
                                     <div className="overflow-x-auto">
                                         <Table>
-                                            <TableHeader className="bg-white/5">
+                                            <TableHeader className="bg-muted dark:bg-white/5">
                                                 <TableRow className="hover:bg-transparent border-none">
                                                     <TableHead className="text-[10px] font-black uppercase tracking-[0.2em] py-5 px-8">Target Role</TableHead>
                                                     <TableHead className="text-[10px] font-black uppercase tracking-[0.2em] py-5">Organization</TableHead>
@@ -285,9 +285,9 @@ export default function InterviewQuestionsGeneratorPage() {
                                             </TableHeader>
                                             <TableBody>
                                                 {questionHistory.map(item => (
-                                                    <TableRow key={item.id} className="group border-b-white/5 hover:bg-primary/5 transition-all duration-300">
+                                                    <TableRow key={item.id} className="group border-b-border dark:border-b-white/5 hover:bg-primary/5 transition-all duration-300">
                                                         <TableCell className="py-6 px-8">
-                                                            <span className="font-bold text-white group-hover:text-primary transition-colors block mb-0.5">{item.details.role}</span>
+                                                            <span className="font-bold text-foreground group-hover:text-primary transition-colors block mb-0.5">{item.details.role}</span>
                                                             <Badge variant="secondary" className="bg-primary/5 text-primary border-primary/10 text-[9px] h-5 font-black uppercase tracking-widest px-2">
                                                                 {item.details.level.replace('-', ' ')}
                                                             </Badge>

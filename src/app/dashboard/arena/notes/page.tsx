@@ -37,7 +37,7 @@ function StudyNotesLoader() {
                 <div className="h-24 w-24 rounded-3xl border-2 border-primary/20 animate-spin" />
                 <BookOpen className="h-12 w-12 text-primary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
             </div>
-            <h2 className="text-3xl font-black italic uppercase tracking-tighter text-white">Synthesizing <span className="text-primary">Intelligence</span></h2>
+            <h2 className="text-3xl font-black italic uppercase tracking-tighter text-foreground">Synthesizing <span className="text-primary">Intelligence</span></h2>
             <p className="text-muted-foreground font-medium max-w-md mt-4 leading-relaxed">Our AI is distilling complex technical documentation into your personalized masterclass. This might take a few moments...</p>
         </div>
     );
@@ -46,12 +46,12 @@ function StudyNotesLoader() {
 function StudyNotesError() {
     return (
         <div className="flex flex-col items-center justify-center p-4 min-h-[80vh]">
-            <Card className="max-w-md w-full text-center shadow-2xl rounded-[2.5rem] border-white/10 bg-black/40 backdrop-blur-xl border p-10">
+            <Card className="max-w-md w-full text-center shadow-2xl rounded-[2.5rem] border-border dark:border-white/10 bg-card/60 dark:bg-black/40 backdrop-blur-xl border p-10">
                 <CardHeader>
                     <div className="mx-auto bg-destructive/10 text-destructive rounded-2xl p-4 w-fit mb-6">
                         <AlertTriangle className="h-10 w-10" />
                     </div>
-                    <CardTitle className="text-2xl font-black italic uppercase text-white leading-none">Extraction <span className="text-destructive">Failed</span></CardTitle>
+                    <CardTitle className="text-2xl font-black italic uppercase text-foreground leading-none">Extraction <span className="text-destructive">Failed</span></CardTitle>
                     <CardDescription className="text-base mt-4">
                         We encountered a temporal anomaly while crafting your study guide. Please attempt a fresh request.
                     </CardDescription>
@@ -138,17 +138,17 @@ function NotesComponent() {
     return (
         <div className="max-w-7xl mx-auto space-y-12">
             <motion.div variants={itemVariants}>
-                <Card className="rounded-[2.5rem] border-white/10 bg-black/40 backdrop-blur-xl shadow-2xl overflow-hidden border">
+                <Card className="rounded-[2.5rem] border-border dark:border-white/10 bg-card/60 dark:bg-black/40 backdrop-blur-xl shadow-2xl overflow-hidden border">
                     <CardHeader className="p-10 md:p-12">
                         <div className="flex flex-col md:flex-row md:items-center gap-8">
                             <div className="p-5 bg-primary/10 rounded-2xl text-primary border border-primary/20 shrink-0 w-fit">
                                 <BookOpen className="h-10 w-10 text-primary" />
                             </div>
                             <div className="space-y-2">
-                                <CardTitle className="text-4xl md:text-5xl font-black italic uppercase tracking-tighter text-white">
+                                <CardTitle className="text-4xl md:text-5xl font-black italic uppercase tracking-tighter text-foreground">
                                     {notes.topic}
                                 </CardTitle>
-                                <CardDescription className="text-lg md:text-xl font-medium text-white/70 max-w-3xl leading-relaxed">
+                                <CardDescription className="text-lg md:text-xl font-medium text-muted-foreground max-w-3xl leading-relaxed">
                                     {notes.introduction}
                                 </CardDescription>
                             </div>
@@ -161,9 +161,9 @@ function NotesComponent() {
                 {/* Main Content */}
                 <div className="lg:col-span-8 space-y-10">
                     <motion.div variants={itemVariants}>
-                        <Card className="rounded-[2rem] border-white/10 bg-black/40 backdrop-blur-xl border overflow-hidden">
-                            <CardHeader className="p-8 border-b border-white/5 bg-white/5">
-                                <CardTitle className="text-xl font-black uppercase italic tracking-widest flex items-center gap-3 text-white">
+                        <Card className="rounded-[2rem] border-border dark:border-white/10 bg-card/60 dark:bg-black/40 backdrop-blur-xl border overflow-hidden">
+                            <CardHeader className="p-8 border-b border-border dark:border-white/5 bg-muted/30 dark:bg-white/5">
+                                <CardTitle className="text-xl font-black uppercase italic tracking-widest flex items-center gap-3 text-foreground">
                                     <BrainCircuit className="h-6 w-6 text-primary" />
                                     Architecture & Concepts
                                 </CardTitle>
@@ -174,14 +174,14 @@ function NotesComponent() {
                                         <AccordionItem
                                             value={`item-${index}`}
                                             key={index}
-                                            className="border border-white/5 bg-white/[0.02] rounded-2xl px-2 overflow-hidden hover:bg-white/[0.04] transition-colors"
+                                            className="border border-border dark:border-white/5 bg-muted/20 dark:bg-white/[0.02] rounded-2xl px-2 overflow-hidden hover:bg-muted/40 dark:hover:bg-white/[0.04] transition-colors"
                                         >
-                                            <AccordionTrigger className="text-lg font-bold py-6 px-4 hover:no-underline text-white data-[state=open]:text-primary transition-colors">
+                                            <AccordionTrigger className="text-lg font-bold py-6 px-4 hover:no-underline text-foreground data-[state=open]:text-primary transition-colors">
                                                 {concept.concept}
                                             </AccordionTrigger>
                                             <AccordionContent className="px-4 pb-6">
                                                 <div
-                                                    className="prose dark:prose-invert max-w-none text-white/70 leading-relaxed font-normal"
+                                                    className="prose dark:prose-invert max-w-none text-muted-foreground leading-relaxed font-normal"
                                                     dangerouslySetInnerHTML={{ __html: concept.description }}
                                                 />
                                             </AccordionContent>
@@ -193,9 +193,9 @@ function NotesComponent() {
                     </motion.div>
 
                     <motion.div variants={itemVariants}>
-                        <Card className="rounded-[2rem] border-white/10 bg-black/40 backdrop-blur-xl border overflow-hidden">
-                            <CardHeader className="p-8 border-b border-white/5 bg-white/5">
-                                <CardTitle className="text-xl font-black uppercase italic tracking-widest flex items-center gap-3 text-white">
+                        <Card className="rounded-[2rem] border-border dark:border-white/10 bg-card/60 dark:bg-black/40 backdrop-blur-xl border overflow-hidden">
+                            <CardHeader className="p-8 border-b border-border dark:border-white/5 bg-muted/30 dark:bg-white/5">
+                                <CardTitle className="text-xl font-black uppercase italic tracking-widest flex items-center gap-3 text-foreground">
                                     <Code className="h-6 w-6 text-primary" />
                                     Practical Implementation
                                 </CardTitle>
@@ -203,10 +203,10 @@ function NotesComponent() {
                             <CardContent className="p-8 space-y-10">
                                 {notes.examples.map((example, index) => (
                                     <div key={index} className="space-y-4">
-                                        <h3 className="font-bold text-lg text-white/90 ml-1">{example.title}</h3>
+                                        <h3 className="font-bold text-lg text-foreground/90 ml-1">{example.title}</h3>
                                         <div className="relative group">
                                             <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-blue-500/20 rounded-2xl blur opacity-0 group-hover:opacity-100 transition duration-500" />
-                                            <pre className="relative bg-black/60 p-6 rounded-2xl overflow-x-auto text-sm font-code border border-white/10 text-primary-foreground/90">
+                                            <pre className="relative bg-zinc-950/90 dark:bg-black/60 p-6 rounded-2xl overflow-x-auto text-sm font-code border border-border dark:border-white/10 text-primary-foreground/90">
                                                 <code>{example.code}</code>
                                             </pre>
                                         </div>
@@ -214,7 +214,7 @@ function NotesComponent() {
                                             <div className="mt-1">
                                                 <Lightbulb className="h-5 w-5 text-primary" />
                                             </div>
-                                            <p className="text-white/70 font-medium leading-relaxed">
+                                            <p className="text-muted-foreground font-medium leading-relaxed">
                                                 {example.explanation}
                                             </p>
                                         </div>
@@ -228,9 +228,9 @@ function NotesComponent() {
                 {/* Sidebar Content */}
                 <div className="lg:col-span-4 space-y-10">
                     <motion.div variants={itemVariants}>
-                        <Card className="rounded-[2rem] border-white/10 bg-black/40 backdrop-blur-xl border overflow-hidden">
-                            <CardHeader className="p-8 border-b border-white/5 bg-white/5">
-                                <CardTitle className="text-lg font-black uppercase italic tracking-widest flex items-center gap-3 text-white">
+                        <Card className="rounded-[2rem] border-border dark:border-white/10 bg-card/60 dark:bg-black/40 backdrop-blur-xl border overflow-hidden">
+                            <CardHeader className="p-8 border-b border-border dark:border-white/5 bg-muted/30 dark:bg-white/5">
+                                <CardTitle className="text-lg font-black uppercase italic tracking-widest flex items-center gap-3 text-foreground">
                                     <Key className="h-5 w-5 text-primary" />
                                     Lexicon
                                 </CardTitle>
@@ -239,7 +239,7 @@ function NotesComponent() {
                                 {notes.terminology.map((term, index) => (
                                     <div key={index} className="space-y-1">
                                         <p className="font-bold text-primary tracking-tight">{term.term}</p>
-                                        <p className="text-sm text-white/60 leading-relaxed font-medium">{term.definition}</p>
+                                        <p className="text-sm text-muted-foreground leading-relaxed font-medium">{term.definition}</p>
                                     </div>
                                 ))}
                             </CardContent>
@@ -247,9 +247,9 @@ function NotesComponent() {
                     </motion.div>
 
                     <motion.div variants={itemVariants}>
-                        <Card className="rounded-[2rem] border-white/10 bg-black/40 backdrop-blur-xl border overflow-hidden">
-                            <CardHeader className="p-8 border-b border-white/5 bg-white/5">
-                                <CardTitle className="text-lg font-black uppercase italic tracking-widest flex items-center gap-3 text-white">
+                        <Card className="rounded-[2rem] border-border dark:border-white/10 bg-card/60 dark:bg-black/40 backdrop-blur-xl border overflow-hidden">
+                            <CardHeader className="p-8 border-b border-border dark:border-white/5 bg-muted/30 dark:bg-white/5">
+                                <CardTitle className="text-lg font-black uppercase italic tracking-widest flex items-center gap-3 text-foreground">
                                     <Star className="h-5 w-5 text-primary" />
                                     Industry Usage
                                 </CardTitle>
@@ -258,7 +258,7 @@ function NotesComponent() {
                                 {notes.useCases.map((useCase, index) => (
                                     <div key={index} className="flex items-start gap-4 group">
                                         <div className="w-1.5 h-1.5 rounded-full bg-primary mt-2 group-hover:scale-150 transition-transform" />
-                                        <p className="text-white/70 font-medium text-sm leading-relaxed">{useCase}</p>
+                                        <p className="text-muted-foreground font-medium text-sm leading-relaxed">{useCase}</p>
                                     </div>
                                 ))}
                             </CardContent>
@@ -266,9 +266,9 @@ function NotesComponent() {
                     </motion.div>
 
                     <motion.div variants={itemVariants}>
-                        <Card className="rounded-[2rem] border-white/10 bg-black/40 backdrop-blur-xl border overflow-hidden">
-                            <CardHeader className="p-8 border-b border-white/5 bg-white/5">
-                                <CardTitle className="text-lg font-black uppercase italic tracking-widest flex items-center gap-3 text-white">
+                        <Card className="rounded-[2rem] border-border dark:border-white/10 bg-card/60 dark:bg-black/40 backdrop-blur-xl border overflow-hidden">
+                            <CardHeader className="p-8 border-b border-border dark:border-white/5 bg-muted/30 dark:bg-white/5">
+                                <CardTitle className="text-lg font-black uppercase italic tracking-widest flex items-center gap-3 text-foreground">
                                     <HelpCircle className="h-5 w-5 text-primary" />
                                     Interview Prep
                                 </CardTitle>
@@ -279,12 +279,12 @@ function NotesComponent() {
                                         <AccordionItem
                                             value={`item-${index}`}
                                             key={index}
-                                            className="border-none bg-white/5 rounded-xl px-2 overflow-hidden"
+                                            className="border-none bg-muted/50 dark:bg-white/5 rounded-xl px-2 overflow-hidden"
                                         >
-                                            <AccordionTrigger className="text-sm font-bold py-4 px-2 text-left hover:no-underline text-white/90">
+                                            <AccordionTrigger className="text-sm font-bold py-4 px-2 text-left hover:no-underline text-foreground/90">
                                                 {qa.question}
                                             </AccordionTrigger>
-                                            <AccordionContent className="px-2 pb-4 text-white/60 text-sm leading-relaxed font-medium">
+                                            <AccordionContent className="px-2 pb-4 text-muted-foreground text-sm leading-relaxed font-medium">
                                                 {qa.answer}
                                             </AccordionContent>
                                         </AccordionItem>
