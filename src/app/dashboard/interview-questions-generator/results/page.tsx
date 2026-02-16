@@ -114,7 +114,7 @@ export default function InterviewQuestionsResultPage() {
     const { role, level, company } = activity.details;
 
     return (
-        <main className="flex-1 p-4 sm:p-6 lg:p-10 bg-background/50 relative overflow-x-hidden min-h-screen">
+        <main className="flex-1 p-4 sm:p-6 lg:p-10 bg-background transition-colors duration-500 relative overflow-x-hidden min-h-screen">
             {/* Decorative Background Elements */}
             <div className="absolute top-0 right-0 -mt-20 -mr-20 h-64 w-64 rounded-full bg-primary/10 blur-[100px] pointer-events-none" />
             <div className="absolute bottom-0 left-0 -mb-20 -ml-20 h-64 w-64 rounded-full bg-primary/5 blur-[100px] pointer-events-none" />
@@ -130,7 +130,7 @@ export default function InterviewQuestionsResultPage() {
                         variant="ghost"
                         size="sm"
                         onClick={() => router.push('/dashboard/interview-questions-generator')}
-                        className="rounded-xl font-bold uppercase tracking-widest text-[10px] text-muted-foreground hover:text-white"
+                        className="rounded-xl font-bold uppercase tracking-widest text-[10px] text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all"
                     >
                         <ChevronLeft className="mr-2 h-4 w-4" />
                         Return to Generator
@@ -138,7 +138,7 @@ export default function InterviewQuestionsResultPage() {
                 </div>
 
                 <motion.div variants={itemVariants}>
-                    <Card className="rounded-[2.5rem] border-white/10 bg-black/40 backdrop-blur-xl shadow-2xl overflow-hidden border">
+                    <Card className="rounded-[2.5rem] border-border bg-card/60 dark:bg-black/40 backdrop-blur-xl shadow-2xl overflow-hidden border">
                         <CardHeader className="p-8 md:p-10">
                             <div className="flex flex-col md:flex-row md:items-center gap-6">
                                 <div className="p-4 bg-primary/10 rounded-2xl text-primary border border-primary/20 shrink-0 w-fit">
@@ -150,12 +150,12 @@ export default function InterviewQuestionsResultPage() {
                                             {level.replace('-', ' ')}
                                         </Badge>
                                         {company && (
-                                            <Badge variant="outline" className="border-white/10 text-white/50 text-[9px] font-black uppercase tracking-widest px-2">
+                                            <Badge variant="outline" className="border-border text-foreground/50 text-[9px] font-black uppercase tracking-widest px-2">
                                                 Target: {company}
                                             </Badge>
                                         )}
                                     </div>
-                                    <CardTitle className="text-3xl md:text-4xl font-black uppercase italic tracking-tight text-white leading-none">
+                                    <CardTitle className="text-3xl md:text-4xl font-black uppercase italic tracking-tight text-foreground leading-none">
                                         Assessment <span className="text-primary">Results</span>
                                     </CardTitle>
                                     <CardDescription className="text-base font-medium">Expertized technical deep-dive for {role}.</CardDescription>
@@ -171,15 +171,15 @@ export default function InterviewQuestionsResultPage() {
                             <AccordionItem
                                 key={index}
                                 value={`item-${index}`}
-                                className="border border-white/10 bg-black/40 backdrop-blur-xl rounded-[1.5rem] px-2 overflow-hidden hover:bg-white/[0.02] transition-colors"
+                                className="border border-border bg-card/60 dark:bg-black/40 backdrop-blur-xl rounded-[1.5rem] px-2 overflow-hidden hover:bg-muted/30 transition-all duration-300"
                             >
                                 <AccordionTrigger className="text-lg text-left hover:no-underline py-6 px-4 group">
                                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full gap-4">
                                         <div className="flex items-start gap-4">
-                                            <span className="h-8 w-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center shrink-0 text-[10px] font-black text-primary italic">
+                                            <span className="h-8 w-8 rounded-lg bg-background border border-border flex items-center justify-center shrink-0 text-[10px] font-black text-primary italic">
                                                 {String(index + 1).padStart(2, '0')}
                                             </span>
-                                            <span className="font-bold text-white group-data-[state=open]:text-primary transition-colors leading-tight pr-4">
+                                            <span className="font-bold text-foreground group-data-[state=open]:text-primary transition-colors leading-tight pr-4">
                                                 {qa.question}
                                             </span>
                                         </div>
@@ -202,17 +202,17 @@ export default function InterviewQuestionsResultPage() {
                                                 Strategic Guidance
                                             </div>
                                             <div
-                                                className="text-muted-foreground font-medium leading-relaxed bg-white/5 rounded-2xl p-6 border border-white/5"
+                                                className="text-foreground/70 font-medium leading-relaxed bg-muted/40 rounded-2xl p-6 border border-border whitespace-pre-wrap"
                                                 dangerouslySetInnerHTML={{ __html: qa.guidance }}
                                             />
                                         </div>
                                         <div className="space-y-3">
-                                            <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white italic">
+                                            <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-foreground italic pl-1">
                                                 <UserCheck className="h-3 w-3" />
                                                 Elite Response
                                             </div>
                                             <div
-                                                className="prose dark:prose-invert max-w-none text-white/80 font-medium bg-primary/5 rounded-2xl p-6 border border-primary/5 italic"
+                                                className="prose dark:prose-invert max-w-none text-foreground bg-muted/30 dark:bg-white/5 rounded-2xl p-6 border border-border whitespace-pre-wrap font-sans"
                                                 dangerouslySetInnerHTML={{ __html: qa.exampleAnswer }}
                                             />
                                         </div>

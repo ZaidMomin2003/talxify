@@ -295,7 +295,7 @@ export default function CodingQuizAnalysisPage() {
                     <div className="space-y-3">
                       <p className="text-[10px] font-black uppercase tracking-widest text-primary/70 italic pl-1">Neural Analysis</p>
                       <div
-                        className="rounded-xl border border-primary/10 bg-primary/5 p-4 text-sm text-foreground/90 italic leading-relaxed prose dark:prose-invert max-w-none"
+                        className="rounded-xl border border-primary/10 bg-primary/5 p-4 text-sm text-white/90 leading-relaxed prose dark:prose-invert max-w-none whitespace-pre-wrap"
                         dangerouslySetInnerHTML={{ __html: result.feedback }}
                       />
                     </div>

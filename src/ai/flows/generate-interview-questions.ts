@@ -38,7 +38,12 @@ const prompt = ai.definePrompt({
   3.  For each question, provide:
       a.  A "question" string.
       b.  A "guidance" string, explaining what a good answer should cover and what the interviewer is looking for.
-      c.  An "exampleAnswer" string, providing a complete, well-structured example answer that follows the STAR method for behavioral questions or is technically sound for technical/coding questions. This should be formatted as a valid HTML string.
+      c.  An "exampleAnswer" string, providing a complete, well-structured example answer that follows the STAR method for behavioral questions or is technically sound for technical/coding questions. 
+          **Formatting rules for exampleAnswer:**
+          - Use standard HTML tags for structure: <p> for paragraphs, <ul>/<li> for lists.
+          - CRITICAL: For any code snippets, use the format: <pre><code>[Code Here]</code></pre>.
+          - Ensure all newlines, indentation, and spacing within code blocks are exactly preserved.
+          - Use <strong> for technical terms or key points.
       d.  A "type" string, which must be one of: "Behavioral", "Technical", or "Coding".
   4.  The difficulty and depth of the questions must be appropriate for the specified **Level**.
   5.  If a **Company** is specified, tailor some questions to reflect that company's known culture, values, and typical interview style (e.g., scalability for Netflix, algorithms for Google).

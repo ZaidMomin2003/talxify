@@ -99,12 +99,12 @@ export default function SignupPage() {
   if (!isMounted) return null;
 
   return (
-    <div className="relative flex min-h-screen w-full items-center justify-center overflow-hidden bg-[#050505] selection:bg-primary/30 selection:text-white">
+    <div className="relative flex min-h-screen w-full items-center justify-center overflow-hidden bg-background selection:bg-primary/30 selection:text-white transition-colors duration-500">
       {/* Dynamic Background */}
       <div className="absolute inset-0 z-0">
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/20 rounded-full blur-[120px] animate-pulse" />
         <div className="absolute bottom-[10%] right-[-10%] w-[30%] h-[30%] bg-indigo-600/10 rounded-full blur-[100px]" />
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] dark:bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]" />
       </div>
 
       <motion.div
@@ -113,19 +113,21 @@ export default function SignupPage() {
         transition={{ duration: 0.8, ease: [0.19, 1, 0.22, 1] }}
         className="z-10 w-full max-w-5xl px-4"
       >
-        <div className="group relative bg-[#0d0d0d]/80 backdrop-blur-2xl overflow-hidden rounded-[2.5rem] shadow-[0_0_50px_rgba(0,0,0,0.5)] border border-white/5 lg:grid lg:grid-cols-2">
+        <div className="group relative bg-card/40 dark:bg-[#0d0d0d]/80 backdrop-blur-2xl overflow-hidden rounded-[2.5rem] shadow-2xl border border-border dark:border-white/5 lg:grid lg:grid-cols-2">
           {/* Left Side: Brand Panel */}
-          <div className="relative hidden lg:flex flex-col justify-between p-12 overflow-hidden border-r border-white/5 bg-[#0a0a0a]">
+          <div className="relative hidden lg:flex flex-col justify-between p-12 overflow-hidden border-r border-border dark:border-white/5 bg-muted/30 dark:bg-[#0a0a0a]">
             <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-transparent opacity-50" />
 
             <div className="relative z-10">
-              <Link href="/" className="flex items-center gap-3 mb-16 group/logo w-fit">
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary shadow-[0_0_20px_rgba(230,57,70,0.4)] group-hover/logo:scale-110 transition-transform duration-300">
-                  <Bot className="h-7 w-7 text-white" />
+              <Link href="/" className="flex items-center gap-4 mb-16 group/logo w-fit">
+                <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary via-purple-500 to-blue-600 shadow-[0_0_20px_rgba(230,57,70,0.3)] group-hover/logo:scale-110 group-hover/logo:shadow-[0_0_35px_rgba(230,57,70,0.5)] transition-all duration-500 animate-vivid-gradient [background-size:200%_200%]">
+                  <Bot className="h-8 w-8 text-white relative z-10" />
+                  <div className="absolute inset-0 rounded-2xl bg-white/10 opacity-0 group-hover/logo:opacity-100 transition-opacity" />
+                  <div className="absolute -inset-1 blur-xl bg-primary/20 rounded-2xl opacity-0 group-hover/logo:opacity-100 transition-opacity duration-500" />
                 </div>
-                <div>
-                  <h1 className="text-2xl font-black italic uppercase tracking-tighter text-white leading-none">Talxify</h1>
-                  <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary/80 italic">Smart Prep</span>
+                <div className="flex flex-col">
+                  <h1 className="text-3xl font-black italic uppercase tracking-tighter text-foreground leading-none">Talxify</h1>
+                  <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary mt-1.5 italic">AI Job Assistant</span>
                 </div>
               </Link>
 
@@ -134,7 +136,7 @@ export default function SignupPage() {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.2, duration: 0.8 }}
-                  className="text-5xl font-black italic uppercase tracking-tight leading-[0.9] text-white"
+                  className="text-5xl font-black italic uppercase tracking-tight leading-[0.9] text-foreground"
                 >
                   Build Your <br />
                   <span className="text-primary italic">Dream Career.</span>
@@ -143,7 +145,7 @@ export default function SignupPage() {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.3, duration: 0.8 }}
-                  className="text-lg text-zinc-400 font-medium italic max-w-sm"
+                  className="text-lg text-muted-foreground font-medium italic max-w-sm"
                 >
                   Create your account and start practicing with our AI interviewer today.
                 </motion.p>

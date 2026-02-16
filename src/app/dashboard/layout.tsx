@@ -42,7 +42,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { motion } from "framer-motion";
-import { Bot, Code, LayoutGrid, MessageSquare, BarChart, Settings, History, Search, User, LogOut, Gem, LifeBuoy, Sun, Moon, Briefcase, CalendarDays, BrainCircuit, PlayCircle, X, CheckCircle, Circle, Swords, BookOpen, AlertTriangle, FileText, FlaskConical, Rocket, ListChecks, Plus, Edit, ShoppingCart, ChevronDown, Wand2, Bug } from "lucide-react";
+import { Bot, Code, LayoutGrid, MessageSquare, BarChart, Settings, History, Search, User, LogOut, Gem, LifeBuoy, Sun, Moon, Briefcase, CalendarDays, BrainCircuit, PlayCircle, X, CheckCircle, Circle, Swords, BookOpen, AlertTriangle, FileText, FlaskConical, Rocket, ListChecks, Plus, Edit, ShoppingCart, ChevronDown, Wand2, Bug, Loader2, Maximize, Minimize } from "lucide-react";
 import type { StoredActivity, QuizResult, UserData, InterviewActivity, NoteGenerationActivity, TodoItem, InterviewQuestionSetActivity } from "@/lib/types";
 import { formatDistanceToNow, format } from 'date-fns';
 import { useAuth } from "@/context/auth-context";
@@ -160,6 +160,30 @@ function DashboardLayoutContent({
   const [isActivityLoading, setIsActivityLoading] = useState(true);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
+  const [isFullScreen, setIsFullScreen] = useState(false);
+
+  useEffect(() => {
+    const handleFullScreenChange = () => {
+      setIsFullScreen(!!document.fullscreenElement);
+    };
+
+    document.addEventListener("fullscreenchange", handleFullScreenChange);
+    return () => document.removeEventListener("fullscreenchange", handleFullScreenChange);
+  }, []);
+
+  const toggleFullScreen = async () => {
+    try {
+      if (!document.fullscreenElement) {
+        await document.documentElement.requestFullscreen();
+      } else {
+        if (document.exitFullscreen) {
+          await document.exitFullscreen();
+        }
+      }
+    } catch (err) {
+      console.error(`Error attempting to toggle full-screen mode: ${err}`);
+    }
+  };
 
 
   const fetchUserData = useCallback(async () => {
@@ -344,14 +368,14 @@ function DashboardLayoutContent({
     <SidebarProvider>
       <Sidebar>
         <SidebarHeader className="p-4 pb-2">
-          <div className="flex items-center gap-3">
-            <div className="relative flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-primary via-purple-500 to-blue-500 text-primary-foreground shadow-lg shadow-primary/20 animate-vivid-gradient [background-size:200%_200%]">
-              <Bot size={24} />
-              <div className="absolute inset-0 rounded-xl bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+          <div className="flex items-center gap-3 group/logo cursor-pointer">
+            <div className="relative flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-primary via-purple-500 to-blue-600 text-primary-foreground shadow-lg shadow-primary/20 group-hover/logo:scale-105 group-hover/logo:shadow-primary/30 transition-all duration-500 animate-vivid-gradient [background-size:200%_200%]">
+              <Bot size={22} className="relative z-10" />
+              <div className="absolute inset-0 rounded-xl bg-white/10 opacity-0 group-hover/logo:opacity-100 transition-opacity" />
             </div>
             <div className="flex flex-col">
-              <h1 className="text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70">Talxify</h1>
-              <span className="text-[10px] uppercase tracking-widest font-bold text-primary/80">AI Job Assistant</span>
+              <h1 className="text-xl font-black italic uppercase tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70 leading-none">Talxify</h1>
+              <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-primary mt-0.5">AI Job Assistant</span>
             </div>
           </div>
         </SidebarHeader>
@@ -609,94 +633,141 @@ function DashboardLayoutContent({
           </motion.div>
         </SidebarFooter>
       </Sidebar>
-      <SidebarInset>
-        <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-background/80 px-4 backdrop-blur-sm sm:px-6 lg:px-8">
+      <SidebarInset className="bg-background transition-colors duration-500">
+        <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-background/60 px-4 backdrop-blur-xl sm:px-6 lg:px-8 transition-colors duration-500">
           <div className="flex items-center gap-2 md:hidden">
-            <Bot className="h-6 w-6 text-primary" />
-            <span className="font-bold">Talxify</span>
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-white shadow-lg shadow-primary/20">
+              <Bot className="h-5 w-5" />
+            </div>
+            <span className="font-black italic uppercase tracking-tighter text-foreground">Talxify</span>
           </div>
 
-          <div className="flex flex-1 items-center justify-end gap-2">
+          <div className="flex flex-1 items-center justify-end gap-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleFullScreen}
+              className="h-10 w-10 rounded-xl bg-muted border border-border text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-all duration-300"
+            >
+              {isFullScreen ? (
+                <Minimize className="h-5 w-5" />
+              ) : (
+                <Maximize className="h-5 w-5" />
+              )}
+              <span className="sr-only">Toggle Fullscreen</span>
+            </Button>
+
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <AlertTriangle className="h-5 w-5 text-yellow-500" />
+                <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl bg-muted border border-border text-yellow-500 hover:bg-yellow-500/10 hover:text-yellow-600 dark:hover:text-yellow-400 hover:border-yellow-500/20 transition-all duration-300">
+                  <AlertTriangle className="h-5 w-5" />
                   <span className="sr-only">View weak concepts</span>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-80">
-                <DropdownMenuLabel>Weakest Areas (Scores {"<"} 70%)</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {isActivityLoading ? (
-                  <div className="p-4 text-center text-sm text-muted-foreground">Loading...</div>
-                ) : weakConcepts.length > 0 ? (
-                  weakConcepts.map((concept) => (
-                    <DropdownMenuItem key={concept.topic}>
-                      <div className="flex justify-between items-center w-full">
-                        <span className="capitalize font-medium">{concept.topic}</span>
-                        <Badge variant={concept.score < 50 ? 'destructive' : 'secondary'}>{concept.score}%</Badge>
-                      </div>
-                    </DropdownMenuItem>
-                  ))
-                ) : (
-                  <div className="p-4 text-center text-sm text-muted-foreground">
-                    <BrainCircuit className="w-6 h-6 mb-2 mx-auto" />
-                    No weak concepts found. Keep up the great work!
+              <DropdownMenuContent align="end" className="w-80 mt-2 p-2 rounded-[1.8rem] bg-popover/90 backdrop-blur-2xl border-border shadow-2xl overflow-hidden anim-slide-in">
+                <DropdownMenuLabel className="p-4">
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary italic">Priority Alerts</span>
+                    <span className="text-sm font-black italic uppercase tracking-tighter text-foreground">Weakest Concepts</span>
                   </div>
-                )}
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator className="bg-border mx-2" />
+                <div className="p-1 space-y-1">
+                  {isActivityLoading ? (
+                    <div className="py-8 flex flex-col items-center justify-center text-muted-foreground">
+                      <Loader2 className="h-6 w-6 animate-spin mb-2" />
+                      <span className="text-[10px] font-bold uppercase tracking-widest italic">Analyzing Performance...</span>
+                    </div>
+                  ) : weakConcepts.length > 0 ? (
+                    weakConcepts.map((concept) => (
+                      <DropdownMenuItem key={concept.topic} className="rounded-[1.2rem] py-3 px-4 focus:bg-muted cursor-pointer group transition-all">
+                        <div className="flex justify-between items-center w-full">
+                          <span className="text-xs font-bold uppercase tracking-tight text-muted-foreground group-hover:text-foreground transition-colors capitalize italic">{concept.topic}</span>
+                          <div className={cn(
+                            "px-2 py-0.5 rounded-md text-[10px] font-black border",
+                            concept.score < 50 ? "bg-red-500/10 text-red-600 dark:text-red-500 border-red-500/20" : "bg-yellow-500/10 text-yellow-600 dark:text-yellow-500 border-yellow-500/20"
+                          )}>
+                            {concept.score}%
+                          </div>
+                        </div>
+                      </DropdownMenuItem>
+                    ))
+                  ) : (
+                    <div className="p-6 text-center">
+                      <div className="w-12 h-12 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-3 text-muted-foreground/60">
+                        <BrainCircuit className="w-6 h-6" />
+                      </div>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground italic">No Vulnerabilities Detected</p>
+                    </div>
+                  )}
+                </div>
               </DropdownMenuContent>
             </DropdownMenu>
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon">
+                <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl bg-muted border border-border text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-all duration-300">
                   <History className="h-5 w-5" />
                   <span className="sr-only">View recent activity</span>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-80">
-                <DropdownMenuLabel>Recent Activity</DropdownMenuLabel>
-                <div className="p-2">
+              <DropdownMenuContent align="end" className="w-80 mt-2 p-2 rounded-[1.8rem] bg-popover/90 backdrop-blur-2xl border-border shadow-2xl overflow-hidden anim-slide-in">
+                <DropdownMenuLabel className="p-4">
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary italic">Live Feed</span>
+                    <span className="text-sm font-black italic uppercase tracking-tighter text-foreground">Recent Activity</span>
+                  </div>
+                </DropdownMenuLabel>
+                <div className="px-3 pb-3">
                   <div className="relative">
-                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                     <Input
-                      placeholder="Search activity..."
-                      className="pl-8"
+                      placeholder="Filter history..."
+                      className="h-9 pl-9 bg-background border-border focus:border-primary/50 text-xs text-foreground rounded-xl italic transition-all"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                     />
                   </div>
                 </div>
-                <DropdownMenuSeparator />
-                {isActivityLoading ? (
-                  <div className="p-4 text-center text-sm text-muted-foreground">Loading...</div>
-                ) : filteredActivity.length > 0 ? (
-                  filteredActivity.slice(0, 5).map((item) => (
-                    <DropdownMenuItem key={item.id} asChild>
-                      <Link href={getActivityLink(item)} className="cursor-pointer">
-                        <div className="flex items-start gap-3">
-                          <div className="bg-primary/10 text-primary rounded-full p-2">
+                <DropdownMenuSeparator className="bg-border mx-2" />
+                <div className="p-1 space-y-1">
+                  {isActivityLoading ? (
+                    <div className="py-8 flex flex-col items-center justify-center text-muted-foreground">
+                      <Loader2 className="h-6 w-6 animate-spin mb-2" />
+                      <span className="text-[10px] font-bold uppercase tracking-widest italic">Loading History...</span>
+                    </div>
+                  ) : filteredActivity.length > 0 ? (
+                    filteredActivity.slice(0, 5).map((item) => (
+                      <DropdownMenuItem key={item.id} asChild>
+                        <Link href={getActivityLink(item)} className="flex items-center gap-3 p-3 rounded-[1.2rem] focus:bg-muted group cursor-pointer transition-all">
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-muted border border-border text-primary group-hover:scale-110 transition-transform duration-300">
                             {getActivityIcon(item.type)}
                           </div>
-                          <div>
-                            <p className="font-semibold text-sm capitalize">{getActivityTitle(item)}</p>
-                            <p className="text-xs text-muted-foreground">
+                          <div className="flex flex-col min-w-0">
+                            <span className="text-[13px] font-black italic uppercase tracking-tighter text-foreground group-hover:text-primary transition-colors truncate">
+                              {getActivityTitle(item)}
+                            </span>
+                            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
                               {formatDistanceToNow(new Date(item.timestamp), { addSuffix: true })}
-                            </p>
+                            </span>
                           </div>
-                        </div>
-                      </Link>
-                    </DropdownMenuItem>
-                  ))
-                ) : (
-                  <div className="p-4 text-center text-sm text-muted-foreground">
-                    No recent activity found.
-                  </div>
-                )}
+                        </Link>
+                      </DropdownMenuItem>
+                    ))
+                  ) : (
+                    <div className="p-6 text-center">
+                      <div className="w-12 h-12 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-3 text-muted-foreground/60">
+                        <History className="w-6 h-6 opacity-40" />
+                      </div>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground italic">No Records Found</p>
+                    </div>
+                  )}
+                </div>
               </DropdownMenuContent>
             </DropdownMenu>
+
             <div className="md:hidden">
-              <SidebarTrigger />
+              <SidebarTrigger className="h-10 w-10 rounded-xl bg-muted border border-border" />
             </div>
           </div>
         </header>

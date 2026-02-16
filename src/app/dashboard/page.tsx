@@ -266,7 +266,7 @@ export default function DashboardPage() {
   const interviewIsScheduled = currentDayNumber === 1 || isFinalDay || (currentDayNumber - 1) % 3 === 0;
 
   return (
-    <main className="flex-1 p-4 sm:p-6 relative overflow-x-hidden min-h-screen">
+    <main className="flex-1 p-4 sm:p-6 relative overflow-x-hidden min-h-screen bg-background transition-colors duration-500">
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none -z-10 bg-dot-pattern opacity-[0.02]" />
       <div className="absolute -top-[10%] -right-[10%] w-[40%] h-[40%] bg-primary/5 rounded-full blur-[120px] pointer-events-none" />
 
