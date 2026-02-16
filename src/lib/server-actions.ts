@@ -91,6 +91,32 @@ export async function addActivityAction(userId: string, activity: StoredActivity
 }
 
 /**
+ * Securely update an activity item in the array.
+ */
+export async function updateActivityAction(userId: string, updatedActivity: StoredActivity) {
+    const userRef = db.collection('users').doc(userId);
+    try {
+        return await db.runTransaction(async (transaction) => {
+            const userDoc = await transaction.get(userRef);
+            if (!userDoc.exists) return { success: false, message: "User not found" };
+
+            const userData = userDoc.data() as UserData;
+            const activities = userData.activity || [];
+            const index = activities.findIndex(a => a.id === updatedActivity.id);
+
+            if (index === -1) return { success: false, message: "Activity item not found" };
+
+            activities[index] = updatedActivity;
+            transaction.update(userRef, { activity: activities });
+            return { success: true };
+        });
+    } catch (e) {
+        console.error("Failed to update activity:", e);
+        return { success: false };
+    }
+}
+
+/**
  * Securely update subscription (e.g. after payment or during onboarding).
  */
 export async function updateSubscriptionAction(userId: string, planId: SubscriptionPlan) {

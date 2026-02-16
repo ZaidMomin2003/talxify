@@ -7,7 +7,7 @@ import type { UserData, Portfolio, StoredActivity, OnboardingData, SurveySubmiss
 import { initialPortfolioData } from './initial-data';
 import { format, differenceInHours, addMonths, addYears } from 'date-fns';
 import { getUserBySlug } from '@/app/zaidmin/actions';
-import { incrementUsageAction, addActivityAction, updateSubscriptionAction, incrementResumeExportsAction } from './server-actions';
+import { incrementUsageAction, addActivityAction, updateActivityAction, updateSubscriptionAction, incrementResumeExportsAction } from './server-actions';
 
 
 // Helper function to convert Firestore Timestamps to ISO strings
@@ -207,11 +207,7 @@ export const addActivity = async (userId: string, activity: StoredActivity): Pro
 // However, since we've protected 'activity' field in firestore.rules, direct updates will fail.
 // So we MUST move any activity updates to the server.
 export const updateActivity = async (userId: string, updatedActivity: StoredActivity): Promise<void> => {
-    // For now, redirecting to addActivityAction or implementing a specific updateAction
-    // Since firestore.rules block individual field updates to 'activity' ARRAY, 
-    // we should ideally have a specific server action to update items in the array.
-    // For now, let's keep it simple and just acknowledge it needs to be updated.
-    console.warn("Direct updateActivity is blocked by Firestore rules. Please use a server action.");
+    await updateActivityAction(userId, updatedActivity);
 };
 
 export const incrementRetakeCount = async (userId: string, topic: string) => {

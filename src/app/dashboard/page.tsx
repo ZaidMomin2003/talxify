@@ -35,11 +35,14 @@ const codingGymSchema = z.object({
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-background/90 backdrop-blur-sm p-4 rounded-lg border border-border shadow-lg">
-        <p className="label text-muted-foreground">{`${label}`}</p>
-        <div style={{ color: payload[0].color }} className="flex items-center gap-2 font-semibold">
-          Score: {payload[0].value}%
-        </div>
+      <div className="bg-background/90 backdrop-blur-sm p-4 rounded-lg border border-border shadow-lg space-y-2">
+        <p className="label text-muted-foreground text-[10px] font-black uppercase tracking-widest">{label}</p>
+        {payload.map((item: any, index: number) => (
+          <div key={index} style={{ color: item.color }} className="flex items-center gap-2 font-black italic text-sm">
+            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }} />
+            {item.name}: {item.value}%
+          </div>
+        ))}
       </div>
     );
   }
@@ -152,13 +155,25 @@ export default function DashboardPage() {
     const quizTaken = completedQuizzes.length > 0;
 
     const allSessions = [
-      ...completedInterviews.map(i => ({ type: 'Interview', timestamp: i.timestamp, score: i.analysis!.crackingChance }))
+      ...completedInterviews.map(i => ({ type: 'Interview', timestamp: i.timestamp, score: i.analysis!.crackingChance })),
+      ...completedQuizzes.map(q => ({ type: 'Quiz', timestamp: q.timestamp, score: getOverallScore(q.analysis) }))
     ].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
 
-    const perfData = allSessions.map((session, index) => ({
-      name: `${session.type} #${index + 1}`,
-      score: session.score,
-    }));
+    let lastQuizScore: number | null = null;
+    let lastInterviewScore: number | null = null;
+
+    const perfData = allSessions.map((session, index) => {
+      if (session.type === 'Quiz') {
+        lastQuizScore = session.score;
+      } else {
+        lastInterviewScore = session.score;
+      }
+      return {
+        name: `Session ${index + 1}`,
+        quizScore: lastQuizScore,
+        interviewScore: lastInterviewScore,
+      };
+    });
 
 
     // Arena progress calculation
@@ -365,9 +380,13 @@ export default function DashboardPage() {
                     }}
                   >
                     <defs>
-                      <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
+                      <linearGradient id="colorInterview" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
                         <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                      </linearGradient>
+                      <linearGradient id="colorQuiz" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#fbbf24" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#fbbf24" stopOpacity={0} />
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" opacity={0.5} />
@@ -390,17 +409,31 @@ export default function DashboardPage() {
                     />
                     <RechartsTooltip
                       content={<CustomTooltip />}
-                      cursor={{ stroke: 'hsl(var(--primary))', strokeWidth: 1, strokeDasharray: '4 4' }}
+                      cursor={{ stroke: 'hsl(var(--border))', strokeWidth: 1, strokeDasharray: '4 4' }}
                     />
                     <Area
                       type="monotone"
-                      dataKey="score"
+                      name="Interview"
+                      dataKey="interviewScore"
                       stroke="hsl(var(--primary))"
                       strokeWidth={3}
                       fillOpacity={1}
-                      fill="url(#colorScore)"
+                      fill="url(#colorInterview)"
+                      connectNulls
                       animationDuration={1500}
                       activeDot={{ r: 6, style: { fill: 'hsl(var(--primary))', stroke: 'hsl(var(--background))', strokeWidth: 2 } }}
+                    />
+                    <Area
+                      type="monotone"
+                      name="Quiz"
+                      dataKey="quizScore"
+                      stroke="#fbbf24"
+                      strokeWidth={3}
+                      fillOpacity={1}
+                      fill="url(#colorQuiz)"
+                      connectNulls
+                      animationDuration={1500}
+                      activeDot={{ r: 6, style: { fill: '#fbbf24', stroke: 'hsl(var(--background))', strokeWidth: 2 } }}
                     />
                   </AreaChart>
                 </ResponsiveContainer>
