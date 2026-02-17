@@ -295,24 +295,37 @@ export default function PricingPage() {
                                     </ul>
                                 </div>
                             </CardContent>
-                            <CardFooter>
-                                {proPlans.map(plan => (
-                                    selectedPlanId === plan.id && (
-                                        <Button
-                                            key={plan.id}
-                                            className="w-full"
-                                            size="lg"
-                                            onClick={() => handlePayment(plan.id)}
-                                            disabled={loadingPlan === plan.id || userData?.subscription?.status === 'active'}
-                                        >
-                                            {loadingPlan === plan.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                                            {userData?.subscription?.status === 'active'
-                                                ? 'Plan Already Active'
-                                                : (loadingPlan === plan.id ? 'Processing...' : `Get ${plan.duration} Pro Access`)
-                                            }
-                                        </Button>
-                                    )
-                                ))}
+                            <CardFooter className="flex flex-col gap-4">
+                                {proPlans.map(plan => {
+                                    const isSubscribed = userData?.subscription?.status === 'active';
+                                    const interviewsLeft = (userData?.subscription?.interviewUsage?.limit ?? 0) - (userData?.subscription?.interviewUsage?.count ?? 0);
+                                    const hasInterviews = interviewsLeft > 0;
+                                    const canPurchase = !isSubscribed || !hasInterviews;
+
+                                    return selectedPlanId === plan.id && (
+                                        <div key={plan.id} className="w-full space-y-3">
+                                            <Button
+                                                className="w-full h-12 rounded-xl transition-all"
+                                                size="lg"
+                                                onClick={() => handlePayment(plan.id)}
+                                                disabled={!!loadingPlan || !canPurchase}
+                                            >
+                                                {loadingPlan === plan.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                                                {loadingPlan === plan.id
+                                                    ? 'Processing...'
+                                                    : (!canPurchase ? 'Active Plan' : `Upgrade to ${plan.name}`)
+                                                }
+                                            </Button>
+
+                                            {!canPurchase && (
+                                                <p className="text-[11px] text-center text-muted-foreground font-medium italic">
+                                                    You have <span className="text-primary font-bold">{interviewsLeft} interviews</span> remaining.
+                                                    You'll be able to purchase a new pack once you've used them all!
+                                                </p>
+                                            )}
+                                        </div>
+                                    );
+                                })}
                             </CardFooter>
                         </Card>
                     </div>
