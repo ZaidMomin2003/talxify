@@ -40,9 +40,9 @@ export async function createRazorpayOrder(uid: string, planId: SubscriptionPlan,
   // SECURITY FIX: Define prices on the server, do NOT trust the 'amount' from the client.
   const planPrices: Record<SubscriptionPlan, { INR: number, USD: number }> = {
     'free': { INR: 0, USD: 0 },
-    'pro-1m': { INR: 2999, USD: 39 },
-    'pro-2m': { INR: 4999, USD: 69 },
-    'pro-3m': { INR: 6999, USD: 89 },
+    'pro-1m': { INR: 999, USD: 14 },
+    'pro-2m': { INR: 1799, USD: 24 },
+    'pro-3m': { INR: 2499, USD: 34 },
   };
 
   const prices = planPrices[planId] || { INR: 0, USD: 0 };
@@ -118,10 +118,10 @@ interface PaymentVerificationData {
 }
 
 const planDetails: Record<SubscriptionPlan, { interviews: number; durationMonths: number }> = {
-  'free': { interviews: 0, durationMonths: 0 },
-  'pro-1m': { interviews: 10, durationMonths: 1 },
-  'pro-2m': { interviews: 25, durationMonths: 2 },
-  'pro-3m': { interviews: 40, durationMonths: 3 },
+  'free': { interviews: 1, durationMonths: 0 },
+  'pro-1m': { interviews: 5, durationMonths: 1 },
+  'pro-2m': { interviews: 15, durationMonths: 1 },
+  'pro-3m': { interviews: 25, durationMonths: 1 },
 };
 
 /**

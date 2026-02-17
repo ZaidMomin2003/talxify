@@ -9,6 +9,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import type { SubscriptionPlan } from '@/lib/types';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
+import { getUserData } from '@/lib/firebase-service';
+import type { UserData } from '@/lib/types';
 import Script from 'next/script';
 import { createRazorpayOrder, verifyRazorpayPayment, createDodoPaymentSession } from './actions';
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -30,38 +32,30 @@ const freePlan = {
 const proPlans = [
     {
         id: 'pro-1m' as SubscriptionPlan,
-        name: '1 Month Pro',
-        priceInr: 2999,
-        priceUsd: 39,
+        name: 'Essential',
+        priceInr: 999,
+        priceUsd: 14,
         duration: '1 Month',
         description: 'Perfect for a focused prep sprint.',
-        interviews: 10,
+        interviews: 5,
     },
     {
         id: 'pro-2m' as SubscriptionPlan,
-        name: '2 Months Pro',
-        priceInr: 4999,
-        originalPriceInr: 5998,
-        priceUsd: 69,
-        originalPriceUsd: 78,
-        duration: '2 Months',
+        name: 'Professional',
+        priceInr: 1799,
+        priceUsd: 24,
+        duration: '1 Month',
         description: 'Balanced plan for steady preparation.',
-        badgeInr: 'Save ₹999',
-        badgeUsd: 'Save $9',
-        interviews: 25,
+        interviews: 15,
     },
     {
         id: 'pro-3m' as SubscriptionPlan,
-        name: '3 Months Pro',
-        priceInr: 6999,
-        originalPriceInr: 8997,
-        priceUsd: 89,
-        originalPriceUsd: 117,
-        duration: '3 Months',
+        name: 'Elite',
+        priceInr: 2499,
+        priceUsd: 34,
+        duration: '1 Month',
         description: 'Best value for in-depth mastery.',
-        badgeInr: 'Save ₹1998',
-        badgeUsd: 'Save $28',
-        interviews: 40,
+        interviews: 25,
     },
 ]
 
@@ -82,8 +76,20 @@ export default function PricingPage() {
     const { toast } = useToast();
     const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
     const [selectedPlanId, setSelectedPlanId] = useState<SubscriptionPlan>('pro-2m');
-    const [region, setRegion] = useState<'india' | 'international'>('india');
+    const [region, setRegion] = useState<'india' | 'international'>('international');
+    const [userData, setUserData] = useState<UserData | null>(null);
     const searchParams = useSearchParams();
+
+    const fetchUserData = useCallback(async () => {
+        if (user) {
+            const data = await getUserData(user.uid);
+            setUserData(data);
+        }
+    }, [user]);
+
+    useEffect(() => {
+        fetchUserData();
+    }, [fetchUserData]);
 
     useEffect(() => {
         const success = searchParams.get('success');
@@ -192,7 +198,7 @@ export default function PricingPage() {
                 </div>
 
                 <div className="flex justify-center mb-12">
-                    <Tabs defaultValue="india" onValueChange={(v) => setRegion(v as any)} className="w-[300px]">
+                    <Tabs defaultValue="international" onValueChange={(v) => setRegion(v as any)} className="w-[300px]">
                         <TabsList className="grid w-full grid-cols-2">
                             <TabsTrigger value="india">🇮🇳 India</TabsTrigger>
                             <TabsTrigger value="international" className="flex items-center gap-2">
@@ -297,10 +303,13 @@ export default function PricingPage() {
                                             className="w-full"
                                             size="lg"
                                             onClick={() => handlePayment(plan.id)}
-                                            disabled={loadingPlan === plan.id}
+                                            disabled={loadingPlan === plan.id || userData?.subscription?.status === 'active'}
                                         >
                                             {loadingPlan === plan.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                                            {loadingPlan === plan.id ? 'Processing...' : `Get ${plan.duration} Pro Access`}
+                                            {userData?.subscription?.status === 'active'
+                                                ? 'Plan Already Active'
+                                                : (loadingPlan === plan.id ? 'Processing...' : `Get ${plan.duration} Pro Access`)
+                                            }
                                         </Button>
                                     )
                                 ))}

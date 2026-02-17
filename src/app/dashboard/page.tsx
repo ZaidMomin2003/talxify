@@ -296,6 +296,7 @@ export default function DashboardPage() {
           {
             title: "Total Interviews",
             count: interviewsCompleted,
+            limit: interviewUsage.limit,
             bgColor: "bg-[#ffcd52]",
             label: "RECORDS"
           },
