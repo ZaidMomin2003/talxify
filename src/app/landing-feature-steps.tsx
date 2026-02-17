@@ -267,17 +267,17 @@ export default function LandingFeatureSteps() {
           </motion.p>
         </div>
 
-        <div className="grid grid-cols-1 gap-12 lg:grid-cols-12 lg:gap-20 items-center justify-center">
-          <div className="lg:col-span-5 space-y-4 md:space-y-6 flex flex-col items-center lg:items-stretch">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 lg:gap-12 lg:items-stretch">
+          <div className="lg:col-span-5 flex flex-col gap-4">
             {features.map((feature, index) => {
               const isActive = index === currentFeature;
               return (
                 <motion.div
                   key={index}
                   className={cn(
-                    "group relative flex flex-col items-center text-center md:items-start md:text-left gap-6 p-6 rounded-[2rem] transition-all duration-500 cursor-pointer border",
+                    "group relative flex items-center gap-4 p-4 rounded-[1.5rem] transition-all duration-500 cursor-pointer border",
                     isActive
-                      ? "bg-card/40 dark:bg-primary/5 border-primary/30 shadow-2xl shadow-primary/10 scale-[1.02]"
+                      ? "bg-card/40 dark:bg-primary/5 border-primary/30 shadow-2xl shadow-primary/10 scale-[1.01]"
                       : "bg-transparent border-transparent hover:bg-muted/30 opacity-40 hover:opacity-100"
                   )}
                   onTap={() => {
@@ -286,7 +286,7 @@ export default function LandingFeatureSteps() {
                   }}
                 >
                   <div className={cn(
-                    "flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl transition-all duration-500 border-2",
+                    "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl transition-all duration-500 border-2",
                     isActive
                       ? "bg-primary text-white border-primary shadow-lg shadow-primary/30 rotate-3"
                       : "bg-muted border-border text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary group-hover:border-primary/20"
@@ -320,7 +320,7 @@ export default function LandingFeatureSteps() {
                   {isActive && (
                     <motion.div
                       layoutId="active-indicator"
-                      className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-12 bg-primary rounded-r-full hidden md:block"
+                      className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-primary rounded-r-full hidden md:block"
                     />
                   )}
                 </motion.div>
@@ -328,8 +328,8 @@ export default function LandingFeatureSteps() {
             })}
           </div>
 
-          <div className="lg:col-span-7 hidden md:block">
-            <div className="relative aspect-[4/3] sm:aspect-video lg:aspect-square xl:aspect-[4/3] rounded-[3rem] border border-border dark:border-white/10 bg-muted/20 dark:bg-black/20 backdrop-blur-3xl overflow-hidden shadow-2xl group shadow-primary/5">
+          <div className="lg:col-span-7 hidden lg:block">
+            <div className="relative h-full min-h-[500px] rounded-[3rem] border border-border dark:border-white/10 bg-muted/20 dark:bg-black/20 backdrop-blur-3xl overflow-hidden shadow-2xl group shadow-primary/5">
               <div className="absolute inset-x-0 h-40 top-0 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none" />
 
               <AnimatePresence mode="wait">
