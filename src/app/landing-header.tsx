@@ -63,6 +63,11 @@ export default function LandingHeader() {
   return (
     <header className={`fixed top-0 right-0 left-0 z-50 transition-all duration-300 ${isScrolled ? 'border-b border-border/40 bg-background/70 backdrop-blur-xl' : 'bg-transparent'
       }`}>
+      <div className="bg-[#e63946] py-1 px-4 text-center">
+        <p className="text-[10px] sm:text-[12px] font-bold text-white tracking-widest uppercase leading-tight">
+          We're thrilled to be backed by <Link href="https://aws.amazon.com/startups/" target="_blank" className="underline decoration-white/30 underline-offset-2 hover:decoration-white transition-colors">AWS Startups</Link>! 🎉
+        </p>
+      </div>
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-20 items-center justify-between">
           {/* Logo */}
@@ -81,100 +86,102 @@ export default function LandingHeader() {
           </Link>
 
           {/* Desktop Nav */}
-          <nav className="hidden items-center space-x-2 lg:flex">
-            <Link href="/#features" onClick={(e) => handleLinkClick(e, '/#features')} className="px-4 py-2 text-sm font-bold uppercase italic tracking-widest text-muted-foreground hover:text-primary transition-colors">Features</Link>
-            <Link href="/#pricing" onClick={(e) => handleLinkClick(e, '/#pricing')} className="px-4 py-2 text-sm font-bold uppercase italic tracking-widest text-muted-foreground hover:text-primary transition-colors">Pricing</Link>
+          <nav className="hidden items-center lg:flex">
+            <div className="flex bg-black/40 backdrop-blur-md rounded-full border border-white/5 p-1 px-2 gap-1 shadow-2xl relative z-40">
+              <Link href="/#features" onClick={(e) => handleLinkClick(e, '/#features')} className="px-5 py-2 text-[13px] font-bold tracking-wide text-gray-300 hover:text-white hover:bg-white/5 rounded-full transition-all">Features</Link>
+              <Link href="/#pricing" onClick={(e) => handleLinkClick(e, '/#pricing')} className="px-5 py-2 text-[13px] font-bold tracking-wide text-gray-300 hover:text-white hover:bg-white/5 rounded-full transition-all">Pricing</Link>
 
-            {/* Partnership Mega Menu */}
-            <div
-              className="relative group"
-              onMouseEnter={() => setActiveMega('partnership')}
-              onMouseLeave={() => setActiveMega(null)}
-            >
-              <button className={`flex items-center gap-1 px-4 py-2 text-sm font-bold uppercase italic tracking-widest transition-colors ${activeMega === 'partnership' ? 'text-primary' : 'text-muted-foreground'}`}>
-                Partners <ChevronDown size={14} className={`transition-transform duration-300 ${activeMega === 'partnership' ? 'rotate-180' : ''}`} />
-              </button>
+              {/* Tools Dropdown */}
+              <div
+                className="relative group"
+                onMouseEnter={() => setActiveMega('tools')}
+                onMouseLeave={() => setActiveMega(null)}
+              >
+                <button className={`flex items-center gap-1.5 px-5 py-2 text-[13px] font-bold tracking-wide transition-all rounded-full hover:bg-white/5 ${activeMega === 'tools' ? 'text-white bg-white/5' : 'text-gray-300'}`}>
+                  Tools <ChevronDown size={14} className={`transition-transform duration-300 ${activeMega === 'tools' ? 'rotate-180' : ''}`} />
+                </button>
 
-              <AnimatePresence>
-                {activeMega === 'partnership' && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    transition={{ duration: 0.2 }}
-                    className="absolute top-full left-1/2 -translate-x-1/2 pt-4 w-[380px]"
-                  >
-                    <div className="bg-background/95 border border-border/50 backdrop-blur-2xl rounded-[2.5rem] shadow-2xl overflow-hidden p-6 grid grid-cols-1 gap-2">
-                      <div className="absolute top-0 right-0 p-8 opacity-[0.03] pointer-events-none text-primary">
-                        <Building size={120} />
+                <AnimatePresence>
+                  {activeMega === 'tools' && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                      transition={{ duration: 0.2 }}
+                      className="absolute top-full left-1/2 -translate-x-1/2 pt-4 w-[380px] z-50"
+                    >
+                      <div className="bg-[#0a0a0a]/95 border border-white/10 backdrop-blur-2xl rounded-[2.5rem] shadow-2xl overflow-hidden p-6 grid grid-cols-1 gap-2">
+                        <div className="absolute top-0 right-0 p-8 opacity-[0.03] pointer-events-none text-primary">
+                          <TrendingUp size={120} />
+                        </div>
+                        {toolsItems.map((item) => (
+                          <Link
+                            key={item.name}
+                            href={item.href}
+                            onClick={(e) => handleLinkClick(e, item.href)}
+                            className="group/item flex items-center gap-4 p-4 rounded-3xl hover:bg-primary/5 transition-all duration-300 border border-transparent hover:border-primary/20"
+                          >
+                            <div className="bg-primary/10 text-primary p-3 rounded-2xl group-hover/item:scale-110 transition-transform">
+                              <item.icon size={20} />
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="text-sm font-black italic uppercase tracking-tight text-foreground">{item.name}</span>
+                              <span className="text-[10px] font-medium italic text-muted-foreground">{item.description}</span>
+                            </div>
+                            <ArrowRight size={14} className="ml-auto opacity-0 -translate-x-2 group-hover/item:opacity-100 group-hover/item:translate-x-0 transition-all text-primary" />
+                          </Link>
+                        ))}
                       </div>
-                      {partnershipItems.map((item) => (
-                        <Link
-                          key={item.name}
-                          href={item.href}
-                          onClick={(e) => handleLinkClick(e, item.href)}
-                          className="group/item flex items-center gap-4 p-4 rounded-3xl hover:bg-primary/5 transition-all duration-300 border border-transparent hover:border-primary/20"
-                        >
-                          <div className="bg-primary/10 text-primary p-3 rounded-2xl group-hover/item:scale-110 transition-transform">
-                            <item.icon size={20} />
-                          </div>
-                          <div className="flex flex-col">
-                            <span className="text-sm font-black italic uppercase tracking-tight text-foreground">{item.name}</span>
-                            <span className="text-[10px] font-medium italic text-muted-foreground">{item.description}</span>
-                          </div>
-                          <ArrowRight size={14} className="ml-auto opacity-0 -translate-x-2 group-hover/item:opacity-100 group-hover/item:translate-x-0 transition-all text-primary" />
-                        </Link>
-                      ))}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
 
-            {/* Tools Mega Menu */}
-            <div
-              className="relative group"
-              onMouseEnter={() => setActiveMega('tools')}
-              onMouseLeave={() => setActiveMega(null)}
-            >
-              <button className={`flex items-center gap-1 px-4 py-2 text-sm font-bold uppercase italic tracking-widest transition-colors ${activeMega === 'tools' ? 'text-primary' : 'text-muted-foreground'}`}>
-                Tools <ChevronDown size={14} className={`transition-transform duration-300 ${activeMega === 'tools' ? 'rotate-180' : ''}`} />
-              </button>
+              {/* Partnership Dropdown */}
+              <div
+                className="relative group"
+                onMouseEnter={() => setActiveMega('partnership')}
+                onMouseLeave={() => setActiveMega(null)}
+              >
+                <button className={`flex items-center gap-1.5 px-5 py-2 text-[13px] font-bold tracking-wide transition-all rounded-full hover:bg-white/5 ${activeMega === 'partnership' ? 'text-white bg-white/5' : 'text-gray-300'}`}>
+                  Partners <ChevronDown size={14} className={`transition-transform duration-300 ${activeMega === 'partnership' ? 'rotate-180' : ''}`} />
+                </button>
 
-              <AnimatePresence>
-                {activeMega === 'tools' && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    transition={{ duration: 0.2 }}
-                    className="absolute top-full left-1/2 -translate-x-1/2 pt-4 w-[380px]"
-                  >
-                    <div className="bg-background/95 border border-border/50 backdrop-blur-2xl rounded-[2.5rem] shadow-2xl overflow-hidden p-6 grid grid-cols-1 gap-2">
-                      <div className="absolute top-0 right-0 p-8 opacity-[0.03] pointer-events-none text-primary">
-                        <TrendingUp size={120} />
+                <AnimatePresence>
+                  {activeMega === 'partnership' && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                      transition={{ duration: 0.2 }}
+                      className="absolute top-full left-1/2 -translate-x-1/2 pt-4 w-[380px] z-50"
+                    >
+                      <div className="bg-[#0a0a0a]/95 border border-white/10 backdrop-blur-2xl rounded-[2.5rem] shadow-2xl overflow-hidden p-6 grid grid-cols-1 gap-2">
+                        <div className="absolute top-0 right-0 p-8 opacity-[0.03] pointer-events-none text-primary">
+                          <Building size={120} />
+                        </div>
+                        {partnershipItems.map((item) => (
+                          <Link
+                            key={item.name}
+                            href={item.href}
+                            onClick={(e) => handleLinkClick(e, item.href)}
+                            className="group/item flex items-center gap-4 p-4 rounded-3xl hover:bg-primary/5 transition-all duration-300 border border-transparent hover:border-primary/20"
+                          >
+                            <div className="bg-primary/10 text-primary p-3 rounded-2xl group-hover/item:scale-110 transition-transform">
+                              <item.icon size={20} />
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="text-sm font-black italic uppercase tracking-tight text-foreground">{item.name}</span>
+                              <span className="text-[10px] font-medium italic text-muted-foreground">{item.description}</span>
+                            </div>
+                            <ArrowRight size={14} className="ml-auto opacity-0 -translate-x-2 group-hover/item:opacity-100 group-hover/item:translate-x-0 transition-all text-primary" />
+                          </Link>
+                        ))}
                       </div>
-                      {toolsItems.map((item) => (
-                        <Link
-                          key={item.name}
-                          href={item.href}
-                          onClick={(e) => handleLinkClick(e, item.href)}
-                          className="group/item flex items-center gap-4 p-4 rounded-3xl hover:bg-primary/5 transition-all duration-300 border border-transparent hover:border-primary/20"
-                        >
-                          <div className="bg-primary/10 text-primary p-3 rounded-2xl group-hover/item:scale-110 transition-transform">
-                            <item.icon size={20} />
-                          </div>
-                          <div className="flex flex-col">
-                            <span className="text-sm font-black italic uppercase tracking-tight text-foreground">{item.name}</span>
-                            <span className="text-[10px] font-medium italic text-muted-foreground">{item.description}</span>
-                          </div>
-                          <ArrowRight size={14} className="ml-auto opacity-0 -translate-x-2 group-hover/item:opacity-100 group-hover/item:translate-x-0 transition-all text-primary" />
-                        </Link>
-                      ))}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             </div>
           </nav>
 
@@ -225,8 +232,8 @@ export default function LandingHeader() {
               <Link href="/#features" onClick={(e) => handleLinkClick(e, '/#features')} className="text-lg font-black italic uppercase tracking-tighter text-foreground py-2 border-b border-border/50">Features</Link>
               <Link href="/#pricing" onClick={(e) => handleLinkClick(e, '/#pricing')} className="text-lg font-black italic uppercase tracking-tighter text-foreground py-2 border-b border-border/50">Pricing</Link>
 
-              <p className="text-[10px] font-bold uppercase tracking-widest text-primary italic pt-4">Partnership</p>
-              {partnershipItems.map((item) => (
+              <p className="text-[10px] font-bold uppercase tracking-widest text-primary italic pt-4">Tools & Resources</p>
+              {toolsItems.map((item) => (
                 <Link
                   key={item.name}
                   href={item.href}
@@ -238,8 +245,8 @@ export default function LandingHeader() {
                 </Link>
               ))}
 
-              <p className="text-[10px] font-bold uppercase tracking-widest text-primary italic pt-4">Tools & Content</p>
-              {toolsItems.map((item) => (
+              <p className="text-[10px] font-bold uppercase tracking-widest text-primary italic pt-4">Partnership</p>
+              {partnershipItems.map((item) => (
                 <Link
                   key={item.name}
                   href={item.href}
