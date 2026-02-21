@@ -88,13 +88,16 @@ export async function createRazorpayOrder(uid: string, planId: SubscriptionPlan,
     const rzp = getRazorpay();
     const order = await rzp.orders.create(options);
     return {
-      id: order.id,
-      currency: order.currency,
-      amount: order.amount
+      success: true,
+      data: {
+        id: order.id,
+        currency: order.currency,
+        amount: order.amount
+      }
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error creating Razorpay order:', error);
-    throw new Error('Could not create Razorpay order.');
+    return { success: false, error: error?.message || 'Could not create Razorpay order.' };
   }
 }
 
@@ -102,23 +105,23 @@ export async function createRazorpayOrder(uid: string, planId: SubscriptionPlan,
  * Creates a Dodo Payments checkout session for international users.
  */
 export async function createDodoPaymentSession(uid: string, planId: SubscriptionPlan) {
-  const productMapping: Record<SubscriptionPlan, string | undefined> = {
-    'free': undefined,
-    'pro-1m': process.env.DODO_PRODUCT_ID_1M,
-    'pro-2m': process.env.DODO_PRODUCT_ID_2M,
-    'pro-3m': process.env.DODO_PRODUCT_ID_3M,
-  };
-
-  const productId = productMapping[planId];
-  if (!productId) {
-    throw new Error(`Dodo Product ID for ${planId} is not configured.`);
-  }
-
-  if (!process.env.NEXT_PUBLIC_APP_URL) {
-    throw new Error('NEXT_PUBLIC_APP_URL is not configured in production settings.');
-  }
-
   try {
+    const productMapping: Record<SubscriptionPlan, string | undefined> = {
+      'free': undefined,
+      'pro-1m': process.env.DODO_PRODUCT_ID_1M,
+      'pro-2m': process.env.DODO_PRODUCT_ID_2M,
+      'pro-3m': process.env.DODO_PRODUCT_ID_3M,
+    };
+
+    const productId = productMapping[planId];
+    if (!productId) {
+      return { success: false, error: `Dodo Product ID for ${planId} is not configured.` };
+    }
+
+    if (!process.env.NEXT_PUBLIC_APP_URL) {
+      return { success: false, error: 'NEXT_PUBLIC_APP_URL is not configured.' };
+    }
+
     const dodo = getDodo();
     const session = await dodo.checkoutSessions.create({
       product_cart: [{
@@ -132,15 +135,17 @@ export async function createDodoPaymentSession(uid: string, planId: Subscription
       return_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/pricing?success=true`,
     });
 
-    return { url: session.checkout_url };
+    return { success: true, url: session.checkout_url };
   } catch (error: any) {
     console.error('Error creating Dodo payment session:', error);
 
-    // Bubble up the specific error message from Dodo or our validation
     const errorMessage = error?.message || 'Unknown Dodo error';
     const errorDetails = error?.response?.data?.message || '';
 
-    throw new Error(`Dodo Session Error: ${errorMessage}${errorDetails ? ` - ${errorDetails}` : ''}`);
+    return {
+      success: false,
+      error: `Dodo Session Error: ${errorMessage}${errorDetails ? ` - ${errorDetails}` : ''}`
+    };
   }
 }
 

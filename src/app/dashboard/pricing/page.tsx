@@ -139,17 +139,23 @@ export default function PricingPage() {
 
             if (region === 'international') {
                 // Use Dodo Payments for International
-                const { url } = await createDodoPaymentSession(user.uid, planId);
-                if (url) {
-                    window.location.href = url; // Redirect to Dodo Checkout
+                const result = await createDodoPaymentSession(user.uid, planId);
+                if (result.success && result.url) {
+                    window.location.href = result.url; // Redirect to Dodo Checkout
                 } else {
-                    throw new Error("Failed to generate checkout URL");
+                    throw new Error(result.error || "Failed to generate checkout URL");
                 }
                 return;
             }
 
             // Use Razorpay for India
-            const order = await createRazorpayOrder(user.uid, planId, currency);
+            const result = await createRazorpayOrder(user.uid, planId, currency);
+
+            if (!result.success || !result.data) {
+                throw new Error(result.error || "Failed to create order");
+            }
+
+            const order = result.data;
 
             // 2. Configure the Razorpay checkout options
             const options = {
