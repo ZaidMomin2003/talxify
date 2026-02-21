@@ -10,24 +10,49 @@ import type { SubscriptionPlan, UserData } from '@/lib/types';
 import { addMonths } from 'date-fns';
 import { adminConfig } from '@/lib/firebase-admin-config';
 
-// Initialize Firebase Admin SDK
-if (!getApps().length) {
-  initializeApp({
-    credential: cert(adminConfig.credential),
-  });
+// Initialize Firebase Admin SDK safely
+function getDb() {
+  if (!getApps().length) {
+    if (adminConfig.credential.projectId && adminConfig.credential.clientEmail && adminConfig.credential.privateKey) {
+      initializeApp({
+        credential: cert(adminConfig.credential),
+      });
+    } else {
+      console.error('[PAYMENT-ACTIONS] Firebase Admin credentials missing.');
+      throw new Error('Firebase Admin not configured.');
+    }
+  }
+  return getFirestore();
 }
-const db = getFirestore();
 
-// Initialize Razorpay with your API keys from environment variables
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID!,
-  key_secret: process.env.RAZORPAY_KEY_SECRET!,
-});
+// Lazy initializers for SDKs
+let razorpayInstance: Razorpay | null = null;
+let dodoInstance: DodoPayments | null = null;
 
-// Initialize Dodo Payments
-const dodo = new DodoPayments({
-  bearerToken: process.env.DODO_PAYMENTS_API_KEY!,
-});
+function getRazorpay() {
+  if (!razorpayInstance) {
+    if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+      throw new Error('Razorpay API keys are not configured.');
+    }
+    razorpayInstance = new Razorpay({
+      key_id: process.env.RAZORPAY_KEY_ID,
+      key_secret: process.env.RAZORPAY_KEY_SECRET,
+    });
+  }
+  return razorpayInstance;
+}
+
+function getDodo() {
+  if (!dodoInstance) {
+    if (!process.env.DODO_PAYMENTS_API_KEY) {
+      throw new Error('Dodo Payments API key is not configured.');
+    }
+    dodoInstance = new DodoPayments({
+      bearerToken: process.env.DODO_PAYMENTS_API_KEY,
+    });
+  }
+  return dodoInstance;
+}
 
 /**
  * Creates an order on Razorpay's servers.
@@ -60,7 +85,8 @@ export async function createRazorpayOrder(uid: string, planId: SubscriptionPlan,
   };
 
   try {
-    const order = await razorpay.orders.create(options);
+    const rzp = getRazorpay();
+    const order = await rzp.orders.create(options);
     return {
       id: order.id,
       currency: order.currency,
@@ -84,12 +110,16 @@ export async function createDodoPaymentSession(uid: string, planId: Subscription
   };
 
   const productId = productMapping[planId];
+  if (!productId) {
+    throw new Error(`Dodo Product ID for ${planId} is not configured.`);
+  }
 
-  if (!productId || productId === 'p_...') {
-    throw new Error(`Dodo Product ID for ${planId} is not configured in .env file.`);
+  if (!process.env.NEXT_PUBLIC_APP_URL) {
+    throw new Error('NEXT_PUBLIC_APP_URL is not configured in production settings.');
   }
 
   try {
+    const dodo = getDodo();
     const session = await dodo.checkoutSessions.create({
       product_cart: [{
         product_id: productId,
@@ -103,9 +133,14 @@ export async function createDodoPaymentSession(uid: string, planId: Subscription
     });
 
     return { url: session.checkout_url };
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error creating Dodo payment session:', error);
-    throw new Error('Could not create Dodo payment session.');
+
+    // Bubble up the specific error message from Dodo or our validation
+    const errorMessage = error?.message || 'Unknown Dodo error';
+    const errorDetails = error?.response?.data?.message || '';
+
+    throw new Error(`Dodo Session Error: ${errorMessage}${errorDetails ? ` - ${errorDetails}` : ''}`);
   }
 }
 
@@ -135,9 +170,13 @@ export async function verifyRazorpayPayment(data: PaymentVerificationData) {
   // The body to be hashed is the order_id + "|" + payment_id
   const body = razorpay_order_id + "|" + razorpay_payment_id;
 
+  if (!process.env.RAZORPAY_KEY_SECRET) {
+    throw new Error('Razorpay secret is not configured.');
+  }
+
   // Create an HMAC-SHA256 hash using your Razorpay secret
   const expectedSignature = crypto
-    .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET!)
+    .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
     .update(body.toString())
     .digest('hex');
 
@@ -145,6 +184,7 @@ export async function verifyRazorpayPayment(data: PaymentVerificationData) {
 
   // If the signature is authentic, update the user's record in the database
   if (isAuthentic) {
+    const db = getDb();
     const userRef = db.collection('users').doc(uid);
     const selectedPlan = planDetails[planId];
 

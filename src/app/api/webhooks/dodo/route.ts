@@ -23,7 +23,15 @@ try {
     console.error('[DODO-WEBHOOK] Firebase Admin Initialization Error:', error);
 }
 
-const db = getFirestore();
+// Safe way to get Firestore instance
+function getDb() {
+    try {
+        return getFirestore();
+    } catch (e) {
+        console.error('[DODO-WEBHOOK] Could not get Firestore instance:', e);
+        throw new Error('Firestore not initialized');
+    }
+}
 
 const planDetails: Record<SubscriptionPlan, { interviews: number; durationMonths: number }> = {
     'free': { interviews: 1, durationMonths: 0 },
@@ -90,6 +98,7 @@ export const POST = Webhooks({
             };
 
             try {
+                const db = getDb();
                 await db.collection('users').doc(uid).set({
                     subscription: subscriptionData,
                     updatedAt: new Date().toISOString()
