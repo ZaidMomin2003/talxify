@@ -160,21 +160,7 @@ export async function incrementResumeExportsAction(userId: string) {
             const plan = sub?.plan || 'free';
 
             if (plan.startsWith('pro')) {
-                const resumeExports = sub.resumeExports || { date: currentMonth, count: 0 };
-
-                if (resumeExports.date !== currentMonth) {
-                    transaction.update(userRef, {
-                        'subscription.resumeExports': { date: currentMonth, count: 1 }
-                    });
-                    return { success: true, message: '' };
-                }
-
-                if (resumeExports.count < 10) {
-                    transaction.update(userRef, { 'subscription.resumeExports.count': FieldValue.increment(1) });
-                    return { success: true, message: '' };
-                } else {
-                    return { success: false, message: 'You have reached your monthly limit of 10 resume exports for the Pro plan.' };
-                }
+                return { success: true, message: '' };
             } else {
                 const currentUsage = sub.usage?.resumeExport || 0;
                 if (currentUsage < 1) { // Free limit

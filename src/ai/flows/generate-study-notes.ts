@@ -9,8 +9,8 @@
  * - GenerateStudyNotesOutput - The return type.
  */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { ai } from '@/ai/genkit';
+import { z } from 'genkit';
 
 const TerminologySchema = z.object({
   term: z.string().describe('The technical term.'),
@@ -19,7 +19,7 @@ const TerminologySchema = z.object({
 
 const ExampleSchema = z.object({
   title: z.string().describe('A descriptive title for the code example.'),
-  code: z.string().describe('A functional code snippet demonstrating the concept.'),
+  code: z.string().describe('A functional code snippet demonstrating the concept. Use multi-line formatting with actual newline characters.'),
   explanation: z.string().describe('A step-by-step explanation of how the code works.'),
 });
 
@@ -39,7 +39,7 @@ const GenerateStudyNotesOutputSchema = z.object({
   terminology: z.array(TerminologySchema).describe('A list of key terms and their definitions.'),
   coreConcepts: z.array(z.object({
     concept: z.string().describe("A core concept or sub-topic."),
-    description: z.string().describe("A detailed, bullet-point description of the concept formatted as an HTML string. Use <strong> tags for bold text.")
+    description: z.string().describe("A detailed, bullet-point description of the concept formatted as an HTML string. Use <strong> tags for bold text. Use <br/> or <p> tags for proper spacing and line breaks.")
   })).describe('A breakdown of the fundamental concepts, organized from basic to advanced.'),
   examples: z.array(ExampleSchema).describe('A set of practical, real-world code examples with explanations.'),
   useCases: z.array(z.string()).describe('A bulleted list of common use cases and scenarios where this topic is applied.'),
@@ -53,8 +53,8 @@ export async function generateStudyNotes(input: GenerateStudyNotesInput): Promis
 
 const prompt = ai.definePrompt({
   name: 'generateStudyNotesPrompt',
-  input: {schema: GenerateStudyNotesInputSchema},
-  output: {schema: GenerateStudyNotesOutputSchema},
+  input: { schema: GenerateStudyNotesInputSchema },
+  output: { schema: GenerateStudyNotesOutputSchema },
   prompt: `You are an expert technical writer and educator. Your task is to create a comprehensive, detailed, and easy-to-understand study guide for a developer on the topic of: "{{topic}}".
 
 Structure the guide in the following manner, starting from fundamental concepts and progressing to more complex ones.
@@ -62,7 +62,7 @@ Structure the guide in the following manner, starting from fundamental concepts 
 1.  **Introduction**: Write a brief, engaging introduction. Explain what {{topic}} is and why it's important for a developer to know.
 2.  **Core Concepts**: Break down the topic into its most critical concepts. Present them in a logical order, from easy to difficult. For each concept, provide a detailed description. IMPORTANT: Format the description as a valid HTML string and use <strong> tags for any bold text instead of markdown.
 3.  **Key Terminology**: Define the essential terms a developer must know related to {{topic}}.
-4.  **Practical Examples**: Provide at least two clear, practical code examples. For each, include a title, the code snippet, and a step-by-step explanation.
+4.  **Practical Examples**: Provide at least two clear, practical code examples. For each, include a title, the code snippet, and a step-by-step explanation. IMPORTANT: The code snippet MUST be well-formatted and multi-line, using actual newline characters for readability.
 5.  **Common Use Cases**: List the most common real-world scenarios and use cases for {{topic}}.
 6.  **Interview Questions**: List potential interview questions related to the topic, along with well-explained, expert answers.
 
@@ -77,7 +77,7 @@ const generateStudyNotesFlow = ai.defineFlow(
     outputSchema: GenerateStudyNotesOutputSchema,
   },
   async input => {
-    const {output} = await prompt(input);
+    const { output } = await prompt(input);
     return output!;
   }
 );

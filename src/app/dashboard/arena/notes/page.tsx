@@ -206,7 +206,7 @@ function NotesComponent() {
                                         <h3 className="font-bold text-lg text-foreground/90 ml-1">{example.title}</h3>
                                         <div className="relative group">
                                             <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-blue-500/20 rounded-2xl blur opacity-0 group-hover:opacity-100 transition duration-500" />
-                                            <pre className="relative bg-zinc-950/90 dark:bg-black/60 p-6 rounded-2xl overflow-x-auto text-sm font-code border border-border dark:border-white/10 text-primary-foreground/90">
+                                            <pre className="relative bg-zinc-950/90 dark:bg-black/60 p-6 rounded-2xl overflow-x-auto text-sm font-code border border-border dark:border-white/10 text-primary-foreground/90 whitespace-pre-wrap">
                                                 <code>{example.code}</code>
                                             </pre>
                                         </div>

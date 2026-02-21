@@ -9,6 +9,7 @@
 
 import { ai } from '@/ai/genkit';
 import { GenerateSalaryEstimationInputSchema, GenerateSalaryEstimationOutputSchema, type GenerateSalaryEstimationInput, type GenerateSalaryEstimationOutput } from '@/lib/types/salary';
+export type { GenerateSalaryEstimationOutput };
 
 
 export async function generateSalaryEstimation(
@@ -48,19 +49,19 @@ const generateSalaryEstimationFlow = ai.defineFlow(
   },
   async (input) => {
     const { output } = await prompt(input);
-    
+
     if (!output) {
       throw new Error("The AI failed to generate a salary estimation.");
     }
-    
+
     // Basic validation to ensure the numbers make sense
     if (output.salaryRangeMin > output.salaryRangeMax || output.estimatedSalary < output.salaryRangeMin || output.estimatedSalary > output.salaryRangeMax) {
-        console.error("AI returned inconsistent salary numbers", output);
-        // Attempt a self-correction
-        output.salaryRangeMin = Math.min(output.salaryRangeMin, output.estimatedSalary);
-        output.salaryRangeMax = Math.max(output.salaryRangeMax, output.estimatedSalary);
+      console.error("AI returned inconsistent salary numbers", output);
+      // Attempt a self-correction
+      output.salaryRangeMin = Math.min(output.salaryRangeMin, output.estimatedSalary);
+      output.salaryRangeMax = Math.max(output.salaryRangeMax, output.estimatedSalary);
     }
-    
+
     return output;
   }
 );

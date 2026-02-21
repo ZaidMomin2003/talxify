@@ -4,6 +4,7 @@ import type { AnswerAnalysis } from "@/ai/flows/analyze-coding-answers";
 import type { GenerateStudyNotesOutput } from "@/ai/flows/generate-study-notes";
 import type { QuizState } from "@/app/dashboard/coding-quiz/quiz/page";
 import type { SyllabusDay } from "@/ai/flows/generate-syllabus";
+export type { SyllabusDay };
 import { z } from 'zod';
 import { type serverTimestamp } from "firebase/firestore";
 

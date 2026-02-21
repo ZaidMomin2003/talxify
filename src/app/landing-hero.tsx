@@ -33,7 +33,7 @@ export default function AppHero() {
   };
 
   return (
-    <section className="relative pt-24 pb-20 md:pt-32 md:pb-32 overflow-hidden">
+    <section className="relative pt-32 pb-20 md:pt-44 md:pb-32 overflow-hidden">
       {/* Background Decorative Elements */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full -z-10 pointer-events-none">
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/20 rounded-full blur-[120px] animate-pulse" />
@@ -47,12 +47,16 @@ export default function AppHero() {
           initial="hidden"
           animate="visible"
         >
-          {/* Badge */}
-          <motion.div variants={itemVariants} className="mb-8">
-            <Badge variant="secondary" className="px-4 py-1.5 rounded-full bg-white/5 border-white/10 text-primary-foreground backdrop-blur-md flex items-center gap-2 border">
-              <Sparkles className="w-3.5 h-3.5 text-primary" />
-              <span className="text-xs font-semibold tracking-wide uppercase">Next-Gen AI Interviewing</span>
-            </Badge>
+          {/* Badge / Pill */}
+          <motion.div variants={itemVariants} className="mb-12">
+            <Link href="/#features" className="group flex items-center gap-4 bg-zinc-900/60 hover:bg-zinc-800/80 backdrop-blur-3xl border border-white/5 rounded-full pl-6 pr-1.5 py-1.5 transition-all duration-500 shadow-2xl hover:border-white/10 ring-1 ring-white/5">
+              <span className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400 group-hover:text-white transition-colors italic">
+                Advanced AI Intelligence v.2.0
+              </span>
+              <div className="bg-primary rounded-full p-2.5 shadow-lg shadow-primary/20 group-hover:scale-110 active:scale-95 transition-all duration-500 flex items-center justify-center">
+                <ArrowRight size={14} className="text-white" />
+              </div>
+            </Link>
           </motion.div>
 
           {/* Headline */}

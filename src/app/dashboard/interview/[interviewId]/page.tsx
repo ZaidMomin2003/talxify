@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams, useRouter, useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Mic, MicOff, Video, VideoOff, Phone, BrainCircuit, Loader2, Play, Radio, Signal, Cpu, Activity, User as UserIcon } from 'lucide-react';
+import { Mic, MicOff, Video, VideoOff, Phone, BrainCircuit, Loader2, User as UserIcon } from 'lucide-react';
 import { addActivity, checkAndIncrementUsage, updateUserFromIcebreaker } from '@/lib/firebase-service';
 import { useAuth } from '@/context/auth-context';
 import type { InterviewActivity, TranscriptEntry, UsageType } from '@/lib/types';
@@ -18,7 +18,18 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 
 // --- Memoized Sub-components for better performance ---
-const InterviewHeader = React.memo(({ status, isInterviewing }: { status: string; isInterviewing: boolean }) => {
+const Timer = React.memo(({ seconds }: { seconds: number }) => {
+  const formatTime = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+  };
+
+  return <span className="text-[11px] font-mono text-white/40 border-l border-white/10 pl-3 ml-1">{formatTime(seconds)}</span>;
+});
+Timer.displayName = 'Timer';
+
+const InterviewHeader = React.memo(({ status, isInterviewing, elapsedSeconds }: { status: string; isInterviewing: boolean; elapsedSeconds: number }) => {
   return (
     <motion.div
       initial={{ y: -20, opacity: 0 }}
@@ -30,33 +41,12 @@ const InterviewHeader = React.memo(({ status, isInterviewing }: { status: string
           <div className={cn("w-2 h-2 rounded-full", status.toLowerCase().includes('your turn') ? 'bg-red-500 animate-pulse' : (status.toLowerCase().includes('error') ? 'bg-destructive' : 'bg-green-500'))} />
         </div>
         <span className="text-[11px] font-bold uppercase tracking-wider text-white/90">{status}</span>
-        {isInterviewing && <Timer />}
+        {isInterviewing && <Timer seconds={elapsedSeconds} />}
       </div>
     </motion.div>
   );
 });
 InterviewHeader.displayName = 'InterviewHeader';
-
-const Timer = React.memo(() => {
-  const [elapsedTime, setElapsedTime] = useState(0);
-  const startTimeRef = useRef(Date.now());
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setElapsedTime(Math.floor((Date.now() - startTimeRef.current) / 1000));
-    }, 1000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const formatTime = (seconds: number) => {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
-  };
-
-  return <span className="text-[11px] font-mono text-white/40 border-l border-white/10 pl-3 ml-1">{formatTime(elapsedTime)}</span>;
-});
-Timer.displayName = 'Timer';
 
 const AIPanel = React.memo(({ characterName, isAISpeaking }: { characterName: string, isAISpeaking: boolean; }) => {
   return (
@@ -210,6 +200,8 @@ export default function LiveInterviewPage() {
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOn, setIsVideoOn] = useState(true);
   const [session, setSession] = useState<Session | null>(null);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [hasTriggeredWrapUp, setHasTriggeredWrapUp] = useState(false);
   const candidateName = useRef<string | null>(null);
 
   const transcriptRef = useRef<TranscriptEntry[]>([]);
@@ -226,7 +218,7 @@ export default function LiveInterviewPage() {
   const audioBufferSources = useRef(new Set<AudioBufferSourceNode>());
   // We no longer need timerIntervalRef or elapsedTime here as it's handled by the Timer component
 
-  const getSystemInstruction = useCallback((stage: 'icebreaker' | 'main' = 'icebreaker', userName: string | null = null, skills: string[] = []) => {
+  const getSystemInstruction = useCallback((stage: 'icebreaker' | 'main' | 'conclusion' = 'icebreaker', userName: string | null = null, skills: string[] = []) => {
     const topic = searchParams.get('topic') || 'general software engineering';
     const role = searchParams.get('role') || 'Software Engineer';
     const company = searchParams.get('company') || undefined;
@@ -234,17 +226,28 @@ export default function LiveInterviewPage() {
     let baseInstruction = character.systemInstruction;
     const candidateDisplayName = userName || user?.displayName || 'Candidate';
 
+    const strictAdherenceRules = `
+STRICT CONDUCT RULES:
+1. NO REPETITION: Never ask the same question twice or repeat topics already covered in the transcript.
+2. SUBJECT FOCUS: Stay strictly focused on ${topic} for a ${role} position${company ? ` at ${company}` : ''}. Do not drift into unrelated small talk.
+3. CONTEXT AWARENESS: Always check the previous conversation history before speaking to ensure you are moving the interview forward.
+`;
+
+    if (stage === 'conclusion') {
+      return `${baseInstruction} ${strictAdherenceRules} TIME LIMIT (10 MINS) REACHED. Be very polite. Do NOT interrupt the candidate if they are currently speaking. Once they finish their current answer, transition smoothly by saying "So thanks for taking this interview..." and then provide a concise summary of their performance (pros and cons). End with: "That's all the questions I have for you. Thank you for your time. All the best."`;
+    }
+
     if (stage === 'icebreaker') {
-      return `${baseInstruction} Your first task is to start the interview with a friendly icebreaker. You MUST speak first. Start by saying "Hello, ${candidateDisplayName}" and then ask the candidate to briefly introduce themselves, including their name, skills, and hobbies. Keep your introduction very brief and direct.`;
+      return `${baseInstruction} ${strictAdherenceRules} Wait for the candidate to greet you first. Once they greet you, acknowledge them warmly as ${candidateDisplayName} and ask them to briefly introduce themselves, including their skills and background.`;
     }
 
     // After icebreaker
     const skillText = skills.length > 0 ? `The candidate mentioned skills in: ${skills.join(', ')}.` : '';
-    let instruction = `${baseInstruction} You are continuing an interview with ${candidateDisplayName}. ${skillText} You must follow this multi-stage interview format precisely:
-1.  **Skill Follow-up (1 question):** Ask one simple, open-ended question related to their stated skills.
-2.  **Behavioral Section (2 questions):** Ask two linked behavioral questions (e.g., "Tell me about a difficult project," followed by "How did you handle disagreements with your team on that project?"). After each user response, provide a brief, natural conversational comment like "Thanks for sharing that" or "That's an interesting approach" before asking the next question.
-3.  **Technical Section (2 questions):** Present two situational technical problems (e.g., "Imagine our user database is slow. How would you diagnose the issue?").
-4.  **Conclusion (1 response):** After the final technical question, you must end the interview. Provide a brief, encouraging verbal summary of their performance. Mention one specific strength you observed and one area for improvement. Do not ask any more questions. End by saying "That's all the questions I have for you. Thank you for your time."`;
+    let instruction = `${baseInstruction} ${strictAdherenceRules} You are continuing an interview with ${candidateDisplayName}. ${skillText} Follow this multi-stage interview format precisely:
+1.  **Skill Follow-up (1-2 questions):** Explore their stated skills deeply.
+2.  **Behavioral Section (2 questions):** Ask targeted behavioral questions relevant to a ${role} role.
+3.  **Technical Section (2-3 questions):** Solve situational or technical problems related to ${topic}.
+4.  **Conclusion:** Wrap up with a specific strength you observed and area for improvement. End with: "That's all the questions I have for you. Thank you for your time."`;
 
     return instruction;
   }, [searchParams, character, user]);
@@ -268,24 +271,49 @@ export default function LiveInterviewPage() {
             await updateUserFromIcebreaker(user.uid, icebreakerData);
           }
           // Re-initialize session with the main interview flow
-          await session?.reinitialize({ systemInstruction: getSystemInstruction('main', icebreakerData.name, icebreakerData.skills || []) });
+          await (session as any)?.reinitialize({ systemInstruction: getSystemInstruction('main', icebreakerData.name, icebreakerData.skills || []) });
           return; // Return early to let the re-initialized session take over
         }
       }
 
       // Fallback if icebreaker extraction fails
-      await session?.reinitialize({ systemInstruction: getSystemInstruction('main', null, []) });
+      await (session as any)?.reinitialize({ systemInstruction: getSystemInstruction('main', null, []) });
 
     }
     setStatus("🔴 Your turn... Speak now.");
   }, [getSystemInstruction, session, toast, user, searchParams]);
 
   useEffect(() => {
+    let interval: any;
+    if (isInterviewing) {
+      const startTime = Date.now();
+      interval = setInterval(async () => {
+        const seconds = Math.floor((Date.now() - startTime) / 1000);
+        setElapsedSeconds(seconds);
+
+        if (seconds >= 600 && !hasTriggeredWrapUp && session) { // 10 minutes
+          setHasTriggeredWrapUp(true);
+          setStatus("Wrapping up...");
+          await (session as any).reinitialize({
+            systemInstruction: getSystemInstruction('conclusion', candidateName.current)
+          });
+        }
+      }, 1000);
+    } else {
+      setElapsedSeconds(0);
+      setHasTriggeredWrapUp(false);
+    }
+    return () => clearInterval(interval);
+  }, [isInterviewing, hasTriggeredWrapUp, session, getSystemInstruction]);
+
+  useEffect(() => {
     const AudioContext = (window as any).AudioContext || (window as any).webkitAudioContext;
     inputAudioContextRef.current = new AudioContext({ sampleRate: 16000 });
     outputAudioContextRef.current = new AudioContext({ sampleRate: 24000 });
-    outputGainNodeRef.current = outputAudioContextRef.current.createGain();
-    outputGainNodeRef.current.connect(outputAudioContextRef.current.destination);
+    if (outputAudioContextRef.current) {
+      outputGainNodeRef.current = outputAudioContextRef.current.createGain();
+      outputGainNodeRef.current.connect(outputAudioContextRef.current.destination);
+    }
 
     const playAudio = async (base64Audio: string) => {
       const audioContext = outputAudioContextRef.current;
@@ -341,9 +369,9 @@ export default function LiveInterviewPage() {
             onmessage: (message: LiveServerMessage) => {
               if (message.serverContent?.interrupted) stopAllPlayback();
 
-              const audio = message.serverContent?.modelTurn?.parts[0]?.inlineData;
+              const audio = message.serverContent?.modelTurn?.parts?.[0]?.inlineData;
               if (audio) {
-                playAudio(audio.data);
+                playAudio(audio.data as string);
                 setStatus(`${character.name} is speaking...`);
               }
 
@@ -351,24 +379,24 @@ export default function LiveInterviewPage() {
 
               if (message.serverContent?.outputTranscription) {
                 const newText = message.serverContent.outputTranscription.text;
-                if (lastEntry?.speaker === 'ai' && message.serverContent.outputTranscription.partial) {
+                if (lastEntry?.speaker === 'ai' && (message.serverContent.outputTranscription as any).partial) {
                   // This is a partial update to the AI's speech, we don't add to transcript yet.
-                } else if (lastEntry?.speaker === 'ai' && !message.serverContent.outputTranscription.partial) {
+                } else if (lastEntry?.speaker === 'ai' && !(message.serverContent.outputTranscription as any).partial) {
                   lastEntry.text += ` ${newText}`;
                 } else if (!lastEntry || lastEntry.speaker !== 'ai') {
-                  transcriptRef.current.push({ speaker: 'ai', text: newText });
+                  transcriptRef.current.push({ speaker: 'ai', text: newText || '' });
                 }
               }
 
               if (message.serverContent?.inputTranscription) {
                 const newText = message.serverContent.inputTranscription.text;
                 setStatus("🔴 Your turn... Speak now.");
-                if (lastEntry?.speaker === 'user' && message.serverContent.inputTranscription.partial) {
+                if (lastEntry?.speaker === 'user' && (message.serverContent.inputTranscription as any).partial) {
                   // This is a partial update to the user's speech
-                } else if (lastEntry?.speaker === 'user' && !message.serverContent.inputTranscription.partial) {
+                } else if (lastEntry?.speaker === 'user' && !(message.serverContent.inputTranscription as any).partial) {
                   lastEntry.text += ` ${newText}`;
                 } else if (!lastEntry || lastEntry.speaker !== 'user') {
-                  transcriptRef.current.push({ speaker: 'user', text: newText });
+                  transcriptRef.current.push({ speaker: 'user', text: newText || '' });
                 }
               }
 
@@ -398,7 +426,7 @@ export default function LiveInterviewPage() {
         });
         setSession(newSession);
       } catch (e: any) {
-        console.error("Connection to Gemini failed:", e);
+        console.error("Connection to Interviewer failed:", e);
         setStatus(`Error: ${e.message}`);
       }
     };
@@ -477,6 +505,7 @@ export default function LiveInterviewPage() {
       scriptProcessorNodeRef.current.connect(inputCtx.destination);
 
       setIsInterviewing(true);
+      setStatus("Please greet the interviewer to begin...");
 
     } catch (err: any) {
       let friendlyMessage = err.message || 'Failed to start interview devices.';
@@ -577,7 +606,7 @@ export default function LiveInterviewPage() {
       {/* Subtle Background Glow */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-primary/2 blur-[120px] pointer-events-none" />
 
-      <InterviewHeader status={status} isInterviewing={isInterviewing} />
+      <InterviewHeader status={status} isInterviewing={isInterviewing} elapsedSeconds={elapsedSeconds} />
 
       <main className="flex-1 relative z-10 flex flex-col items-center justify-center p-8">
         <AIPanel characterName={character.name} isAISpeaking={isAISpeaking} />

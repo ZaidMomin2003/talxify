@@ -29,33 +29,59 @@ const freePlan = {
     ],
 };
 
+const planPrices: Record<SubscriptionPlan, { INR: number, USD: number }> = {
+    'free': { INR: 0, USD: 0 },
+    'pro-1m': { INR: 1249, USD: 15 },
+    'pro-2m': { INR: 2099, USD: 25 },
+    'pro-3m': { INR: 2899, USD: 35 },
+};
+
+const planDetails: Record<SubscriptionPlan, { interviews: number; durationMonths: number }> = {
+    'free': { interviews: 1, durationMonths: 0 },
+    'pro-1m': { interviews: 10, durationMonths: 1 },
+    'pro-2m': { interviews: 20, durationMonths: 1 },
+    'pro-3m': { interviews: 30, durationMonths: 1 },
+};
+
 const proPlans = [
     {
         id: 'pro-1m' as SubscriptionPlan,
         name: 'Essential',
-        priceInr: 999,
-        priceUsd: 14,
+        priceInr: planPrices['pro-1m'].INR,
+        priceUsd: planPrices['pro-1m'].USD,
         duration: '1 Month',
         description: 'Perfect for a focused prep sprint.',
-        interviews: 5,
+        interviews: planDetails['pro-1m'].interviews,
+        badgeInr: null,
+        badgeUsd: null,
+        originalPriceInr: 1599,
+        originalPriceUsd: 19,
     },
     {
         id: 'pro-2m' as SubscriptionPlan,
         name: 'Professional',
-        priceInr: 1799,
-        priceUsd: 24,
+        priceInr: planPrices['pro-2m'].INR,
+        priceUsd: planPrices['pro-2m'].USD,
         duration: '1 Month',
         description: 'Balanced plan for steady preparation.',
-        interviews: 15,
+        interviews: planDetails['pro-2m'].interviews,
+        badgeInr: 'Popular',
+        badgeUsd: 'Popular',
+        originalPriceInr: 2899,
+        originalPriceUsd: 35,
     },
     {
         id: 'pro-3m' as SubscriptionPlan,
         name: 'Elite',
-        priceInr: 2499,
-        priceUsd: 34,
+        priceInr: planPrices['pro-3m'].INR,
+        priceUsd: planPrices['pro-3m'].USD,
         duration: '1 Month',
         description: 'Best value for in-depth mastery.',
-        interviews: 25,
+        interviews: planDetails['pro-3m'].interviews,
+        badgeInr: 'Best Value',
+        badgeUsd: 'Best Value',
+        originalPriceInr: 3999,
+        originalPriceUsd: 49,
     },
 ]
 

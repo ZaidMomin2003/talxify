@@ -27,9 +27,9 @@ const db = getFirestore();
 
 const planDetails: Record<SubscriptionPlan, { interviews: number; durationMonths: number }> = {
     'free': { interviews: 1, durationMonths: 0 },
-    'pro-1m': { interviews: 5, durationMonths: 1 },
-    'pro-2m': { interviews: 15, durationMonths: 1 },
-    'pro-3m': { interviews: 25, durationMonths: 1 },
+    'pro-1m': { interviews: 10, durationMonths: 1 },
+    'pro-2m': { interviews: 20, durationMonths: 1 },
+    'pro-3m': { interviews: 30, durationMonths: 1 },
 };
 
 export const POST = Webhooks({

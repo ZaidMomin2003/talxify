@@ -139,8 +139,10 @@ export default function DraftPage() {
     const AudioContext = (window as any).AudioContext || (window as any).webkitAudioContext;
     inputAudioContextRef.current = new AudioContext({ sampleRate: 16000 });
     outputAudioContextRef.current = new AudioContext({ sampleRate: 24000 });
-    outputGainNodeRef.current = outputAudioContextRef.current.createGain();
-    outputGainNodeRef.current.connect(outputAudioContextRef.current.destination);
+    if (outputAudioContextRef.current) {
+      outputGainNodeRef.current = outputAudioContextRef.current.createGain();
+      outputGainNodeRef.current.connect(outputAudioContextRef.current.destination);
+    }
 
     // 2. Define session functions
     const playAudio = async (base64Audio: string) => {
@@ -200,21 +202,21 @@ export default function DraftPage() {
             onmessage: (message: LiveServerMessage) => {
               if (message.serverContent?.interrupted) stopAllPlayback();
 
-              const audio = message.serverContent?.modelTurn?.parts[0]?.inlineData;
-              if (audio?.data) playAudio(audio.data);
+              const audio = message.serverContent?.modelTurn?.parts?.[0]?.inlineData;
+              if (audio?.data) playAudio(audio.data as string);
 
               if (message.serverContent?.outputTranscription) {
                 const newText = message.serverContent.outputTranscription.text;
                 setStatus("Mark is speaking...");
-                if (message.serverContent.outputTranscription.partial === false) {
-                  transcriptRef.current.push({ speaker: 'ai', text: newText });
+                if ((message.serverContent.outputTranscription as any).partial === false) {
+                  transcriptRef.current.push({ speaker: 'ai', text: newText || '' });
                 }
               }
               if (message.serverContent?.inputTranscription) {
                 const newText = message.serverContent.inputTranscription.text;
                 setStatus("🔴 Your turn... Speak now.");
-                if (message.serverContent.inputTranscription.partial === false) {
-                  transcriptRef.current.push({ speaker: 'user', text: newText });
+                if ((message.serverContent.inputTranscription as any).partial === false) {
+                  transcriptRef.current.push({ speaker: 'user', text: newText || '' });
                 }
               }
               if (message.serverContent?.turnComplete) {
